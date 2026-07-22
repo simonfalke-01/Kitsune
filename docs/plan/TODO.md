@@ -29,5 +29,9 @@ or scaffolding alone.
 - [x] Initial PostgreSQL schema for all specified subsystems applies cleanly.
 - [x] Compile-time checked SQLx transaction/outbox/audit/idempotency store.
 - [ ] Feature repositories and mode-state optimistic concurrency.
-- [ ] In-process cache and EventBus; NATS/Redis scaled adapters.
+- [x] Bounded in-process cache and filtered EventBus.
+- [x] Automation DAG validation, branching, dry-run, execution trace, and action
+  registry seam.
+- [x] HMAC-signed retrying webhooks and shared DNS/IP/redirect SSRF defense.
+- [ ] NATS/Redis scaled adapters.
 - [ ] Milestone-wide format, strict Clippy, unit, and integration gate.

@@ -5,8 +5,8 @@ Updated: 2026-07-22 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: 02 — deterministic core and persistence.
-- In progress: PostgreSQL repositories on the verified initial schema.
-- Next: complete lean cache/event adapters and API/auth vertical slice.
+- In progress: feature repositories and API/auth vertical slice.
+- Next: secure local authentication/session service and Axum/OpenAPI shell.
 
 ## Verified
 
@@ -17,6 +17,9 @@ Updated: 2026-07-22 (Asia/Singapore)
 - Core workspace format, 12 domain tests, and strict workspace Clippy pass.
 - PostgreSQL 17 migration applies from empty state; SQLx compile-time query
   metadata is checked in; transactional audit/outbox/idempotency test passes.
+- Lean cache/EventBus, typed automation DAG validation/execution, centralized
+  public-network egress policy, and signed redirect-safe webhook delivery pass 7
+  focused tests and strict Clippy.
 
 ## Risks being actively retired
 

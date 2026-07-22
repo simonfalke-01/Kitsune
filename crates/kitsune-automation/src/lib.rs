@@ -1,4 +1,11 @@
-//! Events and automation execution.
+//! Event adapters, typed automation execution, safe egress, and signed webhooks.
 
-/// Crate readiness marker used while event adapters are composed.
-pub const CRATE_NAME: &str = "kitsune-automation";
+pub mod automation;
+pub mod egress;
+pub mod local;
+pub mod webhook;
+
+pub use automation::{AutomationEngine, AutomationGraph, AutomationRun};
+pub use egress::EgressPolicy;
+pub use local::{InProcessCache, InProcessEventBus};
+pub use webhook::{WebhookDelivery, WebhookDispatcher, WebhookEndpoint};

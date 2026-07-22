@@ -32,3 +32,10 @@ Format: `YYYY-MM-DD — decision — rationale`.
   compilation prerequisite.
 - 2026-07-22 — Store rotating A&D flag digests and issue HMAC-authenticated
   opaque values — plaintext flags never enter logs or general event payloads.
+- 2026-07-22 — Treat an empty egress host allow-list as “any public host,” not
+  “any address” — integrations remain zero-config while loopback, private,
+  carrier-grade NAT, metadata, link-local, documentation, and multicast ranges
+  stay blocked after every DNS resolution and redirect.
+- 2026-07-22 — Keep the lean EventBus intentionally non-durable and pair it with
+  the PostgreSQL outbox — zero-config fanout stays fast while durable consumers
+  can resume independently of process-local broadcast buffers.
