@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use kitsune_core::{
     DomainError, DomainResult, EventEnvelope,
     events::DomainEvent,
-    identity::{ChallengeId, EventId, OrganizationId, UserId},
+    identity::{ChallengeId, EventId, EventState, OrganizationId, UserId},
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -231,6 +231,64 @@ impl ResourceRepository {
         .fetch_all(&self.pool)
         .await
         .map_err(unavailable)
+    }
+
+    /// Applies a validated lifecycle transition and records it atomically.
+    pub async fn set_event_state(
+        &self,
+        organization_id: OrganizationId,
+        event_id: EventId,
+        actor: UserId,
+        next: EventState,
+        now: DateTime<Utc>,
+    ) -> DomainResult<(EventRecord, EventEnvelope)> {
+        let mut tx = self.pool.begin().await.map_err(unavailable)?;
+        let current = sqlx::query_scalar!(
+            "SELECT state FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE",
+            event_id.0,
+            organization_id.0,
+        )
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(unavailable)?
+        .ok_or(DomainError::NotFound)?;
+        parse_event_state(&current)?.transition_to(next)?;
+        let state = event_state_key(next);
+        let row = sqlx::query_as!(
+            EventRecord,
+            r#"
+            UPDATE events
+            SET state = $3, updated_at = $4
+            WHERE id = $1 AND organization_id = $2
+            RETURNING id,name,slug,description,state,participation,modes,starts_at,
+                      ends_at,team_size_limit,scoreboard_frozen,scoreboard_hidden
+            "#,
+            event_id.0,
+            organization_id.0,
+            state,
+            now,
+        )
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(unavailable)?;
+        let envelope = EventEnvelope::new(
+            organization_id,
+            Some(event_id),
+            Some(actor),
+            Uuid::now_v7(),
+            now,
+            DomainEvent::EventChanged { event_id },
+        );
+        persist_audit_event(
+            &mut tx,
+            &envelope,
+            "event.state.change",
+            "event",
+            &event_id.to_string(),
+        )
+        .await?;
+        tx.commit().await.map_err(unavailable)?;
+        Ok((row, envelope))
     }
 
     /// Confirms an event belongs to the calling tenant.
@@ -496,5 +554,30 @@ fn conflict_or_unavailable(error: sqlx::Error) -> DomainError {
         DomainError::Conflict("resource key already exists".into())
     } else {
         unavailable(error)
+    }
+}
+
+fn parse_event_state(value: &str) -> DomainResult<EventState> {
+    match value {
+        "draft" => Ok(EventState::Draft),
+        "scheduled" => Ok(EventState::Scheduled),
+        "live" => Ok(EventState::Live),
+        "paused" => Ok(EventState::Paused),
+        "ended" => Ok(EventState::Ended),
+        "archived" => Ok(EventState::Archived),
+        _ => Err(DomainError::Unavailable(
+            "postgres event contains an invalid lifecycle state".into(),
+        )),
+    }
+}
+
+const fn event_state_key(value: EventState) -> &'static str {
+    match value {
+        EventState::Draft => "draft",
+        EventState::Scheduled => "scheduled",
+        EventState::Live => "live",
+        EventState::Paused => "paused",
+        EventState::Ended => "ended",
+        EventState::Archived => "archived",
     }
 }

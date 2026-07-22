@@ -60,6 +60,8 @@ or scaffolding alone.
   event and challenge resource endpoints.
 - [x] Tenant-scoped event and challenge create/list APIs with player-safe
   projections, visibility evaluation, hashed exact answers, audit, and outbox.
+- [x] Domain-validated event lifecycle transition API and organizer live/pause/
+  resume/end controls with audit, outbox, realtime, and browser coverage.
 - [ ] Complete versioned REST resources and OpenAPI contracts.
 
 ## Frontend vertical slice

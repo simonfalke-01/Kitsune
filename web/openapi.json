@@ -1089,6 +1089,19 @@
         ],
         "type": "object"
       },
+      "UpdateEventStateRequest": {
+        "description": "Organizer event lifecycle mutation.",
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/EventStateInput",
+            "description": "Requested lifecycle state."
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "type": "object"
+      },
       "UserResponse": {
         "description": "Safe account projection.",
         "properties": {
@@ -1912,6 +1925,88 @@
         },
         "tags": [
           "challenges"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/state": {
+      "patch": {
+        "operationId": "update_event_state",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateEventStateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "events"
         ]
       }
     },

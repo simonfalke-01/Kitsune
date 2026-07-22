@@ -126,9 +126,10 @@ pub struct ReadinessResponse {
         auth::start_totp,
         auth::confirm_totp,
         auth::list_sessions,
-        auth::revoke_session
-        ,resources::list_events,
+        auth::revoke_session,
+        resources::list_events,
         resources::create_event,
+        resources::update_event_state,
         resources::list_challenges,
         resources::create_challenge
     ),
@@ -151,6 +152,7 @@ pub struct ReadinessResponse {
         resources::ParticipationInput,
         resources::ModeInput,
         resources::CreateEventRequest,
+        resources::UpdateEventStateRequest,
         resources::EventResponse,
         resources::ChallengeKindInput,
         resources::ChallengeStateInput,
@@ -166,8 +168,8 @@ pub struct ReadinessResponse {
     )),
     tags(
         (name = "system", description = "Health and diagnostics"),
-        (name = "auth", description = "Setup, sessions, and authentication")
-        ,(name = "events", description = "Competition and workshop events"),
+        (name = "auth", description = "Setup, sessions, and authentication"),
+        (name = "events", description = "Competition and workshop events"),
         (name = "challenges", description = "Challenge board and authoring")
     )
 )]
@@ -237,6 +239,10 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/events",
             get(resources::list_events).post(resources::create_event),
+        )
+        .route(
+            "/api/v1/events/{event_id}/state",
+            axum::routing::patch(resources::update_event_state),
         )
         .route(
             "/api/v1/events/{event_id}/challenges",
@@ -589,7 +595,7 @@ mod tests {
                     "name": "Outfox Open 2026",
                     "slug": "outfox-open-2026",
                     "description": "A live security competition.",
-                    "state": "live",
+                    "state": "draft",
                     "participation": "individual",
                     "modes": ["jeopardy", "workshop"],
                     "starts_at": null,
@@ -614,6 +620,34 @@ mod tests {
         let event: serde_json::Value = serde_json::from_slice(&body).expect("event");
         let event_id = event["id"].as_str().expect("event id");
 
+        let go_live = Request::builder()
+            .method("PATCH")
+            .uri(format!("/api/v1/events/{event_id}/state"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(r#"{"state":"live"}"#))
+            .expect("request");
+        let response = app.clone().oneshot(go_live).await.expect("go live");
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let reopen_draft = Request::builder()
+            .method("PATCH")
+            .uri(format!("/api/v1/events/{event_id}/state"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(r#"{"state":"draft"}"#))
+            .expect("request");
+        assert_eq!(
+            app.clone()
+                .oneshot(reopen_draft)
+                .await
+                .expect("invalid transition")
+                .status(),
+            StatusCode::CONFLICT
+        );
+
         for (name, state) in [("Hidden trail", "draft"), ("Foxfire 101", "published")] {
             let create = Request::builder()
                 .method("POST")
@@ -629,12 +663,21 @@ mod tests {
                         "kind": {"type": "static_flag"},
                         "state": state,
                         "scoring": {"kind": "dynamic", "initial": 500, "minimum": 100, "decay": 50},
-                        "visibility": {"visible_from": null, "visible_until": null, "division_ids": [], "prerequisites": []},
+                        "visibility": {
+                            "visible_from": null,
+                            "visible_until": null,
+                            "division_ids": [],
+                            "prerequisites": []
+                        },
                         "tags": ["intro"],
                         "max_attempts": 10,
                         "writeups_enabled": true,
                         "position": 0,
-                        "answers": [{"kind": "exact", "value": "kit{never-persist-plaintext}", "case_insensitive": false}],
+                        "answers": [{
+                            "kind": "exact",
+                            "value": "kit{never-persist-plaintext}",
+                            "case_insensitive": false
+                        }],
                         "hints": [{"id": 1, "content": "Look closely.", "cost": 10}],
                         "survey": [{"key": "difficulty", "prompt": "How hard?", "range": [1, 5], "required": true}]
                     })
@@ -748,8 +791,8 @@ mod tests {
             .fetch_one(&pool)
             .await
             .expect("outbox count");
-        assert_eq!(audit_count, 3);
-        assert_eq!(outbox_count, 3);
+        assert_eq!(audit_count, 4);
+        assert_eq!(outbox_count, 4);
     }
 
     fn response_cookies(headers: &axum::http::HeaderMap) -> String {

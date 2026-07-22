@@ -53,6 +53,10 @@ Updated: 2026-07-22 (Asia/Singapore)
 - A real Playwright journey starts PostgreSQL-backed Kitsune plus the Svelte dev
   proxy, creates an event and published challenge, verifies the player board on
   desktop and mobile Chromium, and passes axe with no violations.
+- Organizer lifecycle controls now move events through domain-validated
+  draft/scheduled/live/paused/ended/archive transitions; invalid historical
+  reopen attempts return conflicts, while successful changes are audited,
+  outboxed, published in realtime, and exercised through the browser journey.
 
 ## Risks being actively retired
 

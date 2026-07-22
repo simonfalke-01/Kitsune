@@ -52,6 +52,8 @@ test('organizer authors a published challenge visible on the player board', asyn
   await page.getByLabel('Description').fill('A browser-tested Kitsune event.');
   await page.getByRole('button', { name: 'Create draft' }).click();
   await expect(page.getByText(eventName, { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Go live' }).click();
+  await expect(page.getByText('Current state: live')).toBeVisible();
 
   await page.goto('/admin/challenges');
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();

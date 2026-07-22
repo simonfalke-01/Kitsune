@@ -121,6 +121,13 @@ pub struct EventResponse {
     pub scoreboard_hidden: bool,
 }
 
+/// Organizer event lifecycle mutation.
+#[derive(Deserialize, ToSchema)]
+pub struct UpdateEventStateRequest {
+    /// Requested lifecycle state.
+    pub state: EventStateInput,
+}
+
 /// Challenge behavior input.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -403,6 +410,47 @@ pub(crate) async fn create_event(
         .await
         .map_err(ApiError::from)?;
     Ok((StatusCode::CREATED, Json(row.into())))
+}
+
+#[utoipa::path(
+    patch,
+    path = "/api/v1/events/{event_id}/state",
+    tag = "events",
+    params(("event_id" = Uuid, Path, description = "Event ID")),
+    request_body = UpdateEventStateRequest,
+    responses(
+        (status = 200, body = EventResponse),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody),
+        (status = 409, body = ErrorBody)
+    )
+)]
+pub(crate) async fn update_event_state(
+    State(state): State<AppState>,
+    actor: Actor,
+    headers: HeaderMap,
+    Path(event_id): Path<Uuid>,
+    Json(request): Json<UpdateEventStateRequest>,
+) -> ApiResult<Json<EventResponse>> {
+    actor.require("event_manage")?;
+    actor.require_csrf(&headers)?;
+    let (row, envelope) = ResourceRepository::new(state.db.pool().clone())
+        .set_event_state(
+            actor.session.account.organization_id,
+            EventId(event_id),
+            actor.session.account.user_id,
+            event_state(request.state),
+            Utc::now(),
+        )
+        .await
+        .map_err(ApiError::from)?;
+    state
+        .event_bus
+        .publish(envelope)
+        .await
+        .map_err(ApiError::from)?;
+    Ok(Json(row.into()))
 }
 
 #[utoipa::path(

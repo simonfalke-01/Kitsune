@@ -4,7 +4,8 @@ import type {
   ChallengeSummary,
   CreateChallengeInput,
   CreateEventInput,
-  EventSummary
+  EventSummary,
+  UpdateEventStateInput
 } from '$lib/api/client';
 import { session } from '$lib/stores/session.svelte';
 import { SvelteMap } from 'svelte/reactivity';
@@ -167,6 +168,26 @@ class EventStore {
     const normalized = normalizeChallenge(data);
     this.challenges = [...this.challenges, normalized];
     return normalized;
+  }
+
+  async setState(state: UpdateEventStateInput['state']): Promise<EventSummary | null> {
+    const csrf = session.current?.csrf_token;
+    const eventId = this.selectedEventId;
+    if (!csrf || !eventId) return this.authenticationFailure();
+    this.saving = true;
+    this.error = null;
+    const { data, error } = await api.PATCH('/api/v1/events/{event_id}/state', {
+      params: { path: { event_id: eventId } },
+      headers: { 'x-csrf-token': csrf },
+      body: { state }
+    });
+    this.saving = false;
+    if (!data) {
+      this.error = errorMessage(error, 'The event state could not be changed.');
+      return null;
+    }
+    this.events = this.events.map((event) => (event.id === data.id ? data : event));
+    return data;
   }
 
   clear(): void {

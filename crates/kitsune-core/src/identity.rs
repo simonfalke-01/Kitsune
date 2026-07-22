@@ -168,6 +168,29 @@ impl Event {
     }
 }
 
+impl EventState {
+    /// Validates an organizer-requested lifecycle transition. Repeating the
+    /// current state is idempotent; historical events never become writable.
+    pub fn transition_to(self, next: Self) -> DomainResult<Self> {
+        let allowed = self == next
+            || matches!(
+                (self, next),
+                (Self::Draft, Self::Scheduled | Self::Live | Self::Archived)
+                    | (Self::Scheduled, Self::Draft | Self::Live | Self::Archived)
+                    | (Self::Live, Self::Paused | Self::Ended)
+                    | (Self::Paused, Self::Live | Self::Ended)
+                    | (Self::Ended, Self::Archived)
+            );
+        if allowed {
+            Ok(next)
+        } else {
+            Err(DomainError::Conflict(format!(
+                "event cannot transition from {self:?} to {next:?}"
+            )))
+        }
+    }
+}
+
 /// Player or operator account.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct User {
@@ -328,5 +351,23 @@ mod tests {
             modes: BTreeSet::from(["jeopardy".into()]),
         };
         assert!(event.validate().is_err());
+    }
+
+    #[test]
+    fn event_lifecycle_prevents_reopening_history() {
+        assert_eq!(
+            EventState::Draft.transition_to(EventState::Live),
+            Ok(EventState::Live)
+        );
+        assert_eq!(
+            EventState::Paused.transition_to(EventState::Live),
+            Ok(EventState::Live)
+        );
+        assert!(EventState::Ended.transition_to(EventState::Live).is_err());
+        assert!(
+            EventState::Archived
+                .transition_to(EventState::Draft)
+                .is_err()
+        );
     }
 }

@@ -8,6 +8,7 @@ export type SetupInput = components['schemas']['SetupRequest'];
 export type ApiErrorBody = components['schemas']['ErrorBody'];
 export type EventSummary = components['schemas']['EventResponse'];
 export type CreateEventInput = components['schemas']['CreateEventRequest'];
+export type UpdateEventStateInput = components['schemas']['UpdateEventStateRequest'];
 export type ChallengeSummary = components['schemas']['ChallengeResponse'];
 export type CreateChallengeInput = components['schemas']['CreateChallengeRequest'];
 

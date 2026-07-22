@@ -79,3 +79,6 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Run browser E2E against the real Rust server through Vite’s same-
   origin proxy — this covers encrypted cookies, CSRF, PostgreSQL, generated API
   types, UI state, responsive layout, and accessibility in one honest journey.
+- 2026-07-22 — Make event lifecycle transitions explicit and forward-only after
+  competition end — pause/resume remains operationally safe while historical
+  results cannot silently become writable again.

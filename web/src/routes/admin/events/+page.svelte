@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { CalendarPlus, Check, Radio } from '@lucide/svelte';
+  import { CalendarPlus, Check, CirclePause, CirclePlay, Radio, Square } from '@lucide/svelte';
   import Badge from '$lib/components/Badge.svelte';
   import Button from '$lib/components/Button.svelte';
   import Card from '$lib/components/Card.svelte';
@@ -51,6 +51,10 @@
     name = '';
     slug = '';
     description = '';
+  }
+
+  async function changeState(state: 'live' | 'paused' | 'ended'): Promise<void> {
+    await events.setState(state);
   }
 </script>
 
@@ -150,6 +154,45 @@
       detail="Create a draft without configuring anything external."
     />
   {/if}
+
+  {#if events.selectedEvent}
+    <Card>
+      <div class="lifecycle-control">
+        <div>
+          <span>Selected event</span>
+          <strong>{events.selectedEvent.name}</strong>
+          <small>Current state: {events.selectedEvent.state}</small>
+        </div>
+        <div class="lifecycle-actions">
+          {#if ['draft', 'scheduled', 'paused'].includes(events.selectedEvent.state)}
+            <Button loading={events.saving} onclick={() => changeState('live')}>
+              <CirclePlay size={16} />
+              {events.selectedEvent.state === 'paused' ? 'Resume' : 'Go live'}
+            </Button>
+          {/if}
+          {#if events.selectedEvent.state === 'live'}
+            <Button
+              variant="secondary"
+              loading={events.saving}
+              onclick={() => changeState('paused')}
+            >
+              <CirclePause size={16} />
+              Pause
+            </Button>
+          {/if}
+          {#if ['live', 'paused'].includes(events.selectedEvent.state)}
+            <Button variant="danger" loading={events.saving} onclick={() => changeState('ended')}>
+              <Square size={15} />
+              End event
+            </Button>
+          {/if}
+        </div>
+      </div>
+      {#if events.error}
+        <p class="error-text" role="alert">{events.error}</p>
+      {/if}
+    </Card>
+  {/if}
 </section>
 
 <style>
@@ -220,6 +263,34 @@
     justify-content: space-between;
   }
 
+  .lifecycle-control,
+  .lifecycle-actions,
+  .lifecycle-control > div:first-child {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+  }
+
+  .lifecycle-control {
+    justify-content: space-between;
+  }
+
+  .lifecycle-control > div:first-child {
+    align-items: start;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .lifecycle-control span,
+  .lifecycle-control small {
+    color: var(--ink-secondary);
+    font-size: 0.75rem;
+  }
+
+  .lifecycle-control small {
+    text-transform: capitalize;
+  }
+
   .event-grid strong {
     font-size: 1.05rem;
   }
@@ -238,6 +309,12 @@
     .pair,
     .event-grid {
       grid-template-columns: 1fr;
+    }
+
+    .lifecycle-control,
+    .lifecycle-actions {
+      align-items: stretch;
+      flex-direction: column;
     }
   }
 </style>
