@@ -1,0 +1,11 @@
+Kitsune
+Copyright 2026 [COPYRIGHT HOLDER]
+
+Kitsune is source-available proprietary software licensed under the Kitsune
+Community License 1.0 (KCL-1.0). See LICENSE. All rights are reserved except
+those expressly granted there.
+
+The CTFd repository included in `CTFd-reference-repo/` is an independently
+licensed reference artifact and is not part of Kitsune. Kitsune is a clean-room
+implementation and contains no copied CTFd source code or assets.
+

@@ -1,0 +1,16 @@
+/target/
+/web/node_modules/
+/docs/node_modules/
+/node_modules/
+/.env
+/.env.*
+!/.env.example
+/data/
+/dist/
+/playwright-report/
+/test-results/
+/.astro/
+*.profraw
+*.log
+.DS_Store
+/CTFd-reference-repo/
