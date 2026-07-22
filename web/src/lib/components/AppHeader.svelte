@@ -85,8 +85,16 @@
     gap: 2rem;
     padding: 0.65rem max(1rem, calc((100vw - 1180px) / 2));
     border-bottom: 1px solid var(--line);
+    isolation: isolate;
+  }
+
+  .header::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
     background: color-mix(in srgb, var(--canvas) 88%, transparent);
     backdrop-filter: blur(18px) saturate(140%);
+    content: '';
   }
 
   .brand-link {
@@ -160,7 +168,7 @@
 
     nav {
       position: fixed;
-      z-index: 30;
+      z-index: 40;
       right: 0.6rem;
       bottom: 0.6rem;
       left: 0.6rem;

@@ -2,6 +2,7 @@
   import { ExternalLink, LockKeyhole } from '@lucide/svelte';
   import Badge from '$lib/components/Badge.svelte';
   import Card from '$lib/components/Card.svelte';
+  import OidcProviderManager from '$lib/components/OidcProviderManager.svelte';
   import Toggle from '$lib/components/Toggle.svelte';
   import { preferences } from '$lib/i18n/index.svelte';
   import { en } from '$lib/i18n/en';
@@ -32,6 +33,8 @@
   </div>
 
   <div class="settings-grid">
+    <OidcProviderManager />
+
     <Card>
       <div class="section-head">
         <div>

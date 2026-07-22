@@ -57,6 +57,44 @@ test('organizer authors a published challenge visible on the player board', asyn
   const eventName = `Foxfire E2E ${testInfo.project.name} ${run}`;
   const challengeName = `Trailhead ${testInfo.project.name} ${run}`;
 
+  await page.goto('/admin/settings');
+  await expect(page.getByRole('heading', { name: 'OpenID Connect' })).toBeVisible();
+  await page.getByRole('button', { name: 'Add provider' }).click();
+  const providerForm = page.locator('form').filter({ hasText: 'Connect an identity provider' });
+  const providerName = `E2E SSO ${testInfo.project.name} ${run}`;
+  await providerForm.getByLabel('Login label').fill(providerName);
+  await providerForm.getByLabel('Provider key').fill(`e2e-sso-${key}-${run}`);
+  await providerForm.getByLabel('Issuer URL').fill('https://identity.example.test');
+  await providerForm.getByLabel('Client ID').fill(`e2e-client-${key}-${run}`);
+  await providerForm.getByLabel('Client secret').fill('e2e-client-secret-with-enough-entropy');
+  const providerCreated = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && response.url().endsWith('/auth/oidc/providers')
+  );
+  await providerForm.getByRole('button', { name: 'Add provider' }).click();
+  expect((await providerCreated).ok()).toBe(true);
+  await expect(page.getByText(providerName, { exact: true })).toBeVisible();
+  const settingsAccessibility = await new AxeBuilder({ page }).analyze();
+  expect(settingsAccessibility.violations).toEqual([]);
+
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  const providersLoaded = page.waitForResponse((response) =>
+    response.url().includes('/api/v1/auth/oidc/providers/public')
+  );
+  await page.getByLabel('Organization').fill(OWNER.organization);
+  await providersLoaded;
+  await expect(page.getByRole('link', { name: providerName })).toBeVisible();
+  await page.getByLabel('Email').fill(OWNER.email);
+  await page.getByLabel('Password').fill(OWNER.password);
+  const signedInAgain = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && response.url().endsWith('/api/v1/auth/login')
+  );
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  expect((await signedInAgain).ok()).toBe(true);
+  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+
   await page.goto('/admin/events');
   await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
   await page.getByRole('button', { name: 'New event' }).click();

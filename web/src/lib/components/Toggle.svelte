@@ -94,6 +94,10 @@
 
   .disabled {
     cursor: not-allowed;
+  }
+
+  .disabled :global(.switch) {
+    cursor: not-allowed;
     opacity: 0.52;
   }
 </style>

@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: '../tests/e2e',
+  timeout: 120_000,
   fullyParallel: false,
   workers: 1,
   forbidOnly: Boolean(process.env.CI),
@@ -20,6 +21,9 @@ export default defineConfig({
       command: [
         'KITSUNE__DATABASE_URL=${DATABASE_URL:-postgres://kitsune:kitsune@127.0.0.1:5432/kitsune}',
         'KITSUNE__LISTEN=127.0.0.1:3000',
+        'KITSUNE__FEATURES__EXTERNAL_AUTH=true',
+        'KITSUNE__PUBLIC_ORIGIN=http://127.0.0.1:4173',
+        'SQLX_OFFLINE=true',
         'cargo run --manifest-path ../Cargo.toml -p kitsune-server'
       ].join(' '),
       url: 'http://127.0.0.1:3000/ready',

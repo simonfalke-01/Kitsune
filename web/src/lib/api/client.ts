@@ -33,6 +33,10 @@ export type SurveyReceipt = components['schemas']['SurveyResponse'];
 export type SurveySummary = components['schemas']['SurveySummaryResponse'];
 export type ManualReview = components['schemas']['ManualReviewResponse'];
 export type ReviewManualSubmissionInput = components['schemas']['ReviewManualSubmissionRequest'];
+export type OidcProvider = components['schemas']['OidcProviderResponse'];
+export type PublicOidcProvider = components['schemas']['PublicOidcProviderResponse'];
+export type CreateOidcProviderInput = components['schemas']['CreateOidcProviderRequest'];
+export type UpdateOidcProviderInput = components['schemas']['UpdateOidcProviderRequest'];
 
 export const api = createClient<paths>({
   baseUrl: '',

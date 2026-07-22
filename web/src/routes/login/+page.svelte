@@ -1,5 +1,6 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
+  import { page } from '$app/state';
   import { KeyRound, Radio, ScanFace } from '@lucide/svelte';
   import BrandMark from '$lib/components/BrandMark.svelte';
   import Button from '$lib/components/Button.svelte';
@@ -7,12 +8,39 @@
   import { copy, toned } from '$lib/i18n/index.svelte';
   import { session } from '$lib/stores/session.svelte';
   import { realtime } from '$lib/stores/realtime.svelte';
+  import { api, type PublicOidcProvider } from '$lib/api/client';
 
   let organization = $state('');
   let email = $state('');
   let password = $state('');
   let mfaCode = $state('');
   let mfaRequired = $state(false);
+  let providers = $state<PublicOidcProvider[]>([]);
+  let providerRequest = 0;
+  let oidcError = $derived(page.url.searchParams.has('oidc_error'));
+
+  $effect(() => {
+    const requestedOrganization = organization.trim();
+    if (!/^[a-z0-9][a-z0-9-]{0,62}$/.test(requestedOrganization)) {
+      providers = [];
+      return;
+    }
+    const request = ++providerRequest;
+    const timer = window.setTimeout(() => {
+      void loadProviders(requestedOrganization, request);
+    }, 250);
+    return () => window.clearTimeout(timer);
+  });
+
+  async function loadProviders(requestedOrganization: string, request: number) {
+    const result = await api.GET('/api/v1/auth/oidc/providers/public', {
+      params: { query: { organization: requestedOrganization } }
+    });
+    if (request !== providerRequest) {
+      return;
+    }
+    providers = result.data ?? [];
+  }
 
   async function submit(event: SubmitEvent) {
     event.preventDefault();
@@ -33,7 +61,9 @@
   }
 </script>
 
-<svelte:head><title>Sign in — Kitsune</title></svelte:head>
+<svelte:head>
+  <title>Sign in — Kitsune</title>
+</svelte:head>
 
 <div class="auth-shell">
   <section class="auth-intro">
@@ -87,6 +117,11 @@
       {#if session.error}
         <p class="error-text" role="alert">{session.error}</p>
       {/if}
+      {#if oidcError}
+        <p class="error-text" role="alert">
+          The identity provider could not verify this sign-in. Try again or use a local account.
+        </p>
+      {/if}
       <Button type="submit" loading={session.loading}>
         <KeyRound size={16} />
         Sign in
@@ -96,10 +131,12 @@
           <ScanFace size={15} />
           Passkey
         </button>
-        <button type="button" disabled title="Available when SSO is configured">
-          <Radio size={15} />
-          SSO
-        </button>
+        {#each providers as provider (provider.key)}
+          <a href={`${provider.start_path}?return_to=%2F`}>
+            <Radio size={15} />
+            {provider.display_name}
+          </a>
+        {/each}
       </div>
       <a class="recovery" href="/recover">Recover your account</a>
       <a class="recovery" href="/register">Create a local account</a>
@@ -184,7 +221,8 @@
     color: var(--ink-secondary);
     font-size: 0.75rem;
   }
-  .alternatives button {
+  .alternatives button,
+  .alternatives a {
     display: inline-flex;
     min-height: 2.5rem;
     align-items: center;
@@ -195,6 +233,15 @@
     background: var(--surface-muted);
     color: var(--ink-faint);
     font-size: 0.78rem;
+  }
+  .alternatives a {
+    background: var(--surface);
+    color: var(--ink-secondary);
+    font-weight: 650;
+  }
+  .alternatives a:hover {
+    border-color: var(--line-strong);
+    color: var(--ink);
   }
   .recovery {
     justify-self: center;

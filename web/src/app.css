@@ -219,6 +219,10 @@ a {
 }
 
 @media (max-width: 800px) {
+  html {
+    scroll-padding-block: 5rem 5.5rem;
+  }
+
   .grid-3 {
     grid-template-columns: 1fr;
   }
@@ -231,6 +235,7 @@ a {
   .page {
     width: min(100% - 1.2rem, 1180px);
     padding-top: 1.25rem;
+    padding-bottom: 5.5rem;
   }
 }
 
