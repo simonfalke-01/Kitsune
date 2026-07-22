@@ -42,7 +42,7 @@ impl PostgresStore {
             .max_connections(max_connections)
             .min_connections(1)
             .acquire_timeout(Duration::from_secs(5))
-            .idle_timeout(Duration::from_secs(300))
+            .idle_timeout(Duration::from_mins(5))
             .connect(database_url)
             .await
             .map_err(unavailable)?;
