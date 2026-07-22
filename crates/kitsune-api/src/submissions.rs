@@ -10,8 +10,8 @@ use axum::{
 use chrono::{DateTime, Utc};
 use kitsune_core::identity::{ChallengeId, DivisionId, EventId};
 use kitsune_db::submissions::{
-    HintRecord, HintUnlockResult, NewHintUnlock, NewSubmission, ScoreboardRecord,
-    ScoreboardRowRecord, SubmissionRepository, SubmissionResult,
+    HintRecord, HintUnlockResult, ManualReviewRecord, NewHintUnlock, NewManualReview,
+    NewSubmission, ScoreboardRecord, ScoreboardRowRecord, SubmissionRepository, SubmissionResult,
 };
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
@@ -113,6 +113,36 @@ pub struct HintUnlockResponse {
     pub replayed: bool,
 }
 
+/// Pending manual-verification evidence visible only to submission managers.
+#[derive(Serialize, ToSchema)]
+pub struct ManualReviewResponse {
+    /// Submission identifier.
+    pub id: Uuid,
+    /// Challenge identifier.
+    pub challenge_id: Uuid,
+    /// Challenge display name.
+    pub challenge_name: String,
+    /// `user` or `team`.
+    pub competitor_kind: String,
+    /// Competitor identifier.
+    pub competitor_id: Uuid,
+    /// Competitor display name.
+    pub competitor_name: String,
+    /// Decrypted evidence, never persisted or logged as plaintext.
+    pub answer: String,
+    /// Submission timestamp.
+    pub submitted_at: DateTime<Utc>,
+}
+
+/// Organizer manual-verification decision.
+#[derive(Deserialize, ToSchema)]
+pub struct ReviewManualSubmissionRequest {
+    /// Accept and score the submission when true; otherwise discard it.
+    pub accepted: bool,
+    /// Optional reviewer note, up to 10,000 bytes.
+    pub note: Option<String>,
+}
+
 #[utoipa::path(
     post,
     path = "/api/v1/events/{event_id}/challenges/{challenge_id}/submissions",
@@ -147,6 +177,10 @@ pub(crate) async fn submit_answer(
         )));
     }
     enforce_rate_limit(&state, &actor, event_id, challenge_id).await?;
+    let sealed_answer = state
+        .auth
+        .seal(request.answer.as_bytes())
+        .map_err(ApiError::from)?;
     let result = SubmissionRepository::new(state.db.pool().clone())
         .submit(NewSubmission {
             organization_id: actor.session.account.organization_id,
@@ -156,6 +190,85 @@ pub(crate) async fn submit_answer(
             session_id: actor.session.account.session_id,
             idempotency_key: request.idempotency_key,
             answer: &request.answer,
+            sealed_answer: &sealed_answer,
+            now: Utc::now(),
+        })
+        .await
+        .map_err(ApiError::from)?;
+    for envelope in &result.events {
+        state
+            .event_bus
+            .publish(envelope.clone())
+            .await
+            .map_err(ApiError::from)?;
+    }
+    Ok(Json(result.into()))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/events/{event_id}/manual-reviews",
+    tag = "submissions",
+    params(("event_id" = Uuid, Path, description = "Event ID")),
+    responses(
+        (status = 200, body = [ManualReviewResponse]),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody)
+    )
+)]
+pub(crate) async fn manual_review_queue(
+    State(state): State<AppState>,
+    actor: Actor,
+    Path(event_id): Path<Uuid>,
+) -> ApiResult<Json<Vec<ManualReviewResponse>>> {
+    actor.require("submission_manage")?;
+    let records = SubmissionRepository::new(state.db.pool().clone())
+        .manual_review_queue(actor.session.account.organization_id, EventId(event_id))
+        .await
+        .map_err(ApiError::from)?;
+    let responses = records
+        .into_iter()
+        .map(|record| decrypt_manual_review(&state, record))
+        .collect::<ApiResult<Vec<_>>>()?;
+    Ok(Json(responses))
+}
+
+#[utoipa::path(
+    patch,
+    path = "/api/v1/events/{event_id}/manual-reviews/{submission_id}",
+    tag = "submissions",
+    params(
+        ("event_id" = Uuid, Path, description = "Event ID"),
+        ("submission_id" = Uuid, Path, description = "Submission ID")
+    ),
+    request_body = ReviewManualSubmissionRequest,
+    responses(
+        (status = 200, body = SubmissionResponse),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody),
+        (status = 409, body = ErrorBody),
+        (status = 422, body = ErrorBody)
+    )
+)]
+pub(crate) async fn review_manual_submission(
+    State(state): State<AppState>,
+    actor: Actor,
+    headers: HeaderMap,
+    Path((event_id, submission_id)): Path<(Uuid, Uuid)>,
+    Json(request): Json<ReviewManualSubmissionRequest>,
+) -> ApiResult<Json<SubmissionResponse>> {
+    actor.require("submission_manage")?;
+    actor.require_csrf(&headers)?;
+    let result = SubmissionRepository::new(state.db.pool().clone())
+        .review_manual_submission(NewManualReview {
+            organization_id: actor.session.account.organization_id,
+            event_id: EventId(event_id),
+            submission_id: kitsune_core::identity::SubmissionId(submission_id),
+            reviewer: actor.session.account.user_id,
+            accepted: request.accepted,
+            note: request.note.as_deref(),
+            correlation_id: Uuid::now_v7(),
             now: Utc::now(),
         })
         .await
@@ -399,4 +512,29 @@ impl From<HintUnlockResult> for HintUnlockResponse {
             replayed: result.replayed,
         }
     }
+}
+
+fn decrypt_manual_review(
+    state: &AppState,
+    record: ManualReviewRecord,
+) -> ApiResult<ManualReviewResponse> {
+    let plaintext = state
+        .auth
+        .open(&record.answer_ciphertext)
+        .map_err(ApiError::from)?;
+    let answer = String::from_utf8(plaintext).map_err(|_| {
+        ApiError::from(kitsune_core::DomainError::Unavailable(
+            "manual submission evidence is not valid UTF-8".into(),
+        ))
+    })?;
+    Ok(ManualReviewResponse {
+        id: record.id,
+        challenge_id: record.challenge_id,
+        challenge_name: record.challenge_name,
+        competitor_kind: record.competitor_kind,
+        competitor_id: record.competitor_id,
+        competitor_name: record.competitor_name,
+        answer,
+        submitted_at: record.submitted_at,
+    })
 }

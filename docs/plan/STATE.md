@@ -86,6 +86,11 @@ Updated: 2026-07-22 (Asia/Singapore)
   transition with matching audit/outbox events. Player writeup/survey forms and
   the organizer review/analytics surface update from realtime events and pass
   the full desktop/mobile browser journey with axe.
+- Manual-verification evidence is now XChaCha20-Poly1305 encrypted at rest,
+  isolated behind submission-management RBAC, and accepted or discarded in a
+  challenge-locked review transaction. Acceptance reuses automatic solve,
+  first-blood, frozen-ledger, audit, outbox, and realtime semantics; the API
+  journey verifies decryption, player denial, and scoring. Organizer UI is next.
 
 ## Risks being actively retired
 

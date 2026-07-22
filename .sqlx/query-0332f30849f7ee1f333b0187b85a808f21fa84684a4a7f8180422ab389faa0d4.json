@@ -1,0 +1,48 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT user_id,team_id,outcome,attempts_remaining,submitted_at\n            FROM submissions\n            WHERE id = $1 AND event_id = $2 AND challenge_id = $3\n            FOR UPDATE\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "outcome",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "attempts_remaining",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "submitted_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      true,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "0332f30849f7ee1f333b0187b85a808f21fa84684a4a7f8180422ab389faa0d4"
+}

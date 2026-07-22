@@ -83,6 +83,10 @@ or scaffolding alone.
   browser coverage.
 - [ ] Dynamic-instance and plugin answer verifiers, manual-review organizer
   queue, scoreboard graphs, cache batching, and competitor profile links.
+- [x] Encrypted manual-verification persistence, RBAC review API, duplicate
+  pending protection, and transactional accept/discard scoring.
+- [ ] Wire the organizer manual-verification queue and player pending outcome
+  through desktop/mobile browser coverage.
 - [ ] Complete versioned REST resources and OpenAPI contracts.
 
 ## Frontend vertical slice

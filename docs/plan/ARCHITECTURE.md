@@ -56,6 +56,12 @@ competitor and require an accepted solve. Author and reviewer transitions are
 separate domain policies. Survey analytics aggregate validated integer answers
 without returning raw competitor responses.
 
+Manual-verification answers are authenticated-encrypted by the API before the
+submission transaction and retained only for pending outcomes. The RBAC-guarded
+review projection decrypts in memory. Acceptance locks the challenge and pending
+submission in the same order as automatic solves, then reuses the deterministic
+solve, first-blood, score-ledger, audit, and outbox path.
+
 ## Security boundaries
 
 HTTP authorization is deny-by-default and evaluated using org/event-scoped RBAC.

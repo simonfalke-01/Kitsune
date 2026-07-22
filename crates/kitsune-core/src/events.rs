@@ -126,6 +126,13 @@ pub enum DomainEvent {
         competitor: CompetitorId,
         outcome: SubmissionOutcome,
     },
+    /// An organizer accepted or discarded a pending manual submission.
+    SubmissionReviewed {
+        submission_id: SubmissionId,
+        challenge_id: ChallengeId,
+        competitor: CompetitorId,
+        accepted: bool,
+    },
     /// First valid solve.
     FirstBlood {
         challenge_id: ChallengeId,
@@ -182,6 +189,7 @@ impl DomainEvent {
             Self::WriteupChanged { .. } => "challenge.writeup.changed",
             Self::SurveySubmitted { .. } => "challenge.survey.submitted",
             Self::SubmissionReceived { .. } => "submission.received",
+            Self::SubmissionReviewed { .. } => "submission.reviewed",
             Self::FirstBlood { .. } => "submission.first_blood",
             Self::ScoreChanged { .. } => "score.changed",
             Self::ScoreboardControlChanged { .. } => "scoreboard.control_changed",

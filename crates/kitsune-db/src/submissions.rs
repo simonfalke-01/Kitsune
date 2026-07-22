@@ -54,6 +54,8 @@ pub struct NewSubmission<'a> {
     pub idempotency_key: Uuid,
     /// Plaintext answer, retained only for this transaction.
     pub answer: &'a str,
+    /// Authenticated-encrypted answer retained only for manual review outcomes.
+    pub sealed_answer: &'a [u8],
     /// Timestamp.
     pub now: DateTime<Utc>,
 }
@@ -67,6 +69,28 @@ struct GameplayScope {
     now: DateTime<Utc>,
 }
 
+#[derive(Clone, Copy)]
+struct SolveContext {
+    organization_id: OrganizationId,
+    event_id: EventId,
+    challenge_id: ChallengeId,
+    actor: UserId,
+    correlation_id: Uuid,
+    now: DateTime<Utc>,
+}
+
+impl SolveContext {
+    const fn gameplay_scope(self) -> GameplayScope {
+        GameplayScope {
+            organization_id: self.organization_id,
+            event_id: self.event_id,
+            challenge_id: self.challenge_id,
+            actor: self.actor,
+            now: self.now,
+        }
+    }
+}
+
 impl NewSubmission<'_> {
     const fn gameplay_scope(&self) -> GameplayScope {
         GameplayScope {
@@ -74,6 +98,17 @@ impl NewSubmission<'_> {
             event_id: self.event_id,
             challenge_id: self.challenge_id,
             actor: self.actor,
+            now: self.now,
+        }
+    }
+
+    const fn solve_context(&self) -> SolveContext {
+        SolveContext {
+            organization_id: self.organization_id,
+            event_id: self.event_id,
+            challenge_id: self.challenge_id,
+            actor: self.actor,
+            correlation_id: self.idempotency_key,
             now: self.now,
         }
     }
@@ -172,6 +207,47 @@ pub struct HintUnlockResult {
     pub replayed: bool,
 }
 
+/// Organizer-safe encrypted manual review queue record.
+#[derive(Debug, Clone)]
+pub struct ManualReviewRecord {
+    /// Submission identifier.
+    pub id: Uuid,
+    /// Challenge identifier.
+    pub challenge_id: Uuid,
+    /// Challenge display name.
+    pub challenge_name: String,
+    /// `user` or `team`.
+    pub competitor_kind: String,
+    /// Competitor identifier.
+    pub competitor_id: Uuid,
+    /// Competitor display name.
+    pub competitor_name: String,
+    /// Authenticated-encrypted evidence for API-bound decryption.
+    pub answer_ciphertext: Vec<u8>,
+    /// Submission timestamp.
+    pub submitted_at: DateTime<Utc>,
+}
+
+/// Organizer decision for a pending manual submission.
+pub struct NewManualReview<'a> {
+    /// Organization boundary.
+    pub organization_id: OrganizationId,
+    /// Event boundary.
+    pub event_id: EventId,
+    /// Pending submission target.
+    pub submission_id: SubmissionId,
+    /// Authenticated reviewer.
+    pub reviewer: UserId,
+    /// Accept and score when true; discard when false.
+    pub accepted: bool,
+    /// Optional safe reviewer note.
+    pub note: Option<&'a str>,
+    /// Correlation ID.
+    pub correlation_id: Uuid,
+    /// Timestamp.
+    pub now: DateTime<Utc>,
+}
+
 /// PostgreSQL submission and scoreboard repository.
 #[derive(Debug, Clone)]
 pub struct SubmissionRepository {
@@ -222,6 +298,13 @@ impl SubmissionRepository {
         let attempts_remaining = remaining_attempts(challenge.max_attempts, failed_attempts)?;
         let answer_rules = load_answer_rules(&mut tx, command.challenge_id).await?;
         let outcome = evaluate_answer(&answer_rules, command.answer)?;
+        if outcome == SubmissionOutcome::Pending
+            && competitor_has_pending(&mut tx, command.challenge_id, competitor).await?
+        {
+            return Err(DomainError::Conflict(
+                "a manual submission is already awaiting review".into(),
+            ));
+        }
         let answer_digest = Sha256::digest(command.answer.trim().as_bytes());
         let submission_id = SubmissionId::new();
 
@@ -256,8 +339,14 @@ impl SubmissionRepository {
         events.push(received);
 
         if outcome == SubmissionOutcome::Correct {
-            let solve =
-                award_solve(&mut tx, &command, &challenge, submission_id, competitor).await?;
+            let solve = award_solve(
+                &mut tx,
+                command.solve_context(),
+                &challenge,
+                submission_id,
+                competitor,
+            )
+            .await?;
             awarded_points = solve.awarded_points;
             first_blood = solve.first_blood;
             events.extend(solve.events);
@@ -528,6 +617,211 @@ impl SubmissionRepository {
                 unlocked: true,
             },
             charged: hint.cost,
+            events,
+            replayed: false,
+        })
+    }
+
+    /// Lists pending manual submissions with encrypted evidence.
+    pub async fn manual_review_queue(
+        &self,
+        organization_id: OrganizationId,
+        event_id: EventId,
+    ) -> DomainResult<Vec<ManualReviewRecord>> {
+        let rows = sqlx::query!(
+            r#"
+            SELECT s.id,s.challenge_id,c.name AS challenge_name,s.user_id,s.team_id,
+                   COALESCE(t.name,u.display_name) AS "competitor_name!",
+                   s.answer_ciphertext,s.submitted_at
+            FROM submissions s
+            JOIN challenges c ON c.id = s.challenge_id
+            JOIN events e ON e.id = s.event_id
+            LEFT JOIN users u ON u.id = s.user_id
+            LEFT JOIN teams t ON t.id = s.team_id
+            WHERE e.organization_id = $1 AND e.id = $2 AND s.outcome = 'pending'
+              AND s.answer_ciphertext IS NOT NULL
+            ORDER BY s.submitted_at,s.id
+            "#,
+            organization_id.0,
+            event_id.0,
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(unavailable)?;
+        rows.into_iter()
+            .map(|row| {
+                let (competitor_kind, competitor_id) =
+                    review_competitor_identity(row.user_id, row.team_id, "manual submission")?;
+                Ok(ManualReviewRecord {
+                    id: row.id,
+                    challenge_id: row.challenge_id.ok_or_else(|| {
+                        DomainError::Unavailable("manual submission lost its challenge".into())
+                    })?,
+                    challenge_name: row.challenge_name,
+                    competitor_kind,
+                    competitor_id,
+                    competitor_name: row.competitor_name,
+                    answer_ciphertext: row.answer_ciphertext.ok_or_else(|| {
+                        DomainError::Unavailable("manual submission lost its evidence".into())
+                    })?,
+                    submitted_at: row.submitted_at,
+                })
+            })
+            .collect()
+    }
+
+    /// Accepts or discards one pending submission in the scoring transaction.
+    pub async fn review_manual_submission(
+        &self,
+        command: NewManualReview<'_>,
+    ) -> DomainResult<SubmissionResult> {
+        let note = command
+            .note
+            .map(str::trim)
+            .filter(|value| !value.is_empty());
+        if note.is_some_and(|value| value.len() > 10_000) {
+            return Err(DomainError::Validation(
+                "manual review note cannot exceed 10000 bytes".into(),
+            ));
+        }
+        let challenge_id = sqlx::query_scalar!(
+            r#"
+            SELECT s.challenge_id
+            FROM submissions s
+            JOIN events e ON e.id = s.event_id
+            WHERE s.id = $1 AND e.id = $2 AND e.organization_id = $3
+            "#,
+            command.submission_id.0,
+            command.event_id.0,
+            command.organization_id.0,
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(unavailable)?
+        .flatten()
+        .map(ChallengeId)
+        .ok_or(DomainError::NotFound)?;
+        let scope = GameplayScope {
+            organization_id: command.organization_id,
+            event_id: command.event_id,
+            challenge_id,
+            actor: command.reviewer,
+            now: command.now,
+        };
+        let mut tx = self.pool.begin().await.map_err(unavailable)?;
+        let challenge = lock_challenge(&mut tx, scope).await?;
+        let row = sqlx::query!(
+            r#"
+            SELECT user_id,team_id,outcome,attempts_remaining,submitted_at
+            FROM submissions
+            WHERE id = $1 AND event_id = $2 AND challenge_id = $3
+            FOR UPDATE
+            "#,
+            command.submission_id.0,
+            command.event_id.0,
+            challenge_id.0,
+        )
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(unavailable)?
+        .ok_or(DomainError::NotFound)?;
+        if row.outcome != "pending" {
+            return Err(DomainError::Conflict(
+                "manual submission has already been reviewed".into(),
+            ));
+        }
+        let competitor = review_competitor(row.user_id, row.team_id)?;
+        if command.accepted && competitor_has_solved(&mut tx, challenge_id, competitor).await? {
+            return Err(DomainError::Conflict("challenge is already solved".into()));
+        }
+        let outcome = if command.accepted {
+            SubmissionOutcome::Correct
+        } else {
+            SubmissionOutcome::Discarded
+        };
+        sqlx::query!(
+            r#"
+            UPDATE submissions
+            SET outcome = $2,checker_message = $3,reviewed_by = $4,reviewed_at = $5
+            WHERE id = $1
+            "#,
+            command.submission_id.0,
+            outcome_key(outcome),
+            note,
+            command.reviewer.0,
+            command.now,
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(unavailable)?;
+        let review_event = EventEnvelope::new(
+            command.organization_id,
+            Some(command.event_id),
+            Some(command.reviewer),
+            command.correlation_id,
+            command.now,
+            DomainEvent::SubmissionReviewed {
+                submission_id: command.submission_id,
+                challenge_id,
+                competitor,
+                accepted: command.accepted,
+            },
+        );
+        persist_audit_event(
+            &mut tx,
+            &review_event,
+            "submission.review",
+            "submission",
+            &command.submission_id.to_string(),
+        )
+        .await?;
+        let mut events = vec![review_event];
+        let mut awarded_points = 0;
+        let mut first_blood = false;
+        if command.accepted {
+            let solve = award_solve(
+                &mut tx,
+                SolveContext {
+                    organization_id: command.organization_id,
+                    event_id: command.event_id,
+                    challenge_id,
+                    actor: command.reviewer,
+                    correlation_id: command.correlation_id,
+                    now: command.now,
+                },
+                &challenge,
+                command.submission_id,
+                competitor,
+            )
+            .await?;
+            awarded_points = solve.awarded_points;
+            first_blood = solve.first_blood;
+            events.extend(solve.events);
+            sqlx::query!(
+                r#"
+                UPDATE submissions
+                SET awarded_points = $2,first_blood = $3
+                WHERE id = $1
+                "#,
+                command.submission_id.0,
+                awarded_points,
+                first_blood,
+            )
+            .execute(&mut *tx)
+            .await
+            .map_err(unavailable)?;
+        }
+        tx.commit().await.map_err(unavailable)?;
+        Ok(SubmissionResult {
+            record: SubmissionRecord {
+                id: command.submission_id.0,
+                challenge_id: challenge_id.0,
+                outcome: outcome_key(outcome).to_owned(),
+                awarded_points,
+                first_blood,
+                attempts_remaining: row.attempts_remaining,
+                submitted_at: row.submitted_at,
+            },
             events,
             replayed: false,
         })
@@ -864,6 +1158,32 @@ async fn failed_attempts(
     .map_err(unavailable)
 }
 
+async fn competitor_has_pending(
+    tx: &mut Transaction<'_, Postgres>,
+    challenge_id: ChallengeId,
+    competitor: CompetitorId,
+) -> DomainResult<bool> {
+    let (user_id, team_id) = competitor_columns(competitor);
+    sqlx::query_scalar!(
+        r#"
+        SELECT EXISTS(
+            SELECT 1 FROM submissions
+            WHERE challenge_id = $1 AND outcome = 'pending'
+              AND (
+                  ($3::uuid IS NOT NULL AND team_id = $3)
+                  OR ($3::uuid IS NULL AND user_id = $2 AND team_id IS NULL)
+              )
+        ) AS "exists!"
+        "#,
+        challenge_id.0,
+        user_id,
+        team_id,
+    )
+    .fetch_one(&mut **tx)
+    .await
+    .map_err(unavailable)
+}
+
 fn remaining_attempts(
     max_attempts: Option<i32>,
     failed_attempts: i64,
@@ -985,8 +1305,8 @@ async fn insert_submission(
         INSERT INTO submissions (
             id,event_id,challenge_id,user_id,team_id,outcome,answer_digest,
             checker_message,idempotency_key,session_id,submitted_at,
-            attempts_remaining
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,$8,$9,$10,$11)
+            attempts_remaining,answer_ciphertext
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,$8,$9,$10,$11,$12)
         "#,
         submission_id.0,
         command.event_id.0,
@@ -999,6 +1319,7 @@ async fn insert_submission(
         command.session_id,
         command.now,
         attempts_remaining,
+        (outcome == SubmissionOutcome::Pending).then_some(command.sealed_answer),
     )
     .execute(&mut **tx)
     .await
@@ -1008,14 +1329,14 @@ async fn insert_submission(
 
 async fn award_solve(
     tx: &mut Transaction<'_, Postgres>,
-    command: &NewSubmission<'_>,
+    context: SolveContext,
     challenge: &LockedChallenge,
     submission_id: SubmissionId,
     competitor: CompetitorId,
 ) -> DomainResult<SolveAward> {
     let prior_solves = sqlx::query_scalar!(
         "SELECT count(*) AS \"count!\" FROM challenge_solves WHERE challenge_id = $1",
-        command.challenge_id.0,
+        context.challenge_id.0,
     )
     .fetch_one(&mut **tx)
     .await
@@ -1039,25 +1360,25 @@ async fn award_solve(
             challenge_id,user_id,team_id,submission_id,solved_at
         ) VALUES ($1,$2,$3,$4,$5)
         "#,
-        command.challenge_id.0,
+        context.challenge_id.0,
         user_id,
         team_id,
         submission_id.0,
-        command.now,
+        context.now,
     )
     .execute(&mut **tx)
     .await
     .map_err(conflict_or_unavailable)?;
-    let division_id = participant_division(tx, command.event_id, competitor).await?;
+    let division_id = participant_division(tx, context.event_id, competitor).await?;
 
     let solve_sequence = next_score_sequence(tx).await?;
     let reason = serde_json::to_value(ScoreReason::Solve {
-        challenge_id: command.challenge_id,
+        challenge_id: context.challenge_id,
     })
     .map_err(serialization_error)?;
     insert_score_entry(
         tx,
-        command.gameplay_scope(),
+        context.gameplay_scope(),
         competitor,
         division_id,
         solve_sequence,
@@ -1067,7 +1388,7 @@ async fn award_solve(
     )
     .await?;
 
-    let mut events = vec![score_event(command, competitor, solve_points)];
+    let mut events = vec![score_event(context, competitor, solve_points)];
     persist_audit_event(
         tx,
         &events[0],
@@ -1079,12 +1400,12 @@ async fn award_solve(
     if bonus > 0 {
         let bonus_sequence = next_score_sequence(tx).await?;
         let reason = serde_json::to_value(ScoreReason::FirstBlood {
-            challenge_id: command.challenge_id,
+            challenge_id: context.challenge_id,
         })
         .map_err(serialization_error)?;
         insert_score_entry(
             tx,
-            command.gameplay_scope(),
+            context.gameplay_scope(),
             competitor,
             division_id,
             bonus_sequence,
@@ -1093,7 +1414,7 @@ async fn award_solve(
             challenge.scoreboard_frozen,
         )
         .await?;
-        let score_event = score_event(command, competitor, bonus);
+        let score_event = score_event(context, competitor, bonus);
         persist_audit_event(
             tx,
             &score_event,
@@ -1106,13 +1427,13 @@ async fn award_solve(
     }
     if first_blood {
         let first_blood_event = EventEnvelope::new(
-            command.organization_id,
-            Some(command.event_id),
-            Some(command.actor),
-            command.idempotency_key,
-            command.now,
+            context.organization_id,
+            Some(context.event_id),
+            Some(context.actor),
+            context.correlation_id,
+            context.now,
             DomainEvent::FirstBlood {
-                challenge_id: command.challenge_id,
+                challenge_id: context.challenge_id,
                 competitor,
             },
         );
@@ -1121,7 +1442,7 @@ async fn award_solve(
             &first_blood_event,
             "submission.first_blood",
             "challenge",
-            &command.challenge_id.to_string(),
+            &context.challenge_id.to_string(),
         )
         .await?;
         events.push(first_blood_event);
@@ -1217,13 +1538,13 @@ fn submission_event(
     )
 }
 
-fn score_event(command: &NewSubmission<'_>, competitor: CompetitorId, delta: i64) -> EventEnvelope {
+fn score_event(context: SolveContext, competitor: CompetitorId, delta: i64) -> EventEnvelope {
     EventEnvelope::new(
-        command.organization_id,
-        Some(command.event_id),
-        Some(command.actor),
-        command.idempotency_key,
-        command.now,
+        context.organization_id,
+        Some(context.event_id),
+        Some(context.actor),
+        context.correlation_id,
+        context.now,
         DomainEvent::ScoreChanged { competitor, delta },
     )
 }
@@ -1232,6 +1553,30 @@ const fn competitor_columns(competitor: CompetitorId) -> (Option<Uuid>, Option<U
     match competitor {
         CompetitorId::User(user_id) => (Some(user_id.0), None),
         CompetitorId::Team(team_id) => (None, Some(team_id.0)),
+    }
+}
+
+fn review_competitor(user_id: Option<Uuid>, team_id: Option<Uuid>) -> DomainResult<CompetitorId> {
+    match (user_id, team_id) {
+        (_, Some(team_id)) => Ok(CompetitorId::Team(TeamId(team_id))),
+        (Some(user_id), None) => Ok(CompetitorId::User(UserId(user_id))),
+        (None, None) => Err(DomainError::Unavailable(
+            "manual submission contains no competitor identity".into(),
+        )),
+    }
+}
+
+fn review_competitor_identity(
+    user_id: Option<Uuid>,
+    team_id: Option<Uuid>,
+    resource: &str,
+) -> DomainResult<(String, Uuid)> {
+    match (user_id, team_id) {
+        (_, Some(team_id)) => Ok(("team".to_owned(), team_id)),
+        (Some(user_id), None) => Ok(("user".to_owned(), user_id)),
+        (None, None) => Err(DomainError::Unavailable(format!(
+            "{resource} contains no competitor identity"
+        ))),
     }
 }
 

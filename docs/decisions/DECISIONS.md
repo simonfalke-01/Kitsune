@@ -120,3 +120,6 @@ Format: `YYYY-MM-DD — decision — rationale`.
   response surveillance surface.
 - 2026-07-22 — Require an explicit approve-then-publish writeup sequence — one
   accidental review action cannot immediately disclose player-authored content.
+- 2026-07-22 — Encrypt manual-verification evidence with the installation data
+  key and persist plaintext only as a digest — reviewers can inspect the proof
+  while database disclosure does not reveal player-submitted evidence.

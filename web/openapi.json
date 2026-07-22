@@ -796,6 +796,58 @@
         ],
         "type": "object"
       },
+      "ManualReviewResponse": {
+        "description": "Pending manual-verification evidence visible only to submission managers.",
+        "properties": {
+          "answer": {
+            "description": "Decrypted evidence, never persisted or logged as plaintext.",
+            "type": "string"
+          },
+          "challenge_id": {
+            "description": "Challenge identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "challenge_name": {
+            "description": "Challenge display name.",
+            "type": "string"
+          },
+          "competitor_id": {
+            "description": "Competitor identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "competitor_kind": {
+            "description": "`user` or `team`.",
+            "type": "string"
+          },
+          "competitor_name": {
+            "description": "Competitor display name.",
+            "type": "string"
+          },
+          "id": {
+            "description": "Submission identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "submitted_at": {
+            "description": "Submission timestamp.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "challenge_id",
+          "challenge_name",
+          "competitor_kind",
+          "competitor_id",
+          "competitor_name",
+          "answer",
+          "submitted_at"
+        ],
+        "type": "object"
+      },
       "ModeInput": {
         "description": "First-party game mode key.",
         "enum": [
@@ -912,6 +964,26 @@
           "display_name",
           "email",
           "password"
+        ],
+        "type": "object"
+      },
+      "ReviewManualSubmissionRequest": {
+        "description": "Organizer manual-verification decision.",
+        "properties": {
+          "accepted": {
+            "description": "Accept and score the submission when true; otherwise discard it.",
+            "type": "boolean"
+          },
+          "note": {
+            "description": "Optional reviewer note, up to 10,000 bytes.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "accepted"
         ],
         "type": "object"
       },
@@ -3173,6 +3245,163 @@
         },
         "tags": [
           "writeups"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/manual-reviews": {
+      "get": {
+        "operationId": "manual_review_queue",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ManualReviewResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "submissions"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/manual-reviews/{submission_id}": {
+      "patch": {
+        "operationId": "review_manual_submission",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Submission ID",
+            "in": "path",
+            "name": "submission_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewManualSubmissionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmissionResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "submissions"
         ]
       }
     },

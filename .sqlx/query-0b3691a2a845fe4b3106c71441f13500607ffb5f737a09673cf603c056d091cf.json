@@ -1,0 +1,65 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT s.id,s.challenge_id,c.name AS challenge_name,s.user_id,s.team_id,\n                   COALESCE(t.name,u.display_name) AS \"competitor_name!\",\n                   s.answer_ciphertext,s.submitted_at\n            FROM submissions s\n            JOIN challenges c ON c.id = s.challenge_id\n            JOIN events e ON e.id = s.event_id\n            LEFT JOIN users u ON u.id = s.user_id\n            LEFT JOIN teams t ON t.id = s.team_id\n            WHERE e.organization_id = $1 AND e.id = $2 AND s.outcome = 'pending'\n              AND s.answer_ciphertext IS NOT NULL\n            ORDER BY s.submitted_at,s.id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "challenge_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "challenge_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "competitor_name!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "answer_ciphertext",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 7,
+        "name": "submitted_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      true,
+      true,
+      null,
+      true,
+      false
+    ]
+  },
+  "hash": "0b3691a2a845fe4b3106c71441f13500607ffb5f737a09673cf603c056d091cf"
+}

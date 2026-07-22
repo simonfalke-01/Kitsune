@@ -308,6 +308,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/{event_id}/manual-reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["manual_review_queue"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/manual-reviews/{submission_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["review_manual_submission"];
+        trace?: never;
+    };
     "/api/v1/events/{event_id}/scoreboard": {
         parameters: {
             query?: never;
@@ -793,6 +825,37 @@ export interface components {
              */
             password: string;
         };
+        /** @description Pending manual-verification evidence visible only to submission managers. */
+        ManualReviewResponse: {
+            /** @description Decrypted evidence, never persisted or logged as plaintext. */
+            answer: string;
+            /**
+             * Format: uuid
+             * @description Challenge identifier.
+             */
+            challenge_id: string;
+            /** @description Challenge display name. */
+            challenge_name: string;
+            /**
+             * Format: uuid
+             * @description Competitor identifier.
+             */
+            competitor_id: string;
+            /** @description `user` or `team`. */
+            competitor_kind: string;
+            /** @description Competitor display name. */
+            competitor_name: string;
+            /**
+             * Format: uuid
+             * @description Submission identifier.
+             */
+            id: string;
+            /**
+             * Format: date-time
+             * @description Submission timestamp.
+             */
+            submitted_at: string;
+        };
         /**
          * @description First-party game mode key.
          * @enum {string}
@@ -845,6 +908,13 @@ export interface components {
              * @description Account password (12–128 characters).
              */
             password: string;
+        };
+        /** @description Organizer manual-verification decision. */
+        ReviewManualSubmissionRequest: {
+            /** @description Accept and score the submission when true; otherwise discard it. */
+            accepted: boolean;
+            /** @description Optional reviewer note, up to 10,000 bytes. */
+            note?: string | null;
         };
         /** @description Organizer writeup review input. */
         ReviewWriteupRequest: {
@@ -2280,6 +2350,112 @@ export interface operations {
                 };
             };
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    manual_review_queue: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ManualReviewResponse"][];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    review_manual_submission: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+                /** @description Submission ID */
+                submission_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewManualSubmissionRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

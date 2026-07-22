@@ -146,6 +146,8 @@ pub struct ReadinessResponse {
         submissions::scoreboard,
         submissions::list_hints,
         submissions::unlock_hint,
+        submissions::manual_review_queue,
+        submissions::review_manual_submission,
         teams::list_teams,
         teams::create_team,
         teams::join_team,
@@ -196,6 +198,8 @@ pub struct ReadinessResponse {
         submissions::ScoreboardResponse,
         submissions::HintResponse,
         submissions::HintUnlockResponse,
+        submissions::ManualReviewResponse,
+        submissions::ReviewManualSubmissionRequest,
         teams::TeamMemberResponse,
         teams::TeamResponse,
         teams::CreateTeamRequest,
@@ -320,6 +324,14 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/events/{event_id}/challenges/{challenge_id}/hints/{hint_id}/unlock",
             post(submissions::unlock_hint),
+        )
+        .route(
+            "/api/v1/events/{event_id}/manual-reviews",
+            get(submissions::manual_review_queue),
+        )
+        .route(
+            "/api/v1/events/{event_id}/manual-reviews/{submission_id}",
+            axum::routing::patch(submissions::review_manual_submission),
         )
         .route(
             "/api/v1/events/{event_id}/challenges/{challenge_id}/writeup",
@@ -1311,6 +1323,158 @@ mod tests {
         assert_eq!(summary["response_count"], 1);
         assert_eq!(summary["questions"][0]["average"], 4.0);
 
+        let create_manual = Request::builder()
+            .method("POST")
+            .uri(format!("/api/v1/events/{event_id}/challenges"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "name": "Explain the exploit",
+                    "category": "Review",
+                    "description": "Submit a concise proof for organizer review.",
+                    "kind": {"type": "manual_verification"},
+                    "state": "published",
+                    "scoring": {"kind": "static", "points": 300},
+                    "visibility": {
+                        "visible_from": null,
+                        "visible_until": null,
+                        "division_ids": [],
+                        "prerequisites": []
+                    },
+                    "tags": ["manual"],
+                    "max_attempts": null,
+                    "writeups_enabled": false,
+                    "position": 1,
+                    "answers": [{"kind": "manual"}],
+                    "hints": [],
+                    "survey": []
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(create_manual)
+            .await
+            .expect("create manual challenge");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let manual_challenge: serde_json::Value =
+            serde_json::from_slice(&body).expect("manual challenge");
+        let manual_challenge_id = manual_challenge["id"]
+            .as_str()
+            .expect("manual challenge id");
+        let manual_answer = "The evidence follows a bounded reproduction path.";
+        let manual_submission = Request::builder()
+            .method("POST")
+            .uri(format!(
+                "/api/v1/events/{event_id}/challenges/{manual_challenge_id}/submissions"
+            ))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "idempotency_key": Uuid::now_v7(),
+                    "answer": manual_answer
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(manual_submission)
+            .await
+            .expect("manual submission");
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let pending: serde_json::Value = serde_json::from_slice(&body).expect("pending receipt");
+        assert_eq!(pending["outcome"], "pending");
+        let manual_submission_id = pending["id"].as_str().expect("manual submission id");
+
+        let forbidden_queue = Request::builder()
+            .uri(format!("/api/v1/events/{event_id}/manual-reviews"))
+            .header(header::COOKIE, &player_cookies)
+            .body(Body::empty())
+            .expect("request");
+        assert_eq!(
+            app.clone()
+                .oneshot(forbidden_queue)
+                .await
+                .expect("forbidden manual queue")
+                .status(),
+            StatusCode::FORBIDDEN
+        );
+
+        let manual_queue = Request::builder()
+            .uri(format!("/api/v1/events/{event_id}/manual-reviews"))
+            .header(header::COOKIE, &admin_cookies)
+            .body(Body::empty())
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(manual_queue)
+            .await
+            .expect("manual review queue");
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let manual_queue: serde_json::Value = serde_json::from_slice(&body).expect("manual queue");
+        assert_eq!(manual_queue.as_array().expect("queue").len(), 1);
+        assert_eq!(manual_queue[0]["answer"], manual_answer);
+
+        let accept_manual = Request::builder()
+            .method("PATCH")
+            .uri(format!(
+                "/api/v1/events/{event_id}/manual-reviews/{manual_submission_id}"
+            ))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(
+                r#"{"accepted":true,"note":"Reproduction verified."}"#,
+            ))
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(accept_manual)
+            .await
+            .expect("accept manual submission");
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let accepted: serde_json::Value =
+            serde_json::from_slice(&body).expect("accepted manual submission");
+        assert_eq!(accepted["outcome"], "correct");
+        assert_eq!(accepted["awarded_points"], 350);
+        assert_eq!(accepted["first_blood"], true);
+        let ciphertext = sqlx::query_scalar!(
+            "SELECT answer_ciphertext FROM submissions WHERE id = $1",
+            Uuid::parse_str(manual_submission_id).expect("submission UUID"),
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("manual ciphertext")
+        .expect("encrypted evidence");
+        assert_ne!(ciphertext, manual_answer.as_bytes());
+
         let scoreboard = Request::builder()
             .uri(format!("/api/v1/events/{event_id}/scoreboard"))
             .header(header::COOKIE, &player_cookies)
@@ -1326,8 +1490,8 @@ mod tests {
             .to_bytes();
         let board: serde_json::Value = serde_json::from_slice(&body).expect("scoreboard");
         assert_eq!(board["rows"][0]["name"], "Player");
-        assert_eq!(board["rows"][0]["score"], 540);
-        assert_eq!(board["rows"][0]["solves"], 1);
+        assert_eq!(board["rows"][0]["score"], 890);
+        assert_eq!(board["rows"][0]["solves"], 2);
 
         let hide_scoreboard = Request::builder()
             .method("PATCH")
@@ -1413,7 +1577,7 @@ mod tests {
             .to_bytes();
         let frozen_public: serde_json::Value =
             serde_json::from_slice(&body).expect("frozen public board");
-        assert_eq!(frozen_public["rows"][0]["score"], 540);
+        assert_eq!(frozen_public["rows"][0]["score"], 890);
 
         let frozen_admin_board = Request::builder()
             .uri(format!("/api/v1/events/{event_id}/scoreboard"))
@@ -1433,7 +1597,7 @@ mod tests {
             .to_bytes();
         let frozen_admin: serde_json::Value =
             serde_json::from_slice(&body).expect("frozen admin board");
-        assert_eq!(frozen_admin["rows"][0]["score"], 640);
+        assert_eq!(frozen_admin["rows"][0]["score"], 990);
 
         let forbidden = Request::builder()
             .method("POST")
@@ -1472,7 +1636,7 @@ mod tests {
                 .fetch_all(&pool)
                 .await
                 .expect("submission digests");
-        assert_eq!(submitted_digests.len(), 2);
+        assert_eq!(submitted_digests.len(), 3);
         assert!(submitted_digests.iter().flatten().all(|digest| {
             digest.as_slice() != b"kit{never-persist-plaintext}"
                 && digest.as_slice() != b"kit{wrong-trail}"
@@ -1485,8 +1649,8 @@ mod tests {
             .fetch_one(&pool)
             .await
             .expect("outbox count");
-        assert_eq!(audit_count, 23);
-        assert_eq!(outbox_count, 23);
+        assert_eq!(audit_count, 29);
+        assert_eq!(outbox_count, 29);
     }
 
     fn response_cookies(headers: &axum::http::HeaderMap) -> String {
