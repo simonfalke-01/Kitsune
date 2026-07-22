@@ -11,7 +11,8 @@ use chrono::{DateTime, Utc};
 use kitsune_core::identity::{ChallengeId, DivisionId, EventId};
 use kitsune_db::submissions::{
     HintRecord, HintUnlockResult, ManualReviewRecord, NewHintUnlock, NewManualReview,
-    NewSubmission, ScoreboardRecord, ScoreboardRowRecord, SubmissionRepository, SubmissionResult,
+    NewSubmission, ScoreHistoryPointRecord, ScoreHistoryRecord, ScoreHistorySeriesRecord,
+    ScoreboardRecord, ScoreboardRowRecord, SubmissionRepository, SubmissionResult,
 };
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
@@ -59,6 +60,15 @@ pub struct ScoreboardQuery {
     pub division_id: Option<Uuid>,
 }
 
+/// Bounded historical-score projection options.
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct ScoreHistoryQuery {
+    /// Limit series to a division.
+    pub division_id: Option<Uuid>,
+    /// Number of leading competitors to return; defaults to 5 and caps at 20.
+    pub limit: Option<u8>,
+}
+
 /// Ranked scoreboard row.
 #[derive(Serialize, ToSchema)]
 pub struct ScoreboardRowResponse {
@@ -87,6 +97,41 @@ pub struct ScoreboardResponse {
     pub frozen: bool,
     /// Ranked rows.
     pub rows: Vec<ScoreboardRowResponse>,
+}
+
+/// One running-total point in score history.
+#[derive(Serialize, ToSchema)]
+pub struct ScoreHistoryPointResponse {
+    /// Global score-ledger sequence.
+    pub sequence: i64,
+    /// Running visible score.
+    pub score: i64,
+    /// Entry timestamp.
+    pub occurred_at: DateTime<Utc>,
+}
+
+/// One competitor's historical score series.
+#[derive(Serialize, ToSchema)]
+pub struct ScoreHistorySeriesResponse {
+    /// `user` or `team`.
+    pub competitor_kind: String,
+    /// Competitor identifier.
+    pub competitor_id: Uuid,
+    /// Public display name.
+    pub name: String,
+    /// Ordered running totals.
+    pub points: Vec<ScoreHistoryPointResponse>,
+}
+
+/// Historical graph data under scoreboard concealment rules.
+#[derive(Serialize, ToSchema)]
+pub struct ScoreHistoryResponse {
+    /// Organizer has hidden the public board.
+    pub hidden: bool,
+    /// Post-freeze entries are concealed from players.
+    pub frozen: bool,
+    /// Competitor histories.
+    pub series: Vec<ScoreHistorySeriesResponse>,
 }
 
 /// Player-safe hint state.
@@ -319,6 +364,42 @@ pub(crate) async fn scoreboard(
 
 #[utoipa::path(
     get,
+    path = "/api/v1/events/{event_id}/score-history",
+    tag = "scoreboard",
+    params(
+        ("event_id" = Uuid, Path, description = "Event ID"),
+        ScoreHistoryQuery
+    ),
+    responses(
+        (status = 200, body = ScoreHistoryResponse),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody)
+    )
+)]
+pub(crate) async fn score_history(
+    State(state): State<AppState>,
+    actor: Actor,
+    Path(event_id): Path<Uuid>,
+    Query(query): Query<ScoreHistoryQuery>,
+) -> ApiResult<Json<ScoreHistoryResponse>> {
+    actor.require("scoreboard_read")?;
+    let series_limit = i64::from(query.limit.unwrap_or(5).clamp(1, 20));
+    let history = SubmissionRepository::new(state.db.pool().clone())
+        .score_history(
+            actor.session.account.organization_id,
+            EventId(event_id),
+            query.division_id.map(DivisionId),
+            actor.can("scoreboard_manage"),
+            series_limit,
+        )
+        .await
+        .map_err(ApiError::from)?;
+    Ok(Json(history.into()))
+}
+
+#[utoipa::path(
+    get,
     path = "/api/v1/events/{event_id}/challenges/{challenge_id}/hints",
     tag = "challenges",
     params(
@@ -475,6 +556,45 @@ impl From<ScoreboardRecord> for ScoreboardResponse {
                 .enumerate()
                 .map(|(index, row)| ScoreboardRowResponse::from_record(index + 1, row))
                 .collect(),
+        }
+    }
+}
+
+impl From<ScoreHistoryRecord> for ScoreHistoryResponse {
+    fn from(record: ScoreHistoryRecord) -> Self {
+        Self {
+            hidden: record.hidden,
+            frozen: record.frozen,
+            series: record
+                .series
+                .into_iter()
+                .map(ScoreHistorySeriesResponse::from)
+                .collect(),
+        }
+    }
+}
+
+impl From<ScoreHistorySeriesRecord> for ScoreHistorySeriesResponse {
+    fn from(record: ScoreHistorySeriesRecord) -> Self {
+        Self {
+            competitor_kind: record.competitor_kind,
+            competitor_id: record.competitor_id,
+            name: record.name,
+            points: record
+                .points
+                .into_iter()
+                .map(ScoreHistoryPointResponse::from)
+                .collect(),
+        }
+    }
+}
+
+impl From<ScoreHistoryPointRecord> for ScoreHistoryPointResponse {
+    fn from(record: ScoreHistoryPointRecord) -> Self {
+        Self {
+            sequence: record.sequence,
+            score: record.score,
+            occurred_at: record.occurred_at,
         }
     }
 }

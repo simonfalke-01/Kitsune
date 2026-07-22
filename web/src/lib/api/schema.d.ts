@@ -340,6 +340,22 @@ export interface paths {
         patch: operations["review_manual_submission"];
         trace?: never;
     };
+    "/api/v1/events/{event_id}/score-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["score_history"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{event_id}/scoreboard": {
         parameters: {
             query?: never;
@@ -929,6 +945,47 @@ export interface components {
             body: string;
             /** @description Enter the organizer review queue after saving. */
             submit: boolean;
+        };
+        /** @description One running-total point in score history. */
+        ScoreHistoryPointResponse: {
+            /**
+             * Format: date-time
+             * @description Entry timestamp.
+             */
+            occurred_at: string;
+            /**
+             * Format: int64
+             * @description Running visible score.
+             */
+            score: number;
+            /**
+             * Format: int64
+             * @description Global score-ledger sequence.
+             */
+            sequence: number;
+        };
+        /** @description Historical graph data under scoreboard concealment rules. */
+        ScoreHistoryResponse: {
+            /** @description Post-freeze entries are concealed from players. */
+            frozen: boolean;
+            /** @description Organizer has hidden the public board. */
+            hidden: boolean;
+            /** @description Competitor histories. */
+            series: components["schemas"]["ScoreHistorySeriesResponse"][];
+        };
+        /** @description One competitor's historical score series. */
+        ScoreHistorySeriesResponse: {
+            /**
+             * Format: uuid
+             * @description Competitor identifier.
+             */
+            competitor_id: string;
+            /** @description `user` or `team`. */
+            competitor_kind: string;
+            /** @description Public display name. */
+            name: string;
+            /** @description Ordered running totals. */
+            points: components["schemas"]["ScoreHistoryPointResponse"][];
         };
         /** @description Scoreboard controls and ordered standings. */
         ScoreboardResponse: {
@@ -2456,6 +2513,57 @@ export interface operations {
                 };
             };
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    score_history: {
+        parameters: {
+            query?: {
+                /** @description Limit series to a division. */
+                division_id?: string | null;
+                /** @description Number of leading competitors to return; defaults to 5 and caps at 20. */
+                limit?: number | null;
+            };
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScoreHistoryResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

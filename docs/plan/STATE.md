@@ -5,8 +5,8 @@ Updated: 2026-07-22 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: complete the remaining Jeopardy review/content workflows, then
-  finish the provider and programmatic-token authentication suite.
+- In progress: finish the provider and programmatic-token authentication suite,
+  then complete the remaining dynamic/plugin Jeopardy verifier seams.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
 - Next: ship writeup submission/review, surveys, and manual-answer review, then
@@ -92,6 +92,16 @@ Updated: 2026-07-22 (Asia/Singapore)
   first-blood, frozen-ledger, audit, outbox, and realtime semantics; the API
   journey verifies decryption, player denial, and scoring. The realtime
   organizer queue and player pending state are exercised on desktop/mobile.
+- Historical score trails are now derived from the append-only ledger through a
+  typed REST/OpenAPI resource that honors division, hidden, frozen, and reversal
+  rules. The responsive SVG compares the five leading competitors, exposes a
+  keyboard skip path for horizontal mobile overflow, and coalesces realtime
+  browser refreshes within 150 ms. API regression tests and desktop/mobile axe
+  journeys cover the graph and final totals.
+- Main-branch CI now compiles SQLx from committed offline metadata, runs the real
+  Playwright journey against a prebuilt server, and grants the RustSec action
+  only check-write permission. The lockfile-only SQLx/MySQL RSA advisory is
+  documented and absent from every all-feature Kitsune dependency graph.
 
 ## Risks being actively retired
 

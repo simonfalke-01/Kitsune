@@ -42,8 +42,11 @@ without an event-wide counter hotspot. Client idempotency keys replay immutable
 digest-only receipts. Freeze marks new ledger entries as temporarily concealed;
 unfreeze reveals history without rewriting it. A&D tick ownership uses
 PostgreSQL advisory locks; orchestration operations use idempotency keys.
-WebSocket nodes subscribe to the shared bus and batch score updates without
-requiring affinity.
+The score-history projection computes cumulative totals from that immutable
+ledger and applies the same organization, division, hidden, freeze, and
+reversal rules as the ranked snapshot. WebSocket nodes subscribe to the shared
+bus without requiring affinity; browser stores coalesce score bursts into one
+bounded refresh while server-side cross-node batching remains a scale milestone.
 
 Hint bodies live only in the private hint table and are projected as `null`
 until a competitor-scoped unlock exists. The unique unlock key makes repeated

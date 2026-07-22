@@ -1,6 +1,6 @@
 //! Atomic challenge submissions and public scoreboard projections.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use chrono::{DateTime, Utc};
 use kitsune_core::{
@@ -150,6 +150,41 @@ pub struct ScoreboardRecord {
     pub frozen: bool,
     /// Ordered standings. Empty while a public board is hidden.
     pub rows: Vec<ScoreboardRowRecord>,
+}
+
+/// One append-only point in a competitor score history.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScoreHistoryPointRecord {
+    /// Global score-ledger sequence.
+    pub sequence: i64,
+    /// Running visible score after this entry.
+    pub score: i64,
+    /// Entry timestamp.
+    pub occurred_at: DateTime<Utc>,
+}
+
+/// One competitor's ordered historical score series.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScoreHistorySeriesRecord {
+    /// `user` or `team`.
+    pub competitor_kind: String,
+    /// Competitor identifier.
+    pub competitor_id: Uuid,
+    /// Public display name.
+    pub name: String,
+    /// Ordered running totals.
+    pub points: Vec<ScoreHistoryPointRecord>,
+}
+
+/// Event score history with the same concealment controls as the leaderboard.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScoreHistoryRecord {
+    /// Organizer has hidden the public board.
+    pub hidden: bool,
+    /// Post-freeze entries are concealed from players.
+    pub frozen: bool,
+    /// Competitor series.
+    pub series: Vec<ScoreHistorySeriesRecord>,
 }
 
 /// Player-safe hint state. Content is absent until the competitor unlocks it.
@@ -389,23 +424,11 @@ impl SubmissionRepository {
         division_id: Option<DivisionId>,
         organizer: bool,
     ) -> DomainResult<ScoreboardRecord> {
-        let controls = sqlx::query!(
-            r#"
-            SELECT scoreboard_hidden,scoreboard_frozen
-            FROM events
-            WHERE id = $1 AND organization_id = $2
-            "#,
-            event_id.0,
-            organization_id.0,
-        )
-        .fetch_optional(&self.pool)
-        .await
-        .map_err(unavailable)?
-        .ok_or(DomainError::NotFound)?;
-        if controls.scoreboard_hidden && !organizer {
+        let controls = scoreboard_controls(&self.pool, organization_id, event_id).await?;
+        if controls.hidden && !organizer {
             return Ok(ScoreboardRecord {
                 hidden: true,
-                frozen: controls.scoreboard_frozen,
+                frozen: controls.frozen,
                 rows: Vec::new(),
             });
         }
@@ -435,16 +458,118 @@ impl SubmissionRepository {
             ORDER BY SUM(se.points) DESC,MAX(se.occurred_at),COALESCE(se.team_id, se.user_id)
             "#,
             event_id.0,
-            organizer || !controls.scoreboard_frozen,
+            organizer || !controls.frozen,
             division_id.map(|id| id.0),
         )
         .fetch_all(&self.pool)
         .await
         .map_err(unavailable)?;
         Ok(ScoreboardRecord {
-            hidden: controls.scoreboard_hidden,
-            frozen: controls.scoreboard_frozen,
+            hidden: controls.hidden,
+            frozen: controls.frozen,
             rows,
+        })
+    }
+
+    /// Returns append-only score histories under scoreboard concealment rules.
+    pub async fn score_history(
+        &self,
+        organization_id: OrganizationId,
+        event_id: EventId,
+        division_id: Option<DivisionId>,
+        organizer: bool,
+        series_limit: i64,
+    ) -> DomainResult<ScoreHistoryRecord> {
+        let controls = scoreboard_controls(&self.pool, organization_id, event_id).await?;
+        if controls.hidden && !organizer {
+            return Ok(ScoreHistoryRecord {
+                hidden: true,
+                frozen: controls.frozen,
+                series: Vec::new(),
+            });
+        }
+        let rows = sqlx::query!(
+            r#"
+            WITH eligible AS (
+                SELECT se.*
+                FROM score_entries se
+                WHERE se.event_id = $1
+                  AND ($2 OR NOT se.hidden_by_freeze)
+                  AND ($3::uuid IS NULL OR se.division_id = $3)
+                  AND NOT (se.reason ? 'reversal')
+                  AND NOT EXISTS (
+                      SELECT 1 FROM score_entries reversal
+                      WHERE reversal.event_id = se.event_id
+                        AND reversal.reason->'reversal'->>'entry_sequence' = se.sequence::text
+                  )
+            ), leaders AS (
+                SELECT team_id,user_id
+                FROM eligible
+                GROUP BY team_id,user_id
+                ORDER BY SUM(points) DESC,MAX(occurred_at),COALESCE(team_id,user_id)
+                LIMIT $4
+            )
+            SELECT
+                se.sequence,
+                CASE WHEN se.team_id IS NULL THEN 'user' ELSE 'team' END AS "competitor_kind!",
+                COALESCE(se.team_id,se.user_id) AS "competitor_id!",
+                COALESCE(t.name,u.display_name) AS "name!",
+                SUM(se.points) OVER (
+                    PARTITION BY se.team_id,se.user_id
+                    ORDER BY se.sequence
+                    ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+                )::bigint AS "score!",
+                se.occurred_at
+            FROM eligible se
+            JOIN leaders leader
+              ON leader.team_id IS NOT DISTINCT FROM se.team_id
+             AND leader.user_id IS NOT DISTINCT FROM se.user_id
+            LEFT JOIN teams t ON t.id = se.team_id
+            LEFT JOIN users u ON u.id = se.user_id
+            ORDER BY se.sequence
+            "#,
+            event_id.0,
+            organizer || !controls.frozen,
+            division_id.map(|id| id.0),
+            series_limit,
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(unavailable)?;
+        let mut grouped = BTreeMap::<(String, Uuid, String), Vec<ScoreHistoryPointRecord>>::new();
+        for row in rows {
+            grouped
+                .entry((row.competitor_kind, row.competitor_id, row.name))
+                .or_default()
+                .push(ScoreHistoryPointRecord {
+                    sequence: row.sequence,
+                    score: row.score,
+                    occurred_at: row.occurred_at,
+                });
+        }
+        let mut series = grouped
+            .into_iter()
+            .map(
+                |((competitor_kind, competitor_id, name), points)| ScoreHistorySeriesRecord {
+                    competitor_kind,
+                    competitor_id,
+                    name,
+                    points,
+                },
+            )
+            .collect::<Vec<_>>();
+        series.sort_by(|left, right| {
+            let left_score = left.points.last().map_or(0, |point| point.score);
+            let right_score = right.points.last().map_or(0, |point| point.score);
+            right_score
+                .cmp(&left_score)
+                .then_with(|| left.name.cmp(&right.name))
+                .then_with(|| left.competitor_id.cmp(&right.competitor_id))
+        });
+        Ok(ScoreHistoryRecord {
+            hidden: controls.hidden,
+            frozen: controls.frozen,
+            series,
         })
     }
 
@@ -842,10 +967,39 @@ struct LockedChallenge {
     first_blood_bonus: i64,
 }
 
+struct ScoreboardControls {
+    hidden: bool,
+    frozen: bool,
+}
+
 struct SolveAward {
     awarded_points: i64,
     first_blood: bool,
     events: Vec<EventEnvelope>,
+}
+
+async fn scoreboard_controls(
+    pool: &PgPool,
+    organization_id: OrganizationId,
+    event_id: EventId,
+) -> DomainResult<ScoreboardControls> {
+    let row = sqlx::query!(
+        r#"
+        SELECT scoreboard_hidden,scoreboard_frozen
+        FROM events
+        WHERE id = $1 AND organization_id = $2
+        "#,
+        event_id.0,
+        organization_id.0,
+    )
+    .fetch_optional(pool)
+    .await
+    .map_err(unavailable)?
+    .ok_or(DomainError::NotFound)?;
+    Ok(ScoreboardControls {
+        hidden: row.scoreboard_hidden,
+        frozen: row.scoreboard_frozen,
+    })
 }
 
 async fn replayed_submission(

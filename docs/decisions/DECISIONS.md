@@ -130,3 +130,13 @@ Format: `YYYY-MM-DD — decision — rationale`.
   MySQL driver — `cargo tree --workspace --all-features --target all -i rsa`
   proves the vulnerable RSA crate is absent from every Kitsune build graph;
   PostgreSQL remains the only first-party datastore.
+- 2026-07-22 — Derive historical score series directly from the append-only
+  ledger instead of maintaining a second mutable aggregate — freeze, division,
+  reversal, and tie semantics remain explainable from one source of truth.
+- 2026-07-22 — Coalesce browser score-event bursts over a 150 ms trailing window
+  — repeated solves trigger one scoreboard/history fetch while staying well
+  inside the one-second realtime budget; transport-level batching stays a
+  separate scale concern.
+- 2026-07-22 — Bound score-history responses to five leading competitors by
+  default with an operator-selectable maximum of twenty — graphs stay useful
+  and predictable without transferring every ledger entry for large events.

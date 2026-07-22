@@ -6,8 +6,40 @@
   import { game } from '$lib/stores/game.svelte';
   import { realtime } from '$lib/stores/realtime.svelte';
   import { session } from '$lib/stores/session.svelte';
+  import type { ScoreHistoryPoint, ScoreHistorySeries } from '$lib/api/client';
 
   let loaded = $state(false);
+  const chartWidth = 900;
+  const chartHeight = 260;
+  const chartPadding = 30;
+  const seriesColors = [
+    'var(--accent)',
+    'var(--foxfire)',
+    'var(--success)',
+    'var(--warning)',
+    'var(--ink-secondary)'
+  ];
+  let displayedSeries = $derived(game.scoreHistory?.series.slice(0, 5) ?? []);
+  let chartBounds = $derived.by(() => {
+    let minimumSequence = Number.POSITIVE_INFINITY;
+    let maximumSequence = Number.NEGATIVE_INFINITY;
+    let minimumScore = 0;
+    let maximumScore = 1;
+    for (const series of displayedSeries) {
+      for (const point of series.points) {
+        minimumSequence = Math.min(minimumSequence, point.sequence);
+        maximumSequence = Math.max(maximumSequence, point.sequence);
+        minimumScore = Math.min(minimumScore, point.score);
+        maximumScore = Math.max(maximumScore, point.score);
+      }
+    }
+    return {
+      minimumSequence: Number.isFinite(minimumSequence) ? minimumSequence : 0,
+      maximumSequence: Number.isFinite(maximumSequence) ? maximumSequence : 1,
+      minimumScore,
+      maximumScore
+    };
+  });
 
   $effect(() => {
     if (session.authenticated && !loaded) {
@@ -18,7 +50,28 @@
 
   async function load(): Promise<void> {
     await events.load();
-    await game.loadScoreboard();
+    await game.loadScoreboardData();
+  }
+
+  function pointPosition(point: ScoreHistoryPoint): [number, number] {
+    const sequenceSpan = Math.max(1, chartBounds.maximumSequence - chartBounds.minimumSequence);
+    const scoreSpan = Math.max(1, chartBounds.maximumScore - chartBounds.minimumScore);
+    const width = chartWidth - chartPadding * 2;
+    const height = chartHeight - chartPadding * 2;
+    const x =
+      chartPadding + ((point.sequence - chartBounds.minimumSequence) / sequenceSpan) * width;
+    const y =
+      chartHeight - chartPadding - ((point.score - chartBounds.minimumScore) / scoreSpan) * height;
+    return [x, y];
+  }
+
+  function seriesPath(series: ScoreHistorySeries): string {
+    return series.points
+      .map((point, index) => {
+        const [x, y] = pointPosition(point);
+        return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`;
+      })
+      .join(' ');
   }
 </script>
 
@@ -56,7 +109,56 @@
       {/snippet}
     </EmptyState>
   {:else if game.scoreboard?.rows.length}
-    <div class="board" aria-label="Event standings">
+    {#if game.scoreHistory?.series.length}
+      <figure class="history" aria-label="Score history">
+        <figcaption>
+          <div>
+            <strong>Score trail</strong>
+            <span>Append-only totals in ledger order</span>
+          </div>
+          <div class="legend">
+            {#each displayedSeries as series, index (series.competitor_id)}
+              <span style={`--series-color: ${seriesColors[index]}`}>
+                <i></i>{series.name}
+              </span>
+            {/each}
+          </div>
+        </figcaption>
+        <a class="skip-chart" href="#event-standings">Skip score history</a>
+        <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} role="img">
+          <title>Historical score totals for ranked competitors</title>
+          <line
+            x1={chartPadding}
+            y1={chartHeight - chartPadding}
+            x2={chartWidth - chartPadding}
+            y2={chartHeight - chartPadding}
+          ></line>
+          <line
+            x1={chartPadding}
+            y1={chartPadding}
+            x2={chartPadding}
+            y2={chartHeight - chartPadding}
+          ></line>
+          {#each displayedSeries as series, index (series.competitor_id)}
+            <path d={seriesPath(series)} style={`--series-color: ${seriesColors[index]}`}></path>
+            {#each series.points as point (point.sequence)}
+              {@const position = pointPosition(point)}
+              <circle
+                cx={position[0]}
+                cy={position[1]}
+                r="3.5"
+                style={`--series-color: ${seriesColors[index]}`}
+              >
+                <title>{series.name}: {point.score} points</title>
+              </circle>
+            {/each}
+          {/each}
+          <text x={chartPadding} y={chartPadding - 8}>{chartBounds.maximumScore}</text>
+          <text x={chartPadding} y={chartHeight - 8}>{chartBounds.minimumScore}</text>
+        </svg>
+      </figure>
+    {/if}
+    <div id="event-standings" class="board" aria-label="Event standings" tabindex="-1">
       <div class="board-head" aria-hidden="true">
         <span>Rank</span>
         <span>Competitor</span>
@@ -109,6 +211,115 @@
     border-radius: var(--radius-lg);
     background: var(--surface);
     box-shadow: var(--shadow-sm);
+  }
+
+  .history {
+    position: relative;
+    overflow: hidden;
+    margin: 0 0 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .skip-chart {
+    position: absolute;
+    z-index: 2;
+    top: 0.5rem;
+    left: 0.5rem;
+    padding: 0.45rem 0.65rem;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-contrast);
+    font-size: 0.75rem;
+    font-weight: 700;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-150%);
+  }
+
+  .skip-chart:focus {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .history figcaption,
+  .legend,
+  .legend span {
+    display: flex;
+    align-items: center;
+  }
+
+  .history figcaption {
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.1rem 0;
+  }
+
+  .history figcaption > div:first-child {
+    display: grid;
+    gap: 0.2rem;
+  }
+
+  .history figcaption strong {
+    font-size: 0.86rem;
+  }
+
+  .history figcaption span {
+    color: var(--ink-secondary);
+    font-size: 0.7rem;
+  }
+
+  .legend {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+  }
+
+  .legend span {
+    gap: 0.3rem;
+  }
+
+  .legend i {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: var(--series-color);
+  }
+
+  .history svg {
+    display: block;
+    width: 100%;
+    min-width: 36rem;
+    height: auto;
+    max-height: 19rem;
+    padding: 0.4rem;
+  }
+
+  .history line {
+    stroke: var(--line-strong);
+    stroke-width: 1;
+  }
+
+  .history path {
+    fill: none;
+    stroke: var(--series-color);
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 3;
+  }
+
+  .history circle {
+    fill: var(--surface);
+    stroke: var(--series-color);
+    stroke-width: 2;
+  }
+
+  .history text {
+    fill: var(--ink-faint);
+    font-size: 10px;
   }
 
   .board-head,
@@ -166,6 +377,15 @@
   }
 
   @media (max-width: 620px) {
+    .history {
+      overflow-x: auto;
+    }
+
+    .history figcaption {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
     .board-head {
       display: none;
     }

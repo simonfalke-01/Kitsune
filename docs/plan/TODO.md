@@ -81,8 +81,10 @@ or scaffolding alone.
   aggregate-only post-solve survey API.
 - [x] Player writeup/survey forms and organizer review/analytics surface with
   browser coverage.
-- [ ] Dynamic-instance and plugin answer verifiers, scoreboard graphs, cache
-  batching, and competitor profile links.
+- [x] Append-only historical score REST/OpenAPI projection, responsive graph,
+  hidden/freeze/division parity, and bounded browser realtime coalescing.
+- [ ] Dynamic-instance and plugin answer verifiers, server-side cross-node score
+  batching/cache, and competitor profile links.
 - [x] Encrypted manual-verification persistence, RBAC review API, duplicate
   pending protection, and transactional accept/discard scoring.
 - [x] Wire the organizer manual-verification queue and player pending outcome

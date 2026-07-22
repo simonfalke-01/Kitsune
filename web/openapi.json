@@ -1025,6 +1025,90 @@
         ],
         "type": "object"
       },
+      "ScoreHistoryPointResponse": {
+        "description": "One running-total point in score history.",
+        "properties": {
+          "occurred_at": {
+            "description": "Entry timestamp.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "score": {
+            "description": "Running visible score.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "sequence": {
+            "description": "Global score-ledger sequence.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "sequence",
+          "score",
+          "occurred_at"
+        ],
+        "type": "object"
+      },
+      "ScoreHistoryResponse": {
+        "description": "Historical graph data under scoreboard concealment rules.",
+        "properties": {
+          "frozen": {
+            "description": "Post-freeze entries are concealed from players.",
+            "type": "boolean"
+          },
+          "hidden": {
+            "description": "Organizer has hidden the public board.",
+            "type": "boolean"
+          },
+          "series": {
+            "description": "Competitor histories.",
+            "items": {
+              "$ref": "#/components/schemas/ScoreHistorySeriesResponse"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "hidden",
+          "frozen",
+          "series"
+        ],
+        "type": "object"
+      },
+      "ScoreHistorySeriesResponse": {
+        "description": "One competitor's historical score series.",
+        "properties": {
+          "competitor_id": {
+            "description": "Competitor identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "competitor_kind": {
+            "description": "`user` or `team`.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Public display name.",
+            "type": "string"
+          },
+          "points": {
+            "description": "Ordered running totals.",
+            "items": {
+              "$ref": "#/components/schemas/ScoreHistoryPointResponse"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "competitor_kind",
+          "competitor_id",
+          "name",
+          "points"
+        ],
+        "type": "object"
+      },
       "ScoreboardResponse": {
         "description": "Scoreboard controls and ordered standings.",
         "properties": {
@@ -3402,6 +3486,95 @@
         },
         "tags": [
           "submissions"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/score-history": {
+      "get": {
+        "operationId": "score_history",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Limit series to a division.",
+            "in": "query",
+            "name": "division_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "Number of leading competitors to return; defaults to 5 and caps at 20.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreHistoryResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "scoreboard"
         ]
       }
     },

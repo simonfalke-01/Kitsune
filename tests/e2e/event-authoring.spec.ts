@@ -122,8 +122,13 @@ test('organizer authors a published challenge visible on the player board', asyn
   const scoreboardLoaded = page.waitForResponse((response) =>
     response.url().endsWith('/scoreboard')
   );
+  const scoreHistoryLoaded = page.waitForResponse((response) =>
+    response.url().endsWith('/score-history')
+  );
   await page.goto('/scoreboard');
-  await scoreboardLoaded;
+  await Promise.all([scoreboardLoaded, scoreHistoryLoaded]);
+  await expect(page.getByLabel('Score history')).toBeVisible();
+  await expect(page.getByText('Score trail', { exact: true })).toBeVisible();
   const standings = page.getByLabel('Event standings');
   await expect(standings.getByText('E2E Owner', { exact: true })).toBeVisible();
   await expect(standings.getByText('540 pts', { exact: true })).toBeVisible();
@@ -151,13 +156,23 @@ test('organizer authors a published challenge visible on the player board', asyn
   await page.getByLabel('Description').fill('Explain a bounded reproduction path for review.');
   await page.getByLabel('Type').selectOption('manual_verification');
   await page.getByLabel('Lifecycle').selectOption('published');
+  const manualChallengeCreated = page.waitForResponse(
+    (response) => response.request().method() === 'POST' && response.url().endsWith('/challenges')
+  );
   await page.getByRole('button', { name: 'Save challenge' }).click();
+  await manualChallengeCreated;
+  await expect(page.getByRole('button', { name: 'Save challenge' })).toBeHidden();
   await expect(page.getByText(manualChallengeName, { exact: true })).toBeVisible();
 
+  const challengesReloaded = page.waitForResponse(
+    (response) => response.request().method() === 'GET' && response.url().endsWith('/challenges')
+  );
   await page.goto('/challenges');
+  await challengesReloaded;
   const manualCard = page
     .locator('article.challenge-card')
     .filter({ has: page.getByRole('heading', { name: manualChallengeName }) });
+  await expect(manualCard).toBeVisible();
   await manualCard.getByRole('button', { name: 'Submit flag' }).click();
   const manualEvidence = 'A browser-verified reproduction with bounded impact and clear evidence.';
   await manualCard.getByLabel('Evidence').fill(manualEvidence);

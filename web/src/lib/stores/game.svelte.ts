@@ -1,6 +1,7 @@
 import { api, errorMessage } from '$lib/api/client';
 import type {
   ChallengeHint,
+  ScoreHistory,
   Scoreboard,
   SubmissionReceipt,
   SurveyReceipt,
@@ -23,6 +24,7 @@ export function submissionMessage(receipt: SubmissionReceipt): string {
 
 class GameStore {
   scoreboard = $state<Scoreboard | null>(null);
+  scoreHistory = $state<ScoreHistory | null>(null);
   receipts = $state<Record<string, SubmissionReceipt>>({});
   hints = $state<Record<string, ChallengeHint[]>>({});
   writeups = $state<Record<string, Writeup | null>>({});
@@ -33,11 +35,14 @@ class GameStore {
   savingWriteupId = $state<string | null>(null);
   savingSurveyId = $state<string | null>(null);
   error = $state<string | null>(null);
+  private scoreboardRefresh: ReturnType<typeof setTimeout> | null = null;
 
   async submit(challengeId: string, answer: string): Promise<SubmissionReceipt | null> {
     const csrf = session.current?.csrf_token;
     const eventId = events.selectedEventId;
-    if (!csrf || !eventId) return this.authenticationFailure();
+    if (!csrf || !eventId) {
+      return this.authenticationFailure();
+    }
     this.savingChallengeId = challengeId;
     this.error = null;
     const { data, error } = await api.POST(
@@ -55,7 +60,7 @@ class GameStore {
     }
     this.receipts = { ...this.receipts, [challengeId]: data };
     if (data.outcome === 'correct') {
-      await Promise.all([events.loadChallenges(), this.loadScoreboard()]);
+      await Promise.all([events.loadChallenges(), this.loadScoreboardData()]);
     }
     return data;
   }
@@ -78,9 +83,41 @@ class GameStore {
     this.scoreboard = data;
   }
 
+  async loadScoreHistory(): Promise<void> {
+    const eventId = events.selectedEventId;
+    if (!eventId || !session.authenticated) {
+      this.scoreHistory = null;
+      return;
+    }
+    const { data, error } = await api.GET('/api/v1/events/{event_id}/score-history', {
+      params: { path: { event_id: eventId }, query: {} }
+    });
+    if (!data) {
+      this.error = errorMessage(error, 'Score history could not be loaded.');
+      return;
+    }
+    this.scoreHistory = data;
+  }
+
+  async loadScoreboardData(): Promise<void> {
+    await Promise.all([this.loadScoreboard(), this.loadScoreHistory()]);
+  }
+
+  scheduleScoreboardRefresh(): void {
+    if (this.scoreboardRefresh) {
+      clearTimeout(this.scoreboardRefresh);
+    }
+    this.scoreboardRefresh = setTimeout(() => {
+      this.scoreboardRefresh = null;
+      void this.loadScoreboardData();
+    }, 150);
+  }
+
   async loadHints(challengeId: string): Promise<void> {
     const eventId = events.selectedEventId;
-    if (!eventId || !session.authenticated) return;
+    if (!eventId || !session.authenticated) {
+      return;
+    }
     const { data, error } = await api.GET(
       '/api/v1/events/{event_id}/challenges/{challenge_id}/hints',
       {
@@ -122,7 +159,9 @@ class GameStore {
       ...this.hints,
       [challengeId]: existing.map((hint) => (hint.id === data.hint.id ? data.hint : hint))
     };
-    if (data.charged > 0) await this.loadScoreboard();
+    if (data.charged > 0) {
+      await this.loadScoreboardData();
+    }
     return true;
   }
 
@@ -132,7 +171,9 @@ class GameStore {
 
   async loadWriteup(challengeId: string): Promise<Writeup | null> {
     const eventId = events.selectedEventId;
-    if (!eventId || !session.authenticated) return null;
+    if (!eventId || !session.authenticated) {
+      return null;
+    }
     const { data, error, response } = await api.GET(
       '/api/v1/events/{event_id}/challenges/{challenge_id}/writeup',
       {
@@ -211,6 +252,7 @@ class GameStore {
 
   clear(): void {
     this.scoreboard = null;
+    this.scoreHistory = null;
     this.receipts = {};
     this.hints = {};
     this.writeups = {};
@@ -220,6 +262,10 @@ class GameStore {
     this.unlockingHint = null;
     this.savingWriteupId = null;
     this.savingSurveyId = null;
+    if (this.scoreboardRefresh) {
+      clearTimeout(this.scoreboardRefresh);
+    }
+    this.scoreboardRefresh = null;
   }
 
   private authenticationFailure(): null {

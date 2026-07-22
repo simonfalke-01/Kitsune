@@ -32,9 +32,9 @@
     } else if (envelope.event.type === 'submission.received') {
       void events.loadChallenges();
     } else if (envelope.event.type === 'score.changed') {
-      void game.loadScoreboard();
+      game.scheduleScoreboardRefresh();
     } else if (envelope.event.type === 'scoreboard.control_changed') {
-      void Promise.all([events.load(), game.loadScoreboard()]);
+      void Promise.all([events.load(), game.loadScoreboardData()]);
     } else if (envelope.event.type === 'challenge.hint.unlocked') {
       void game.refreshLoadedHints();
     } else if (envelope.event.type === 'challenge.writeup.changed') {

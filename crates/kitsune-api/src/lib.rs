@@ -144,6 +144,7 @@ pub struct ReadinessResponse {
         engagement::survey_summary,
         submissions::submit_answer,
         submissions::scoreboard,
+        submissions::score_history,
         submissions::list_hints,
         submissions::unlock_hint,
         submissions::manual_review_queue,
@@ -196,6 +197,9 @@ pub struct ReadinessResponse {
         submissions::SubmissionResponse,
         submissions::ScoreboardRowResponse,
         submissions::ScoreboardResponse,
+        submissions::ScoreHistoryPointResponse,
+        submissions::ScoreHistorySeriesResponse,
+        submissions::ScoreHistoryResponse,
         submissions::HintResponse,
         submissions::HintUnlockResponse,
         submissions::ManualReviewResponse,
@@ -316,6 +320,10 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/events/{event_id}/scoreboard",
             get(submissions::scoreboard),
+        )
+        .route(
+            "/api/v1/events/{event_id}/score-history",
+            get(submissions::score_history),
         )
         .route(
             "/api/v1/events/{event_id}/challenges/{challenge_id}/hints",
@@ -1493,6 +1501,33 @@ mod tests {
         assert_eq!(board["rows"][0]["score"], 890);
         assert_eq!(board["rows"][0]["solves"], 2);
 
+        let score_history = Request::builder()
+            .uri(format!("/api/v1/events/{event_id}/score-history"))
+            .header(header::COOKIE, &player_cookies)
+            .body(Body::empty())
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(score_history)
+            .await
+            .expect("score history");
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let history: serde_json::Value = serde_json::from_slice(&body).expect("score history");
+        assert_eq!(history["series"].as_array().expect("series").len(), 1);
+        assert_eq!(
+            history["series"][0]["points"]
+                .as_array()
+                .expect("history points")
+                .len(),
+            5
+        );
+        assert_eq!(history["series"][0]["points"][4]["score"], 890);
+
         let hide_scoreboard = Request::builder()
             .method("PATCH")
             .uri(format!("/api/v1/events/{event_id}/scoreboard-controls"))
@@ -1528,6 +1563,29 @@ mod tests {
         let hidden: serde_json::Value = serde_json::from_slice(&body).expect("hidden board");
         assert_eq!(hidden["hidden"], true);
         assert_eq!(hidden["rows"].as_array().expect("rows").len(), 0);
+        let hidden_history = Request::builder()
+            .uri(format!("/api/v1/events/{event_id}/score-history"))
+            .header(header::COOKIE, &player_cookies)
+            .body(Body::empty())
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(hidden_history)
+            .await
+            .expect("hidden score history");
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let hidden_history: serde_json::Value =
+            serde_json::from_slice(&body).expect("hidden score history");
+        assert_eq!(hidden_history["hidden"], true);
+        assert_eq!(
+            hidden_history["series"].as_array().expect("series").len(),
+            0
+        );
 
         let freeze_scoreboard = Request::builder()
             .method("PATCH")
