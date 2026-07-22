@@ -9,7 +9,6 @@ use kitsune_api::{AppState, AuthService, TokenService};
 use kitsune_automation::{InProcessCache, InProcessEventBus};
 use kitsune_core::config::{FeatureFlags, RuntimeProfile};
 use kitsune_db::{PostgresStore, auth::AuthRepository};
-use rand::Rng as _;
 use serde::Deserialize;
 use tokio::signal;
 use tracing::{info, warn};
@@ -151,7 +150,7 @@ async fn load_or_generate_cookie_key(data_dir: &std::path::Path) -> Result<Key> 
             let parent = path.parent().context("cookie key parent")?;
             tokio::fs::create_dir_all(parent).await?;
             let mut bytes = [0_u8; 64];
-            rand::rng().fill(&mut bytes);
+            rand::fill(&mut bytes);
             let encoded = URL_SAFE_NO_PAD.encode(bytes);
             let mut options = tokio::fs::OpenOptions::new();
             options.write(true).create_new(true);

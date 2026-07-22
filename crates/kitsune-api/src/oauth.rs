@@ -12,7 +12,6 @@ use base64::{Engine as _, engine::general_purpose::STANDARD};
 use chrono::{DateTime, Duration, Utc};
 use kitsune_core::DomainError;
 use kitsune_db::oauth::{NewOAuthClient, OAuthClientRecord, OAuthClientRepository};
-use rand::Rng as _;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use utoipa::ToSchema;
@@ -428,7 +427,7 @@ fn basic_credentials(headers: &HeaderMap) -> Option<(String, String)> {
 
 fn random_credential(prefix: &str, byte_count: usize) -> String {
     let mut bytes = vec![0_u8; byte_count];
-    rand::rng().fill(bytes.as_mut_slice());
+    rand::fill(bytes.as_mut_slice());
     format!(
         "{prefix}{}",
         base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(bytes)

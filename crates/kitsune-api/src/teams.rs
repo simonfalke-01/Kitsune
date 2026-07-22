@@ -9,7 +9,6 @@ use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use chrono::{DateTime, Utc};
 use kitsune_core::{DomainError, identity::TeamId};
 use kitsune_db::teams::{TeamMemberRecord, TeamRecord, TeamRepository};
-use rand::Rng as _;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use utoipa::ToSchema;
@@ -268,6 +267,6 @@ fn validate_name(name: &str) -> ApiResult<&str> {
 
 fn generate_invite_code() -> String {
     let mut bytes = [0_u8; 24];
-    rand::rng().fill(&mut bytes);
+    rand::fill(&mut bytes);
     URL_SAFE_NO_PAD.encode(bytes)
 }

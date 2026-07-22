@@ -191,3 +191,6 @@ Format: `YYYY-MM-DD — decision — rationale`.
   foreign key and rely on primary/unique lookup indexes — cross-tenant ownership
   becomes impossible at the database boundary without maintaining a redundant
   active-client index on the same primary-key prefix.
+- 2026-07-22 — Use rand’s free `fill` function and track rand 0.10 — the stable
+  call shape avoids extension-trait churn while keeping security-sensitive byte
+  generation on the current maintained release.

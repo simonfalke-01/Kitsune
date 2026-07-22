@@ -32,7 +32,6 @@ use kitsune_db::{
     oauth::OAuthClientRepository,
     tokens::ApiTokenRepository,
 };
-use rand::Rng as _;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use subtle::ConstantTimeEq;
@@ -61,7 +60,7 @@ impl AuthService {
     /// Constructs Argon2id with OWASP-aligned memory/time/parallelism defaults.
     pub fn new() -> Result<Self, DomainError> {
         let mut master = [0_u8; 64];
-        rand::rng().fill(&mut master);
+        rand::fill(&mut master);
         Self::from_master_key(&master)
     }
 
@@ -122,7 +121,7 @@ impl AuthService {
     pub fn seal(&self, plaintext: &[u8]) -> Result<Vec<u8>, DomainError> {
         let cipher = XChaCha20Poly1305::new(self.data_key.as_ref().into());
         let mut nonce = [0_u8; 24];
-        rand::rng().fill(&mut nonce);
+        rand::fill(&mut nonce);
         let ciphertext = cipher
             .encrypt(XNonce::from_slice(&nonce), plaintext)
             .map_err(|_| DomainError::Unavailable("secret encryption failed".into()))?;
@@ -902,7 +901,7 @@ pub(crate) async fn start_totp(
     let identity = SessionIdentity::require(&state.auth_repository, &jar).await?;
     identity.require_csrf(&headers)?;
     let mut secret = vec![0_u8; 20];
-    rand::rng().fill(secret.as_mut_slice());
+    rand::fill(secret.as_mut_slice());
     state
         .cache
         .put(
@@ -1280,7 +1279,7 @@ fn removal_cookie(name: &'static str, secure: bool) -> Cookie<'static> {
 
 fn hash_with(argon2: &Argon2<'_>, password: &str) -> Result<String, DomainError> {
     let mut salt_bytes = [0_u8; 16];
-    rand::rng().fill(&mut salt_bytes);
+    rand::fill(&mut salt_bytes);
     let salt = SaltString::encode_b64(&salt_bytes)
         .map_err(|error| DomainError::Validation(error.to_string()))?;
     argon2
@@ -1291,7 +1290,7 @@ fn hash_with(argon2: &Argon2<'_>, password: &str) -> Result<String, DomainError>
 
 fn random_token(length: usize) -> String {
     let mut bytes = vec![0_u8; length];
-    rand::rng().fill(bytes.as_mut_slice());
+    rand::fill(bytes.as_mut_slice());
     URL_SAFE_NO_PAD.encode(bytes)
 }
 
