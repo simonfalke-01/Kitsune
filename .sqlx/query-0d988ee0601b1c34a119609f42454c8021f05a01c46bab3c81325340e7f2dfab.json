@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT s.id AS session_id, s.expires_at, s.csrf_digest,\n                   u.id AS user_id, u.organization_id, u.display_name, u.email_normalized\n            FROM sessions s\n            JOIN users u ON u.id = s.user_id\n            WHERE s.token_digest = $1 AND s.revoked_at IS NULL\n              AND s.expires_at > $2 AND u.disabled = false\n            FOR UPDATE OF s\n            ",
+  "query": "\n            SELECT s.id AS session_id, s.expires_at, s.csrf_digest,\n                   u.id AS user_id, u.organization_id, u.display_name, u.email_normalized,\n                   u.email_verified\n            FROM sessions s\n            JOIN users u ON u.id = s.user_id\n            WHERE s.token_digest = $1 AND s.revoked_at IS NULL\n              AND s.expires_at > $2 AND u.disabled = false\n            FOR UPDATE OF s\n            ",
   "describe": {
     "columns": [
       {
@@ -37,6 +37,11 @@
         "ordinal": 6,
         "name": "email_normalized",
         "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "email_verified",
+        "type_info": "Bool"
       }
     ],
     "parameters": {
@@ -52,8 +57,9 @@
       false,
       false,
       false,
+      false,
       false
     ]
   },
-  "hash": "7360ce3adbfe435de5dc41ab46c12226334eef5ece830e4c1433779e74d64774"
+  "hash": "0d988ee0601b1c34a119609f42454c8021f05a01c46bab3c81325340e7f2dfab"
 }

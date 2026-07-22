@@ -115,9 +115,17 @@ pub struct ReadinessResponse {
         readiness,
         auth::setup_status,
         auth::setup,
+        auth::register,
         auth::login,
+        auth::verify_email,
+        auth::start_recovery,
+        auth::complete_recovery,
         auth::current_session,
-        auth::logout
+        auth::logout,
+        auth::start_totp,
+        auth::confirm_totp,
+        auth::list_sessions,
+        auth::revoke_session
     ),
     components(schemas(
         HealthResponse,
@@ -126,6 +134,14 @@ pub struct ReadinessResponse {
         auth::SetupStatusResponse,
         auth::SetupRequest,
         auth::LoginRequest,
+        auth::RegisterRequest,
+        auth::TokenRequest,
+        auth::RecoveryStartRequest,
+        auth::RecoveryCompleteRequest,
+        auth::TotpEnrollmentResponse,
+        auth::TotpConfirmRequest,
+        auth::RecoveryCodesResponse,
+        auth::SessionSummaryResponse,
         auth::SessionResponse,
         auth::UserResponse
     )),
@@ -181,8 +197,22 @@ pub fn router(state: AppState) -> Router {
         .route("/ready", get(readiness))
         .route("/api/v1/setup", get(auth::setup_status).post(auth::setup))
         .route("/api/v1/auth/login", post(auth::login))
+        .route("/api/v1/auth/register", post(auth::register))
+        .route("/api/v1/auth/email/verify", post(auth::verify_email))
+        .route("/api/v1/auth/recovery", post(auth::start_recovery))
+        .route(
+            "/api/v1/auth/recovery/complete",
+            post(auth::complete_recovery),
+        )
         .route("/api/v1/auth/session", get(auth::current_session))
         .route("/api/v1/auth/logout", post(auth::logout))
+        .route("/api/v1/auth/mfa/totp/start", post(auth::start_totp))
+        .route("/api/v1/auth/mfa/totp/confirm", post(auth::confirm_totp))
+        .route("/api/v1/auth/sessions", get(auth::list_sessions))
+        .route(
+            "/api/v1/auth/sessions/{session_id}",
+            axum::routing::delete(auth::revoke_session),
+        )
         .route("/api/v1/realtime/ws", get(realtime::websocket))
         .route("/api/v1/realtime/sse", get(realtime::sse))
         .merge(SwaggerUi::new("/api/docs").url("/api/openapi.json", ApiDoc::openapi()))
@@ -241,6 +271,7 @@ mod tests {
     use kitsune_automation::{InProcessCache, InProcessEventBus};
     use kitsune_db::{MIGRATOR, PostgresStore, auth::AuthRepository};
     use sqlx::PgPool;
+    use totp_rs::{Algorithm as TotpAlgorithm, Secret, TOTP};
     use tower::ServiceExt;
 
     use super::*;
@@ -344,5 +375,175 @@ mod tests {
             .expect("request");
         let response = app.oneshot(revoked).await.expect("revoked response");
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[sqlx::test(migrator = "MIGRATOR")]
+    async fn registration_totp_and_session_management_are_end_to_end(pool: PgPool) {
+        let app = router(test_state(pool));
+        let setup = Request::builder()
+            .method("POST")
+            .uri("/api/v1/setup")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "organization_name": "Foxfire League",
+                    "organization_slug": "foxfire",
+                    "display_name": "Owner",
+                    "email": "owner@example.test",
+                    "password": "correct horse foxfire battery"
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        let response = app.clone().oneshot(setup).await.expect("setup");
+        let cookies = response_cookies(response.headers());
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let session: serde_json::Value = serde_json::from_slice(&body).expect("session");
+        let csrf = session["csrf_token"].as_str().expect("csrf");
+
+        let register = Request::builder()
+            .method("POST")
+            .uri("/api/v1/auth/register")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "organization": "foxfire",
+                    "display_name": "Player One",
+                    "email": "player@example.test",
+                    "password": "another correct foxfire secret"
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        let response = app.clone().oneshot(register).await.expect("register");
+        assert_eq!(response.status(), StatusCode::CREATED);
+
+        let start = Request::builder()
+            .method("POST")
+            .uri("/api/v1/auth/mfa/totp/start")
+            .header(header::COOKIE, &cookies)
+            .header("x-csrf-token", csrf)
+            .body(Body::empty())
+            .expect("request");
+        let response = app.clone().oneshot(start).await.expect("start TOTP");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let enrollment: serde_json::Value = serde_json::from_slice(&body).expect("enrollment");
+        let secret = Secret::Encoded(
+            enrollment["secret"]
+                .as_str()
+                .expect("encoded secret")
+                .to_owned(),
+        )
+        .to_bytes()
+        .expect("decode secret");
+        let generator = TOTP::new(
+            TotpAlgorithm::SHA1,
+            6,
+            1,
+            30,
+            secret,
+            Some("Kitsune".into()),
+            "owner@example.test".into(),
+        )
+        .expect("TOTP");
+        let code = generator.generate_current().expect("current code");
+        let confirm = Request::builder()
+            .method("POST")
+            .uri("/api/v1/auth/mfa/totp/confirm")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &cookies)
+            .header("x-csrf-token", csrf)
+            .body(Body::from(serde_json::json!({"code": code}).to_string()))
+            .expect("request");
+        let response = app.clone().oneshot(confirm).await.expect("confirm TOTP");
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let logout = Request::builder()
+            .method("POST")
+            .uri("/api/v1/auth/logout")
+            .header(header::COOKIE, &cookies)
+            .header("x-csrf-token", csrf)
+            .body(Body::empty())
+            .expect("request");
+        assert_eq!(
+            app.clone().oneshot(logout).await.expect("logout").status(),
+            StatusCode::NO_CONTENT
+        );
+
+        let missing_mfa = local_login(None);
+        let response = app.clone().oneshot(missing_mfa).await.expect("login");
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let error: serde_json::Value = serde_json::from_slice(&body).expect("error");
+        assert_eq!(error["code"], "mfa_required");
+
+        let response = app
+            .clone()
+            .oneshot(local_login(Some(
+                generator.generate_current().expect("current code"),
+            )))
+            .await
+            .expect("MFA login");
+        assert_eq!(response.status(), StatusCode::OK);
+        let login_cookies = response_cookies(response.headers());
+        let sessions = Request::builder()
+            .uri("/api/v1/auth/sessions")
+            .header(header::COOKIE, login_cookies)
+            .body(Body::empty())
+            .expect("request");
+        let response = app.oneshot(sessions).await.expect("sessions");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let sessions: serde_json::Value = serde_json::from_slice(&body).expect("sessions");
+        assert_eq!(sessions.as_array().expect("array").len(), 1);
+        assert_eq!(sessions[0]["current"], true);
+    }
+
+    fn response_cookies(headers: &axum::http::HeaderMap) -> String {
+        headers
+            .get_all(header::SET_COOKIE)
+            .iter()
+            .filter_map(|value| value.to_str().ok())
+            .filter_map(|value| value.split(';').next())
+            .collect::<Vec<_>>()
+            .join("; ")
+    }
+
+    fn local_login(mfa_code: Option<String>) -> Request<Body> {
+        Request::builder()
+            .method("POST")
+            .uri("/api/v1/auth/login")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "organization": "foxfire",
+                    "email": "owner@example.test",
+                    "password": "correct horse foxfire battery",
+                    "mfa_code": mfa_code
+                })
+                .to_string(),
+            ))
+            .expect("request")
     }
 }

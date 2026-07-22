@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE email_verifications SET consumed_at = $2\n            WHERE token_digest = $1 AND consumed_at IS NULL AND expires_at > $2\n            RETURNING user_id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Bytea",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "fbff1326fd75e1f0f0656d9af036fda5a1078eb92855613c6a51cc9f652db837"
+}

@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO account_recovery_tokens (\n                    id,user_id,token_digest,expires_at,created_at\n                ) VALUES ($1,$2,$3,$4,$5)\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Bytea",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fd9a7dc5abe1017ac76cc7ef9ba6eb47e33adc43f6efd06ecf0ac5f6f626735b"
+}

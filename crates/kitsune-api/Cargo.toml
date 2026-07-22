@@ -13,6 +13,7 @@ axum.workspace = true
 axum-extra.workspace = true
 base64.workspace = true
 chrono.workspace = true
+chacha20poly1305.workspace = true
 futures.workspace = true
 hex.workspace = true
 kitsune-automation = { path = "../kitsune-automation" }
@@ -25,6 +26,7 @@ sha2.workspace = true
 subtle.workspace = true
 time.workspace = true
 tokio.workspace = true
+totp-rs.workspace = true
 tower.workspace = true
 tower-http.workspace = true
 tracing.workspace = true

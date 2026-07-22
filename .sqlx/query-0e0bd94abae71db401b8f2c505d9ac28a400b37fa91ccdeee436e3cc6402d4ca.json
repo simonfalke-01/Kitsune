@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE recovery_codes SET consumed_at = $3\n            WHERE user_id = $1 AND code_digest = $2 AND consumed_at IS NULL\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Bytea",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0e0bd94abae71db401b8f2c505d9ac28a400b37fa91ccdeee436e3cc6402d4ca"
+}

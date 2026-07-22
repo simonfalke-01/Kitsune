@@ -105,10 +105,12 @@ async fn main() -> Result<()> {
     let cache = Arc::new(InProcessCache::new(100_000).context("lean cache")?);
     let event_bus = Arc::new(InProcessEventBus::new(16_384).context("lean event bus")?);
     let auth_repository = AuthRepository::new(store.pool().clone());
+    let auth =
+        AuthService::from_master_key(cookie_key.master()).context("authentication service")?;
     let state = AppState::new(
         store,
         auth_repository,
-        AuthService::new().context("authentication service")?,
+        auth,
         cache,
         event_bus,
         cookie_key,

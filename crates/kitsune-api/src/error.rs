@@ -58,6 +58,17 @@ impl ApiError {
             },
         }
     }
+
+    /// A valid second factor is required before a session can be issued.
+    pub fn mfa_required() -> Self {
+        Self {
+            status: StatusCode::UNAUTHORIZED,
+            body: ErrorBody {
+                code: "mfa_required",
+                message: "A valid MFA code is required.".into(),
+            },
+        }
+    }
 }
 
 impl From<DomainError> for ApiError {

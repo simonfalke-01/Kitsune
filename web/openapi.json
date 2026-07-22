@@ -51,6 +51,13 @@
             "description": "Account email.",
             "type": "string"
           },
+          "mfa_code": {
+            "description": "Six-digit TOTP or a single-use recovery code when MFA is enabled.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
           "organization": {
             "description": "Organization slug.",
             "type": "string"
@@ -86,6 +93,88 @@
         ],
         "type": "object"
       },
+      "RecoveryCodesResponse": {
+        "description": "Recovery codes are returned exactly once.",
+        "properties": {
+          "codes": {
+            "description": "Single-use codes. The operator must store these safely.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "codes"
+        ],
+        "type": "object"
+      },
+      "RecoveryCompleteRequest": {
+        "description": "Complete recovery with a new password.",
+        "properties": {
+          "password": {
+            "description": "Replacement password.",
+            "format": "password",
+            "type": "string"
+          },
+          "token": {
+            "description": "URL-safe one-time token.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token",
+          "password"
+        ],
+        "type": "object"
+      },
+      "RecoveryStartRequest": {
+        "description": "Begin recovery without revealing whether an identity exists.",
+        "properties": {
+          "email": {
+            "description": "Account email.",
+            "type": "string"
+          },
+          "organization": {
+            "description": "Organization slug.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "organization",
+          "email"
+        ],
+        "type": "object"
+      },
+      "RegisterRequest": {
+        "description": "Local self-registration input.",
+        "properties": {
+          "display_name": {
+            "description": "Public display name.",
+            "type": "string"
+          },
+          "email": {
+            "description": "Account email.",
+            "type": "string"
+          },
+          "organization": {
+            "description": "Organization slug to join.",
+            "type": "string"
+          },
+          "password": {
+            "description": "Account password (12–128 characters).",
+            "format": "password",
+            "type": "string"
+          }
+        },
+        "required": [
+          "organization",
+          "display_name",
+          "email",
+          "password"
+        ],
+        "type": "object"
+      },
       "SessionResponse": {
         "description": "Session bootstrap used by the Svelte client.",
         "properties": {
@@ -114,6 +203,43 @@
           "user",
           "csrf_token",
           "permissions",
+          "expires_at"
+        ],
+        "type": "object"
+      },
+      "SessionSummaryResponse": {
+        "description": "One active login session.",
+        "properties": {
+          "created_at": {
+            "description": "Creation timestamp.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "current": {
+            "description": "Whether this is the calling session.",
+            "type": "boolean"
+          },
+          "expires_at": {
+            "description": "Expiry timestamp.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "description": "Session ID.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "last_seen_at": {
+            "description": "Last request timestamp.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "current",
+          "created_at",
+          "last_seen_at",
           "expires_at"
         ],
         "type": "object"
@@ -165,6 +291,50 @@
         ],
         "type": "object"
       },
+      "TokenRequest": {
+        "description": "One opaque token input.",
+        "properties": {
+          "token": {
+            "description": "URL-safe one-time token.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "token"
+        ],
+        "type": "object"
+      },
+      "TotpConfirmRequest": {
+        "description": "TOTP setup proof.",
+        "properties": {
+          "code": {
+            "description": "Current six-digit authenticator code.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
+        ],
+        "type": "object"
+      },
+      "TotpEnrollmentResponse": {
+        "description": "TOTP enrollment data for an authenticator application.",
+        "properties": {
+          "provisioning_uri": {
+            "description": "Standard `otpauth://` provisioning URI.",
+            "type": "string"
+          },
+          "secret": {
+            "description": "Base32 secret for manual entry.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "secret",
+          "provisioning_uri"
+        ],
+        "type": "object"
+      },
       "UserResponse": {
         "description": "Safe account projection.",
         "properties": {
@@ -213,6 +383,39 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/auth/email/verify": {
+      "post": {
+        "operationId": "verify_email",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/auth/login": {
       "post": {
         "operationId": "login",
@@ -296,6 +499,262 @@
         ]
       }
     },
+    "/api/v1/auth/mfa/totp/confirm": {
+      "post": {
+        "operationId": "confirm_totp",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TotpConfirmRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecoveryCodesResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/mfa/totp/start": {
+      "post": {
+        "operationId": "start_totp",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TotpEnrollmentResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/recovery": {
+      "post": {
+        "operationId": "start_recovery",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecoveryStartRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/recovery/complete": {
+      "post": {
+        "operationId": "complete_recovery",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecoveryCompleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "register",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/api/v1/auth/session": {
       "get": {
         "operationId": "current_session",
@@ -311,6 +770,94 @@
             "description": ""
           },
           "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/sessions": {
+      "get": {
+        "operationId": "list_sessions",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SessionSummaryResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/sessions/{session_id}": {
+      "delete": {
+        "operationId": "revoke_session",
+        "parameters": [
+          {
+            "description": "Session ID",
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
             "content": {
               "application/json": {
                 "schema": {
