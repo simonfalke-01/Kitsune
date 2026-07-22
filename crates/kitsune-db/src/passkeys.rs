@@ -913,7 +913,12 @@ mod tests {
         .await
         .expect("stored credential");
         assert_eq!(stored.sign_count, 7);
-        assert_eq!(stored.revoked_at, Some(now));
+        assert_eq!(
+            stored
+                .revoked_at
+                .map(|timestamp| timestamp.timestamp_micros()),
+            Some(now.timestamp_micros())
+        );
         let actions = sqlx::query_scalar!(
             r#"
             SELECT action
