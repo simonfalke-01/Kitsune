@@ -93,6 +93,8 @@ pub enum DomainEvent {
         identity_hint: String,
         method: String,
     },
+    /// Programmatic API credential lifecycle changed.
+    ApiTokenChanged { token_id: Uuid, state: String },
     /// Event lifecycle or configuration changed.
     EventChanged { event_id: EventId },
     /// Team created.
@@ -181,6 +183,7 @@ impl DomainEvent {
             Self::UserCreated { .. } => "identity.user.created",
             Self::AuthenticationSucceeded { .. } => "auth.succeeded",
             Self::AuthenticationFailed { .. } => "auth.failed",
+            Self::ApiTokenChanged { .. } => "auth.api_token.changed",
             Self::EventChanged { .. } => "event.changed",
             Self::TeamCreated { .. } => "identity.team.created",
             Self::TeamMembershipChanged { .. } => "identity.team.membership_changed",

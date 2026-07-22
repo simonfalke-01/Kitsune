@@ -184,7 +184,7 @@
 
   .primary-link {
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
   }
   .secondary-link {
     border: 1px solid var(--line-strong);

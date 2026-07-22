@@ -64,7 +64,7 @@
 
   .primary {
     background: var(--accent);
-    color: white;
+    color: var(--on-accent);
   }
 
   .primary:hover:not(:disabled) {

@@ -10,6 +10,7 @@ pub mod engagement;
 pub mod resources;
 pub mod submissions;
 pub mod teams;
+pub mod tokens;
 
 use async_trait::async_trait;
 use chrono::Utc;

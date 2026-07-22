@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE api_tokens SET last_used_at = $2::timestamptz\n            WHERE id = $1\n              AND (\n                  last_used_at IS NULL\n                  OR last_used_at < $2::timestamptz - interval '5 minutes'\n              )\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "131bad8c0468da4114c28f6a1d89a36236289e1b3e0cf5405279387b30ffc9fd"
+}

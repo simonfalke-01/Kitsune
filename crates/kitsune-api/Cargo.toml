@@ -19,6 +19,7 @@ hex.workspace = true
 kitsune-automation = { path = "../kitsune-automation" }
 kitsune-core = { path = "../kitsune-core" }
 kitsune-db = { path = "../kitsune-db" }
+pasetors.workspace = true
 rand.workspace = true
 secrecy.workspace = true
 serde.workspace = true

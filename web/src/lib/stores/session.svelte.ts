@@ -13,6 +13,7 @@ class SessionStore {
   loading = $state(true);
   error = $state<string | null>(null);
   errorCode = $state<string | null>(null);
+  private bootstrapRequest: Promise<void> | null = null;
 
   get authenticated(): boolean {
     return this.current !== null;
@@ -22,8 +23,17 @@ class SessionStore {
     return this.current?.permissions.includes(permission) ?? false;
   }
 
-  async bootstrap(): Promise<void> {
-    if (!browser) return;
+  bootstrap(): Promise<void> {
+    if (!browser) return Promise.resolve();
+    if (!this.bootstrapRequest) {
+      this.bootstrapRequest = this.restore().finally(() => {
+        this.bootstrapRequest = null;
+      });
+    }
+    return this.bootstrapRequest;
+  }
+
+  private async restore(): Promise<void> {
     this.loading = true;
     const { data, error, response } = await api.GET('/api/v1/auth/session');
     if (data) {

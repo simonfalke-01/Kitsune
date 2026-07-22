@@ -180,6 +180,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_api_tokens"];
+        put?: never;
+        post: operations["create_api_token"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/tokens/{token_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["revoke_api_token"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events": {
         parameters: {
             query?: never;
@@ -558,6 +590,40 @@ export interface components {
             /** @enum {string} */
             kind: "manual";
         };
+        /** @description Safe persisted API-token metadata. */
+        ApiTokenResponse: {
+            /**
+             * Format: date-time
+             * @description Creation time.
+             */
+            created_at: string;
+            /** @description Optional event allow-list. */
+            event_ids: string[];
+            /**
+             * Format: date-time
+             * @description Mandatory expiry.
+             */
+            expires_at: string;
+            /**
+             * Format: uuid
+             * @description Token ID.
+             */
+            id: string;
+            /**
+             * Format: date-time
+             * @description Coarsely updated last-use time.
+             */
+            last_used_at?: string | null;
+            /** @description Human-readable token name. */
+            name: string;
+            /**
+             * Format: date-time
+             * @description Revocation time.
+             */
+            revoked_at?: string | null;
+            /** @description Effective requested scope ceiling. */
+            scopes: string[];
+        };
         /** @description Challenge behavior input. */
         ChallengeKindInput: {
             /** @enum {string} */
@@ -636,6 +702,20 @@ export interface components {
          * @enum {string}
          */
         ChallengeStateInput: "draft" | "testing" | "scheduled" | "published" | "hidden" | "archived";
+        /** @description New API-token request. The cleartext token is returned exactly once. */
+        CreateApiTokenRequest: {
+            /** @description Optional event allow-list. An empty list is organization-wide. */
+            event_ids?: string[];
+            /**
+             * Format: int32
+             * @description Lifetime in days; defaults to 30 and cannot exceed 365.
+             */
+            expires_in_days?: number | null;
+            /** @description Human-readable token name. */
+            name: string;
+            /** @description Fine-grained permission keys, each bounded by the caller's live RBAC. */
+            scopes: string[];
+        };
         /** @description New challenge aggregate. */
         CreateChallengeRequest: {
             /** @description Accepted rules. */
@@ -714,6 +794,11 @@ export interface components {
             invite_code: string;
             /** @description Created team. */
             team: components["schemas"]["TeamResponse"];
+        };
+        /** @description One-time API-token creation response. */
+        CreatedApiTokenResponse: components["schemas"]["ApiTokenResponse"] & {
+            /** @description PASETO v4.local bearer value, shown exactly once. */
+            token: string;
         };
         /** @description Machine-readable error response. */
         ErrorBody: {
@@ -1763,6 +1848,124 @@ export interface operations {
             path: {
                 /** @description Session ID */
                 session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_api_tokens: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiTokenResponse"][];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    create_api_token: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateApiTokenRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedApiTokenResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    revoke_api_token: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Token ID */
+                token_id: string;
             };
             cookie?: never;
         };

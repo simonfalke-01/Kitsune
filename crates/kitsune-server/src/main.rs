@@ -5,7 +5,7 @@ use std::{net::SocketAddr, path::PathBuf, sync::Arc};
 use anyhow::{Context, Result};
 use axum_extra::extract::cookie::Key;
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
-use kitsune_api::{AppState, AuthService};
+use kitsune_api::{AppState, AuthService, TokenService};
 use kitsune_automation::{InProcessCache, InProcessEventBus};
 use kitsune_core::config::{FeatureFlags, RuntimeProfile};
 use kitsune_db::{PostgresStore, auth::AuthRepository};
@@ -107,10 +107,13 @@ async fn main() -> Result<()> {
     let auth_repository = AuthRepository::new(store.pool().clone());
     let auth =
         AuthService::from_master_key(cookie_key.master()).context("authentication service")?;
+    let tokens =
+        TokenService::from_master_key(cookie_key.master()).context("programmatic token service")?;
     let state = AppState::new(
         store,
         auth_repository,
         auth,
+        tokens,
         cache,
         event_bus,
         cookie_key,

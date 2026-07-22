@@ -226,4 +226,31 @@ test('organizer authors a published challenge visible on the player board', asyn
   }
   await expect(page.locator('.members').getByText('E2E Owner', { exact: true })).toBeVisible();
   await expect(page.getByText('Captain', { exact: true })).toBeVisible();
+
+  const tokenName = `Challenge reader ${testInfo.project.name} ${run}`;
+  await page.goto('/account/security');
+  await expect(page.getByRole('heading', { name: 'Guard your trail.' })).toBeVisible();
+  await page.getByLabel('Token name').fill(tokenName);
+  await page.getByRole('checkbox', { name: 'challenge read', exact: true }).check();
+  await page.getByRole('checkbox', { name: eventName, exact: true }).check();
+  const tokenCreated = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && response.url().endsWith('/api/v1/auth/tokens')
+  );
+  await page.getByRole('button', { name: 'Create API token' }).click();
+  expect((await tokenCreated).status()).toBe(201);
+  await expect(page.getByLabel('New API token')).toHaveValue(/v4\.local\./);
+  const tokenCard = page.locator('.tokens article').filter({ hasText: tokenName });
+  await expect(tokenCard.getByText('Active', { exact: true })).toBeVisible();
+
+  const securityAccessibility = await new AxeBuilder({ page }).analyze();
+  expect(securityAccessibility.violations).toEqual([]);
+
+  const tokenRevoked = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'DELETE' && response.url().includes('/api/v1/auth/tokens/')
+  );
+  await tokenCard.getByRole('button', { name: `Revoke ${tokenName}` }).click();
+  expect((await tokenRevoked).status()).toBe(204);
+  await expect(tokenCard.getByText('Revoked', { exact: true })).toBeVisible();
 });

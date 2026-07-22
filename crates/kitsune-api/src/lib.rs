@@ -7,6 +7,7 @@ mod realtime;
 mod resources;
 mod submissions;
 mod teams;
+mod tokens;
 
 use std::{sync::Arc, time::Instant};
 
@@ -33,6 +34,7 @@ use utoipa_swagger_ui::SwaggerUi;
 
 pub use auth::{Actor, AuthService, SessionIdentity};
 pub use error::{ApiError, ApiResult, ErrorBody};
+pub use tokens::TokenService;
 
 /// Shared application dependencies. Trait objects keep scaled adapters
 /// swappable without changing route code.
@@ -44,6 +46,8 @@ pub struct AppState {
     pub auth_repository: AuthRepository,
     /// Password/session service.
     pub auth: AuthService,
+    /// PASETO v4.local programmatic-token service.
+    pub tokens: tokens::TokenService,
     /// Rate-limit and ephemeral state adapter.
     pub cache: Arc<dyn Cache>,
     /// Typed realtime backbone.
@@ -62,6 +66,7 @@ impl AppState {
         db: PostgresStore,
         auth_repository: AuthRepository,
         auth: AuthService,
+        tokens: tokens::TokenService,
         cache: Arc<dyn Cache>,
         event_bus: Arc<dyn EventBus>,
         cookie_key: Key,
@@ -71,6 +76,7 @@ impl AppState {
             db,
             auth_repository,
             auth,
+            tokens,
             cache,
             event_bus,
             cookie_key,
@@ -130,6 +136,9 @@ pub struct ReadinessResponse {
         auth::confirm_totp,
         auth::list_sessions,
         auth::revoke_session,
+        tokens::list_api_tokens,
+        tokens::create_api_token,
+        tokens::revoke_api_token,
         resources::list_events,
         resources::create_event,
         resources::update_event_state,
@@ -211,7 +220,10 @@ pub struct ReadinessResponse {
         teams::JoinTeamRequest,
         teams::TransferCaptainRequest,
         auth::SessionResponse,
-        auth::UserResponse
+        auth::UserResponse,
+        tokens::CreateApiTokenRequest,
+        tokens::ApiTokenResponse,
+        tokens::CreatedApiTokenResponse
     )),
     tags(
         (name = "system", description = "Health and diagnostics"),
@@ -287,6 +299,14 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/auth/sessions/{session_id}",
             axum::routing::delete(auth::revoke_session),
+        )
+        .route(
+            "/api/v1/auth/tokens",
+            get(tokens::list_api_tokens).post(tokens::create_api_token),
+        )
+        .route(
+            "/api/v1/auth/tokens/{token_id}",
+            axum::routing::delete(tokens::revoke_api_token),
         )
         .route(
             "/api/v1/events",
@@ -433,6 +453,7 @@ mod tests {
             store,
             AuthRepository::new(pool),
             AuthService::new().expect("auth"),
+            TokenService::from_master_key(&[9_u8; 64]).expect("tokens"),
             Arc::new(InProcessCache::new(1_000).expect("cache")),
             Arc::new(InProcessEventBus::new(128).expect("bus")),
             Key::generate(),
@@ -526,6 +547,195 @@ mod tests {
             .expect("request");
         let response = app.oneshot(revoked).await.expect("revoked response");
         assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+    }
+
+    #[sqlx::test(migrator = "MIGRATOR")]
+    async fn api_tokens_are_digest_only_scoped_and_revocable(pool: PgPool) {
+        let app = router(test_state(pool.clone()));
+        let setup = Request::builder()
+            .method("POST")
+            .uri("/api/v1/setup")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "organization_name": "Token Shrine",
+                    "organization_slug": "token-shrine",
+                    "display_name": "Token Keeper",
+                    "email": "keeper@example.test",
+                    "password": "correct horse foxfire battery"
+                })
+                .to_string(),
+            ))
+            .expect("setup request");
+        let response = app.clone().oneshot(setup).await.expect("setup response");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let cookies = response_cookies(response.headers());
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("setup body")
+            .to_bytes();
+        let session: serde_json::Value = serde_json::from_slice(&body).expect("session JSON");
+        let csrf = session["csrf_token"].as_str().expect("CSRF token");
+
+        let create_event = Request::builder()
+            .method("POST")
+            .uri("/api/v1/events")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &cookies)
+            .header("x-csrf-token", csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "name": "Scoped Token Trials",
+                    "slug": "scoped-token-trials",
+                    "description": "An event used to prove API token boundaries.",
+                    "state": "draft",
+                    "participation": "individual",
+                    "modes": ["jeopardy"],
+                    "starts_at": null,
+                    "ends_at": null,
+                    "team_size_limit": null
+                })
+                .to_string(),
+            ))
+            .expect("event request");
+        let response = app
+            .clone()
+            .oneshot(create_event)
+            .await
+            .expect("event response");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("event body")
+            .to_bytes();
+        let event: serde_json::Value = serde_json::from_slice(&body).expect("event JSON");
+        let event_id = event["id"].as_str().expect("event ID");
+
+        let create_token = Request::builder()
+            .method("POST")
+            .uri("/api/v1/auth/tokens")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &cookies)
+            .header("x-csrf-token", csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "name": "Challenge reader",
+                    "scopes": ["challenge_read"],
+                    "event_ids": [event_id],
+                    "expires_in_days": 7
+                })
+                .to_string(),
+            ))
+            .expect("token request");
+        let response = app
+            .clone()
+            .oneshot(create_token)
+            .await
+            .expect("token response");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("token body")
+            .to_bytes();
+        let created: serde_json::Value = serde_json::from_slice(&body).expect("token JSON");
+        let token_id = created["id"].as_str().expect("token ID");
+        let token = created["token"].as_str().expect("token value");
+        assert!(token.starts_with("v4.local."));
+        assert_eq!(created["scopes"], serde_json::json!(["challenge_read"]));
+        assert_eq!(created["event_ids"], serde_json::json!([event_id]));
+
+        let stored_digest = sqlx::query_scalar!(
+            "SELECT token_digest FROM api_tokens WHERE id = $1",
+            Uuid::parse_str(token_id).expect("token UUID"),
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("stored token digest");
+        assert_eq!(stored_digest, Sha256::digest(token.as_bytes()).as_slice());
+        assert_ne!(stored_digest, token.as_bytes());
+
+        let authorized = Request::builder()
+            .uri(format!("/api/v1/events/{event_id}/challenges"))
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .body(Body::empty())
+            .expect("authorized request");
+        let response = app
+            .clone()
+            .oneshot(authorized)
+            .await
+            .expect("authorized response");
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let outside_event_resource = Request::builder()
+            .uri("/api/v1/events")
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .body(Body::empty())
+            .expect("organization request");
+        let response = app
+            .clone()
+            .oneshot(outside_event_resource)
+            .await
+            .expect("organization response");
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+
+        let outside_permission = Request::builder()
+            .uri(format!("/api/v1/events/{event_id}/scoreboard"))
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .body(Body::empty())
+            .expect("scoreboard request");
+        let response = app
+            .clone()
+            .oneshot(outside_permission)
+            .await
+            .expect("scoreboard response");
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+
+        let revoke = Request::builder()
+            .method("DELETE")
+            .uri(format!("/api/v1/auth/tokens/{token_id}"))
+            .header(header::COOKIE, &cookies)
+            .header("x-csrf-token", csrf)
+            .body(Body::empty())
+            .expect("revoke request");
+        let response = app.clone().oneshot(revoke).await.expect("revoke response");
+        assert_eq!(response.status(), StatusCode::NO_CONTENT);
+
+        let revoked = Request::builder()
+            .uri(format!("/api/v1/events/{event_id}/challenges"))
+            .header(header::AUTHORIZATION, format!("Bearer {token}"))
+            .body(Body::empty())
+            .expect("revoked request");
+        let response = app.oneshot(revoked).await.expect("revoked response");
+        assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+
+        let token_audit_count = sqlx::query_scalar!(
+            r#"
+            SELECT count(*) AS "count!"
+            FROM audit_log
+            WHERE resource_type = 'api_token'
+            "#,
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("token audit count");
+        let token_event_count = sqlx::query_scalar!(
+            r#"
+            SELECT count(*) AS "count!"
+            FROM event_outbox
+            WHERE kind = 'auth.api_token.changed'
+            "#,
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("token outbox count");
+        assert_eq!(token_audit_count, 2);
+        assert_eq!(token_event_count, 2);
     }
 
     #[sqlx::test(migrator = "MIGRATOR")]

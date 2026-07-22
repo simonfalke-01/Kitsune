@@ -97,7 +97,7 @@
     padding: 0.6rem;
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
-    color: white;
+    color: var(--on-accent);
     font-size: 0.68rem;
     font-weight: 700;
   }
@@ -113,6 +113,7 @@
   }
   .muted-token {
     background: var(--ink-secondary);
+    color: var(--canvas);
   }
   @media (max-width: 700px) {
     .catalog {

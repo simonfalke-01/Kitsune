@@ -55,7 +55,10 @@ or scaffolding alone.
 - [x] TOTP setup, encrypted secret storage, replay protection, recovery codes,
   MFA login challenge, and account security UI.
 - [ ] OIDC/OAuth2, passkeys/WebAuthn, and SAML.
-- [ ] PASETO API tokens and OAuth2 client credentials.
+- [x] PASETO v4.local API tokens with digest-only persistence, mandatory expiry,
+  live-RBAC/event scoping, revocation, audit/outbox, OpenAPI, UI, and browser
+  coverage.
+- [ ] OAuth2 client credentials.
 - [ ] Deny-by-default RBAC extractor on every protected endpoint.
 - [x] Deny-by-default actor extraction plus permission/CSRF enforcement on the
   event and challenge resource endpoints.

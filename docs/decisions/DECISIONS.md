@@ -140,3 +140,20 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Bound score-history responses to five leading competitors by
   default with an operator-selectable maximum of twenty — graphs stay useful
   and predictable without transferring every ledger entry for large events.
+- 2026-07-22 — Issue programmatic credentials as encrypted PASETO v4.local
+  tokens from a domain-separated installation key — lean mode needs no new
+  secret while cookie and API-token cryptographic purposes remain isolated.
+- 2026-07-22 — Return each API token value exactly once and persist only its
+  SHA-256 digest with mandatory expiry — high-entropy bearer credentials remain
+  immediately revocable without recoverable cleartext in PostgreSQL.
+- 2026-07-22 — Intersect token scopes with the owner’s live RBAC permissions on
+  every request — role removal takes effect immediately instead of surviving
+  until token expiry, while the authored scope remains a permanent ceiling.
+- 2026-07-22 — Deny event-scoped tokens on routes without an explicit event ID
+  — ambiguous organization-wide access must not silently escape an allow-list.
+- 2026-07-22 — Coalesce browser session restoration behind one in-flight
+  request — nested protected pages can await authentication without racing the
+  root layout or redirecting a valid hard-navigation session to sign-in.
+- 2026-07-22 — Use a dedicated dark foreground token on bright fox-orange
+  controls — Kitsune keeps its accent identity while meeting AA contrast in
+  both themes and all interaction states.

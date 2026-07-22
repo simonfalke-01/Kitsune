@@ -9,15 +9,16 @@ Updated: 2026-07-22 (Asia/Singapore)
   then complete the remaining dynamic/plugin Jeopardy verifier seams.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
-- Next: ship writeup submission/review, surveys, and manual-answer review, then
-  implement OIDC, passkeys, SAML, and programmatic tokens.
+- Next: implement OAuth2 client credentials, OIDC, passkeys, and SAML, then
+  complete the remaining dynamic/plugin Jeopardy verifier seams.
 
 ## Verified
 
 - `PROMPT.md` read and treated as the source specification.
 - CTFd reference inspected only for externally visible features and schema
   concepts; no source or assets copied.
-- Local toolchain: Rust 1.93.1, Node 24.13.0, Corepack 0.34.5, Docker 29.4.0.
+- Local toolchain: Rust 1.93.1 default plus Rust 1.97.0 CI-parity
+  validation, Node 24.13.0, Corepack 0.34.5, Docker 29.4.0.
 - Core workspace format, 13 domain tests, and strict workspace Clippy pass.
 - PostgreSQL 17 migration applies from empty state; SQLx compile-time query
   metadata is checked in; transactional audit/outbox/idempotency test passes.
@@ -38,7 +39,7 @@ Updated: 2026-07-22 (Asia/Singapore)
 - Tenant-scoped event and challenge create/list APIs now enforce explicit RBAC
   and CSRF, hash exact answers before persistence, filter player visibility by
   lifecycle/time/division/prerequisites, and atomically emit audit/outbox rows.
-  Eight API tests, strict Clippy, SQLx offline compilation, and the regenerated
+  Ten API tests, strict Clippy, SQLx offline compilation, and the regenerated
   OpenAPI/TypeScript contract are green.
 - Repository-wide Rustfmt, Prettier, and EditorConfig policy is executable from
   the root; dense pre-existing Svelte markup was expanded and all format checks
@@ -102,6 +103,15 @@ Updated: 2026-07-22 (Asia/Singapore)
   Playwright journey against a prebuilt server, and grants the RustSec action
   only check-write permission. The lockfile-only SQLx/MySQL RSA advisory is
   documented and absent from every all-feature Kitsune dependency graph.
+- Scoped PASETO v4.local API tokens now use a domain-separated installation key,
+  digest-only persistence, mandatory expiry, coarse last-use telemetry, event
+  allow-lists, live-RBAC intersection, immediate revocation, and atomic audit/
+  outbox events. The generated client drives a full account-security manager
+  with one-time reveal, permission/event selection, history, and revocation.
+  PostgreSQL-backed API tests plus desktop/mobile Playwright and axe verify the
+  credential boundary end to end.
+- Main CI run 29918383516 is green across Rust, Web, dependency audit, and real
+  Browser E2E after reproducing and removing the setup-navigation race locally.
 
 ## Risks being actively retired
 

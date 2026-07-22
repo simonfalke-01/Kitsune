@@ -27,7 +27,10 @@ use kitsune_core::{
     identity::{OrganizationId, UserId},
     ports::EventBus,
 };
-use kitsune_db::auth::{AuthRepository, LocalAccount, SessionAccount};
+use kitsune_db::{
+    auth::{AuthRepository, LocalAccount, SessionAccount},
+    tokens::ApiTokenRepository,
+};
 use rand::Rng as _;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -288,7 +291,7 @@ pub struct SessionResponse {
 pub struct SessionIdentity {
     /// Account/session projection.
     pub account: SessionAccount,
-    csrf_digest: Vec<u8>,
+    csrf_digest: Option<Vec<u8>>,
 }
 
 /// Deny-by-default authenticated actor extractor for protected resources.
@@ -327,6 +330,17 @@ impl FromRequestParts<AppState> for Actor {
         parts: &mut Parts,
         state: &AppState,
     ) -> Result<Self, Self::Rejection> {
+        if let Some(authorization) = parts.headers.get(axum::http::header::AUTHORIZATION) {
+            let authorization = authorization
+                .to_str()
+                .map_err(|_| ApiError::unauthorized())?;
+            let token = authorization
+                .strip_prefix("Bearer ")
+                .filter(|token| !token.is_empty())
+                .ok_or_else(ApiError::unauthorized)?
+                .to_owned();
+            return Self::from_bearer(parts.uri.path(), state, &token).await;
+        }
         let jar = PrivateCookieJar::from_request_parts(parts, state)
             .await
             .map_err(|_| ApiError::unauthorized())?;
@@ -349,6 +363,57 @@ impl FromRequestParts<AppState> for Actor {
     }
 }
 
+impl Actor {
+    async fn from_bearer(path: &str, state: &AppState, token: &str) -> ApiResult<Self> {
+        let now = Utc::now();
+        let claims = state
+            .tokens
+            .parse(token, now)
+            .map_err(|_| ApiError::unauthorized())?;
+        let token_digest = Sha256::digest(token.as_bytes());
+        let principal = ApiTokenRepository::new(state.db.pool().clone())
+            .authenticate(token_digest.as_slice(), now)
+            .await
+            .map_err(ApiError::from)?
+            .ok_or_else(ApiError::unauthorized)?;
+        if claims.token_id != principal.token_id
+            || claims.user_id != principal.user_id.0
+            || claims.organization_id != principal.organization_id.0
+            || claims.expires_at != principal.expires_at.timestamp()
+        {
+            return Err(ApiError::unauthorized());
+        }
+        enforce_token_event_scope(path, &principal.event_ids)?;
+        let granted = state
+            .auth_repository
+            .permission_keys(principal.user_id, principal.organization_id, None)
+            .await
+            .map_err(ApiError::from)?
+            .into_iter()
+            .collect::<std::collections::HashSet<_>>();
+        let permissions = principal
+            .scopes
+            .into_iter()
+            .filter(|scope| granted.contains(scope))
+            .collect();
+        Ok(Self {
+            session: SessionIdentity {
+                account: SessionAccount {
+                    session_id: principal.token_id,
+                    user_id: principal.user_id,
+                    organization_id: principal.organization_id,
+                    display_name: principal.display_name,
+                    email: principal.email,
+                    email_verified: principal.email_verified,
+                    expires_at: principal.expires_at,
+                },
+                csrf_digest: None,
+            },
+            permissions,
+        })
+    }
+}
+
 impl SessionIdentity {
     /// Requires a valid encrypted session cookie.
     pub async fn require(repository: &AuthRepository, jar: &PrivateCookieJar) -> ApiResult<Self> {
@@ -363,23 +428,49 @@ impl SessionIdentity {
             .map_err(ApiError::from)?
             .map(|(account, csrf_digest)| Self {
                 account,
-                csrf_digest,
+                csrf_digest: Some(csrf_digest),
             })
             .ok_or_else(ApiError::unauthorized)
     }
 
     /// Verifies the header token against the server-side digest in constant time.
     pub fn require_csrf(&self, headers: &HeaderMap) -> ApiResult<()> {
+        let Some(expected_digest) = self.csrf_digest.as_deref() else {
+            return Ok(());
+        };
         let submitted = headers
             .get("x-csrf-token")
             .and_then(|value| value.to_str().ok())
             .ok_or_else(ApiError::csrf)?;
         let digest = Sha256::digest(submitted.as_bytes());
-        if self.csrf_digest.ct_eq(digest.as_slice()).into() {
+        if expected_digest.ct_eq(digest.as_slice()).into() {
             Ok(())
         } else {
             Err(ApiError::csrf())
         }
+    }
+}
+
+fn enforce_token_event_scope(path: &str, event_ids: &[Uuid]) -> ApiResult<()> {
+    if event_ids.is_empty() {
+        return Ok(());
+    }
+    let mut segments = path.split('/');
+    let requested_event = segments
+        .by_ref()
+        .zip(path.split('/').skip(1))
+        .find_map(|(segment, next)| {
+            if segment == "events" {
+                Uuid::parse_str(next).ok()
+            } else {
+                None
+            }
+        })
+        .ok_or_else(|| ApiError::from(DomainError::Forbidden))?;
+    if event_ids.contains(&requested_event) {
+        Ok(())
+    } else {
+        Err(ApiError::from(DomainError::Forbidden))
     }
 }
 
