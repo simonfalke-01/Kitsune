@@ -20,18 +20,28 @@ async function authenticate(page: Page): Promise<void> {
     await page.getByLabel('Organization').fill(OWNER.organization);
     await page.getByLabel('Email').fill(OWNER.email);
     await page.getByLabel('Password').fill(OWNER.password);
+    const authenticated = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' && response.url().endsWith('/api/v1/auth/login')
+    );
     await page.getByRole('button', { name: 'Sign in' }).click();
+    expect((await authenticated).ok()).toBe(true);
   } else {
     await page.getByLabel('Organization name').fill('E2E Shrine');
     await page.getByLabel('Organization key').fill(OWNER.organization);
     await page.getByLabel('Your name').fill('E2E Owner');
     await page.getByLabel('Email').fill(OWNER.email);
     await page.getByLabel('Password').fill(OWNER.password);
+    const authenticated = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' && response.url().endsWith('/api/v1/setup')
+    );
     await page.getByRole('button', { name: 'Create Kitsune' }).click();
+    expect((await authenticated).ok()).toBe(true);
   }
-  await expect(page).not.toHaveURL(/\/login$/);
   await page.goto('/admin');
   await expect(page).toHaveURL(/\/admin$/);
+  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
 }
 
 function projectKey(testInfo: TestInfo): string {
