@@ -6,8 +6,8 @@
 - [x] Inspect the CTFd feature/schema surface without copying implementation.
 - [x] Create plan, architecture, milestones, state, todo, and decisions ledgers.
 - [x] Draft KCL-1.0, CLA, NOTICE, and package license policy.
-- [ ] Complete and cross-check CTFd feature-parity matrix.
-- [ ] Scaffold all Cargo crates and pnpm workspaces.
+- [x] Complete and cross-check CTFd feature-parity matrix.
+- [x] Scaffold all Cargo crates and pnpm workspaces.
 - [ ] Add baseline CI and supply-chain policy.
 - [ ] Run format, metadata, compile, lint, and base tests green.
 
@@ -17,3 +17,17 @@ The canonical ordered exit criteria are in `MILESTONES.md`. Expand the current
 milestone here before implementation; never mark a later milestone from prose
 or scaffolding alone.
 
+## Milestone 02
+
+- [x] Strongly typed organization/event/identity/team/division/bracket model.
+- [x] Scoped RBAC permission evaluation.
+- [x] Challenge types, visibility, answer validation, prerequisite graph, hints,
+  writeup/survey schema, static/dynamic/plugin score rules.
+- [x] Append-only score replay, freeze filtering, deterministic tie break.
+- [x] Typed domain event and infrastructure port contracts.
+- [x] Jeopardy, KotH, A&D, and workshop core engines with focused tests.
+- [x] Initial PostgreSQL schema for all specified subsystems applies cleanly.
+- [x] Compile-time checked SQLx transaction/outbox/audit/idempotency store.
+- [ ] Feature repositories and mode-state optimistic concurrency.
+- [ ] In-process cache and EventBus; NATS/Redis scaled adapters.
+- [ ] Milestone-wide format, strict Clippy, unit, and integration gate.

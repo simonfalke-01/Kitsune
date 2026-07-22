@@ -27,3 +27,8 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Exclude the local CTFd reference checkout from Kitsune history —
   it is third-party audit input, not a distributable part of the proprietary
   product, and this keeps the clean-room boundary visible.
+- 2026-07-22 — Check SQLx offline metadata into `.sqlx/` — compile-time query
+  checking remains enforceable in CI without making a live database a Rust
+  compilation prerequisite.
+- 2026-07-22 — Store rotating A&D flag digests and issue HMAC-authenticated
+  opaque values — plaintext flags never enter logs or general event payloads.

@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO event_deliveries (event_id, consumer, delivered_at)\n            VALUES ($1,$2,$3)\n            ON CONFLICT (event_id, consumer) DO NOTHING\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "18027ee6491bcd53c23ee7fdeed51ab51feab605bd66b8aa13d0b8be62c2a58a"
+}
