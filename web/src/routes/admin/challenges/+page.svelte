@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Plus, Upload } from '@lucide/svelte';
+  import { Plus, Upload, X } from '@lucide/svelte';
   import Badge from '$lib/components/Badge.svelte';
   import Button from '$lib/components/Button.svelte';
   import Card from '$lib/components/Card.svelte';
@@ -16,6 +16,12 @@
     | 'remote_service'
     | 'manual_verification';
 
+  interface HintDraft {
+    key: number;
+    content: string;
+    cost: number;
+  }
+
   let loaded = $state(false);
   let showComposer = $state(false);
   let title = $state('');
@@ -27,6 +33,8 @@
   let details = $state('');
   let points = $state(500);
   let lifecycle = $state<'draft' | 'testing' | 'published'>('draft');
+  let hints = $state<HintDraft[]>([]);
+  let nextHintKey = 1;
 
   $effect(() => {
     if (session.authenticated && !loaded) {
@@ -83,7 +91,11 @@
       writeups_enabled: true,
       position: events.challenges.length,
       answers: answerRules(),
-      hints: [],
+      hints: hints.map((hint, index) => ({
+        id: index + 1,
+        content: hint.content,
+        cost: hint.cost
+      })),
       survey: []
     });
     if (!created) return;
@@ -92,7 +104,17 @@
     description = '';
     answer = '';
     details = '';
+    hints = [];
     lifecycle = 'draft';
+  }
+
+  function addHint(): void {
+    hints = [...hints, { key: nextHintKey, content: '', cost: 0 }];
+    nextHintKey += 1;
+  }
+
+  function removeHint(key: number): void {
+    hints = hints.filter((hint) => hint.key !== key);
   }
 
   function detailsLabel(): string {
@@ -212,12 +234,44 @@
           </label>
           {#if challengeType !== 'manual_verification' && challengeType !== 'dynamic_instance'}
             <label class="field wide">
-              <span
-                >{challengeType === 'multiple_choice' ? 'Correct choice' : 'Accepted answer'}</span
-              >
+              <span>
+                {challengeType === 'multiple_choice' ? 'Correct choice' : 'Accepted answer'}
+              </span>
               <input bind:value={answer} type="password" autocomplete="new-password" required />
             </label>
           {/if}
+          <section class="hint-editor wide" aria-labelledby="hint-editor-title">
+            <div class="hint-heading">
+              <div>
+                <h3 id="hint-editor-title">Hints</h3>
+                <small>Content stays sealed until a competitor pays its one-time cost.</small>
+              </div>
+              <Button variant="secondary" onclick={addHint}>
+                <Plus size={14} />
+                Add hint
+              </Button>
+            </div>
+            {#each hints as hint, index (hint.key)}
+              <div class="hint-row">
+                <label class="field">
+                  <span>Hint {index + 1}</span>
+                  <textarea bind:value={hint.content} rows="3" required></textarea>
+                </label>
+                <label class="field">
+                  <span>Point cost</span>
+                  <input bind:value={hint.cost} type="number" min="0" required />
+                </label>
+                <Button
+                  variant="quiet"
+                  ariaLabel={`Remove hint ${index + 1}`}
+                  onclick={() => removeHint(hint.key)}
+                >
+                  <X size={15} />
+                  Remove
+                </Button>
+              </div>
+            {/each}
+          </section>
         </div>
         {#if events.error}
           <p class="error-text" role="alert">{events.error}</p>
@@ -320,6 +374,45 @@
     resize: vertical;
   }
 
+  .hint-editor {
+    display: grid;
+    gap: 0.8rem;
+    padding: 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+  }
+
+  .hint-heading,
+  .hint-row {
+    display: flex;
+    align-items: end;
+    gap: 0.75rem;
+  }
+
+  .hint-heading {
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .hint-heading h3 {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .hint-heading small {
+    color: var(--ink-secondary);
+    font-size: 0.72rem;
+  }
+
+  .hint-row > :first-child {
+    flex: 1;
+  }
+
+  .hint-row > :nth-child(2) {
+    width: 8rem;
+  }
+
   .form-actions {
     justify-content: end;
     margin-top: 1.2rem;
@@ -358,6 +451,16 @@
     .actions {
       width: 100%;
       flex-wrap: wrap;
+    }
+
+    .hint-heading,
+    .hint-row {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .hint-row > :nth-child(2) {
+      width: 100%;
     }
   }
 </style>

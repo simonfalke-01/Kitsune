@@ -212,6 +212,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/{event_id}/challenges/{challenge_id}/hints": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_hints"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/challenges/{challenge_id}/hints/{hint_id}/unlock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["unlock_hint"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{event_id}/challenges/{challenge_id}/submissions": {
         parameters: {
             query?: never;
@@ -632,6 +664,35 @@ export interface components {
              * @description Stable positive key.
              */
             id: number;
+        };
+        /** @description Player-safe hint state. */
+        HintResponse: {
+            /** @description Content, present only after unlock. */
+            content?: string | null;
+            /**
+             * Format: int64
+             * @description One-time score cost.
+             */
+            cost: number;
+            /**
+             * Format: int32
+             * @description Challenge-local identifier.
+             */
+            id: number;
+            /** @description Current competitor unlock state. */
+            unlocked: boolean;
+        };
+        /** @description Idempotent hint unlock receipt. */
+        HintUnlockResponse: {
+            /**
+             * Format: int64
+             * @description Score points charged by this request.
+             */
+            charged: number;
+            /** @description Revealed hint. */
+            hint: components["schemas"]["HintResponse"];
+            /** @description True when no second charge was applied. */
+            replayed: boolean;
         };
         /** @description Join-code input. */
         JoinTeamRequest: {
@@ -1585,6 +1646,120 @@ export interface operations {
                 };
             };
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_hints: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+                /** @description Challenge ID */
+                challenge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HintResponse"][];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    unlock_hint: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+                /** @description Challenge ID */
+                challenge_id: string;
+                /** @description Hint ID */
+                hint_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HintUnlockResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

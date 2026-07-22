@@ -74,6 +74,9 @@ or scaffolding alone.
 - [x] Ranked REST/web scoreboard with division filter, realtime refresh,
   audited freeze/unfreeze and hide/reveal controls, and frozen-ledger visibility
   regression coverage.
+- [x] Multi-hint organizer authoring, sealed player projections, idempotent
+  user/team unlocks, one-time score deductions, freeze-aware ledger entries,
+  audit/outbox/realtime events, and browser coverage.
 - [ ] Dynamic-instance and plugin answer verifiers, manual-review organizer
   queue, scoreboard graphs, cache batching, and competitor profile links.
 - [ ] Complete versioned REST resources and OpenAPI contracts.

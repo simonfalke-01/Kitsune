@@ -137,6 +137,8 @@ pub struct ReadinessResponse {
         resources::create_challenge,
         submissions::submit_answer,
         submissions::scoreboard,
+        submissions::list_hints,
+        submissions::unlock_hint,
         teams::list_teams,
         teams::create_team,
         teams::join_team,
@@ -177,6 +179,8 @@ pub struct ReadinessResponse {
         submissions::SubmissionResponse,
         submissions::ScoreboardRowResponse,
         submissions::ScoreboardResponse,
+        submissions::HintResponse,
+        submissions::HintUnlockResponse,
         teams::TeamMemberResponse,
         teams::TeamResponse,
         teams::CreateTeamRequest,
@@ -291,6 +295,14 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/events/{event_id}/scoreboard",
             get(submissions::scoreboard),
+        )
+        .route(
+            "/api/v1/events/{event_id}/challenges/{challenge_id}/hints",
+            get(submissions::list_hints),
+        )
+        .route(
+            "/api/v1/events/{event_id}/challenges/{challenge_id}/hints/{hint_id}/unlock",
+            post(submissions::unlock_hint),
         )
         .route("/api/v1/realtime/ws", get(realtime::websocket))
         .route("/api/v1/realtime/sse", get(realtime::sse))
@@ -905,6 +917,71 @@ mod tests {
         assert_eq!(receipt["outcome"], "incorrect");
         assert_eq!(receipt["attempts_remaining"], 9);
 
+        let list_hints = Request::builder()
+            .uri(format!(
+                "/api/v1/events/{event_id}/challenges/{published_challenge_id}/hints"
+            ))
+            .header(header::COOKIE, &player_cookies)
+            .body(Body::empty())
+            .expect("request");
+        let response = app.clone().oneshot(list_hints).await.expect("list hints");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let hints: serde_json::Value = serde_json::from_slice(&body).expect("hints");
+        assert_eq!(hints[0]["cost"], 10);
+        assert_eq!(hints[0]["unlocked"], false);
+        assert_eq!(hints[0]["content"], serde_json::Value::Null);
+
+        let hint_path =
+            format!("/api/v1/events/{event_id}/challenges/{published_challenge_id}/hints/1/unlock");
+        let unlock_hint = Request::builder()
+            .method("POST")
+            .uri(&hint_path)
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::empty())
+            .expect("request");
+        let response = app.clone().oneshot(unlock_hint).await.expect("unlock hint");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let unlocked: serde_json::Value = serde_json::from_slice(&body).expect("unlocked hint");
+        assert_eq!(unlocked["hint"]["content"], "Look closely.");
+        assert_eq!(unlocked["charged"], 10);
+        assert_eq!(unlocked["replayed"], false);
+
+        let replay_hint = Request::builder()
+            .method("POST")
+            .uri(&hint_path)
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::empty())
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(replay_hint)
+            .await
+            .expect("replay hint unlock");
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let replayed_hint: serde_json::Value =
+            serde_json::from_slice(&body).expect("replayed hint");
+        assert_eq!(replayed_hint["charged"], 0);
+        assert_eq!(replayed_hint["replayed"], true);
+
         let solve_idempotency_key = Uuid::now_v7();
         let correct_body = serde_json::json!({
             "idempotency_key": solve_idempotency_key,
@@ -1001,7 +1078,7 @@ mod tests {
             .to_bytes();
         let board: serde_json::Value = serde_json::from_slice(&body).expect("scoreboard");
         assert_eq!(board["rows"][0]["name"], "Player");
-        assert_eq!(board["rows"][0]["score"], 550);
+        assert_eq!(board["rows"][0]["score"], 540);
         assert_eq!(board["rows"][0]["solves"], 1);
 
         let hide_scoreboard = Request::builder()
@@ -1088,7 +1165,7 @@ mod tests {
             .to_bytes();
         let frozen_public: serde_json::Value =
             serde_json::from_slice(&body).expect("frozen public board");
-        assert_eq!(frozen_public["rows"][0]["score"], 550);
+        assert_eq!(frozen_public["rows"][0]["score"], 540);
 
         let frozen_admin_board = Request::builder()
             .uri(format!("/api/v1/events/{event_id}/scoreboard"))
@@ -1108,7 +1185,7 @@ mod tests {
             .to_bytes();
         let frozen_admin: serde_json::Value =
             serde_json::from_slice(&body).expect("frozen admin board");
-        assert_eq!(frozen_admin["rows"][0]["score"], 650);
+        assert_eq!(frozen_admin["rows"][0]["score"], 640);
 
         let forbidden = Request::builder()
             .method("POST")
@@ -1160,8 +1237,8 @@ mod tests {
             .fetch_one(&pool)
             .await
             .expect("outbox count");
-        assert_eq!(audit_count, 14);
-        assert_eq!(outbox_count, 14);
+        assert_eq!(audit_count, 16);
+        assert_eq!(outbox_count, 16);
     }
 
     fn response_cookies(headers: &axum::http::HeaderMap) -> String {

@@ -4,14 +4,13 @@ Updated: 2026-07-22 (Asia/Singapore)
 
 ## Cursor
 
-- Current milestone: 02 — deterministic core and persistence.
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: complete the Jeopardy submission/scoreboard slice, then finish
-  the remaining provider and programmatic-token suite.
+- In progress: complete the remaining Jeopardy review/content workflows, then
+  finish the provider and programmatic-token authentication suite.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
-- Next: accept and score challenge submissions transactionally, expose the live
-  scoreboard, then implement OIDC, passkeys, SAML, and programmatic tokens.
+- Next: ship writeup submission/review, surveys, and manual-answer review, then
+  implement OIDC, passkeys, SAML, and programmatic tokens.
 
 ## Verified
 
@@ -34,7 +33,7 @@ Updated: 2026-07-22 (Asia/Singapore)
   single-use recovery codes, and account-owned session revocation pass a second
   PostgreSQL-backed API journey. Recovery delivery awaits the SMTP adapter.
 - SvelteKit production build passes strict TypeScript/Svelte diagnostics,
-  ESLint/Prettier, and 4 Vitest assertions. The generated TypeScript client is
+  ESLint/Prettier, and 9 Vitest assertions. The generated TypeScript client is
   derived from the code-generated OpenAPI 3.1 document.
 - Tenant-scoped event and challenge create/list APIs now enforce explicit RBAC
   and CSRF, hash exact answers before persistence, filter player visibility by
@@ -74,6 +73,12 @@ Updated: 2026-07-22 (Asia/Singapore)
   hide/reveal controls are API-backed, audited, and browser-tested. The full
   event → challenge → flag → first blood → scoreboard journey passes desktop,
   mobile, and axe checks.
+- Hint authoring and one-time unlock economics are now end-to-end. Locked hint
+  content never enters player responses, user/team unlock identity is resolved
+  with the same event policy as scoring, positive costs append negative score
+  entries, repeated unlocks are free idempotent reads, and teammates receive the
+  reveal through realtime refresh. API integration and both browser profiles
+  exercise the sealed-content and 10-point deduction path.
 
 ## Risks being actively retired
 

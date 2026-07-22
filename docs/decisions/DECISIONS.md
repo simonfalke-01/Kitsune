@@ -106,3 +106,9 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Extend the root Prettier contract to cross-cutting Playwright
   sources — browser tests now follow the same readable width, quote, and trailing
   comma policy as the Svelte application instead of relying on editor defaults.
+- 2026-07-22 — Charge hints as one-time negative score-ledger entries for the
+  event's resolved competitor, including team-wide unlocks — this keeps the
+  economy deterministic, historically explainable, and naturally freeze-aware.
+- 2026-07-22 — Permit a hint charge to make a score negative — organizers can
+  deliberately price information above a current balance, and silently refusing
+  an authored cost would make the stated economy misleading.

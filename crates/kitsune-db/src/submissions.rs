@@ -58,6 +58,27 @@ pub struct NewSubmission<'a> {
     pub now: DateTime<Utc>,
 }
 
+#[derive(Clone, Copy)]
+struct GameplayScope {
+    organization_id: OrganizationId,
+    event_id: EventId,
+    challenge_id: ChallengeId,
+    actor: UserId,
+    now: DateTime<Utc>,
+}
+
+impl NewSubmission<'_> {
+    const fn gameplay_scope(&self) -> GameplayScope {
+        GameplayScope {
+            organization_id: self.organization_id,
+            event_id: self.event_id,
+            challenge_id: self.challenge_id,
+            actor: self.actor,
+            now: self.now,
+        }
+    }
+}
+
 /// Repository result including fresh events that need immediate publication.
 pub struct SubmissionResult {
     /// Stable receipt.
@@ -96,6 +117,61 @@ pub struct ScoreboardRecord {
     pub rows: Vec<ScoreboardRowRecord>,
 }
 
+/// Player-safe hint state. Content is absent until the competitor unlocks it.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HintRecord {
+    /// Challenge-local hint identifier.
+    pub id: u32,
+    /// One-time score cost.
+    pub cost: i64,
+    /// Revealed content.
+    pub content: Option<String>,
+    /// Competitor unlock state.
+    pub unlocked: bool,
+}
+
+/// Hint unlock command.
+pub struct NewHintUnlock {
+    /// Organization boundary.
+    pub organization_id: OrganizationId,
+    /// Event boundary.
+    pub event_id: EventId,
+    /// Challenge target.
+    pub challenge_id: ChallengeId,
+    /// Authenticated actor.
+    pub actor: UserId,
+    /// Challenge-local hint key.
+    pub hint_id: u32,
+    /// Correlation ID for audit and events.
+    pub correlation_id: Uuid,
+    /// Timestamp.
+    pub now: DateTime<Utc>,
+}
+
+impl NewHintUnlock {
+    const fn gameplay_scope(&self) -> GameplayScope {
+        GameplayScope {
+            organization_id: self.organization_id,
+            event_id: self.event_id,
+            challenge_id: self.challenge_id,
+            actor: self.actor,
+            now: self.now,
+        }
+    }
+}
+
+/// Transactional hint unlock result.
+pub struct HintUnlockResult {
+    /// Revealed hint.
+    pub hint: HintRecord,
+    /// Positive score cost charged by this request; zero for a replay.
+    pub charged: i64,
+    /// Fresh events for immediate publication.
+    pub events: Vec<EventEnvelope>,
+    /// Whether the competitor had already unlocked this hint.
+    pub replayed: bool,
+}
+
 /// PostgreSQL submission and scoreboard repository.
 #[derive(Debug, Clone)]
 pub struct SubmissionRepository {
@@ -121,7 +197,8 @@ impl SubmissionRepository {
             });
         }
 
-        let challenge = lock_challenge(&mut tx, &command).await?;
+        let scope = command.gameplay_scope();
+        let challenge = lock_challenge(&mut tx, scope).await?;
         // A concurrent retry may have committed while this transaction waited
         // for the challenge lock. Recheck before performing any state change.
         if let Some(record) = replayed_submission(&mut tx, &command).await? {
@@ -133,9 +210,9 @@ impl SubmissionRepository {
             });
         }
         validate_event_window(&challenge, command.now)?;
-        let competitor = resolve_competitor(&mut tx, &command, &challenge).await?;
-        register_competitor(&mut tx, &command, competitor).await?;
-        validate_challenge_visibility(&mut tx, &command, competitor, &challenge).await?;
+        let competitor = resolve_competitor(&mut tx, scope, &challenge).await?;
+        register_competitor(&mut tx, scope, competitor).await?;
+        validate_challenge_visibility(&mut tx, scope, competitor, &challenge).await?;
 
         if competitor_has_solved(&mut tx, command.challenge_id, competitor).await? {
             return Err(DomainError::Conflict("challenge is already solved".into()));
@@ -281,6 +358,180 @@ impl SubmissionRepository {
             rows,
         })
     }
+
+    /// Lists hints without disclosing locked content.
+    pub async fn hints(
+        &self,
+        organization_id: OrganizationId,
+        event_id: EventId,
+        challenge_id: ChallengeId,
+        actor: UserId,
+        now: DateTime<Utc>,
+    ) -> DomainResult<Vec<HintRecord>> {
+        let mut tx = self.pool.begin().await.map_err(unavailable)?;
+        let scope = GameplayScope {
+            organization_id,
+            event_id,
+            challenge_id,
+            actor,
+            now,
+        };
+        let challenge = read_challenge(&mut tx, scope).await?;
+        let competitor = resolve_competitor(&mut tx, scope, &challenge).await?;
+        validate_challenge_visibility(&mut tx, scope, competitor, &challenge).await?;
+        let rows = hint_records(&mut tx, challenge_id, competitor).await?;
+        tx.rollback().await.map_err(unavailable)?;
+        Ok(rows)
+    }
+
+    /// Reveals one hint exactly once per competitor and appends its score cost.
+    pub async fn unlock_hint(&self, command: NewHintUnlock) -> DomainResult<HintUnlockResult> {
+        let mut tx = self.pool.begin().await.map_err(unavailable)?;
+        let scope = command.gameplay_scope();
+        let challenge = lock_challenge(&mut tx, scope).await?;
+        validate_event_window(&challenge, command.now)?;
+        let competitor = resolve_competitor(&mut tx, scope, &challenge).await?;
+        register_competitor(&mut tx, scope, competitor).await?;
+        validate_challenge_visibility(&mut tx, scope, competitor, &challenge).await?;
+
+        let hint_id = i32::try_from(command.hint_id)
+            .map_err(|_| DomainError::Validation("hint identifier is too large".into()))?;
+        let hint = sqlx::query!(
+            r#"
+            SELECT content,cost FROM challenge_hints
+            WHERE challenge_id = $1 AND id = $2
+            FOR UPDATE
+            "#,
+            command.challenge_id.0,
+            hint_id,
+        )
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(unavailable)?
+        .ok_or(DomainError::NotFound)?;
+        let (user_id, team_id) = competitor_columns(competitor);
+        let already_unlocked = sqlx::query_scalar!(
+            r#"
+            SELECT EXISTS(
+                SELECT 1 FROM hint_unlocks
+                WHERE challenge_id = $1 AND hint_id = $2
+                  AND user_id IS NOT DISTINCT FROM $3
+                  AND team_id IS NOT DISTINCT FROM $4
+            ) AS "exists!"
+            "#,
+            command.challenge_id.0,
+            hint_id,
+            user_id,
+            team_id,
+        )
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(unavailable)?;
+        if already_unlocked {
+            tx.rollback().await.map_err(unavailable)?;
+            return Ok(HintUnlockResult {
+                hint: HintRecord {
+                    id: command.hint_id,
+                    cost: hint.cost,
+                    content: Some(hint.content),
+                    unlocked: true,
+                },
+                charged: 0,
+                events: Vec::new(),
+                replayed: true,
+            });
+        }
+
+        sqlx::query!(
+            r#"
+            INSERT INTO hint_unlocks (
+                challenge_id,hint_id,user_id,team_id,unlocked_at
+            ) VALUES ($1,$2,$3,$4,$5)
+            "#,
+            command.challenge_id.0,
+            hint_id,
+            user_id,
+            team_id,
+            command.now,
+        )
+        .execute(&mut *tx)
+        .await
+        .map_err(conflict_or_unavailable)?;
+
+        let hint_event = EventEnvelope::new(
+            command.organization_id,
+            Some(command.event_id),
+            Some(command.actor),
+            command.correlation_id,
+            command.now,
+            DomainEvent::HintUnlocked {
+                challenge_id: command.challenge_id,
+                hint_id: command.hint_id,
+                competitor,
+            },
+        );
+        persist_audit_event(
+            &mut tx,
+            &hint_event,
+            "challenge.hint.unlock",
+            "challenge_hint",
+            &format!("{}:{}", command.challenge_id, command.hint_id),
+        )
+        .await?;
+        let mut events = vec![hint_event];
+        if hint.cost > 0 {
+            let division_id = participant_division(&mut tx, command.event_id, competitor).await?;
+            let sequence = next_score_sequence(&mut tx).await?;
+            let reason = serde_json::to_value(ScoreReason::Hint {
+                challenge_id: command.challenge_id,
+                hint_id: command.hint_id,
+            })
+            .map_err(serialization_error)?;
+            insert_score_entry(
+                &mut tx,
+                scope,
+                competitor,
+                division_id,
+                sequence,
+                -hint.cost,
+                &reason,
+                challenge.scoreboard_frozen,
+            )
+            .await?;
+            let score_event = EventEnvelope::new(
+                command.organization_id,
+                Some(command.event_id),
+                Some(command.actor),
+                command.correlation_id,
+                command.now,
+                DomainEvent::ScoreChanged {
+                    competitor,
+                    delta: -hint.cost,
+                },
+            );
+            persist_audit_event(
+                &mut tx,
+                &score_event,
+                "score.hint_cost",
+                "score_entry",
+                &sequence.to_string(),
+            )
+            .await?;
+            events.push(score_event);
+        }
+        tx.commit().await.map_err(unavailable)?;
+        Ok(HintUnlockResult {
+            hint: HintRecord {
+                id: command.hint_id,
+                cost: hint.cost,
+                content: Some(hint.content),
+                unlocked: true,
+            },
+            charged: hint.cost,
+            events,
+            replayed: false,
+        })
+    }
 }
 
 struct LockedChallenge {
@@ -355,7 +606,7 @@ async fn replayed_submission(
 
 async fn lock_challenge(
     tx: &mut Transaction<'_, Postgres>,
-    command: &NewSubmission<'_>,
+    scope: GameplayScope,
 ) -> DomainResult<LockedChallenge> {
     let row = sqlx::query!(
         r#"
@@ -368,9 +619,47 @@ async fn lock_challenge(
         WHERE c.id = $1 AND c.event_id = $2 AND e.organization_id = $3
         FOR UPDATE OF c
         "#,
-        command.challenge_id.0,
-        command.event_id.0,
-        command.organization_id.0,
+        scope.challenge_id.0,
+        scope.event_id.0,
+        scope.organization_id.0,
+        DEFAULT_FIRST_BLOOD_BONUS,
+    )
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(unavailable)?
+    .ok_or(DomainError::NotFound)?;
+    Ok(LockedChallenge {
+        state: row.state,
+        scoring: row.scoring,
+        visibility: row.visibility,
+        max_attempts: row.max_attempts,
+        event_state: row.event_state,
+        participation: row.participation,
+        scoreboard_frozen: row.scoreboard_frozen,
+        starts_at: row.starts_at,
+        ends_at: row.ends_at,
+        team_size_limit: row.team_size_limit,
+        first_blood_bonus: row.first_blood_bonus,
+    })
+}
+
+async fn read_challenge(
+    tx: &mut Transaction<'_, Postgres>,
+    scope: GameplayScope,
+) -> DomainResult<LockedChallenge> {
+    let row = sqlx::query!(
+        r#"
+        SELECT c.state,c.scoring,c.visibility,c.max_attempts,
+               e.state AS event_state,e.participation,e.scoreboard_frozen,
+               e.starts_at,e.ends_at,e.team_size_limit,
+               COALESCE((e.config->>'first_blood_bonus')::bigint, $4) AS "first_blood_bonus!"
+        FROM challenges c
+        JOIN events e ON e.id = c.event_id
+        WHERE c.id = $1 AND c.event_id = $2 AND e.organization_id = $3
+        "#,
+        scope.challenge_id.0,
+        scope.event_id.0,
+        scope.organization_id.0,
         DEFAULT_FIRST_BLOOD_BONUS,
     )
     .fetch_optional(&mut **tx)
@@ -406,7 +695,7 @@ fn validate_event_window(challenge: &LockedChallenge, now: DateTime<Utc>) -> Dom
 
 async fn resolve_competitor(
     tx: &mut Transaction<'_, Postgres>,
-    command: &NewSubmission<'_>,
+    scope: GameplayScope,
     challenge: &LockedChallenge,
 ) -> DomainResult<CompetitorId> {
     let team_id = sqlx::query_scalar!(
@@ -416,20 +705,20 @@ async fn resolve_competitor(
         JOIN teams t ON t.id = tm.team_id
         WHERE tm.user_id = $1 AND tm.organization_id = $2
         "#,
-        command.actor.0,
-        command.organization_id.0,
+        scope.actor.0,
+        scope.organization_id.0,
     )
     .fetch_optional(&mut **tx)
     .await
     .map_err(unavailable)?;
     let competitor = match challenge.participation.as_str() {
-        "individual" => CompetitorId::User(command.actor),
+        "individual" => CompetitorId::User(scope.actor),
         "team" => CompetitorId::Team(TeamId(team_id.ok_or_else(|| {
             DomainError::Validation("join a team before submitting to this event".into())
         })?)),
         "hybrid" => match team_id {
             Some(id) => CompetitorId::Team(TeamId(id)),
-            None => CompetitorId::User(command.actor),
+            None => CompetitorId::User(scope.actor),
         },
         _ => {
             return Err(DomainError::Unavailable(
@@ -456,7 +745,7 @@ async fn resolve_competitor(
 
 async fn register_competitor(
     tx: &mut Transaction<'_, Postgres>,
-    command: &NewSubmission<'_>,
+    scope: GameplayScope,
     competitor: CompetitorId,
 ) -> DomainResult<()> {
     let (user_id, team_id) = competitor_columns(competitor);
@@ -467,10 +756,10 @@ async fn register_competitor(
         ) VALUES ($1,$2,$3,NULL,NULL,$4)
         ON CONFLICT DO NOTHING
         "#,
-        command.event_id.0,
+        scope.event_id.0,
         user_id,
         team_id,
-        command.now,
+        scope.now,
     )
     .execute(&mut **tx)
     .await
@@ -480,7 +769,7 @@ async fn register_competitor(
 
 async fn validate_challenge_visibility(
     tx: &mut Transaction<'_, Postgres>,
-    command: &NewSubmission<'_>,
+    scope: GameplayScope,
     competitor: CompetitorId,
     challenge: &LockedChallenge,
 ) -> DomainResult<()> {
@@ -494,7 +783,7 @@ async fn validate_challenge_visibility(
         WHERE event_id = $1 AND user_id IS NOT DISTINCT FROM $2
           AND team_id IS NOT DISTINCT FROM $3
         "#,
-        command.event_id.0,
+        scope.event_id.0,
         user_id,
         team_id,
     )
@@ -520,7 +809,7 @@ async fn validate_challenge_visibility(
         .map_err(|error| {
             DomainError::Unavailable(format!("invalid challenge visibility: {error}"))
         })?;
-    if visibility.allows(command.now, division_id.map(DivisionId), &solves) {
+    if visibility.allows(scope.now, division_id.map(DivisionId), &solves) {
         Ok(())
     } else {
         Err(DomainError::NotFound)
@@ -609,6 +898,51 @@ async fn load_answer_rules(
         .map(|row| {
             serde_json::from_value(row).map_err(|error| {
                 DomainError::Unavailable(format!("invalid stored answer rule: {error}"))
+            })
+        })
+        .collect()
+}
+
+async fn hint_records(
+    tx: &mut Transaction<'_, Postgres>,
+    challenge_id: ChallengeId,
+    competitor: CompetitorId,
+) -> DomainResult<Vec<HintRecord>> {
+    let (user_id, team_id) = competitor_columns(competitor);
+    let rows = sqlx::query!(
+        r#"
+        SELECT h.id,h.cost,
+               CASE WHEN EXISTS(
+                   SELECT 1 FROM hint_unlocks hu
+                   WHERE hu.challenge_id = h.challenge_id AND hu.hint_id = h.id
+                     AND hu.user_id IS NOT DISTINCT FROM $2
+                     AND hu.team_id IS NOT DISTINCT FROM $3
+               ) THEN h.content ELSE NULL END AS content,
+               EXISTS(
+                   SELECT 1 FROM hint_unlocks hu
+                   WHERE hu.challenge_id = h.challenge_id AND hu.hint_id = h.id
+                     AND hu.user_id IS NOT DISTINCT FROM $2
+                     AND hu.team_id IS NOT DISTINCT FROM $3
+               ) AS "unlocked!"
+        FROM challenge_hints h
+        WHERE h.challenge_id = $1
+        ORDER BY h.id
+        "#,
+        challenge_id.0,
+        user_id,
+        team_id,
+    )
+    .fetch_all(&mut **tx)
+    .await
+    .map_err(unavailable)?;
+    rows.into_iter()
+        .map(|row| {
+            Ok(HintRecord {
+                id: u32::try_from(row.id)
+                    .map_err(|_| DomainError::Unavailable("negative hint identifier".into()))?,
+                cost: row.cost,
+                content: row.content,
+                unlocked: row.unlocked,
             })
         })
         .collect()
@@ -723,7 +1057,7 @@ async fn award_solve(
     .map_err(serialization_error)?;
     insert_score_entry(
         tx,
-        command,
+        command.gameplay_scope(),
         competitor,
         division_id,
         solve_sequence,
@@ -750,7 +1084,7 @@ async fn award_solve(
         .map_err(serialization_error)?;
         insert_score_entry(
             tx,
-            command,
+            command.gameplay_scope(),
             competitor,
             division_id,
             bonus_sequence,
@@ -830,7 +1164,7 @@ async fn next_score_sequence(tx: &mut Transaction<'_, Postgres>) -> DomainResult
 #[allow(clippy::too_many_arguments)]
 async fn insert_score_entry(
     tx: &mut Transaction<'_, Postgres>,
-    command: &NewSubmission<'_>,
+    scope: GameplayScope,
     competitor: CompetitorId,
     division_id: Option<Uuid>,
     sequence: i64,
@@ -846,14 +1180,14 @@ async fn insert_score_entry(
             occurred_at,hidden_by_freeze
         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
         "#,
-        command.event_id.0,
+        scope.event_id.0,
         sequence,
         user_id,
         team_id,
         division_id,
         points,
         reason,
-        command.now,
+        scope.now,
         hidden_by_freeze,
     )
     .execute(&mut **tx)

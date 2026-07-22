@@ -59,6 +59,15 @@
     if (receipt?.outcome === 'correct') answers[challenge.id] = '';
   }
 
+  async function toggleChallenge(challengeId: string): Promise<void> {
+    if (openChallengeId === challengeId) {
+      openChallengeId = null;
+      return;
+    }
+    openChallengeId = challengeId;
+    await game.loadHints(challengeId);
+  }
+
   function resultText(challengeId: string): string | null {
     const receipt = game.receipts[challengeId];
     return receipt ? submissionMessage(receipt) : null;
@@ -127,9 +136,7 @@
                   <Button
                     variant={openChallengeId === challenge.id ? 'quiet' : 'secondary'}
                     disabled={challenge.solved}
-                    onclick={() => {
-                      openChallengeId = openChallengeId === challenge.id ? null : challenge.id;
-                    }}
+                    onclick={() => toggleChallenge(challenge.id)}
                   >
                     {#if challenge.solved}
                       <Check size={15} />
@@ -172,6 +179,30 @@
                         Inspect submission
                       </Button>
                     </form>
+                  {/if}
+                  {#if openChallengeId === challenge.id && game.hints[challenge.id]?.length}
+                    <section class="hints" aria-label={`Hints for ${challenge.name}`}>
+                      <h4>Hints</h4>
+                      {#each game.hints[challenge.id] as hint (hint.id)}
+                        <article>
+                          <div>
+                            <strong>Hint {hint.id}</strong>
+                            <small>{hint.cost} point cost</small>
+                          </div>
+                          {#if hint.unlocked}
+                            <p>{hint.content}</p>
+                          {:else}
+                            <Button
+                              variant="secondary"
+                              loading={game.unlockingHint === `${challenge.id}:${hint.id}`}
+                              onclick={() => game.unlockHint(challenge.id, hint.id)}
+                            >
+                              Unlock hint
+                            </Button>
+                          {/if}
+                        </article>
+                      {/each}
+                    </section>
                   {/if}
                   {#if resultText(challenge.id)}
                     <p
@@ -277,6 +308,45 @@
   .result.accepted {
     background: color-mix(in srgb, var(--success) 11%, var(--surface));
     color: var(--success);
+  }
+
+  .hints {
+    display: grid;
+    gap: 0.65rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .hints h4,
+  .hints p {
+    margin: 0;
+  }
+
+  .hints > article {
+    display: grid;
+    gap: 0.6rem;
+    padding: 0.7rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-raised);
+  }
+
+  .hints > article > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .hints small {
+    color: var(--ink-faint);
+    font-size: 0.68rem;
+  }
+
+  .hints p {
+    color: var(--ink-secondary);
+    font-size: 0.8rem;
+    line-height: 1.55;
   }
 
   .tools {

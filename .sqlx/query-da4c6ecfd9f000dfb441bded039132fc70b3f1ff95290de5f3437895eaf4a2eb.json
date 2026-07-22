@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT content,cost FROM challenge_hints\n            WHERE challenge_id = $1 AND id = $2\n            FOR UPDATE\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "cost",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "da4c6ecfd9f000dfb441bded039132fc70b3f1ff95290de5f3437895eaf4a2eb"
+}

@@ -68,6 +68,11 @@ test('organizer authors a published challenge visible on the player board', asyn
   await page.getByLabel('Description').fill('Follow the typed API trail to the accepted flag.');
   await page.getByLabel('Lifecycle').selectOption('published');
   await page.getByLabel('Accepted answer').fill(`kit{${key}-accepted}`);
+  await page.getByRole('button', { name: 'Add hint' }).click();
+  await page
+    .getByRole('textbox', { name: 'Hint 1', exact: true })
+    .fill('The answer follows the project-specific key.');
+  await page.getByLabel('Point cost').fill('10');
   await page.getByRole('button', { name: 'Save challenge' }).click();
   await expect(page.getByRole('button', { name: 'Save challenge' })).toBeHidden();
   await expect(page.getByText(challengeName, { exact: true })).toBeVisible();
@@ -79,6 +84,15 @@ test('organizer authors a published challenge visible on the player board', asyn
   await expect(challengeCard).toBeVisible();
   await expect(challengeCard.getByText('500 pts')).toBeVisible();
   await challengeCard.getByRole('button', { name: 'Submit flag' }).click();
+  await expect(challengeCard.getByRole('button', { name: 'Unlock hint' })).toBeVisible();
+  const hintUnlocked = page.waitForResponse((response) =>
+    response.url().includes('/hints/1/unlock')
+  );
+  await challengeCard.getByRole('button', { name: 'Unlock hint' }).click();
+  await hintUnlocked;
+  await expect(
+    challengeCard.getByText('The answer follows the project-specific key.')
+  ).toBeVisible();
   await challengeCard.getByLabel('Flag').fill(`kit{${key}-accepted}`);
   const submissionRecorded = page.waitForResponse((response) =>
     response.url().includes('/submissions')
@@ -95,7 +109,7 @@ test('organizer authors a published challenge visible on the player board', asyn
   await scoreboardLoaded;
   const standings = page.getByLabel('Event standings');
   await expect(standings.getByText('E2E Owner', { exact: true })).toBeVisible();
-  await expect(standings.getByText('550 pts', { exact: true })).toBeVisible();
+  await expect(standings.getByText('540 pts', { exact: true })).toBeVisible();
 
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations).toEqual([]);

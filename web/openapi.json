@@ -695,6 +695,63 @@
         ],
         "type": "object"
       },
+      "HintResponse": {
+        "description": "Player-safe hint state.",
+        "properties": {
+          "content": {
+            "description": "Content, present only after unlock.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cost": {
+            "description": "One-time score cost.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "description": "Challenge-local identifier.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "unlocked": {
+            "description": "Current competitor unlock state.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "cost",
+          "unlocked"
+        ],
+        "type": "object"
+      },
+      "HintUnlockResponse": {
+        "description": "Idempotent hint unlock receipt.",
+        "properties": {
+          "charged": {
+            "description": "Score points charged by this request.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "hint": {
+            "$ref": "#/components/schemas/HintResponse",
+            "description": "Revealed hint."
+          },
+          "replayed": {
+            "description": "True when no second charge was applied.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "hint",
+          "charged",
+          "replayed"
+        ],
+        "type": "object"
+      },
       "JoinTeamRequest": {
         "description": "Join-code input.",
         "properties": {
@@ -2205,6 +2262,184 @@
             "description": ""
           },
           "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "challenges"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/challenges/{challenge_id}/hints": {
+      "get": {
+        "operationId": "list_hints",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Challenge ID",
+            "in": "path",
+            "name": "challenge_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/HintResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "challenges"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/challenges/{challenge_id}/hints/{hint_id}/unlock": {
+      "post": {
+        "operationId": "unlock_hint",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Challenge ID",
+            "in": "path",
+            "name": "challenge_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Hint ID",
+            "in": "path",
+            "name": "hint_id",
+            "required": true,
+            "schema": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HintUnlockResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
             "content": {
               "application/json": {
                 "schema": {

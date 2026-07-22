@@ -35,6 +35,8 @@
       void game.loadScoreboard();
     } else if (envelope.event.type === 'scoreboard.control_changed') {
       void Promise.all([events.load(), game.loadScoreboard()]);
+    } else if (envelope.event.type === 'challenge.hint.unlocked') {
+      void game.refreshLoadedHints();
     }
   });
 </script>

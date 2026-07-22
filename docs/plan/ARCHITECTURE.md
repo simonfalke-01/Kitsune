@@ -45,6 +45,11 @@ PostgreSQL advisory locks; orchestration operations use idempotency keys.
 WebSocket nodes subscribe to the shared bus and batch score updates without
 requiring affinity.
 
+Hint bodies live only in the private hint table and are projected as `null`
+until a competitor-scoped unlock exists. The unique unlock key makes repeated
+requests free, while the first unlock and its optional negative score entry
+share the challenge transaction and outbox boundary.
+
 ## Security boundaries
 
 HTTP authorization is deny-by-default and evaluated using org/event-scoped RBAC.

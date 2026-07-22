@@ -20,6 +20,8 @@ export type SubmitAnswerInput = components['schemas']['SubmitAnswerRequest'];
 export type SubmissionReceipt = components['schemas']['SubmissionResponse'];
 export type Scoreboard = components['schemas']['ScoreboardResponse'];
 export type ScoreboardRow = components['schemas']['ScoreboardRowResponse'];
+export type ChallengeHint = components['schemas']['HintResponse'];
+export type HintUnlockReceipt = components['schemas']['HintUnlockResponse'];
 
 export const api = createClient<paths>({
   baseUrl: '',

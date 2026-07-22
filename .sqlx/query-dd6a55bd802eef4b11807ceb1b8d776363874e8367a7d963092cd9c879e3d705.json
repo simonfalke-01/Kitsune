@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT EXISTS(\n                SELECT 1 FROM hint_unlocks\n                WHERE challenge_id = $1 AND hint_id = $2\n                  AND user_id IS NOT DISTINCT FROM $3\n                  AND team_id IS NOT DISTINCT FROM $4\n            ) AS \"exists!\"\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "dd6a55bd802eef4b11807ceb1b8d776363874e8367a7d963092cd9c879e3d705"
+}

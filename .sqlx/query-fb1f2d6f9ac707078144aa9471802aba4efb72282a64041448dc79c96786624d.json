@@ -1,0 +1,42 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT h.id,h.cost,\n               CASE WHEN EXISTS(\n                   SELECT 1 FROM hint_unlocks hu\n                   WHERE hu.challenge_id = h.challenge_id AND hu.hint_id = h.id\n                     AND hu.user_id IS NOT DISTINCT FROM $2\n                     AND hu.team_id IS NOT DISTINCT FROM $3\n               ) THEN h.content ELSE NULL END AS content,\n               EXISTS(\n                   SELECT 1 FROM hint_unlocks hu\n                   WHERE hu.challenge_id = h.challenge_id AND hu.hint_id = h.id\n                     AND hu.user_id IS NOT DISTINCT FROM $2\n                     AND hu.team_id IS NOT DISTINCT FROM $3\n               ) AS \"unlocked!\"\n        FROM challenge_hints h\n        WHERE h.challenge_id = $1\n        ORDER BY h.id\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "cost",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "content",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "unlocked!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      null,
+      null
+    ]
+  },
+  "hash": "fb1f2d6f9ac707078144aa9471802aba4efb72282a64041448dc79c96786624d"
+}

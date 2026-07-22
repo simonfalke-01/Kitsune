@@ -10,7 +10,8 @@ use axum::{
 use chrono::{DateTime, Utc};
 use kitsune_core::identity::{ChallengeId, DivisionId, EventId};
 use kitsune_db::submissions::{
-    NewSubmission, ScoreboardRecord, ScoreboardRowRecord, SubmissionRepository, SubmissionResult,
+    HintRecord, HintUnlockResult, NewHintUnlock, NewSubmission, ScoreboardRecord,
+    ScoreboardRowRecord, SubmissionRepository, SubmissionResult,
 };
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
@@ -86,6 +87,30 @@ pub struct ScoreboardResponse {
     pub frozen: bool,
     /// Ranked rows.
     pub rows: Vec<ScoreboardRowResponse>,
+}
+
+/// Player-safe hint state.
+#[derive(Serialize, ToSchema)]
+pub struct HintResponse {
+    /// Challenge-local identifier.
+    pub id: u32,
+    /// One-time score cost.
+    pub cost: i64,
+    /// Content, present only after unlock.
+    pub content: Option<String>,
+    /// Current competitor unlock state.
+    pub unlocked: bool,
+}
+
+/// Idempotent hint unlock receipt.
+#[derive(Serialize, ToSchema)]
+pub struct HintUnlockResponse {
+    /// Revealed hint.
+    pub hint: HintResponse,
+    /// Score points charged by this request.
+    pub charged: i64,
+    /// True when no second charge was applied.
+    pub replayed: bool,
 }
 
 #[utoipa::path(
@@ -179,6 +204,89 @@ pub(crate) async fn scoreboard(
     Ok(Json(board.into()))
 }
 
+#[utoipa::path(
+    get,
+    path = "/api/v1/events/{event_id}/challenges/{challenge_id}/hints",
+    tag = "challenges",
+    params(
+        ("event_id" = Uuid, Path, description = "Event ID"),
+        ("challenge_id" = Uuid, Path, description = "Challenge ID")
+    ),
+    responses(
+        (status = 200, body = [HintResponse]),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody)
+    )
+)]
+pub(crate) async fn list_hints(
+    State(state): State<AppState>,
+    actor: Actor,
+    Path((event_id, challenge_id)): Path<(Uuid, Uuid)>,
+) -> ApiResult<Json<Vec<HintResponse>>> {
+    actor.require("challenge_read")?;
+    let rows = SubmissionRepository::new(state.db.pool().clone())
+        .hints(
+            actor.session.account.organization_id,
+            EventId(event_id),
+            ChallengeId(challenge_id),
+            actor.session.account.user_id,
+            Utc::now(),
+        )
+        .await
+        .map_err(ApiError::from)?;
+    Ok(Json(rows.into_iter().map(HintResponse::from).collect()))
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/events/{event_id}/challenges/{challenge_id}/hints/{hint_id}/unlock",
+    tag = "challenges",
+    params(
+        ("event_id" = Uuid, Path, description = "Event ID"),
+        ("challenge_id" = Uuid, Path, description = "Challenge ID"),
+        ("hint_id" = u32, Path, description = "Hint ID")
+    ),
+    responses(
+        (status = 200, body = HintUnlockResponse),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody),
+        (status = 422, body = ErrorBody),
+        (status = 429, body = ErrorBody)
+    )
+)]
+pub(crate) async fn unlock_hint(
+    State(state): State<AppState>,
+    actor: Actor,
+    headers: HeaderMap,
+    Path((event_id, challenge_id, hint_id)): Path<(Uuid, Uuid, u32)>,
+) -> ApiResult<Json<HintUnlockResponse>> {
+    actor.require("submission_create")?;
+    actor.require_csrf(&headers)?;
+    enforce_hint_rate_limit(&state, &actor, challenge_id).await?;
+    let result = SubmissionRepository::new(state.db.pool().clone())
+        .unlock_hint(NewHintUnlock {
+            organization_id: actor.session.account.organization_id,
+            event_id: EventId(event_id),
+            challenge_id: ChallengeId(challenge_id),
+            actor: actor.session.account.user_id,
+            hint_id,
+            correlation_id: Uuid::now_v7(),
+            now: Utc::now(),
+        })
+        .await
+        .map_err(ApiError::from)?;
+    for envelope in &result.events {
+        state
+            .event_bus
+            .publish(envelope.clone())
+            .await
+            .map_err(ApiError::from)?;
+    }
+    Ok(Json(result.into()))
+}
+
 async fn enforce_rate_limit(
     state: &AppState,
     actor: &Actor,
@@ -201,6 +309,27 @@ async fn enforce_rate_limit(
         .await
         .map_err(ApiError::from)?;
     if global > GLOBAL_ATTEMPTS_PER_MINUTE || challenge > CHALLENGE_ATTEMPTS_PER_MINUTE {
+        Err(ApiError::rate_limited())
+    } else {
+        Ok(())
+    }
+}
+
+async fn enforce_hint_rate_limit(
+    state: &AppState,
+    actor: &Actor,
+    challenge_id: Uuid,
+) -> ApiResult<()> {
+    let key = format!(
+        "hint:unlock:{}:{challenge_id}:{}",
+        actor.session.account.organization_id, actor.session.account.user_id
+    );
+    let attempts = state
+        .cache
+        .increment(&key, Duration::from_secs(60))
+        .await
+        .map_err(ApiError::from)?;
+    if attempts > 10 {
         Err(ApiError::rate_limited())
     } else {
         Ok(())
@@ -247,6 +376,27 @@ impl ScoreboardRowResponse {
             score: row.score,
             solves: row.solves,
             reached_at: row.reached_at,
+        }
+    }
+}
+
+impl From<HintRecord> for HintResponse {
+    fn from(hint: HintRecord) -> Self {
+        Self {
+            id: hint.id,
+            cost: hint.cost,
+            content: hint.content,
+            unlocked: hint.unlocked,
+        }
+    }
+}
+
+impl From<HintUnlockResult> for HintUnlockResponse {
+    fn from(result: HintUnlockResult) -> Self {
+        Self {
+            hint: result.hint.into(),
+            charged: result.charged,
+            replayed: result.replayed,
         }
     }
 }
