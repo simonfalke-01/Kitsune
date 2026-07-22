@@ -3,6 +3,7 @@
 mod auth;
 mod engagement;
 mod error;
+mod oauth;
 mod realtime;
 mod resources;
 mod submissions;
@@ -139,6 +140,10 @@ pub struct ReadinessResponse {
         tokens::list_api_tokens,
         tokens::create_api_token,
         tokens::revoke_api_token,
+        oauth::list_oauth_clients,
+        oauth::create_oauth_client,
+        oauth::revoke_oauth_client,
+        oauth::exchange_client_credentials,
         resources::list_events,
         resources::create_event,
         resources::update_event_state,
@@ -223,7 +228,13 @@ pub struct ReadinessResponse {
         auth::UserResponse,
         tokens::CreateApiTokenRequest,
         tokens::ApiTokenResponse,
-        tokens::CreatedApiTokenResponse
+        tokens::CreatedApiTokenResponse,
+        oauth::CreateOAuthClientRequest,
+        oauth::OAuthClientResponse,
+        oauth::CreatedOAuthClientResponse,
+        oauth::OAuthTokenRequest,
+        oauth::OAuthTokenResponse,
+        oauth::OAuthErrorResponse
     )),
     tags(
         (name = "system", description = "Health and diagnostics"),
@@ -308,6 +319,15 @@ pub fn router(state: AppState) -> Router {
             "/api/v1/auth/tokens/{token_id}",
             axum::routing::delete(tokens::revoke_api_token),
         )
+        .route(
+            "/api/v1/auth/oauth-clients",
+            get(oauth::list_oauth_clients).post(oauth::create_oauth_client),
+        )
+        .route(
+            "/api/v1/auth/oauth-clients/{client_id}",
+            axum::routing::delete(oauth::revoke_oauth_client),
+        )
+        .route("/oauth/token", post(oauth::exchange_client_credentials))
         .route(
             "/api/v1/events",
             get(resources::list_events).post(resources::create_event),

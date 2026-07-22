@@ -82,7 +82,9 @@ class EventStore {
   }
 
   async load(): Promise<void> {
-    if (!session.authenticated) return;
+    if (!session.authenticated) {
+      return;
+    }
     this.loading = true;
     this.error = null;
     const { data, error } = await api.GET('/api/v1/events');
@@ -104,7 +106,9 @@ class EventStore {
   }
 
   async select(eventId: string): Promise<void> {
-    if (this.selectedEventId === eventId) return;
+    if (this.selectedEventId === eventId) {
+      return;
+    }
     this.selectedEventId = eventId;
     this.persistSelection();
     await this.loadChallenges();
@@ -120,7 +124,9 @@ class EventStore {
     const { data, error } = await api.GET('/api/v1/events/{event_id}/challenges', {
       params: { path: { event_id: eventId } }
     });
-    if (request !== this.challengeRequest) return;
+    if (request !== this.challengeRequest) {
+      return;
+    }
     if (!data) {
       this.error = errorMessage(error, 'Challenges could not be loaded.');
       this.challenges = [];
@@ -131,7 +137,9 @@ class EventStore {
 
   async createEvent(input: CreateEventInput): Promise<EventSummary | null> {
     const csrf = session.current?.csrf_token;
-    if (!csrf) return this.authenticationFailure();
+    if (!csrf) {
+      return this.authenticationFailure();
+    }
     this.saving = true;
     this.error = null;
     const { data, error } = await api.POST('/api/v1/events', {
@@ -153,7 +161,9 @@ class EventStore {
   async createChallenge(input: CreateChallengeInput): Promise<ChallengeSummary | null> {
     const csrf = session.current?.csrf_token;
     const eventId = this.selectedEventId;
-    if (!csrf || !eventId) return this.authenticationFailure();
+    if (!csrf || !eventId) {
+      return this.authenticationFailure();
+    }
     this.saving = true;
     this.error = null;
     const { data, error } = await api.POST('/api/v1/events/{event_id}/challenges', {
@@ -174,7 +184,9 @@ class EventStore {
   async setState(state: UpdateEventStateInput['state']): Promise<EventSummary | null> {
     const csrf = session.current?.csrf_token;
     const eventId = this.selectedEventId;
-    if (!csrf || !eventId) return this.authenticationFailure();
+    if (!csrf || !eventId) {
+      return this.authenticationFailure();
+    }
     this.saving = true;
     this.error = null;
     const { data, error } = await api.PATCH('/api/v1/events/{event_id}/state', {
@@ -194,7 +206,9 @@ class EventStore {
   async setScoreboardControls(input: UpdateScoreboardControlsInput): Promise<EventSummary | null> {
     const csrf = session.current?.csrf_token;
     const eventId = this.selectedEventId;
-    if (!csrf || !eventId) return this.authenticationFailure();
+    if (!csrf || !eventId) {
+      return this.authenticationFailure();
+    }
     this.saving = true;
     this.error = null;
     const { data, error } = await api.PATCH('/api/v1/events/{event_id}/scoreboard-controls', {
@@ -217,7 +231,9 @@ class EventStore {
     this.selectedEventId = null;
     this.error = null;
     this.challengeRequest += 1;
-    if (browser) localStorage.removeItem(SELECTED_EVENT_KEY);
+    if (browser) {
+      localStorage.removeItem(SELECTED_EVENT_KEY);
+    }
   }
 
   private authenticationFailure(): null {
@@ -226,7 +242,9 @@ class EventStore {
   }
 
   private persistSelection(): void {
-    if (!browser) return;
+    if (!browser) {
+      return;
+    }
     if (this.selectedEventId) {
       localStorage.setItem(SELECTED_EVENT_KEY, this.selectedEventId);
     } else {

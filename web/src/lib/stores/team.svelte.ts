@@ -22,7 +22,9 @@ class TeamStore {
   }
 
   async load(): Promise<void> {
-    if (!session.authenticated) return;
+    if (!session.authenticated) {
+      return;
+    }
     this.loading = true;
     this.error = null;
     const { data, error } = await api.GET('/api/v1/teams');
@@ -36,7 +38,9 @@ class TeamStore {
 
   async create(input: CreateTeamInput): Promise<boolean> {
     const csrf = session.current?.csrf_token;
-    if (!csrf) return this.authenticationFailure();
+    if (!csrf) {
+      return this.authenticationFailure();
+    }
     this.saving = true;
     this.error = null;
     const { data, error } = await api.POST('/api/v1/teams', {
@@ -55,7 +59,9 @@ class TeamStore {
 
   async join(input: JoinTeamInput): Promise<boolean> {
     const csrf = session.current?.csrf_token;
-    if (!csrf) return this.authenticationFailure();
+    if (!csrf) {
+      return this.authenticationFailure();
+    }
     this.saving = true;
     this.error = null;
     const { data, error } = await api.POST('/api/v1/teams/join', {
@@ -75,7 +81,9 @@ class TeamStore {
   async transferCaptain(userId: string): Promise<boolean> {
     const csrf = session.current?.csrf_token;
     const teamId = this.current?.id;
-    if (!csrf || !teamId) return this.authenticationFailure();
+    if (!csrf || !teamId) {
+      return this.authenticationFailure();
+    }
     this.saving = true;
     this.error = null;
     const { data, error } = await api.POST('/api/v1/teams/{team_id}/captain', {

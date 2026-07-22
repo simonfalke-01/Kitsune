@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT c.user_id,c.organization_id\n            FROM oauth_clients c\n            JOIN users u ON u.id = c.user_id AND u.organization_id = c.organization_id\n            WHERE c.id = $1 AND c.disabled = false AND c.revoked_at IS NULL\n              AND u.disabled = false\n            FOR UPDATE OF c\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      false
+    ]
+  },
+  "hash": "a9dafe89b2420811b2981972f57ddfea9824d5e5497167e4c22baa8802895590"
+}

@@ -15,7 +15,9 @@ class RealtimeStore {
   private stopped = false;
 
   start() {
-    if (!browser || this.socket) return;
+    if (!browser || this.socket) {
+      return;
+    }
     this.stopped = false;
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
     this.socket = new WebSocket(`${protocol}//${location.host}/api/v1/realtime/ws`);
@@ -32,13 +34,17 @@ class RealtimeStore {
     this.socket.onclose = () => {
       this.connected = false;
       this.socket = null;
-      if (!this.stopped) this.reconnect = setTimeout(() => this.start(), 1_500);
+      if (!this.stopped) {
+        this.reconnect = setTimeout(() => this.start(), 1_500);
+      }
     };
   }
 
   stop() {
     this.stopped = true;
-    if (this.reconnect) clearTimeout(this.reconnect);
+    if (this.reconnect) {
+      clearTimeout(this.reconnect);
+    }
     this.socket?.close();
     this.socket = null;
     this.connected = false;

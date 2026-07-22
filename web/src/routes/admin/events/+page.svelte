@@ -57,7 +57,9 @@
       modes: enabledModes,
       team_size_limit: participation === 'individual' ? null : teamSizeLimit
     });
-    if (!created) return;
+    if (!created) {
+      return;
+    }
     composing = false;
     name = '';
     slug = '';
@@ -70,7 +72,9 @@
 
   async function toggleFreeze(): Promise<void> {
     const selected = events.selectedEvent;
-    if (!selected) return;
+    if (!selected) {
+      return;
+    }
     await events.setScoreboardControls({
       frozen: !selected.scoreboard_frozen,
       hidden: selected.scoreboard_hidden
@@ -79,7 +83,9 @@
 
   async function toggleHidden(): Promise<void> {
     const selected = events.selectedEvent;
-    if (!selected) return;
+    if (!selected) {
+      return;
+    }
     await events.setScoreboardControls({
       frozen: selected.scoreboard_frozen,
       hidden: !selected.scoreboard_hidden

@@ -1,0 +1,70 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                c.id,c.user_id,c.organization_id,u.display_name,\n                u.email_normalized AS email,u.email_verified,c.scopes,c.event_ids,\n                c.client_secret_digest\n            FROM oauth_clients c\n            JOIN users u ON u.id = c.user_id AND u.organization_id = c.organization_id\n            WHERE c.client_id = $1 AND c.disabled = false AND c.revoked_at IS NULL\n              AND u.disabled = false\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "email_verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "scopes",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 7,
+        "name": "event_ids",
+        "type_info": "UuidArray"
+      },
+      {
+        "ordinal": 8,
+        "name": "client_secret_digest",
+        "type_info": "Bytea"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "cc9ff6dabaeecf30d0caf43e00acce9d5ee9276be027c395a7bceaefb68e1dbe"
+}

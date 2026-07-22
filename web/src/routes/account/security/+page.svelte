@@ -6,6 +6,7 @@
   import Button from '$lib/components/Button.svelte';
   import Card from '$lib/components/Card.svelte';
   import Badge from '$lib/components/Badge.svelte';
+  import OAuthClientManager from '$lib/components/OAuthClientManager.svelte';
   import { session } from '$lib/stores/session.svelte';
 
   type SessionSummary = import('$lib/api/schema').components['schemas']['SessionSummaryResponse'];
@@ -42,37 +43,52 @@
 
   async function loadSessions() {
     const result = await api.GET('/api/v1/auth/sessions');
-    if (result.data) sessions = result.data;
+    if (result.data) {
+      sessions = result.data;
+    }
   }
 
   async function loadApiTokens() {
     const result = await api.GET('/api/v1/auth/tokens');
-    if (result.data) apiTokens = result.data;
+    if (result.data) {
+      apiTokens = result.data;
+    }
   }
 
   async function loadEvents() {
-    if (!session.can('event_read')) return;
+    if (!session.can('event_read')) {
+      return;
+    }
     const result = await api.GET('/api/v1/events');
-    if (result.data) availableEvents = result.data;
+    if (result.data) {
+      availableEvents = result.data;
+    }
   }
 
   async function startTotp() {
     const csrf = session.current?.csrf_token;
-    if (!csrf) return;
+    if (!csrf) {
+      return;
+    }
     busy = true;
     error = null;
     const result = await api.POST('/api/v1/auth/mfa/totp/start', {
       headers: { 'x-csrf-token': csrf }
     });
     busy = false;
-    if (result.data) enrollment = result.data;
-    else error = errorMessage(result.error, 'MFA setup could not start.');
+    if (result.data) {
+      enrollment = result.data;
+    } else {
+      error = errorMessage(result.error, 'MFA setup could not start.');
+    }
   }
 
   async function confirmTotp(event: SubmitEvent) {
     event.preventDefault();
     const csrf = session.current?.csrf_token;
-    if (!csrf) return;
+    if (!csrf) {
+      return;
+    }
     busy = true;
     error = null;
     const result = await api.POST('/api/v1/auth/mfa/totp/confirm', {
@@ -83,12 +99,16 @@
     if (result.data) {
       recoveryCodes = result.data.codes;
       enrollment = null;
-    } else error = errorMessage(result.error, 'The authenticator code did not match.');
+    } else {
+      error = errorMessage(result.error, 'The authenticator code did not match.');
+    }
   }
 
   async function revoke(id: string) {
     const csrf = session.current?.csrf_token;
-    if (!csrf) return;
+    if (!csrf) {
+      return;
+    }
     const result = await api.DELETE('/api/v1/auth/sessions/{session_id}', {
       params: { path: { session_id: id } },
       headers: { 'x-csrf-token': csrf }
@@ -98,14 +118,18 @@
       if (wasCurrent) {
         session.current = null;
         await goto('/login');
-      } else await loadSessions();
+      } else {
+        await loadSessions();
+      }
     }
   }
 
   async function createApiToken(event: SubmitEvent) {
     event.preventDefault();
     const csrf = session.current?.csrf_token;
-    if (!csrf) return;
+    if (!csrf) {
+      return;
+    }
     busy = true;
     error = null;
     createdToken = null;
@@ -133,14 +157,19 @@
 
   async function revokeApiToken(id: string) {
     const csrf = session.current?.csrf_token;
-    if (!csrf) return;
+    if (!csrf) {
+      return;
+    }
     error = null;
     const result = await api.DELETE('/api/v1/auth/tokens/{token_id}', {
       params: { path: { token_id: id } },
       headers: { 'x-csrf-token': csrf }
     });
-    if (result.response.ok) await loadApiTokens();
-    else error = errorMessage(result.error, 'The API token could not be revoked.');
+    if (result.response.ok) {
+      await loadApiTokens();
+    } else {
+      error = errorMessage(result.error, 'The API token could not be revoked.');
+    }
   }
 
   async function copyCodes() {
@@ -148,7 +177,9 @@
   }
 
   async function copyApiToken() {
-    if (createdToken) await navigator.clipboard.writeText(createdToken.token);
+    if (createdToken) {
+      await navigator.clipboard.writeText(createdToken.token);
+    }
   }
 
   function describeSession(item: SessionSummary): string {
@@ -231,6 +262,8 @@
       </Button>
     {/if}
   </Card>
+
+  <OAuthClientManager {availableEvents} {availableScopes} />
 
   <Card>
     <div class="section-head">

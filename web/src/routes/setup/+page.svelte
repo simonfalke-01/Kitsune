@@ -39,7 +39,9 @@
       email,
       password
     });
-    if (success) await goto('/admin');
+    if (success) {
+      await goto('/admin');
+    }
   }
 </script>
 

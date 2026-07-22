@@ -26,6 +26,7 @@ export default [
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'error',
+      curly: ['error', 'all'],
       'svelte/no-at-html-tags': 'error',
       'svelte/no-navigation-without-resolve': 'off'
     }

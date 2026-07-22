@@ -9,27 +9,39 @@ class Preferences {
   branding = $state(true);
 
   load() {
-    if (!browser) return;
+    if (!browser) {
+      return;
+    }
     const tone = localStorage.getItem('kitsune:tone');
     const theme = localStorage.getItem('kitsune:theme');
-    if (tone === 'kitsune' || tone === 'professional') this.tone = tone;
-    if (theme === 'dark' || theme === 'light' || theme === 'system') this.theme = theme;
+    if (tone === 'kitsune' || tone === 'professional') {
+      this.tone = tone;
+    }
+    if (theme === 'dark' || theme === 'light' || theme === 'system') {
+      this.theme = theme;
+    }
     this.applyTheme();
   }
 
   setTone(tone: Tone) {
     this.tone = tone;
-    if (browser) localStorage.setItem('kitsune:tone', tone);
+    if (browser) {
+      localStorage.setItem('kitsune:tone', tone);
+    }
   }
 
   setTheme(theme: Theme) {
     this.theme = theme;
-    if (browser) localStorage.setItem('kitsune:theme', theme);
+    if (browser) {
+      localStorage.setItem('kitsune:theme', theme);
+    }
     this.applyTheme();
   }
 
   private applyTheme() {
-    if (!browser) return;
+    if (!browser) {
+      return;
+    }
     const resolved =
       this.theme === 'system'
         ? matchMedia('(prefers-color-scheme: dark)').matches

@@ -7,6 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': { target: 'http://127.0.0.1:3000', ws: true },
+      '/oauth': { target: 'http://127.0.0.1:3000' },
       '/health': { target: 'http://127.0.0.1:3000' },
       '/ready': { target: 'http://127.0.0.1:3000' }
     }

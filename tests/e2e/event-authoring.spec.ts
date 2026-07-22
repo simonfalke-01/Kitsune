@@ -230,21 +230,91 @@ test('organizer authors a published challenge visible on the player board', asyn
   const tokenName = `Challenge reader ${testInfo.project.name} ${run}`;
   await page.goto('/account/security');
   await expect(page.getByRole('heading', { name: 'Guard your trail.' })).toBeVisible();
-  await page.getByLabel('Token name').fill(tokenName);
-  await page.getByRole('checkbox', { name: 'challenge read', exact: true }).check();
-  await page.getByRole('checkbox', { name: eventName, exact: true }).check();
+  const apiTokenManager = page.locator('.card').filter({
+    has: page.getByRole('heading', { name: 'API tokens' })
+  });
+  await apiTokenManager.getByLabel('Token name').fill(tokenName);
+  await apiTokenManager.getByRole('checkbox', { name: 'challenge read', exact: true }).check();
+  await apiTokenManager.getByRole('checkbox', { name: eventName, exact: true }).check();
   const tokenCreated = page.waitForResponse(
     (response) =>
       response.request().method() === 'POST' && response.url().endsWith('/api/v1/auth/tokens')
   );
-  await page.getByRole('button', { name: 'Create API token' }).click();
+  await apiTokenManager.getByRole('button', { name: 'Create API token' }).click();
   expect((await tokenCreated).status()).toBe(201);
   await expect(page.getByLabel('New API token')).toHaveValue(/v4\.local\./);
   const tokenCard = page.locator('.tokens article').filter({ hasText: tokenName });
   await expect(tokenCard.getByText('Active', { exact: true })).toBeVisible();
 
+  const oauthName = `Score exporter ${testInfo.project.name} ${run}`;
+  const oauthManager = page.locator('.card').filter({
+    has: page.getByRole('heading', { name: 'OAuth2 clients' })
+  });
+  await oauthManager.getByLabel('Client name').fill(oauthName);
+  await oauthManager.getByRole('checkbox', { name: 'challenge read', exact: true }).check();
+  await oauthManager.getByRole('checkbox', { name: eventName, exact: true }).check();
+  const oauthCreated = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      response.url().endsWith('/api/v1/auth/oauth-clients')
+  );
+  await oauthManager.getByRole('button', { name: 'Create OAuth client' }).click();
+  expect((await oauthCreated).status()).toBe(201);
+
+  const clientId = await oauthManager.getByLabel('New OAuth client ID').inputValue();
+  const clientSecret = await oauthManager.getByLabel('New OAuth client secret').inputValue();
+  expect(clientId).toMatch(/^kitc_/);
+  expect(clientSecret).toMatch(/^kits_/);
+
+  const tokenExchange = await page.request.post('/oauth/token', {
+    headers: {
+      authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`
+    },
+    form: {
+      grant_type: 'client_credentials',
+      scope: 'challenge_read'
+    }
+  });
+  expect(tokenExchange.status()).toBe(200);
+  expect(tokenExchange.headers()['cache-control']).toBe('no-store');
+  const oauthToken = (await tokenExchange.json()) as {
+    access_token: string;
+    expires_in: number;
+    scope: string;
+  };
+  expect(oauthToken.access_token).toMatch(/v4\.local\./);
+  expect(oauthToken.expires_in).toBe(900);
+  expect(oauthToken.scope).toBe('challenge_read');
+
+  const eventId = await page.evaluate(() => localStorage.getItem('kitsune.selected-event'));
+  expect(eventId).toBeTruthy();
+  const authorizedChallenges = await page.request.get(`/api/v1/events/${eventId}/challenges`, {
+    headers: { authorization: `Bearer ${oauthToken.access_token}` }
+  });
+  expect(authorizedChallenges.status()).toBe(200);
+  const organizationEvents = await page.request.get('/api/v1/events', {
+    headers: { authorization: `Bearer ${oauthToken.access_token}` }
+  });
+  expect(organizationEvents.status()).toBe(403);
+
+  const oauthCard = page.locator('.clients article').filter({ hasText: oauthName });
+  await expect(oauthCard.getByText('Active', { exact: true })).toBeVisible();
+
   const securityAccessibility = await new AxeBuilder({ page }).analyze();
   expect(securityAccessibility.violations).toEqual([]);
+
+  const oauthRevoked = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'DELETE' &&
+      response.url().includes('/api/v1/auth/oauth-clients/')
+  );
+  await oauthCard.getByRole('button', { name: `Revoke ${oauthName}` }).click();
+  expect((await oauthRevoked).status()).toBe(204);
+  await expect(oauthCard.getByText('Revoked', { exact: true })).toBeVisible();
+  const revokedAccess = await page.request.get(`/api/v1/events/${eventId}/challenges`, {
+    headers: { authorization: `Bearer ${oauthToken.access_token}` }
+  });
+  expect(revokedAccess.status()).toBe(401);
 
   const tokenRevoked = page.waitForResponse(
     (response) =>

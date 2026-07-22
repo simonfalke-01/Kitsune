@@ -84,6 +84,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/oauth-clients": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_oauth_clients"];
+        put?: never;
+        post: operations["create_oauth_client"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/oauth-clients/{client_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["revoke_oauth_client"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/recovery": {
         parameters: {
             query?: never;
@@ -548,6 +580,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/oauth/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["exchange_client_credentials"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/ready": {
         parameters: {
             query?: never;
@@ -783,6 +831,15 @@ export interface components {
              */
             team_size_limit?: number | null;
         };
+        /** @description New OAuth2 confidential-client request. */
+        CreateOAuthClientRequest: {
+            /** @description Optional event allow-list. Empty means organization-wide. */
+            event_ids?: string[];
+            /** @description Human-readable client name. */
+            name: string;
+            /** @description Maximum fine-grained permission scopes. */
+            scopes: string[];
+        };
         /** @description New team input. */
         CreateTeamRequest: {
             /** @description Display name. */
@@ -799,6 +856,11 @@ export interface components {
         CreatedApiTokenResponse: components["schemas"]["ApiTokenResponse"] & {
             /** @description PASETO v4.local bearer value, shown exactly once. */
             token: string;
+        };
+        /** @description One-time confidential-client creation response. */
+        CreatedOAuthClientResponse: components["schemas"]["OAuthClientResponse"] & {
+            /** @description Client secret shown exactly once. */
+            client_secret: string;
         };
         /** @description Machine-readable error response. */
         ErrorBody: {
@@ -962,6 +1024,65 @@ export interface components {
          * @enum {string}
          */
         ModeInput: "jeopardy" | "koth" | "attack_defense" | "workshop";
+        /** @description Safe persisted OAuth2 client metadata. */
+        OAuthClientResponse: {
+            /** @description Public client identifier. */
+            client_id: string;
+            /**
+             * Format: date-time
+             * @description Creation time.
+             */
+            created_at: string;
+            /** @description Optional event allow-list. */
+            event_ids: string[];
+            /**
+             * Format: uuid
+             * @description Internal management ID.
+             */
+            id: string;
+            /**
+             * Format: date-time
+             * @description Coarsely updated last token-exchange time.
+             */
+            last_used_at?: string | null;
+            /** @description Human-readable client name. */
+            name: string;
+            /**
+             * Format: date-time
+             * @description Revocation time.
+             */
+            revoked_at?: string | null;
+            /** @description Maximum permission scopes. */
+            scopes: string[];
+        };
+        /** @description RFC 6749 token-endpoint error response. */
+        OAuthErrorResponse: {
+            /** @description Stable OAuth error code. */
+            error: string;
+            /** @description Safe human-readable detail. */
+            error_description: string;
+        };
+        /** @description RFC 6749 client-credentials token request. */
+        OAuthTokenRequest: {
+            /** @description Must be `client_credentials`. */
+            grant_type: string;
+            /** @description Optional space-delimited subset of registered scopes. */
+            scope?: string | null;
+        };
+        /** @description RFC 6749 bearer access-token response. */
+        OAuthTokenResponse: {
+            /** @description Short-lived PASETO bearer credential. */
+            access_token: string;
+            /**
+             * Format: int64
+             * @description Lifetime in seconds.
+             */
+            expires_in: number;
+            /** @description Granted space-delimited scopes. */
+            scope: string;
+            /** @description Always `Bearer`. */
+            token_type: string;
+        };
         /**
          * @description Event scoring identity policy.
          * @enum {string}
@@ -1649,6 +1770,124 @@ export interface operations {
                 };
             };
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_oauth_clients: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthClientResponse"][];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    create_oauth_client: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOAuthClientRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreatedOAuthClientResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    revoke_oauth_client: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Internal client ID */
+                client_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3334,6 +3573,53 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    exchange_client_credentials: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/x-www-form-urlencoded": components["schemas"]["OAuthTokenRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthTokenResponse"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthErrorResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthErrorResponse"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthErrorResponse"];
                 };
             };
         };

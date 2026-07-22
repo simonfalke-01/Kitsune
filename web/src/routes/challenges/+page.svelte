@@ -58,7 +58,9 @@
     event.preventDefault();
     const answer = answers[challenge.id] ?? '';
     const receipt = await game.submit(challenge.id, answer);
-    if (receipt?.outcome === 'correct') answers[challenge.id] = '';
+    if (receipt?.outcome === 'correct') {
+      answers[challenge.id] = '';
+    }
   }
 
   async function toggleChallenge(challenge: ChallengeSummary): Promise<void> {
@@ -86,8 +88,12 @@
   }
 
   function answerLabel(challenge: ChallengeSummary): string {
-    if (challenge.kind.type === 'multiple_choice') return 'Answer';
-    if (challenge.kind.type === 'manual_verification') return 'Evidence';
+    if (challenge.kind.type === 'multiple_choice') {
+      return 'Answer';
+    }
+    if (challenge.kind.type === 'manual_verification') {
+      return 'Evidence';
+    }
     return 'Flag';
   }
 
@@ -113,7 +119,9 @@
     const answers: Record<string, number> = {};
     for (const question of challenge.survey) {
       const value = surveyAnswers[`${challenge.id}:${question.key}`];
-      if (value !== undefined) answers[question.key] = value;
+      if (value !== undefined) {
+        answers[question.key] = value;
+      }
     }
     await game.submitSurvey(challenge.id, answers);
   }

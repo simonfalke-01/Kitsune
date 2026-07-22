@@ -22,16 +22,22 @@
 
   async function create(event: SubmitEvent): Promise<void> {
     event.preventDefault();
-    if (await team.create({ name })) mode = null;
+    if (await team.create({ name })) {
+      mode = null;
+    }
   }
 
   async function join(event: SubmitEvent): Promise<void> {
     event.preventDefault();
-    if (await team.join({ invite_code: inviteCode })) mode = null;
+    if (await team.join({ invite_code: inviteCode })) {
+      mode = null;
+    }
   }
 
   async function copyInvite(): Promise<void> {
-    if (!team.inviteCode) return;
+    if (!team.inviteCode) {
+      return;
+    }
     await navigator.clipboard.writeText(team.inviteCode);
     copied = true;
   }

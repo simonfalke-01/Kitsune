@@ -16,7 +16,9 @@ export function submissionMessage(receipt: SubmissionReceipt): string {
       ? `First blood. ${receipt.awarded_points} points caught in the foxfire.`
       : `Accepted. ${receipt.awarded_points} points secured.`;
   }
-  if (receipt.outcome === 'pending') return 'Queued for an organizer’s review.';
+  if (receipt.outcome === 'pending') {
+    return 'Queued for an organizer’s review.';
+  }
   const attempts =
     receipt.attempts_remaining == null ? '' : ` ${receipt.attempts_remaining} attempts remain.`;
   return `That flag did not hold.${attempts}`;

@@ -24,7 +24,9 @@ class SessionStore {
   }
 
   bootstrap(): Promise<void> {
-    if (!browser) return Promise.resolve();
+    if (!browser) {
+      return Promise.resolve();
+    }
     if (!this.bootstrapRequest) {
       this.bootstrapRequest = this.restore().finally(() => {
         this.bootstrapRequest = null;
@@ -96,7 +98,9 @@ class SessionStore {
 
   async logout(): Promise<void> {
     const csrf = this.current?.csrf_token;
-    if (!csrf) return;
+    if (!csrf) {
+      return;
+    }
     await api.POST('/api/v1/auth/logout', {
       headers: { 'x-csrf-token': csrf }
     });

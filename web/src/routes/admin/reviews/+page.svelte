@@ -32,7 +32,9 @@
 
   $effect(() => {
     const envelope = realtime.latest;
-    if (!envelope || envelope.id === appliedRealtimeEvent) return;
+    if (!envelope || envelope.id === appliedRealtimeEvent) {
+      return;
+    }
     if (
       envelope.event.type !== 'challenge.writeup.changed' &&
       envelope.event.type !== 'challenge.survey.submitted' &&
@@ -44,7 +46,9 @@
     appliedRealtimeEvent = envelope.id;
     void loadWriteups();
     void loadManualReviews();
-    if (selectedSurveyChallengeId) void loadSurveySummary(selectedSurveyChallengeId);
+    if (selectedSurveyChallengeId) {
+      void loadSurveySummary(selectedSurveyChallengeId);
+    }
   });
 
   async function initialize(): Promise<void> {
@@ -59,7 +63,9 @@
 
   async function loadWriteups(): Promise<void> {
     const eventId = events.selectedEventId;
-    if (!eventId) return;
+    if (!eventId) {
+      return;
+    }
     loading = true;
     const { data, error: responseError } = await api.GET('/api/v1/events/{event_id}/writeups', {
       params: { path: { event_id: eventId }, query: {} }
@@ -74,7 +80,9 @@
 
   async function loadManualReviews(): Promise<void> {
     const eventId = events.selectedEventId;
-    if (!eventId) return;
+    if (!eventId) {
+      return;
+    }
     const { data, error: responseError } = await api.GET(
       '/api/v1/events/{event_id}/manual-reviews',
       {
@@ -91,7 +99,9 @@
   async function reviewManual(review: ManualReview, accepted: boolean): Promise<void> {
     const eventId = events.selectedEventId;
     const csrf = session.current?.csrf_token;
-    if (!eventId || !csrf) return;
+    if (!eventId || !csrf) {
+      return;
+    }
     reviewingId = review.id;
     error = null;
     const { data, error: responseError } = await api.PATCH(
@@ -116,7 +126,9 @@
   ): Promise<void> {
     const eventId = events.selectedEventId;
     const csrf = session.current?.csrf_token;
-    if (!eventId || !csrf) return;
+    if (!eventId || !csrf) {
+      return;
+    }
     reviewingId = writeup.id;
     error = null;
     const { data, error: responseError } = await api.PATCH(
@@ -141,7 +153,9 @@
 
   async function loadSurveySummary(challengeId: string): Promise<void> {
     const eventId = events.selectedEventId;
-    if (!eventId) return;
+    if (!eventId) {
+      return;
+    }
     selectedSurveyChallengeId = challengeId;
     const { data, error: responseError } = await api.GET(
       '/api/v1/events/{event_id}/challenges/{challenge_id}/survey-summary',
@@ -157,8 +171,12 @@
   }
 
   function stateTone(state: string): 'neutral' | 'success' | 'warning' {
-    if (state === 'published' || state === 'approved') return 'success';
-    if (state === 'submitted' || state === 'changes_requested') return 'warning';
+    if (state === 'published' || state === 'approved') {
+      return 'success';
+    }
+    if (state === 'submitted' || state === 'changes_requested') {
+      return 'warning';
+    }
     return 'neutral';
   }
 </script>

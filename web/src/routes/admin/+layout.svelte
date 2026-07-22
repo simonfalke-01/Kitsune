@@ -17,7 +17,9 @@
   ];
 
   onMount(async () => {
-    if (!session.loading && !session.can('event_manage')) await goto('/');
+    if (!session.loading && !session.can('event_manage')) {
+      await goto('/');
+    }
   });
 </script>
 

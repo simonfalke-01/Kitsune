@@ -20,7 +20,7 @@ use chacha20poly1305::{
     XChaCha20Poly1305, XNonce,
     aead::{Aead, KeyInit},
 };
-use chrono::{Duration, Utc};
+use chrono::{DateTime, Duration, Utc};
 use kitsune_core::{
     DomainError, EventEnvelope,
     events::DomainEvent,
@@ -29,6 +29,7 @@ use kitsune_core::{
 };
 use kitsune_db::{
     auth::{AuthRepository, LocalAccount, SessionAccount},
+    oauth::OAuthClientRepository,
     tokens::ApiTokenRepository,
 };
 use rand::Rng as _;
@@ -39,7 +40,10 @@ use totp_rs::{Algorithm as TotpAlgorithm, Secret, TOTP};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::{ApiError, ApiResult, AppState, ErrorBody};
+use crate::{
+    ApiError, ApiResult, AppState, ErrorBody,
+    tokens::{ProgrammaticTokenClaims, ProgrammaticTokenKind},
+};
 
 const SESSION_COOKIE: &str = "kit_session";
 const CSRF_COOKIE: &str = "kit_csrf";
@@ -302,6 +306,18 @@ pub struct Actor {
     permissions: std::collections::HashSet<String>,
 }
 
+struct ProgrammaticPrincipal {
+    session_id: Uuid,
+    user_id: UserId,
+    organization_id: OrganizationId,
+    display_name: String,
+    email: String,
+    email_verified: bool,
+    scopes: Vec<String>,
+    event_ids: Vec<Uuid>,
+    expires_at: DateTime<Utc>,
+}
+
 impl Actor {
     /// Rejects the request unless the resolved scoped grants contain `key`.
     pub fn require(&self, key: &str) -> ApiResult<()> {
@@ -315,6 +331,15 @@ impl Actor {
     /// Enforces CSRF on cookie-authenticated mutations.
     pub fn require_csrf(&self, headers: &HeaderMap) -> ApiResult<()> {
         self.session.require_csrf(headers)
+    }
+
+    /// Restricts account-credential management to an interactive cookie session.
+    pub fn require_interactive_session(&self) -> ApiResult<()> {
+        if self.session.csrf_digest.is_some() {
+            Ok(())
+        } else {
+            Err(ApiError::from(DomainError::Forbidden))
+        }
     }
 
     /// Returns true for a granted permission without weakening handler checks.
@@ -370,19 +395,12 @@ impl Actor {
             .tokens
             .parse(token, now)
             .map_err(|_| ApiError::unauthorized())?;
-        let token_digest = Sha256::digest(token.as_bytes());
-        let principal = ApiTokenRepository::new(state.db.pool().clone())
-            .authenticate(token_digest.as_slice(), now)
-            .await
-            .map_err(ApiError::from)?
-            .ok_or_else(ApiError::unauthorized)?;
-        if claims.token_id != principal.token_id
-            || claims.user_id != principal.user_id.0
-            || claims.organization_id != principal.organization_id.0
-            || claims.expires_at != principal.expires_at.timestamp()
-        {
-            return Err(ApiError::unauthorized());
-        }
+        let principal = match claims.kind {
+            ProgrammaticTokenKind::ApiToken => {
+                Self::api_token_principal(state, token, &claims, now).await?
+            }
+            ProgrammaticTokenKind::OAuthAccess => Self::oauth_principal(state, &claims).await?,
+        };
         enforce_token_event_scope(path, &principal.event_ids)?;
         let granted = state
             .auth_repository
@@ -399,7 +417,7 @@ impl Actor {
         Ok(Self {
             session: SessionIdentity {
                 account: SessionAccount {
-                    session_id: principal.token_id,
+                    session_id: principal.session_id,
                     user_id: principal.user_id,
                     organization_id: principal.organization_id,
                     display_name: principal.display_name,
@@ -410,6 +428,78 @@ impl Actor {
                 csrf_digest: None,
             },
             permissions,
+        })
+    }
+
+    async fn api_token_principal(
+        state: &AppState,
+        token: &str,
+        claims: &ProgrammaticTokenClaims,
+        now: DateTime<Utc>,
+    ) -> ApiResult<ProgrammaticPrincipal> {
+        if claims.oauth_client_id.is_some() || !claims.scopes.is_empty() {
+            return Err(ApiError::unauthorized());
+        }
+        let token_digest = Sha256::digest(token.as_bytes());
+        let principal = ApiTokenRepository::new(state.db.pool().clone())
+            .authenticate(token_digest.as_slice(), now)
+            .await
+            .map_err(ApiError::from)?
+            .ok_or_else(ApiError::unauthorized)?;
+        if claims.token_id != principal.token_id
+            || claims.user_id != principal.user_id.0
+            || claims.organization_id != principal.organization_id.0
+            || claims.expires_at != principal.expires_at.timestamp()
+        {
+            return Err(ApiError::unauthorized());
+        }
+        Ok(ProgrammaticPrincipal {
+            session_id: principal.token_id,
+            user_id: principal.user_id,
+            organization_id: principal.organization_id,
+            display_name: principal.display_name,
+            email: principal.email,
+            email_verified: principal.email_verified,
+            scopes: principal.scopes,
+            event_ids: principal.event_ids,
+            expires_at: principal.expires_at,
+        })
+    }
+
+    async fn oauth_principal(
+        state: &AppState,
+        claims: &ProgrammaticTokenClaims,
+    ) -> ApiResult<ProgrammaticPrincipal> {
+        let client_id = claims.oauth_client_id.ok_or_else(ApiError::unauthorized)?;
+        if claims.scopes.is_empty() {
+            return Err(ApiError::unauthorized());
+        }
+        let principal = OAuthClientRepository::new(state.db.pool().clone())
+            .principal(client_id)
+            .await
+            .map_err(ApiError::from)?
+            .ok_or_else(ApiError::unauthorized)?;
+        if claims.user_id != principal.user_id.0
+            || claims.organization_id != principal.organization_id.0
+            || !claims
+                .scopes
+                .iter()
+                .all(|scope| principal.scopes.contains(scope))
+        {
+            return Err(ApiError::unauthorized());
+        }
+        let expires_at =
+            DateTime::from_timestamp(claims.expires_at, 0).ok_or_else(ApiError::unauthorized)?;
+        Ok(ProgrammaticPrincipal {
+            session_id: claims.token_id,
+            user_id: principal.user_id,
+            organization_id: principal.organization_id,
+            display_name: principal.display_name,
+            email: principal.email,
+            email_verified: principal.email_verified,
+            scopes: claims.scopes.clone(),
+            event_ids: principal.event_ids,
+            expires_at,
         })
     }
 }

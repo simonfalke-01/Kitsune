@@ -14,16 +14,22 @@
   onMount(async () => {
     preferences.load();
     await session.bootstrap();
-    if (session.authenticated) realtime.start();
+    if (session.authenticated) {
+      realtime.start();
+    }
   });
 
   $effect(() => {
-    if (session.authenticated) realtime.start();
+    if (session.authenticated) {
+      realtime.start();
+    }
   });
 
   $effect(() => {
     const envelope = realtime.latest;
-    if (!session.authenticated || !envelope || envelope.id === appliedRealtimeEvent) return;
+    if (!session.authenticated || !envelope || envelope.id === appliedRealtimeEvent) {
+      return;
+    }
     appliedRealtimeEvent = envelope.id;
     if (envelope.event.type === 'event.changed') {
       void events.load();

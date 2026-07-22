@@ -95,6 +95,8 @@ pub enum DomainEvent {
     },
     /// Programmatic API credential lifecycle changed.
     ApiTokenChanged { token_id: Uuid, state: String },
+    /// OAuth2 confidential-client lifecycle changed.
+    OAuthClientChanged { client_id: Uuid, state: String },
     /// Event lifecycle or configuration changed.
     EventChanged { event_id: EventId },
     /// Team created.
@@ -184,6 +186,7 @@ impl DomainEvent {
             Self::AuthenticationSucceeded { .. } => "auth.succeeded",
             Self::AuthenticationFailed { .. } => "auth.failed",
             Self::ApiTokenChanged { .. } => "auth.api_token.changed",
+            Self::OAuthClientChanged { .. } => "auth.oauth_client.changed",
             Self::EventChanged { .. } => "event.changed",
             Self::TeamCreated { .. } => "identity.team.created",
             Self::TeamMembershipChanged { .. } => "identity.team.membership_changed",

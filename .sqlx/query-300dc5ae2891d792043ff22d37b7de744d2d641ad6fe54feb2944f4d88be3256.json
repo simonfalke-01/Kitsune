@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE oauth_clients SET last_used_at = $2::timestamptz\n        WHERE id = $1\n          AND (\n              last_used_at IS NULL\n              OR last_used_at < $2::timestamptz - interval '5 minutes'\n          )\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "300dc5ae2891d792043ff22d37b7de744d2d641ad6fe54feb2944f4d88be3256"
+}

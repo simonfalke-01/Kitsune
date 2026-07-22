@@ -20,19 +20,27 @@
     error = null;
     const result = await api.POST('/api/v1/auth/recovery', { body: { organization, email } });
     busy = false;
-    if (result.response.ok) sent = true;
-    else error = errorMessage(result.error, 'Recovery could not be started.');
+    if (result.response.ok) {
+      sent = true;
+    } else {
+      error = errorMessage(result.error, 'Recovery could not be started.');
+    }
   }
 
   async function complete(event: SubmitEvent) {
     event.preventDefault();
-    if (!token) return;
+    if (!token) {
+      return;
+    }
     busy = true;
     error = null;
     const result = await api.POST('/api/v1/auth/recovery/complete', { body: { token, password } });
     busy = false;
-    if (result.response.ok) await goto('/login');
-    else error = errorMessage(result.error, 'This recovery link is invalid or expired.');
+    if (result.response.ok) {
+      await goto('/login');
+    } else {
+      error = errorMessage(result.error, 'This recovery link is invalid or expired.');
+    }
   }
 </script>
 

@@ -24,20 +24,33 @@ use uuid::Uuid;
 use crate::{Actor, ApiError, ApiResult, AppState, ErrorBody};
 
 const TOKEN_IMPLICIT_ASSERTION: &[u8] = b"kitsune:programmatic:v1";
-const TOKEN_KIND_API: &str = "api_token";
 const DEFAULT_EXPIRY_DAYS: u16 = 30;
 const MAX_EXPIRY_DAYS: u16 = 365;
+
+/// Programmatic credential class carried inside the authenticated token.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum ProgrammaticTokenKind {
+    /// User-created long-lived personal API token.
+    ApiToken,
+    /// Short-lived OAuth2 client-credentials access token.
+    OAuthAccess,
+}
 
 /// Authenticated PASETO payload. Database state remains authoritative for
 /// revocation and scope changes.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub(crate) struct ProgrammaticTokenClaims {
-    pub(crate) kind: String,
+    pub(crate) kind: ProgrammaticTokenKind,
     pub(crate) token_id: Uuid,
     pub(crate) user_id: Uuid,
     pub(crate) organization_id: Uuid,
     pub(crate) issued_at: i64,
     pub(crate) expires_at: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub(crate) oauth_client_id: Option<Uuid>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub(crate) scopes: Vec<String>,
 }
 
 /// Stable installation-key-backed PASETO v4.local codec.
@@ -90,10 +103,7 @@ impl TokenService {
         let claims: ProgrammaticTokenClaims =
             serde_json::from_str(trusted.payload()).map_err(|_| DomainError::Forbidden)?;
         let now = now.timestamp();
-        if claims.kind != TOKEN_KIND_API
-            || claims.issued_at > now.saturating_add(60)
-            || claims.expires_at <= now
-        {
+        if claims.issued_at > now.saturating_add(60) || claims.expires_at <= now {
             return Err(DomainError::Forbidden);
         }
         Ok(claims)
@@ -158,6 +168,7 @@ pub(crate) async fn list_api_tokens(
     State(state): State<AppState>,
     actor: Actor,
 ) -> ApiResult<Json<Vec<ApiTokenResponse>>> {
+    actor.require_interactive_session()?;
     let records = ApiTokenRepository::new(state.db.pool().clone())
         .list(
             actor.session.account.organization_id,
@@ -188,6 +199,7 @@ pub(crate) async fn create_api_token(
     headers: HeaderMap,
     Json(request): Json<CreateApiTokenRequest>,
 ) -> ApiResult<(StatusCode, Json<CreatedApiTokenResponse>)> {
+    actor.require_interactive_session()?;
     actor.require_csrf(&headers)?;
     let name = request.name.trim();
     if !(1..=80).contains(&name.chars().count()) {
@@ -207,12 +219,14 @@ pub(crate) async fn create_api_token(
     let expires_at = now + Duration::days(i64::from(expiry_days));
     let token_id = Uuid::now_v7();
     let claims = ProgrammaticTokenClaims {
-        kind: TOKEN_KIND_API.to_owned(),
+        kind: ProgrammaticTokenKind::ApiToken,
         token_id,
         user_id: actor.session.account.user_id.0,
         organization_id: actor.session.account.organization_id.0,
         issued_at: now.timestamp(),
         expires_at: expires_at.timestamp(),
+        oauth_client_id: None,
+        scopes: Vec::new(),
     };
     let token = state.tokens.issue(&claims).map_err(ApiError::from)?;
     let token_digest = Sha256::digest(token.as_bytes());
@@ -263,6 +277,7 @@ pub(crate) async fn revoke_api_token(
     headers: HeaderMap,
     Path(token_id): Path<Uuid>,
 ) -> ApiResult<StatusCode> {
+    actor.require_interactive_session()?;
     actor.require_csrf(&headers)?;
     let mutation = ApiTokenRepository::new(state.db.pool().clone())
         .revoke(
@@ -282,7 +297,7 @@ pub(crate) async fn revoke_api_token(
     Ok(StatusCode::NO_CONTENT)
 }
 
-fn canonical_scopes(actor: &Actor, scopes: Vec<String>) -> ApiResult<Vec<String>> {
+pub(crate) fn canonical_scopes(actor: &Actor, scopes: Vec<String>) -> ApiResult<Vec<String>> {
     let scopes = scopes
         .into_iter()
         .map(|scope| scope.trim().to_owned())
@@ -298,7 +313,7 @@ fn canonical_scopes(actor: &Actor, scopes: Vec<String>) -> ApiResult<Vec<String>
     Ok(scopes.into_iter().collect())
 }
 
-fn canonical_event_ids(event_ids: Vec<Uuid>) -> ApiResult<Vec<Uuid>> {
+pub(crate) fn canonical_event_ids(event_ids: Vec<Uuid>) -> ApiResult<Vec<Uuid>> {
     let unique = event_ids.into_iter().collect::<BTreeSet<_>>();
     if unique.len() > 100 {
         return Err(ApiError::from(DomainError::Validation(
@@ -328,19 +343,21 @@ mod tests {
     use chrono::{Duration, Utc};
     use uuid::Uuid;
 
-    use super::{ProgrammaticTokenClaims, TOKEN_KIND_API, TokenService};
+    use super::{ProgrammaticTokenClaims, ProgrammaticTokenKind, TokenService};
 
     #[test]
     fn v4_local_tokens_round_trip_and_reject_tampering() {
         let service = TokenService::from_master_key(&[7_u8; 64]).expect("service");
         let now = Utc::now();
         let claims = ProgrammaticTokenClaims {
-            kind: TOKEN_KIND_API.into(),
+            kind: ProgrammaticTokenKind::ApiToken,
             token_id: Uuid::now_v7(),
             user_id: Uuid::now_v7(),
             organization_id: Uuid::now_v7(),
             issued_at: now.timestamp(),
             expires_at: (now + Duration::minutes(5)).timestamp(),
+            oauth_client_id: None,
+            scopes: Vec::new(),
         };
         let token = service.issue(&claims).expect("issue");
         assert!(token.starts_with("v4.local."));

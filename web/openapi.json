@@ -604,6 +604,35 @@
         ],
         "type": "object"
       },
+      "CreateOAuthClientRequest": {
+        "description": "New OAuth2 confidential-client request.",
+        "properties": {
+          "event_ids": {
+            "description": "Optional event allow-list. Empty means organization-wide.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "description": "Human-readable client name.",
+            "type": "string"
+          },
+          "scopes": {
+            "description": "Maximum fine-grained permission scopes.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "scopes"
+        ],
+        "type": "object"
+      },
       "CreateTeamRequest": {
         "description": "New team input.",
         "properties": {
@@ -655,6 +684,27 @@
           }
         ],
         "description": "One-time API-token creation response."
+      },
+      "CreatedOAuthClientResponse": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/OAuthClientResponse",
+            "description": "Safe persisted metadata."
+          },
+          {
+            "properties": {
+              "client_secret": {
+                "description": "Client secret shown exactly once.",
+                "type": "string"
+              }
+            },
+            "required": [
+              "client_secret"
+            ],
+            "type": "object"
+          }
+        ],
+        "description": "One-time confidential-client creation response."
       },
       "ErrorBody": {
         "description": "Machine-readable error response.",
@@ -980,6 +1030,136 @@
           "workshop"
         ],
         "type": "string"
+      },
+      "OAuthClientResponse": {
+        "description": "Safe persisted OAuth2 client metadata.",
+        "properties": {
+          "client_id": {
+            "description": "Public client identifier.",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "Creation time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "event_ids": {
+            "description": "Optional event allow-list.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "id": {
+            "description": "Internal management ID.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "last_used_at": {
+            "description": "Coarsely updated last token-exchange time.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "description": "Human-readable client name.",
+            "type": "string"
+          },
+          "revoked_at": {
+            "description": "Revocation time.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scopes": {
+            "description": "Maximum permission scopes.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "client_id",
+          "name",
+          "scopes",
+          "event_ids",
+          "created_at"
+        ],
+        "type": "object"
+      },
+      "OAuthErrorResponse": {
+        "description": "RFC 6749 token-endpoint error response.",
+        "properties": {
+          "error": {
+            "description": "Stable OAuth error code.",
+            "type": "string"
+          },
+          "error_description": {
+            "description": "Safe human-readable detail.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "error",
+          "error_description"
+        ],
+        "type": "object"
+      },
+      "OAuthTokenRequest": {
+        "description": "RFC 6749 client-credentials token request.",
+        "properties": {
+          "grant_type": {
+            "description": "Must be `client_credentials`.",
+            "type": "string"
+          },
+          "scope": {
+            "description": "Optional space-delimited subset of registered scopes.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "grant_type"
+        ],
+        "type": "object"
+      },
+      "OAuthTokenResponse": {
+        "description": "RFC 6749 bearer access-token response.",
+        "properties": {
+          "access_token": {
+            "description": "Short-lived PASETO bearer credential.",
+            "type": "string"
+          },
+          "expires_in": {
+            "description": "Lifetime in seconds.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "scope": {
+            "description": "Granted space-delimited scopes.",
+            "type": "string"
+          },
+          "token_type": {
+            "description": "Always `Bearer`.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_token",
+          "token_type",
+          "expires_in",
+          "scope"
+        ],
+        "type": "object"
       },
       "ParticipationInput": {
         "description": "Event scoring identity policy.",
@@ -2274,6 +2454,152 @@
             "description": ""
           },
           "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/oauth-clients": {
+      "get": {
+        "operationId": "list_oauth_clients",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OAuthClientResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      },
+      "post": {
+        "operationId": "create_oauth_client",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOAuthClientRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedOAuthClientResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/oauth-clients/{client_id}": {
+      "delete": {
+        "operationId": "revoke_oauth_client",
+        "parameters": [
+          {
+            "description": "Internal client ID",
+            "in": "path",
+            "name": "client_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
             "content": {
               "application/json": {
                 "schema": {
@@ -4613,6 +4939,66 @@
         },
         "tags": [
           "system"
+        ]
+      }
+    },
+    "/oauth/token": {
+      "post": {
+        "operationId": "exchange_client_credentials",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthTokenResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthErrorResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthErrorResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthErrorResponse"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
         ]
       }
     },

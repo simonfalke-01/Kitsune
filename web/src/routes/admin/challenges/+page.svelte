@@ -79,9 +79,15 @@
   }
 
   function answerRules(): CreateChallengeInput['answers'] {
-    if (challengeType === 'manual_verification') return [{ kind: 'manual' }];
-    if (challengeType === 'dynamic_instance') return [{ kind: 'dynamic' }];
-    if (challengeType === 'multiple_choice') return [{ kind: 'choice', value: answer }];
+    if (challengeType === 'manual_verification') {
+      return [{ kind: 'manual' }];
+    }
+    if (challengeType === 'dynamic_instance') {
+      return [{ kind: 'dynamic' }];
+    }
+    if (challengeType === 'multiple_choice') {
+      return [{ kind: 'choice', value: answer }];
+    }
     if (answerMode === 'regex') {
       return [{ kind: 'regex', pattern: answer, case_insensitive: false }];
     }
@@ -115,7 +121,9 @@
         required: question.required
       }))
     });
-    if (!created) return;
+    if (!created) {
+      return;
+    }
     showComposer = false;
     title = '';
     description = '';
