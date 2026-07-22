@@ -7,9 +7,13 @@
 {#if preferences.branding}
   <span class="brand" aria-label="Kitsune">
     <span class="placeholder" aria-hidden="true">
-      <i></i><i></i><b></b>
+      <i></i>
+      <i></i>
+      <b></b>
     </span>
-    {#if !compact}<span class="wordmark">Kitsune</span>{/if}
+    {#if !compact}
+      <span class="wordmark">Kitsune</span>
+    {/if}
   </span>
 {/if}
 

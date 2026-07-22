@@ -24,7 +24,9 @@
 <label class:disabled>
   <span class="copy">
     <strong>{label}</strong>
-    {#if description}<small>{description}</small>{/if}
+    {#if description}
+      <small>{description}</small>
+    {/if}
   </span>
   <Switch.Root {checked} onCheckedChange={update} {disabled} class="switch" aria-label={label}>
     <Switch.Thumb class="thumb" />

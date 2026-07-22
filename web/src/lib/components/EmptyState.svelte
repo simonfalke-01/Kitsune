@@ -6,10 +6,16 @@
 </script>
 
 <section class="empty" aria-labelledby="empty-title">
-  <div class="icon" aria-hidden="true"><Search size={19} strokeWidth={1.7} /></div>
+  <div class="icon" aria-hidden="true">
+    <Search size={19} strokeWidth={1.7} />
+  </div>
   <h2 id="empty-title">{title}</h2>
-  {#if detail}<p>{detail}</p>{/if}
-  {#if action}<div class="action">{@render action()}</div>{/if}
+  {#if detail}
+    <p>{detail}</p>
+  {/if}
+  {#if action}
+    <div class="action">{@render action()}</div>
+  {/if}
 </section>
 
 <style>

@@ -200,14 +200,18 @@
   }
 </script>
 
-<svelte:head><title>Account security — Kitsune</title></svelte:head>
+<svelte:head>
+  <title>Account security — Kitsune</title>
+</svelte:head>
 <section class="page page-narrow security">
   <div>
     <p class="eyebrow">Account security</p>
     <h1 class="title">Guard your trail.</h1>
     <p class="lede">Add an authenticator and inspect every active session.</p>
   </div>
-  {#if error}<p class="error-text" role="alert">{error}</p>{/if}
+  {#if error}
+    <p class="error-text" role="alert">{error}</p>
+  {/if}
 
   <Card elevated>
     <div class="section-head">

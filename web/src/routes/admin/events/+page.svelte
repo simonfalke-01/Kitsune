@@ -172,10 +172,14 @@
         >
           <div class="event-head">
             <Badge tone={item.state === 'live' ? 'success' : 'neutral'}>
-              {#if item.state === 'live'}<Radio size={11} />{/if}
+              {#if item.state === 'live'}
+                <Radio size={11} />
+              {/if}
               {item.state}
             </Badge>
-            {#if events.selectedEventId === item.id}<Check size={16} />{/if}
+            {#if events.selectedEventId === item.id}
+              <Check size={16} />
+            {/if}
           </div>
           <strong>{item.name}</strong>
           <span>{item.modes.join(' · ')}</span>

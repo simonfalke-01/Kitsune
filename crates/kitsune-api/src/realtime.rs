@@ -27,19 +27,29 @@ pub(crate) async fn websocket(
         loop {
             tokio::select! {
                 event = events.next() => {
-                    let Some(event) = event else { break; };
-                    let Ok(serialized) = serde_json::to_string(&event) else { continue; };
+                    let Some(event) = event else {
+                        break;
+                    };
+                    let Ok(serialized) = serde_json::to_string(&event) else {
+                        continue;
+                    };
                     if sender.send(Message::Text(serialized.into())).await.is_err() {
                         break;
                     }
                 }
                 message = receiver.next() => {
-                    match message {
-                        Some(Ok(Message::Ping(payload))) => {
-                            if sender.send(Message::Pong(payload)).await.is_err() { break; }
-                        }
-                        Some(Ok(Message::Close(_)) | Err(_)) | None => break,
-                        _ => {}
+                    let connection_closed = matches!(
+                        &message,
+                        Some(Ok(Message::Close(_)) | Err(_)) | None
+                    );
+                    if connection_closed {
+                        break;
+                    }
+
+                    if let Some(Ok(Message::Ping(payload))) = message
+                        && sender.send(Message::Pong(payload)).await.is_err()
+                    {
+                        break;
                     }
                 }
             }

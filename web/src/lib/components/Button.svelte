@@ -28,7 +28,9 @@
   aria-label={ariaLabel}
   {onclick}
 >
-  {#if loading}<span class="spinner" aria-hidden="true"></span>{/if}
+  {#if loading}
+    <span class="spinner" aria-hidden="true"></span>
+  {/if}
   <span class:visually-muted={loading}>{@render children()}</span>
 </button>
 
