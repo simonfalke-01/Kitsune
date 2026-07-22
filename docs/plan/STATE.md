@@ -7,6 +7,8 @@ Updated: 2026-07-22 (Asia/Singapore)
 - Current milestone: 02 — deterministic core and persistence.
 - Current milestone: 03 — secured API, authentication, and realtime.
 - In progress: complete provider/MFA/token suite and domain REST resources.
+- Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
+  organizer navigation, design primitives, and branding plumbing are green.
 - Next: OIDC/passkey/SAML/TOTP adapters, RBAC extractor, and event/challenge API.
 
 ## Verified
@@ -25,6 +27,13 @@ Updated: 2026-07-22 (Asia/Singapore)
   `/health`, `/ready`, OpenAPI 3.1, first-run admin creation, encrypted cookies,
   session recovery, 15-permission super-admin grant, CSRF rejection, logout, and
   graceful shutdown.
+- SvelteKit production build passes strict TypeScript/Svelte diagnostics,
+  ESLint/Prettier, and 4 Vitest assertions. The generated TypeScript client is
+  derived from the code-generated OpenAPI 3.1 document.
+- Neutral Kon slots, separate tone/branding controls, the free de-brand path and
+  support nudge, disabled-by-default white-label entitlement UX, dark/light
+  tokens, responsive player shell, organizer shell, automation canvas, and
+  component catalog are wired without introducing final mascot artwork early.
 
 ## Risks being actively retired
 

@@ -8,8 +8,8 @@
 - [x] Draft KCL-1.0, CLA, NOTICE, and package license policy.
 - [x] Complete and cross-check CTFd feature-parity matrix.
 - [x] Scaffold all Cargo crates and pnpm workspaces.
-- [ ] Add baseline CI and supply-chain policy.
-- [ ] Run format, metadata, compile, lint, and base tests green.
+- [x] Add baseline CI and dependency-update policy.
+- [x] Run format, metadata, compile, lint, and base tests green.
 
 ## Subsequent work
 
@@ -52,3 +52,20 @@ or scaffolding alone.
 - [ ] PASETO API tokens and OAuth2 client credentials.
 - [ ] Deny-by-default RBAC extractor on every protected endpoint.
 - [ ] Complete versioned REST resources and OpenAPI contracts.
+
+## Frontend vertical slice
+
+- [x] Svelte 5 strict shell and Kitsune CSS-token system.
+- [x] OpenAPI-generated TypeScript schema and typed fetch seam.
+- [x] Session and reconnecting authenticated realtime stores.
+- [x] Responsive player navigation, login, first-run setup, board, scoreboard,
+  and team states.
+- [x] Organizer live-ops, challenge-authoring, automation-canvas, and settings
+  surfaces with working local interactions.
+- [x] Bits UI headless switch primitive and docs-quality component catalog.
+- [x] Dark/light preference, i18n tone catalog, neutral mascot slot, free
+  de-brand support nudge, and white-label entitlement state.
+- [x] Strict Svelte check, ESLint/Prettier, component tests, and production build.
+- [ ] Wire player and organizer resources to the complete domain REST API.
+- [ ] Complete all mode-specific, auth-provider, plugin, integration, and
+  administrative surfaces.

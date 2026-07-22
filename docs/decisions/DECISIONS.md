@@ -49,3 +49,9 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Default Secure cookies off only in the direct lean HTTP topology
   and make the layered setting authoritative — TLS deployments and shipped scale
   manifests enable it, while localhost remains usable without hidden setup.
+- 2026-07-22 — Use static root-relative navigation in the Svelte application —
+  every blessed deployment serves the UI at the origin root, so the base-path
+  lint rule would add indirection without protecting a supported topology.
+- 2026-07-22 — Keep Kon artwork as a neutral CSS silhouette until milestone 16 —
+  this delivers every branding, entitlement, and copy seam now while honoring
+  the required human-made-art sequencing and provenance constraint.
