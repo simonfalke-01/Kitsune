@@ -91,3 +91,18 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Treat built-in role permissions as Kitsune-managed upgrade data —
   forward migrations add new capabilities to existing installations and player
   registration refreshes the canonical role rather than preserving stale grants.
+- 2026-07-22 — Serialize solve decisions with a challenge-row lock but allocate
+  score-entry IDs from a PostgreSQL sequence — first blood remains race-proof
+  without turning every submission in a large event into one counter bottleneck.
+- 2026-07-22 — Default first blood to a 50-point append-only bonus configurable
+  through event config — the distinction stays visible in history and operators
+  can set it to zero without changing solve semantics.
+- 2026-07-22 — Prefer the current team identity in hybrid events and fall back
+  to the user identity when teamless — one deterministic rule prevents a player
+  from choosing a different scoring identity on each submission.
+- 2026-07-22 — Implement score freeze by marking new ledger entries concealed
+  while frozen, never by mutating totals — organizer views stay live, the public
+  snapshot stays stable, and unfreeze is an auditable reveal rather than replay.
+- 2026-07-22 — Extend the root Prettier contract to cross-cutting Playwright
+  sources — browser tests now follow the same readable width, quote, and trailing
+  comma policy as the Svelte application instead of relying on editor defaults.

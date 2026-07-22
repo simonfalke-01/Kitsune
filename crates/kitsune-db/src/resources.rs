@@ -291,6 +291,56 @@ impl ResourceRepository {
         Ok((row, envelope))
     }
 
+    /// Updates public scoreboard freeze and visibility controls atomically.
+    pub async fn set_scoreboard_controls(
+        &self,
+        organization_id: OrganizationId,
+        event_id: EventId,
+        actor: UserId,
+        frozen: bool,
+        hidden: bool,
+        now: DateTime<Utc>,
+    ) -> DomainResult<(EventRecord, EventEnvelope)> {
+        let mut tx = self.pool.begin().await.map_err(unavailable)?;
+        let row = sqlx::query_as!(
+            EventRecord,
+            r#"
+            UPDATE events
+            SET scoreboard_frozen = $3, scoreboard_hidden = $4, updated_at = $5
+            WHERE id = $1 AND organization_id = $2
+            RETURNING id,name,slug,description,state,participation,modes,starts_at,
+                      ends_at,team_size_limit,scoreboard_frozen,scoreboard_hidden
+            "#,
+            event_id.0,
+            organization_id.0,
+            frozen,
+            hidden,
+            now,
+        )
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(unavailable)?
+        .ok_or(DomainError::NotFound)?;
+        let envelope = EventEnvelope::new(
+            organization_id,
+            Some(event_id),
+            Some(actor),
+            Uuid::now_v7(),
+            now,
+            DomainEvent::ScoreboardControlChanged { frozen, hidden },
+        );
+        persist_audit_event(
+            &mut tx,
+            &envelope,
+            "scoreboard.controls.change",
+            "event",
+            &event_id.to_string(),
+        )
+        .await?;
+        tx.commit().await.map_err(unavailable)?;
+        Ok((row, envelope))
+    }
+
     /// Confirms an event belongs to the calling tenant.
     pub async fn owns_event(
         &self,

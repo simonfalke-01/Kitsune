@@ -6,8 +6,8 @@
   "scripts": {
     "build": "pnpm --recursive build",
     "check": "pnpm --recursive check",
-    "format": "pnpm --recursive format",
-    "lint": "pnpm --recursive lint",
+    "format": "pnpm --dir web exec prettier --write '../tests/e2e/**/*.ts' && pnpm --recursive format",
+    "lint": "pnpm --dir web exec prettier --check '../tests/e2e/**/*.ts' && pnpm --recursive lint",
     "test": "pnpm --recursive test"
   }
 }

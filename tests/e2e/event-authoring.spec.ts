@@ -11,7 +11,9 @@ async function authenticate(page: Page): Promise<void> {
   await page.goto('/setup');
   const completed = page.getByRole('heading', { name: 'Setup is complete.' });
   await expect(
-    page.getByRole('heading', { name: /Setup is complete\.|Raise your first torii\./ })
+    page.getByRole('heading', {
+      name: /Setup is complete\.|Raise your first torii\./
+    })
   ).toBeVisible();
   if (await completed.isVisible()) {
     await page.getByRole('link', { name: 'Go to sign in' }).click();
@@ -36,7 +38,9 @@ function projectKey(testInfo: TestInfo): string {
   return testInfo.project.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
 }
 
-test('organizer authors a published challenge visible on the player board', async ({ page }, testInfo) => {
+test('organizer authors a published challenge visible on the player board', async ({
+  page
+}, testInfo) => {
   await authenticate(page);
   const key = projectKey(testInfo);
   const run = Date.now().toString(36);
@@ -50,6 +54,7 @@ test('organizer authors a published challenge visible on the player board', asyn
   await page.getByLabel('Event name').fill(eventName);
   await page.getByLabel('Event key').fill(`foxfire-e2e-${key}-${run}`);
   await page.getByLabel('Description').fill('A browser-tested Kitsune event.');
+  await page.getByLabel('Participation').selectOption('individual');
   await page.getByRole('button', { name: 'Create draft' }).click();
   await expect(page.locator('.event-grid').getByText(eventName, { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Go live' }).click();
@@ -68,11 +73,46 @@ test('organizer authors a published challenge visible on the player board', asyn
   await expect(page.getByText(challengeName, { exact: true })).toBeVisible();
 
   await page.goto('/challenges');
-  await expect(page.getByRole('heading', { name: challengeName })).toBeVisible();
-  await expect(page.getByText('500 pts')).toBeVisible();
+  const challengeCard = page
+    .locator('article.challenge-card')
+    .filter({ has: page.getByRole('heading', { name: challengeName }) });
+  await expect(challengeCard).toBeVisible();
+  await expect(challengeCard.getByText('500 pts')).toBeVisible();
+  await challengeCard.getByRole('button', { name: 'Submit flag' }).click();
+  await challengeCard.getByLabel('Flag').fill(`kit{${key}-accepted}`);
+  const submissionRecorded = page.waitForResponse((response) =>
+    response.url().includes('/submissions')
+  );
+  await challengeCard.getByRole('button', { name: 'Inspect submission' }).click();
+  await submissionRecorded;
+  await expect(challengeCard.getByText(/First blood\./)).toBeVisible();
+  await expect(challengeCard.getByRole('button', { name: 'Solved' })).toBeVisible();
+
+  const scoreboardLoaded = page.waitForResponse((response) =>
+    response.url().endsWith('/scoreboard')
+  );
+  await page.goto('/scoreboard');
+  await scoreboardLoaded;
+  const standings = page.getByLabel('Event standings');
+  await expect(standings.getByText('E2E Owner', { exact: true })).toBeVisible();
+  await expect(standings.getByText('550 pts', { exact: true })).toBeVisible();
 
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations).toEqual([]);
+
+  await page.goto('/admin/events');
+  const freezeUpdated = page.waitForResponse((response) =>
+    response.url().includes('/scoreboard-controls')
+  );
+  await page.getByRole('button', { name: 'Freeze', exact: true }).click();
+  await freezeUpdated;
+  await expect(page.getByText('Frozen snapshot', { exact: true })).toBeVisible();
+  const unfreezeUpdated = page.waitForResponse((response) =>
+    response.url().includes('/scoreboard-controls')
+  );
+  await page.getByRole('button', { name: 'Unfreeze', exact: true }).click();
+  await unfreezeUpdated;
+  await expect(page.getByText('Live and visible', { exact: true })).toBeVisible();
 
   const teamsLoaded = page.waitForResponse((response) => response.url().endsWith('/api/v1/teams'));
   await page.goto('/team');

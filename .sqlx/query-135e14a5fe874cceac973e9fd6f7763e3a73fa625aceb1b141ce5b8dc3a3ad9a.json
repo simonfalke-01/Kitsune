@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT rule FROM challenge_answers WHERE challenge_id = $1 ORDER BY position,id",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "rule",
+        "type_info": "Jsonb"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "135e14a5fe874cceac973e9fd6f7763e3a73fa625aceb1b141ce5b8dc3a3ad9a"
+}

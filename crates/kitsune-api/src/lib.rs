@@ -4,6 +4,7 @@ mod auth;
 mod error;
 mod realtime;
 mod resources;
+mod submissions;
 mod teams;
 
 use std::{sync::Arc, time::Instant};
@@ -131,8 +132,11 @@ pub struct ReadinessResponse {
         resources::list_events,
         resources::create_event,
         resources::update_event_state,
+        resources::update_scoreboard_controls,
         resources::list_challenges,
         resources::create_challenge,
+        submissions::submit_answer,
+        submissions::scoreboard,
         teams::list_teams,
         teams::create_team,
         teams::join_team,
@@ -158,6 +162,7 @@ pub struct ReadinessResponse {
         resources::ModeInput,
         resources::CreateEventRequest,
         resources::UpdateEventStateRequest,
+        resources::UpdateScoreboardControlsRequest,
         resources::EventResponse,
         resources::ChallengeKindInput,
         resources::ChallengeStateInput,
@@ -168,6 +173,10 @@ pub struct ReadinessResponse {
         resources::SurveyInput,
         resources::CreateChallengeRequest,
         resources::ChallengeResponse,
+        submissions::SubmitAnswerRequest,
+        submissions::SubmissionResponse,
+        submissions::ScoreboardRowResponse,
+        submissions::ScoreboardResponse,
         teams::TeamMemberResponse,
         teams::TeamResponse,
         teams::CreateTeamRequest,
@@ -182,6 +191,8 @@ pub struct ReadinessResponse {
         (name = "auth", description = "Setup, sessions, and authentication"),
         (name = "events", description = "Competition and workshop events"),
         (name = "challenges", description = "Challenge board and authoring"),
+        (name = "submissions", description = "Challenge attempts and solves"),
+        (name = "scoreboard", description = "Ranked event standings"),
         (name = "teams", description = "Player teams and captain controls")
     )
 )]
@@ -257,6 +268,10 @@ pub fn router(state: AppState) -> Router {
             axum::routing::patch(resources::update_event_state),
         )
         .route(
+            "/api/v1/events/{event_id}/scoreboard-controls",
+            axum::routing::patch(resources::update_scoreboard_controls),
+        )
+        .route(
             "/api/v1/events/{event_id}/challenges",
             get(resources::list_challenges).post(resources::create_challenge),
         )
@@ -268,6 +283,14 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/teams/{team_id}/captain",
             post(teams::transfer_captain),
+        )
+        .route(
+            "/api/v1/events/{event_id}/challenges/{challenge_id}/submissions",
+            post(submissions::submit_answer),
+        )
+        .route(
+            "/api/v1/events/{event_id}/scoreboard",
+            get(submissions::scoreboard),
         )
         .route("/api/v1/realtime/ws", get(realtime::websocket))
         .route("/api/v1/realtime/sse", get(realtime::sse))
@@ -323,6 +346,7 @@ mod tests {
         http::{Request, StatusCode, header},
     };
     use axum_extra::extract::cookie::Key;
+    use chrono::Utc;
     use http_body_util::BodyExt;
     use kitsune_automation::{InProcessCache, InProcessEventBus};
     use kitsune_db::{MIGRATOR, PostgresStore, auth::AuthRepository};
@@ -845,6 +869,246 @@ mod tests {
         let challenges: serde_json::Value = serde_json::from_slice(&body).expect("challenges");
         assert_eq!(challenges.as_array().expect("array").len(), 1);
         assert_eq!(challenges[0]["name"], "Foxfire 101");
+        let published_challenge_id = challenges[0]["id"]
+            .as_str()
+            .expect("published challenge id");
+
+        let incorrect = Request::builder()
+            .method("POST")
+            .uri(format!(
+                "/api/v1/events/{event_id}/challenges/{published_challenge_id}/submissions"
+            ))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "idempotency_key": Uuid::now_v7(),
+                    "answer": "kit{wrong-trail}"
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(incorrect)
+            .await
+            .expect("incorrect submission");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let receipt: serde_json::Value = serde_json::from_slice(&body).expect("receipt");
+        assert_eq!(receipt["outcome"], "incorrect");
+        assert_eq!(receipt["attempts_remaining"], 9);
+
+        let solve_idempotency_key = Uuid::now_v7();
+        let correct_body = serde_json::json!({
+            "idempotency_key": solve_idempotency_key,
+            "answer": "kit{never-persist-plaintext}"
+        })
+        .to_string();
+        let correct = Request::builder()
+            .method("POST")
+            .uri(format!(
+                "/api/v1/events/{event_id}/challenges/{published_challenge_id}/submissions"
+            ))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::from(correct_body.clone()))
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(correct)
+            .await
+            .expect("correct submission");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let solved: serde_json::Value = serde_json::from_slice(&body).expect("solve receipt");
+        assert_eq!(solved["outcome"], "correct");
+        assert_eq!(solved["awarded_points"], 550);
+        assert_eq!(solved["first_blood"], true);
+        assert_eq!(solved["replayed"], false);
+
+        let retry = Request::builder()
+            .method("POST")
+            .uri(format!(
+                "/api/v1/events/{event_id}/challenges/{published_challenge_id}/submissions"
+            ))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::from(correct_body))
+            .expect("request");
+        let response = app.clone().oneshot(retry).await.expect("idempotent retry");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let replayed: serde_json::Value = serde_json::from_slice(&body).expect("replayed receipt");
+        assert_eq!(replayed["id"], solved["id"]);
+        assert_eq!(replayed["replayed"], true);
+
+        let duplicate = Request::builder()
+            .method("POST")
+            .uri(format!(
+                "/api/v1/events/{event_id}/challenges/{published_challenge_id}/submissions"
+            ))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "idempotency_key": Uuid::now_v7(),
+                    "answer": "kit{never-persist-plaintext}"
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        assert_eq!(
+            app.clone()
+                .oneshot(duplicate)
+                .await
+                .expect("duplicate solve")
+                .status(),
+            StatusCode::CONFLICT
+        );
+
+        let scoreboard = Request::builder()
+            .uri(format!("/api/v1/events/{event_id}/scoreboard"))
+            .header(header::COOKIE, &player_cookies)
+            .body(Body::empty())
+            .expect("request");
+        let response = app.clone().oneshot(scoreboard).await.expect("scoreboard");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let board: serde_json::Value = serde_json::from_slice(&body).expect("scoreboard");
+        assert_eq!(board["rows"][0]["name"], "Player");
+        assert_eq!(board["rows"][0]["score"], 550);
+        assert_eq!(board["rows"][0]["solves"], 1);
+
+        let hide_scoreboard = Request::builder()
+            .method("PATCH")
+            .uri(format!("/api/v1/events/{event_id}/scoreboard-controls"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(r#"{"frozen":false,"hidden":true}"#))
+            .expect("request");
+        assert_eq!(
+            app.clone()
+                .oneshot(hide_scoreboard)
+                .await
+                .expect("hide scoreboard")
+                .status(),
+            StatusCode::OK
+        );
+        let hidden_board = Request::builder()
+            .uri(format!("/api/v1/events/{event_id}/scoreboard"))
+            .header(header::COOKIE, &player_cookies)
+            .body(Body::empty())
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(hidden_board)
+            .await
+            .expect("hidden board");
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let hidden: serde_json::Value = serde_json::from_slice(&body).expect("hidden board");
+        assert_eq!(hidden["hidden"], true);
+        assert_eq!(hidden["rows"].as_array().expect("rows").len(), 0);
+
+        let freeze_scoreboard = Request::builder()
+            .method("PATCH")
+            .uri(format!("/api/v1/events/{event_id}/scoreboard-controls"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(r#"{"frozen":true,"hidden":false}"#))
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(freeze_scoreboard)
+            .await
+            .expect("freeze scoreboard");
+        assert_eq!(response.status(), StatusCode::OK);
+        sqlx::query!(
+            r#"
+            INSERT INTO score_entries (
+                event_id,sequence,user_id,team_id,division_id,points,reason,
+                occurred_at,hidden_by_freeze
+            ) VALUES ($1,nextval('score_entry_sequence'),$2,NULL,NULL,100,$3,$4,true)
+            "#,
+            Uuid::parse_str(event_id).expect("event UUID"),
+            Uuid::parse_str(player_id).expect("player UUID"),
+            serde_json::json!({"adjustment":{"reason":"freeze regression"}}),
+            Utc::now(),
+        )
+        .execute(&pool)
+        .await
+        .expect("frozen score entry");
+
+        let frozen_public_board = Request::builder()
+            .uri(format!("/api/v1/events/{event_id}/scoreboard"))
+            .header(header::COOKIE, &player_cookies)
+            .body(Body::empty())
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(frozen_public_board)
+            .await
+            .expect("frozen public board");
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let frozen_public: serde_json::Value =
+            serde_json::from_slice(&body).expect("frozen public board");
+        assert_eq!(frozen_public["rows"][0]["score"], 550);
+
+        let frozen_admin_board = Request::builder()
+            .uri(format!("/api/v1/events/{event_id}/scoreboard"))
+            .header(header::COOKIE, &admin_cookies)
+            .body(Body::empty())
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(frozen_admin_board)
+            .await
+            .expect("frozen admin board");
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let frozen_admin: serde_json::Value =
+            serde_json::from_slice(&body).expect("frozen admin board");
+        assert_eq!(frozen_admin["rows"][0]["score"], 650);
 
         let forbidden = Request::builder()
             .method("POST")
@@ -878,6 +1142,16 @@ mod tests {
             .expect("answer rule query")
             .expect("answer rule");
         assert!(!answer_json.contains("never-persist-plaintext"));
+        let submitted_digests =
+            sqlx::query_scalar!("SELECT answer_digest FROM submissions ORDER BY submitted_at")
+                .fetch_all(&pool)
+                .await
+                .expect("submission digests");
+        assert_eq!(submitted_digests.len(), 2);
+        assert!(submitted_digests.iter().flatten().all(|digest| {
+            digest.as_slice() != b"kit{never-persist-plaintext}"
+                && digest.as_slice() != b"kit{wrong-trail}"
+        }));
         let audit_count = sqlx::query_scalar!("SELECT count(*) AS \"count!\" FROM audit_log")
             .fetch_one(&pool)
             .await
@@ -886,8 +1160,8 @@ mod tests {
             .fetch_one(&pool)
             .await
             .expect("outbox count");
-        assert_eq!(audit_count, 7);
-        assert_eq!(outbox_count, 7);
+        assert_eq!(audit_count, 14);
+        assert_eq!(outbox_count, 14);
     }
 
     fn response_cookies(headers: &axum::http::HeaderMap) -> String {

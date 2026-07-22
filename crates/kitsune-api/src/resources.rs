@@ -128,6 +128,15 @@ pub struct UpdateEventStateRequest {
     pub state: EventStateInput,
 }
 
+/// Organizer scoreboard control mutation.
+#[derive(Deserialize, ToSchema)]
+pub struct UpdateScoreboardControlsRequest {
+    /// Conceal new score entries while preserving the last public snapshot.
+    pub frozen: bool,
+    /// Conceal the entire public scoreboard.
+    pub hidden: bool,
+}
+
 /// Challenge behavior input.
 #[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -309,6 +318,8 @@ pub struct ChallengeResponse {
     /// Survey schema.
     #[schema(value_type = Vec<SurveyInput>)]
     pub survey: Value,
+    /// Whether the authenticated competitor has already solved it.
+    pub solved: bool,
 }
 
 #[utoipa::path(
@@ -454,6 +465,47 @@ pub(crate) async fn update_event_state(
 }
 
 #[utoipa::path(
+    patch,
+    path = "/api/v1/events/{event_id}/scoreboard-controls",
+    tag = "scoreboard",
+    params(("event_id" = Uuid, Path, description = "Event ID")),
+    request_body = UpdateScoreboardControlsRequest,
+    responses(
+        (status = 200, body = EventResponse),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody)
+    )
+)]
+pub(crate) async fn update_scoreboard_controls(
+    State(state): State<AppState>,
+    actor: Actor,
+    headers: HeaderMap,
+    Path(event_id): Path<Uuid>,
+    Json(request): Json<UpdateScoreboardControlsRequest>,
+) -> ApiResult<Json<EventResponse>> {
+    actor.require("scoreboard_manage")?;
+    actor.require_csrf(&headers)?;
+    let (row, envelope) = ResourceRepository::new(state.db.pool().clone())
+        .set_scoreboard_controls(
+            actor.session.account.organization_id,
+            EventId(event_id),
+            actor.session.account.user_id,
+            request.frozen,
+            request.hidden,
+            Utc::now(),
+        )
+        .await
+        .map_err(ApiError::from)?;
+    state
+        .event_bus
+        .publish(envelope)
+        .await
+        .map_err(ApiError::from)?;
+    Ok(Json(row.into()))
+}
+
+#[utoipa::path(
     get,
     path = "/api/v1/events/{event_id}/challenges",
     tag = "challenges",
@@ -483,28 +535,33 @@ pub(crate) async fn list_challenges(
         )
         .await
         .map_err(ApiError::from)?;
+    let context = repository
+        .challenge_access_context(
+            actor.session.account.organization_id,
+            event_id,
+            actor.session.account.user_id,
+        )
+        .await
+        .map_err(ApiError::from)?;
+    let division = context.division_id.map(DivisionId);
+    let solves = context
+        .solves
+        .into_iter()
+        .map(ChallengeId)
+        .collect::<BTreeSet<_>>();
     if !manager {
-        let context = repository
-            .challenge_access_context(
-                actor.session.account.organization_id,
-                event_id,
-                actor.session.account.user_id,
-            )
-            .await
-            .map_err(ApiError::from)?;
-        let division = context.division_id.map(DivisionId);
-        let solves = context
-            .solves
-            .into_iter()
-            .map(ChallengeId)
-            .collect::<BTreeSet<_>>();
         rows.retain(|row| {
             serde_json::from_value::<VisibilityRule>(row.visibility.clone())
                 .is_ok_and(|visibility| visibility.allows(Utc::now(), division, &solves))
         });
     }
     Ok(Json(
-        rows.into_iter().map(ChallengeResponse::from).collect(),
+        rows.into_iter()
+            .map(|row| {
+                let completed_by_actor = solves.contains(&ChallengeId(row.id));
+                ChallengeResponse::from_record(row, completed_by_actor)
+            })
+            .collect(),
     ))
 }
 
@@ -654,7 +711,10 @@ pub(crate) async fn create_challenge(
         .publish(envelope)
         .await
         .map_err(ApiError::from)?;
-    Ok((StatusCode::CREATED, Json(row.into())))
+    Ok((
+        StatusCode::CREATED,
+        Json(ChallengeResponse::from_record(row, false)),
+    ))
 }
 
 impl From<EventRecord> for EventResponse {
@@ -676,8 +736,8 @@ impl From<EventRecord> for EventResponse {
     }
 }
 
-impl From<ChallengeRecord> for ChallengeResponse {
-    fn from(row: ChallengeRecord) -> Self {
+impl ChallengeResponse {
+    fn from_record(row: ChallengeRecord, solved: bool) -> Self {
         Self {
             id: row.id,
             event_id: row.event_id,
@@ -693,6 +753,7 @@ impl From<ChallengeRecord> for ChallengeResponse {
             writeups_enabled: row.writeups_enabled,
             position: row.position,
             survey: row.survey,
+            solved,
         }
     }
 }

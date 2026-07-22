@@ -1,16 +1,20 @@
 <script lang="ts">
-  import { Filter, Search, Sparkles } from '@lucide/svelte';
+  import { Check, ChevronDown, Flag, Filter, Search, Sparkles } from '@lucide/svelte';
   import Badge from '$lib/components/Badge.svelte';
+  import Button from '$lib/components/Button.svelte';
   import Card from '$lib/components/Card.svelte';
   import EmptyState from '$lib/components/EmptyState.svelte';
   import type { ChallengeSummary } from '$lib/api/client';
   import { copy, toned } from '$lib/i18n/index.svelte';
   import { challengeCategories, events } from '$lib/stores/events.svelte';
+  import { game, submissionMessage } from '$lib/stores/game.svelte';
   import { session } from '$lib/stores/session.svelte';
 
   let query = $state('');
   let loaded = $state(false);
   let selectedCategory = $state<string | null>(null);
+  let openChallengeId = $state<string | null>(null);
+  let answers = $state<Record<string, string>>({});
   let filtered = $derived(
     events.challenges.filter((challenge) => {
       const text =
@@ -42,6 +46,22 @@
 
   function typeLabel(challenge: ChallengeSummary): string {
     return challenge.kind.type.replaceAll('_', ' ');
+  }
+
+  function updateAnswer(challengeId: string, value: string): void {
+    answers[challengeId] = value;
+  }
+
+  async function submit(event: SubmitEvent, challenge: ChallengeSummary): Promise<void> {
+    event.preventDefault();
+    const answer = answers[challenge.id] ?? '';
+    const receipt = await game.submit(challenge.id, answer);
+    if (receipt?.outcome === 'correct') answers[challenge.id] = '';
+  }
+
+  function resultText(challengeId: string): string | null {
+    const receipt = game.receipts[challengeId];
+    return receipt ? submissionMessage(receipt) : null;
   }
 </script>
 
@@ -77,8 +97,10 @@
         <section class="category">
           <div class="category-head">
             <h2>{category}</h2>
-            <Badge>{challenges.length} {challenges.length === 1 ? 'challenge' : 'challenges'}</Badge
-            >
+            <Badge>
+              {challenges.length}
+              {challenges.length === 1 ? 'challenge' : 'challenges'}
+            </Badge>
           </div>
           <div class="challenge-grid">
             {#each challenges as challenge (challenge.id)}
@@ -86,7 +108,11 @@
                 <article class="challenge-card">
                   <div class="challenge-top">
                     <Sparkles size={17} />
-                    <strong>{score(challenge)}</strong>
+                    {#if challenge.solved}
+                      <Badge tone="success"><Check size={11} /> Outfoxed</Badge>
+                    {:else}
+                      <strong>{score(challenge)}</strong>
+                    {/if}
                   </div>
                   <div>
                     <h3>{challenge.name}</h3>
@@ -94,8 +120,70 @@
                   </div>
                   <footer>
                     <span>{typeLabel(challenge)}</span>
-                    {#if challenge.max_attempts}<span>{challenge.max_attempts} attempts</span>{/if}
+                    {#if challenge.max_attempts}
+                      <span>{challenge.max_attempts} attempts</span>
+                    {/if}
                   </footer>
+                  <Button
+                    variant={openChallengeId === challenge.id ? 'quiet' : 'secondary'}
+                    disabled={challenge.solved}
+                    onclick={() => {
+                      openChallengeId = openChallengeId === challenge.id ? null : challenge.id;
+                    }}
+                  >
+                    {#if challenge.solved}
+                      <Check size={15} />
+                      Solved
+                    {:else}
+                      <Flag size={15} />
+                      Submit flag
+                      <ChevronDown size={14} />
+                    {/if}
+                  </Button>
+                  {#if openChallengeId === challenge.id && !challenge.solved}
+                    <form onsubmit={(event) => submit(event, challenge)}>
+                      <label>
+                        <span>{challenge.kind.type === 'multiple_choice' ? 'Answer' : 'Flag'}</span>
+                        {#if challenge.kind.type === 'multiple_choice'}
+                          <select
+                            required
+                            value={answers[challenge.id] ?? ''}
+                            onchange={(event) =>
+                              updateAnswer(challenge.id, event.currentTarget.value)}
+                          >
+                            <option value="" disabled>Choose an answer</option>
+                            {#each challenge.kind.choices as choice (choice)}
+                              <option value={choice}>{choice}</option>
+                            {/each}
+                          </select>
+                        {:else}
+                          <input
+                            required
+                            maxlength="4096"
+                            autocomplete="off"
+                            value={answers[challenge.id] ?? ''}
+                            oninput={(event) =>
+                              updateAnswer(challenge.id, event.currentTarget.value)}
+                            placeholder={'kit{…}'}
+                          />
+                        {/if}
+                      </label>
+                      <Button type="submit" loading={game.savingChallengeId === challenge.id}>
+                        Inspect submission
+                      </Button>
+                    </form>
+                  {/if}
+                  {#if resultText(challenge.id)}
+                    <p
+                      class:accepted={game.receipts[challenge.id]?.outcome === 'correct'}
+                      class="result"
+                      role="status"
+                    >
+                      {resultText(challenge.id)}
+                    </p>
+                  {:else if openChallengeId === challenge.id && game.error}
+                    <p class="result error-text" role="alert">{game.error}</p>
+                  {/if}
                 </article>
               </Card>
             {/each}
@@ -139,6 +227,56 @@
   .clear-filter {
     display: flex;
     align-items: center;
+  }
+
+  .challenge-card form,
+  .challenge-card form label {
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .challenge-card form {
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .challenge-card form label > span {
+    color: var(--ink-secondary);
+    font-size: 0.72rem;
+    font-weight: 700;
+  }
+
+  .challenge-card form input,
+  .challenge-card form select {
+    width: 100%;
+    min-height: 2.65rem;
+    padding: 0 0.72rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    outline: none;
+    background: var(--surface-raised);
+    color: var(--ink);
+    font: inherit;
+  }
+
+  .challenge-card form input:focus,
+  .challenge-card form select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+
+  .result {
+    margin: 0;
+    padding: 0.65rem 0.75rem;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--danger) 10%, var(--surface));
+    color: var(--danger);
+    font-size: 0.78rem;
+  }
+
+  .result.accepted {
+    background: color-mix(in srgb, var(--success) 11%, var(--surface));
+    color: var(--success);
   }
 
   .tools {

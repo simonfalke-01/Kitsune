@@ -36,9 +36,14 @@ couple to command handlers.
 Commands execute in database transactions, persist state plus an outbox event,
 then publish. Consumers are idempotent by event ID. Scores are derived by pure
 strategies and persisted as append-only score entries for historical graphs.
-A&D tick ownership uses PostgreSQL advisory locks; orchestration operations use
-idempotency keys. WebSocket nodes subscribe to the shared bus and batch score
-updates without requiring affinity.
+Challenge submissions lock only their target challenge while deciding solves
+and first blood, and use a PostgreSQL sequence for globally monotonic score IDs
+without an event-wide counter hotspot. Client idempotency keys replay immutable
+digest-only receipts. Freeze marks new ledger entries as temporarily concealed;
+unfreeze reveals history without rewriting it. A&D tick ownership uses
+PostgreSQL advisory locks; orchestration operations use idempotency keys.
+WebSocket nodes subscribe to the shared bus and batch score updates without
+requiring affinity.
 
 ## Security boundaries
 
@@ -56,4 +61,3 @@ enhancement. One generated TypeScript client consumes the OpenAPI document.
 CSS-variable Kitsune tokens support light/dark and theme packs. All visible copy
 comes from tone-aware i18n catalogs. Brand, mascot, and extension-slot
 components centralize operator toggles and entitlement behavior.
-

@@ -4,6 +4,7 @@
   import AppHeader from '$lib/components/AppHeader.svelte';
   import { preferences } from '$lib/i18n/index.svelte';
   import { events } from '$lib/stores/events.svelte';
+  import { game } from '$lib/stores/game.svelte';
   import { session } from '$lib/stores/session.svelte';
   import { realtime } from '$lib/stores/realtime.svelte';
 
@@ -28,6 +29,12 @@
       void events.load();
     } else if (envelope.event.type === 'challenge.changed') {
       void events.loadChallenges();
+    } else if (envelope.event.type === 'submission.received') {
+      void events.loadChallenges();
+    } else if (envelope.event.type === 'score.changed') {
+      void game.loadScoreboard();
+    } else if (envelope.event.type === 'scoreboard.control_changed') {
+      void Promise.all([events.load(), game.loadScoreboard()]);
     }
   });
 </script>

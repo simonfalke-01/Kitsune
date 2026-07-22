@@ -6,6 +6,7 @@
   import Button from './Button.svelte';
   import { preferences } from '$lib/i18n/index.svelte';
   import { events } from '$lib/stores/events.svelte';
+  import { game } from '$lib/stores/game.svelte';
   import { session } from '$lib/stores/session.svelte';
   import { team } from '$lib/stores/team.svelte';
   import { realtime } from '$lib/stores/realtime.svelte';
@@ -20,6 +21,7 @@
     realtime.stop();
     await session.logout();
     events.clear();
+    game.clear();
     team.clear();
     await goto('/login');
   }

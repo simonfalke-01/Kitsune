@@ -280,6 +280,10 @@
             "$ref": "#/components/schemas/ScoringInput",
             "description": "Scoring schema."
           },
+          "solved": {
+            "description": "Whether the authenticated competitor has already solved it.",
+            "type": "boolean"
+          },
           "state": {
             "description": "Lifecycle.",
             "type": "string"
@@ -320,7 +324,8 @@
           "tags",
           "writeups_enabled",
           "position",
-          "survey"
+          "survey",
+          "solved"
         ],
         "type": "object"
       },
@@ -853,6 +858,80 @@
         ],
         "type": "object"
       },
+      "ScoreboardResponse": {
+        "description": "Scoreboard controls and ordered standings.",
+        "properties": {
+          "frozen": {
+            "description": "Post-freeze entries are concealed from players.",
+            "type": "boolean"
+          },
+          "hidden": {
+            "description": "Organizer has hidden the public board.",
+            "type": "boolean"
+          },
+          "rows": {
+            "description": "Ranked rows.",
+            "items": {
+              "$ref": "#/components/schemas/ScoreboardRowResponse"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "hidden",
+          "frozen",
+          "rows"
+        ],
+        "type": "object"
+      },
+      "ScoreboardRowResponse": {
+        "description": "Ranked scoreboard row.",
+        "properties": {
+          "competitor_id": {
+            "description": "Competitor identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "competitor_kind": {
+            "description": "`user` or `team`.",
+            "type": "string"
+          },
+          "name": {
+            "description": "Public display name.",
+            "type": "string"
+          },
+          "rank": {
+            "description": "One-based public rank.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "reached_at": {
+            "description": "Earliest-to-reach tie-break timestamp.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "score": {
+            "description": "Visible score total.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "solves": {
+            "description": "Accepted challenge solve count.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rank",
+          "competitor_kind",
+          "competitor_id",
+          "name",
+          "score",
+          "solves",
+          "reached_at"
+        ],
+        "type": "object"
+      },
       "ScoringInput": {
         "description": "Scoring configuration.",
         "oneOf": [
@@ -1048,6 +1127,80 @@
         ],
         "type": "object"
       },
+      "SubmissionResponse": {
+        "description": "Safe immutable submission receipt.",
+        "properties": {
+          "attempts_remaining": {
+            "description": "Remaining incorrect attempts when bounded.",
+            "format": "int32",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "awarded_points": {
+            "description": "Total solve and bonus points awarded.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "challenge_id": {
+            "description": "Challenge identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "first_blood": {
+            "description": "First accepted solve marker.",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "Submission identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "outcome": {
+            "description": "`correct`, `incorrect`, or `pending`.",
+            "type": "string"
+          },
+          "replayed": {
+            "description": "True when an earlier response was replayed by idempotency key.",
+            "type": "boolean"
+          },
+          "submitted_at": {
+            "description": "Server receipt time.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "challenge_id",
+          "outcome",
+          "awarded_points",
+          "first_blood",
+          "submitted_at",
+          "replayed"
+        ],
+        "type": "object"
+      },
+      "SubmitAnswerRequest": {
+        "description": "Idempotent answer submission.",
+        "properties": {
+          "answer": {
+            "description": "Flag, regular-expression candidate, or selected choice.",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "description": "Client-generated UUID reused for safe retries.",
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "idempotency_key",
+          "answer"
+        ],
+        "type": "object"
+      },
       "SurveyInput": {
         "description": "Post-solve survey item.",
         "properties": {
@@ -1220,6 +1373,24 @@
         },
         "required": [
           "state"
+        ],
+        "type": "object"
+      },
+      "UpdateScoreboardControlsRequest": {
+        "description": "Organizer scoreboard control mutation.",
+        "properties": {
+          "frozen": {
+            "description": "Conceal new score entries while preserving the last public snapshot.",
+            "type": "boolean"
+          },
+          "hidden": {
+            "description": "Conceal the entire public scoreboard.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "frozen",
+          "hidden"
         ],
         "type": "object"
       },
@@ -2049,6 +2220,265 @@
         ]
       }
     },
+    "/api/v1/events/{event_id}/challenges/{challenge_id}/submissions": {
+      "post": {
+        "operationId": "submit_answer",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Challenge ID",
+            "in": "path",
+            "name": "challenge_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitAnswerRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmissionResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "submissions"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/scoreboard": {
+      "get": {
+        "operationId": "scoreboard",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Limit rows to a division.",
+            "in": "query",
+            "name": "division_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScoreboardResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "scoreboard"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/scoreboard-controls": {
+      "patch": {
+        "operationId": "update_scoreboard_controls",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateScoreboardControlsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "scoreboard"
+        ]
+      }
+    },
     "/api/v1/events/{event_id}/state": {
       "patch": {
         "operationId": "update_event_state",
@@ -2539,6 +2969,14 @@
     {
       "description": "Challenge board and authoring",
       "name": "challenges"
+    },
+    {
+      "description": "Challenge attempts and solves",
+      "name": "submissions"
+    },
+    {
+      "description": "Ranked event standings",
+      "name": "scoreboard"
     },
     {
       "description": "Player teams and captain controls",

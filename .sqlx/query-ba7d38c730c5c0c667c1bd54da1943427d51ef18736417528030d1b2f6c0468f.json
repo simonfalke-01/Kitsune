@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT answer_digest FROM submissions ORDER BY submitted_at",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "answer_digest",
+        "type_info": "Bytea"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "ba7d38c730c5c0c667c1bd54da1943427d51ef18736417528030d1b2f6c0468f"
+}

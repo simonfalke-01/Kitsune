@@ -5,6 +5,7 @@ import type {
   CreateChallengeInput,
   CreateEventInput,
   EventSummary,
+  UpdateScoreboardControlsInput,
   UpdateEventStateInput
 } from '$lib/api/client';
 import { session } from '$lib/stores/session.svelte';
@@ -184,6 +185,26 @@ class EventStore {
     this.saving = false;
     if (!data) {
       this.error = errorMessage(error, 'The event state could not be changed.');
+      return null;
+    }
+    this.events = this.events.map((event) => (event.id === data.id ? data : event));
+    return data;
+  }
+
+  async setScoreboardControls(input: UpdateScoreboardControlsInput): Promise<EventSummary | null> {
+    const csrf = session.current?.csrf_token;
+    const eventId = this.selectedEventId;
+    if (!csrf || !eventId) return this.authenticationFailure();
+    this.saving = true;
+    this.error = null;
+    const { data, error } = await api.PATCH('/api/v1/events/{event_id}/scoreboard-controls', {
+      params: { path: { event_id: eventId } },
+      headers: { 'x-csrf-token': csrf },
+      body: input
+    });
+    this.saving = false;
+    if (!data) {
+      this.error = errorMessage(error, 'Scoreboard controls could not be changed.');
       return null;
     }
     this.events = this.events.map((event) => (event.id === data.id ? data : event));

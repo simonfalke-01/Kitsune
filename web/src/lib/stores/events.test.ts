@@ -30,7 +30,8 @@ function challenge(name: string, category: string, position: number): ChallengeS
     tags: [],
     writeups_enabled: false,
     position,
-    survey: []
+    survey: [],
+    solved: false
   };
 }
 

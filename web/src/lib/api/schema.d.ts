@@ -212,6 +212,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/{event_id}/challenges/{challenge_id}/submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["submit_answer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/scoreboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["scoreboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/scoreboard-controls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["update_scoreboard_controls"];
+        trace?: never;
+    };
     "/api/v1/events/{event_id}/state": {
         parameters: {
             query?: never;
@@ -410,6 +458,8 @@ export interface components {
             position: number;
             /** @description Scoring schema. */
             scoring: components["schemas"]["ScoringInput"];
+            /** @description Whether the authenticated competitor has already solved it. */
+            solved: boolean;
             /** @description Lifecycle. */
             state: string;
             /** @description Survey schema. */
@@ -655,6 +705,44 @@ export interface components {
              */
             password: string;
         };
+        /** @description Scoreboard controls and ordered standings. */
+        ScoreboardResponse: {
+            /** @description Post-freeze entries are concealed from players. */
+            frozen: boolean;
+            /** @description Organizer has hidden the public board. */
+            hidden: boolean;
+            /** @description Ranked rows. */
+            rows: components["schemas"]["ScoreboardRowResponse"][];
+        };
+        /** @description Ranked scoreboard row. */
+        ScoreboardRowResponse: {
+            /**
+             * Format: uuid
+             * @description Competitor identifier.
+             */
+            competitor_id: string;
+            /** @description `user` or `team`. */
+            competitor_kind: string;
+            /** @description Public display name. */
+            name: string;
+            /** @description One-based public rank. */
+            rank: number;
+            /**
+             * Format: date-time
+             * @description Earliest-to-reach tie-break timestamp.
+             */
+            reached_at: string;
+            /**
+             * Format: int64
+             * @description Visible score total.
+             */
+            score: number;
+            /**
+             * Format: int64
+             * @description Accepted challenge solve count.
+             */
+            solves: number;
+        };
         /** @description Scoring configuration. */
         ScoringInput: {
             /** @enum {string} */
@@ -736,6 +824,50 @@ export interface components {
             /** @description True when no user exists and setup can be completed. */
             required: boolean;
         };
+        /** @description Safe immutable submission receipt. */
+        SubmissionResponse: {
+            /**
+             * Format: int32
+             * @description Remaining incorrect attempts when bounded.
+             */
+            attempts_remaining?: number | null;
+            /**
+             * Format: int64
+             * @description Total solve and bonus points awarded.
+             */
+            awarded_points: number;
+            /**
+             * Format: uuid
+             * @description Challenge identifier.
+             */
+            challenge_id: string;
+            /** @description First accepted solve marker. */
+            first_blood: boolean;
+            /**
+             * Format: uuid
+             * @description Submission identifier.
+             */
+            id: string;
+            /** @description `correct`, `incorrect`, or `pending`. */
+            outcome: string;
+            /** @description True when an earlier response was replayed by idempotency key. */
+            replayed: boolean;
+            /**
+             * Format: date-time
+             * @description Server receipt time.
+             */
+            submitted_at: string;
+        };
+        /** @description Idempotent answer submission. */
+        SubmitAnswerRequest: {
+            /** @description Flag, regular-expression candidate, or selected choice. */
+            answer: string;
+            /**
+             * Format: uuid
+             * @description Client-generated UUID reused for safe retries.
+             */
+            idempotency_key: string;
+        };
         /** @description Post-solve survey item. */
         SurveyInput: {
             /** @description Stable key. */
@@ -813,6 +945,13 @@ export interface components {
         UpdateEventStateRequest: {
             /** @description Requested lifecycle state. */
             state: components["schemas"]["EventStateInput"];
+        };
+        /** @description Organizer scoreboard control mutation. */
+        UpdateScoreboardControlsRequest: {
+            /** @description Conceal new score entries while preserving the last public snapshot. */
+            frozen: boolean;
+            /** @description Conceal the entire public scoreboard. */
+            hidden: boolean;
         };
         /** @description Safe account projection. */
         UserResponse: {
@@ -1446,6 +1585,181 @@ export interface operations {
                 };
             };
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    submit_answer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+                /** @description Challenge ID */
+                challenge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitAnswerRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SubmissionResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    scoreboard: {
+        parameters: {
+            query?: {
+                /** @description Limit rows to a division. */
+                division_id?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ScoreboardResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    update_scoreboard_controls: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateScoreboardControlsRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

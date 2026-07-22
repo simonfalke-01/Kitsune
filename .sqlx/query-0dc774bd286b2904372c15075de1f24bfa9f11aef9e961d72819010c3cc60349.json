@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO event_participants (\n            event_id,user_id,team_id,division_id,bracket_id,registered_at\n        ) VALUES ($1,$2,$3,NULL,NULL,$4)\n        ON CONFLICT DO NOTHING\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0dc774bd286b2904372c15075de1f24bfa9f11aef9e961d72819010c3cc60349"
+}

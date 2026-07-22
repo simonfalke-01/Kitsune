@@ -68,8 +68,14 @@ or scaffolding alone.
   outbox, PostgreSQL constraints, and desktop/mobile browser coverage.
 - [ ] Team invite rotation, leave/removal, merge/transfer administration,
   event registration, and event-specific size-limit enforcement.
-- [ ] Challenge submission validation, score ledger, solves, first blood,
-  freeze-safe realtime scoreboard, attempts, and rate limiting.
+- [x] Exact/regex/choice/manual submission validation, digest-only receipts,
+  client idempotency, immutable score ledger, solves, first blood, authored and
+  runtime attempt limits, and individual/team competitor resolution.
+- [x] Ranked REST/web scoreboard with division filter, realtime refresh,
+  audited freeze/unfreeze and hide/reveal controls, and frozen-ledger visibility
+  regression coverage.
+- [ ] Dynamic-instance and plugin answer verifiers, manual-review organizer
+  queue, scoreboard graphs, cache batching, and competitor profile links.
 - [ ] Complete versioned REST resources and OpenAPI contracts.
 
 ## Frontend vertical slice
@@ -92,6 +98,9 @@ or scaffolding alone.
   Playwright on desktop/mobile and axe.
 - [x] Wire the player team page to create/join/list/captain APIs and cover team
   creation through the real desktop/mobile browser journey.
+- [x] Wire inline flag submission, solved state, first-blood feedback, live
+  ranked standings, and organizer scoreboard controls through the generated API
+  and exercise them on desktop/mobile with axe.
 - [ ] Complete all mode-specific, auth-provider, plugin, integration, and
   administrative surfaces.
 

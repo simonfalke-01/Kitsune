@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT challenge_id FROM challenge_solves\n        WHERE user_id IS NOT DISTINCT FROM $1 AND team_id IS NOT DISTINCT FROM $2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "challenge_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "3b1b81f4e6307b919f0c9c4f623c04dc8c86e56a21e5ed7794bb351e7d054fa5"
+}

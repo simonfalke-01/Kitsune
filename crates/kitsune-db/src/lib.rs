@@ -7,6 +7,7 @@ use std::time::Duration;
 
 pub mod auth;
 pub mod resources;
+pub mod submissions;
 pub mod teams;
 
 use async_trait::async_trait;

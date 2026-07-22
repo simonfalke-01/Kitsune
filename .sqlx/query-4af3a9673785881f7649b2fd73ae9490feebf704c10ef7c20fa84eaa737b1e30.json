@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT scoreboard_hidden,scoreboard_frozen\n            FROM events\n            WHERE id = $1 AND organization_id = $2\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "scoreboard_hidden",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 1,
+        "name": "scoreboard_frozen",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "4af3a9673785881f7649b2fd73ae9490feebf704c10ef7c20fa84eaa737b1e30"
+}

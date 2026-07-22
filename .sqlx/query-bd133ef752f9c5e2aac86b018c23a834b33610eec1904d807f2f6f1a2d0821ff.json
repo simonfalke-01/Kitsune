@@ -1,0 +1,54 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                CASE WHEN se.team_id IS NULL THEN 'user' ELSE 'team' END AS \"competitor_kind!\",\n                COALESCE(se.team_id, se.user_id) AS \"competitor_id!\",\n                COALESCE(t.name, u.display_name) AS \"name!\",\n                SUM(se.points)::bigint AS \"score!\",\n                COUNT(*) FILTER (WHERE se.reason ? 'solve')::bigint AS \"solves!\",\n                MAX(se.occurred_at) AS \"reached_at!\"\n            FROM score_entries se\n            LEFT JOIN teams t ON t.id = se.team_id\n            LEFT JOIN users u ON u.id = se.user_id\n            WHERE se.event_id = $1\n              AND ($2 OR NOT se.hidden_by_freeze)\n              AND ($3::uuid IS NULL OR se.division_id = $3)\n              AND NOT (se.reason ? 'reversal')\n              AND NOT EXISTS (\n                  SELECT 1 FROM score_entries reversal\n                  WHERE reversal.event_id = se.event_id\n                    AND reversal.reason->'reversal'->>'entry_sequence' = se.sequence::text\n              )\n            GROUP BY se.team_id,se.user_id,t.name,u.display_name\n            ORDER BY SUM(se.points) DESC,MAX(se.occurred_at),COALESCE(se.team_id, se.user_id)\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "competitor_kind!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "competitor_id!",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "score!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "solves!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "reached_at!",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Bool",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "bd133ef752f9c5e2aac86b018c23a834b33610eec1904d807f2f6f1a2d0821ff"
+}

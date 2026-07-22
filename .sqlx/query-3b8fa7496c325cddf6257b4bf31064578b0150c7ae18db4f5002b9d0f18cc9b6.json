@@ -1,0 +1,85 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT c.state,c.scoring,c.visibility,c.max_attempts,\n               e.state AS event_state,e.participation,e.scoreboard_frozen,\n               e.starts_at,e.ends_at,e.team_size_limit,\n               COALESCE((e.config->>'first_blood_bonus')::bigint, $4) AS \"first_blood_bonus!\"\n        FROM challenges c\n        JOIN events e ON e.id = c.event_id\n        WHERE c.id = $1 AND c.event_id = $2 AND e.organization_id = $3\n        FOR UPDATE OF c\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "state",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "scoring",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 2,
+        "name": "visibility",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 3,
+        "name": "max_attempts",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 4,
+        "name": "event_state",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "participation",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "scoreboard_frozen",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "starts_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 8,
+        "name": "ends_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "team_size_limit",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 10,
+        "name": "first_blood_bonus!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "3b8fa7496c325cddf6257b4bf31064578b0150c7ae18db4f5002b9d0f18cc9b6"
+}

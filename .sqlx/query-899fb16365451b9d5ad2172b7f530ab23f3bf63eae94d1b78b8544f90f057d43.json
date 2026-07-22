@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT division_id FROM event_participants\n        WHERE event_id = $1 AND user_id IS NOT DISTINCT FROM $2\n          AND team_id IS NOT DISTINCT FROM $3\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "division_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "899fb16365451b9d5ad2172b7f530ab23f3bf63eae94d1b78b8544f90f057d43"
+}

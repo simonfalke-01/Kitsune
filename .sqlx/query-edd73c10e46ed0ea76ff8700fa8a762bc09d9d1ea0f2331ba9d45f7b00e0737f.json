@@ -1,0 +1,79 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT s.id,s.challenge_id,s.user_id,s.team_id,s.outcome,s.awarded_points,\n               s.first_blood,s.attempts_remaining,s.submitted_at,\n               EXISTS(\n                   SELECT 1 FROM team_members tm\n                   WHERE tm.team_id = s.team_id AND tm.user_id = $4\n               ) AS \"team_member!\"\n        FROM submissions s\n        JOIN events e ON e.id = s.event_id\n        WHERE s.event_id = $1 AND s.idempotency_key = $2 AND e.organization_id = $3\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "challenge_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "outcome",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "awarded_points",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "first_blood",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "attempts_remaining",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 8,
+        "name": "submitted_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "team_member!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      null
+    ]
+  },
+  "hash": "edd73c10e46ed0ea76ff8700fa8a762bc09d9d1ea0f2331ba9d45f7b00e0737f"
+}

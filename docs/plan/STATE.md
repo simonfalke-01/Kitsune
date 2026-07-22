@@ -63,6 +63,17 @@ Updated: 2026-07-22 (Asia/Singapore)
   one team per user per organization and unique invite lookup under races;
   managed role upgrades keep existing installations authorized. The real
   desktop/mobile browser journey now verifies the team surface too.
+- Jeopardy submissions now validate exact, case-insensitive, regex, choice, and
+  manual-review answers inside a challenge-scoped transaction; enforce global,
+  per-challenge, and authored attempt budgets; persist answer digests only; and
+  replay immutable receipts for idempotent retries. Accepted solves append
+  deterministic score and first-blood bonus entries with audit/outbox events.
+- The live responsive scoreboard ranks individual or team competitors, supports
+  division filtering at the API, honors hidden and frozen public views, and
+  refreshes from cross-node-ready score events. Organizer freeze/unfreeze and
+  hide/reveal controls are API-backed, audited, and browser-tested. The full
+  event → challenge → flag → first blood → scoreboard journey passes desktop,
+  mobile, and axe checks.
 
 ## Risks being actively retired
 

@@ -1,5 +1,16 @@
 <script lang="ts">
-  import { CalendarPlus, Check, CirclePause, CirclePlay, Radio, Square } from '@lucide/svelte';
+  import {
+    CalendarPlus,
+    Check,
+    CirclePause,
+    CirclePlay,
+    Eye,
+    EyeOff,
+    Flame,
+    Radio,
+    Snowflake,
+    Square
+  } from '@lucide/svelte';
   import Badge from '$lib/components/Badge.svelte';
   import Button from '$lib/components/Button.svelte';
   import Card from '$lib/components/Card.svelte';
@@ -55,6 +66,24 @@
 
   async function changeState(state: 'live' | 'paused' | 'ended'): Promise<void> {
     await events.setState(state);
+  }
+
+  async function toggleFreeze(): Promise<void> {
+    const selected = events.selectedEvent;
+    if (!selected) return;
+    await events.setScoreboardControls({
+      frozen: !selected.scoreboard_frozen,
+      hidden: selected.scoreboard_hidden
+    });
+  }
+
+  async function toggleHidden(): Promise<void> {
+    const selected = events.selectedEvent;
+    if (!selected) return;
+    await events.setScoreboardControls({
+      frozen: selected.scoreboard_frozen,
+      hidden: !selected.scoreboard_hidden
+    });
   }
 </script>
 
@@ -188,6 +217,38 @@
           {/if}
         </div>
       </div>
+      <div class="scoreboard-control">
+        <div>
+          <span>Public scoreboard</span>
+          <strong>
+            {events.selectedEvent.scoreboard_hidden
+              ? 'Hidden'
+              : events.selectedEvent.scoreboard_frozen
+                ? 'Frozen snapshot'
+                : 'Live and visible'}
+          </strong>
+        </div>
+        <div class="lifecycle-actions">
+          <Button variant="secondary" loading={events.saving} onclick={toggleFreeze}>
+            {#if events.selectedEvent.scoreboard_frozen}
+              <Flame size={15} />
+              Unfreeze
+            {:else}
+              <Snowflake size={15} />
+              Freeze
+            {/if}
+          </Button>
+          <Button variant="secondary" loading={events.saving} onclick={toggleHidden}>
+            {#if events.selectedEvent.scoreboard_hidden}
+              <Eye size={15} />
+              Reveal
+            {:else}
+              <EyeOff size={15} />
+              Hide
+            {/if}
+          </Button>
+        </div>
+      </div>
       {#if events.error}
         <p class="error-text" role="alert">{events.error}</p>
       {/if}
@@ -275,6 +336,26 @@
     justify-content: space-between;
   }
 
+  .scoreboard-control {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .scoreboard-control > div:first-child {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .scoreboard-control span {
+    color: var(--ink-secondary);
+    font-size: 0.75rem;
+  }
+
   .lifecycle-control > div:first-child {
     align-items: start;
     flex-direction: column;
@@ -312,7 +393,8 @@
     }
 
     .lifecycle-control,
-    .lifecycle-actions {
+    .lifecycle-actions,
+    .scoreboard-control {
       align-items: stretch;
       flex-direction: column;
     }

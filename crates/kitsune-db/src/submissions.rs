@@ -1,0 +1,937 @@
+//! Atomic challenge submissions and public scoreboard projections.
+
+use std::collections::BTreeSet;
+
+use chrono::{DateTime, Utc};
+use kitsune_core::{
+    DomainError, DomainResult, EventEnvelope,
+    challenge::{AnswerOutcome, AnswerRule, VisibilityRule},
+    events::{DomainEvent, SubmissionOutcome},
+    identity::{ChallengeId, DivisionId, EventId, OrganizationId, SubmissionId, TeamId, UserId},
+    scoring::{CompetitorId, ScoreReason, ScoringRule, ScoringStrategy},
+};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use sqlx::{PgPool, Postgres, Transaction};
+use uuid::Uuid;
+
+use crate::resources::persist_audit_event;
+
+const DEFAULT_FIRST_BLOOD_BONUS: i64 = 50;
+
+/// Immutable submission receipt safe for a player response.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SubmissionRecord {
+    /// Submission identifier.
+    pub id: Uuid,
+    /// Challenge identifier.
+    pub challenge_id: Uuid,
+    /// Stable result key.
+    pub outcome: String,
+    /// Total points awarded by this submission.
+    pub awarded_points: i64,
+    /// Whether this solve was the first accepted solve.
+    pub first_blood: bool,
+    /// Remaining incorrect attempts when a limit exists.
+    pub attempts_remaining: Option<i32>,
+    /// Authoritative receipt time.
+    pub submitted_at: DateTime<Utc>,
+}
+
+/// Submission command passed into the transactional repository.
+pub struct NewSubmission<'a> {
+    /// Organization boundary.
+    pub organization_id: OrganizationId,
+    /// Event boundary.
+    pub event_id: EventId,
+    /// Challenge target.
+    pub challenge_id: ChallengeId,
+    /// Authenticated user who supplied the answer.
+    pub actor: UserId,
+    /// Current server-side session.
+    pub session_id: Uuid,
+    /// Client-generated retry key.
+    pub idempotency_key: Uuid,
+    /// Plaintext answer, retained only for this transaction.
+    pub answer: &'a str,
+    /// Timestamp.
+    pub now: DateTime<Utc>,
+}
+
+/// Repository result including fresh events that need immediate publication.
+pub struct SubmissionResult {
+    /// Stable receipt.
+    pub record: SubmissionRecord,
+    /// Empty for an idempotent replay.
+    pub events: Vec<EventEnvelope>,
+    /// Whether the receipt came from an earlier request.
+    pub replayed: bool,
+}
+
+/// One ranked competitor row.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScoreboardRowRecord {
+    /// User or team.
+    pub competitor_kind: String,
+    /// Competitor identifier.
+    pub competitor_id: Uuid,
+    /// Public display name.
+    pub name: String,
+    /// Total visible score.
+    pub score: i64,
+    /// Number of accepted challenge solves.
+    pub solves: i64,
+    /// Tie-break instant.
+    pub reached_at: DateTime<Utc>,
+}
+
+/// Event scoreboard controls and rows.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScoreboardRecord {
+    /// Organizer-controlled hidden state.
+    pub hidden: bool,
+    /// Whether post-freeze entries are currently concealed from players.
+    pub frozen: bool,
+    /// Ordered standings. Empty while a public board is hidden.
+    pub rows: Vec<ScoreboardRowRecord>,
+}
+
+/// PostgreSQL submission and scoreboard repository.
+#[derive(Debug, Clone)]
+pub struct SubmissionRepository {
+    pool: PgPool,
+}
+
+impl SubmissionRepository {
+    /// Wraps a pool.
+    pub const fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+
+    /// Validates and records an answer, solve, score changes, audit records,
+    /// and outbox events in one transaction.
+    pub async fn submit(&self, command: NewSubmission<'_>) -> DomainResult<SubmissionResult> {
+        let mut tx = self.pool.begin().await.map_err(unavailable)?;
+        if let Some(record) = replayed_submission(&mut tx, &command).await? {
+            tx.rollback().await.map_err(unavailable)?;
+            return Ok(SubmissionResult {
+                record,
+                events: Vec::new(),
+                replayed: true,
+            });
+        }
+
+        let challenge = lock_challenge(&mut tx, &command).await?;
+        // A concurrent retry may have committed while this transaction waited
+        // for the challenge lock. Recheck before performing any state change.
+        if let Some(record) = replayed_submission(&mut tx, &command).await? {
+            tx.rollback().await.map_err(unavailable)?;
+            return Ok(SubmissionResult {
+                record,
+                events: Vec::new(),
+                replayed: true,
+            });
+        }
+        validate_event_window(&challenge, command.now)?;
+        let competitor = resolve_competitor(&mut tx, &command, &challenge).await?;
+        register_competitor(&mut tx, &command, competitor).await?;
+        validate_challenge_visibility(&mut tx, &command, competitor, &challenge).await?;
+
+        if competitor_has_solved(&mut tx, command.challenge_id, competitor).await? {
+            return Err(DomainError::Conflict("challenge is already solved".into()));
+        }
+
+        let failed_attempts = failed_attempts(&mut tx, command.challenge_id, competitor).await?;
+        let attempts_remaining = remaining_attempts(challenge.max_attempts, failed_attempts)?;
+        let answer_rules = load_answer_rules(&mut tx, command.challenge_id).await?;
+        let outcome = evaluate_answer(&answer_rules, command.answer)?;
+        let answer_digest = Sha256::digest(command.answer.trim().as_bytes());
+        let submission_id = SubmissionId::new();
+
+        let mut awarded_points = 0;
+        let mut first_blood = false;
+        let mut final_attempts_remaining = attempts_remaining;
+        if outcome == SubmissionOutcome::Incorrect {
+            final_attempts_remaining = attempts_remaining.map(|remaining| remaining - 1);
+        }
+
+        insert_submission(
+            &mut tx,
+            &command,
+            competitor,
+            submission_id,
+            outcome,
+            answer_digest.as_slice(),
+            final_attempts_remaining,
+        )
+        .await?;
+
+        let mut events = Vec::new();
+        let received = submission_event(&command, submission_id, competitor, outcome);
+        persist_audit_event(
+            &mut tx,
+            &received,
+            "submission.create",
+            "submission",
+            &submission_id.to_string(),
+        )
+        .await?;
+        events.push(received);
+
+        if outcome == SubmissionOutcome::Correct {
+            let solve =
+                award_solve(&mut tx, &command, &challenge, submission_id, competitor).await?;
+            awarded_points = solve.awarded_points;
+            first_blood = solve.first_blood;
+            events.extend(solve.events);
+            sqlx::query!(
+                r#"
+                UPDATE submissions
+                SET awarded_points = $2, first_blood = $3
+                WHERE id = $1
+                "#,
+                submission_id.0,
+                awarded_points,
+                first_blood,
+            )
+            .execute(&mut *tx)
+            .await
+            .map_err(unavailable)?;
+        }
+
+        tx.commit().await.map_err(unavailable)?;
+        Ok(SubmissionResult {
+            record: SubmissionRecord {
+                id: submission_id.0,
+                challenge_id: command.challenge_id.0,
+                outcome: outcome_key(outcome).to_owned(),
+                awarded_points,
+                first_blood,
+                attempts_remaining: final_attempts_remaining,
+                submitted_at: command.now,
+            },
+            events,
+            replayed: false,
+        })
+    }
+
+    /// Returns a tenant-scoped public or organizer scoreboard.
+    pub async fn scoreboard(
+        &self,
+        organization_id: OrganizationId,
+        event_id: EventId,
+        division_id: Option<DivisionId>,
+        organizer: bool,
+    ) -> DomainResult<ScoreboardRecord> {
+        let controls = sqlx::query!(
+            r#"
+            SELECT scoreboard_hidden,scoreboard_frozen
+            FROM events
+            WHERE id = $1 AND organization_id = $2
+            "#,
+            event_id.0,
+            organization_id.0,
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(unavailable)?
+        .ok_or(DomainError::NotFound)?;
+        if controls.scoreboard_hidden && !organizer {
+            return Ok(ScoreboardRecord {
+                hidden: true,
+                frozen: controls.scoreboard_frozen,
+                rows: Vec::new(),
+            });
+        }
+        let rows = sqlx::query_as!(
+            ScoreboardRowRecord,
+            r#"
+            SELECT
+                CASE WHEN se.team_id IS NULL THEN 'user' ELSE 'team' END AS "competitor_kind!",
+                COALESCE(se.team_id, se.user_id) AS "competitor_id!",
+                COALESCE(t.name, u.display_name) AS "name!",
+                SUM(se.points)::bigint AS "score!",
+                COUNT(*) FILTER (WHERE se.reason ? 'solve')::bigint AS "solves!",
+                MAX(se.occurred_at) AS "reached_at!"
+            FROM score_entries se
+            LEFT JOIN teams t ON t.id = se.team_id
+            LEFT JOIN users u ON u.id = se.user_id
+            WHERE se.event_id = $1
+              AND ($2 OR NOT se.hidden_by_freeze)
+              AND ($3::uuid IS NULL OR se.division_id = $3)
+              AND NOT (se.reason ? 'reversal')
+              AND NOT EXISTS (
+                  SELECT 1 FROM score_entries reversal
+                  WHERE reversal.event_id = se.event_id
+                    AND reversal.reason->'reversal'->>'entry_sequence' = se.sequence::text
+              )
+            GROUP BY se.team_id,se.user_id,t.name,u.display_name
+            ORDER BY SUM(se.points) DESC,MAX(se.occurred_at),COALESCE(se.team_id, se.user_id)
+            "#,
+            event_id.0,
+            organizer || !controls.scoreboard_frozen,
+            division_id.map(|id| id.0),
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(unavailable)?;
+        Ok(ScoreboardRecord {
+            hidden: controls.scoreboard_hidden,
+            frozen: controls.scoreboard_frozen,
+            rows,
+        })
+    }
+}
+
+struct LockedChallenge {
+    state: String,
+    scoring: serde_json::Value,
+    visibility: serde_json::Value,
+    max_attempts: Option<i32>,
+    event_state: String,
+    participation: String,
+    scoreboard_frozen: bool,
+    starts_at: Option<DateTime<Utc>>,
+    ends_at: Option<DateTime<Utc>>,
+    team_size_limit: Option<i16>,
+    first_blood_bonus: i64,
+}
+
+struct SolveAward {
+    awarded_points: i64,
+    first_blood: bool,
+    events: Vec<EventEnvelope>,
+}
+
+async fn replayed_submission(
+    tx: &mut Transaction<'_, Postgres>,
+    command: &NewSubmission<'_>,
+) -> DomainResult<Option<SubmissionRecord>> {
+    let row = sqlx::query!(
+        r#"
+        SELECT s.id,s.challenge_id,s.user_id,s.team_id,s.outcome,s.awarded_points,
+               s.first_blood,s.attempts_remaining,s.submitted_at,
+               EXISTS(
+                   SELECT 1 FROM team_members tm
+                   WHERE tm.team_id = s.team_id AND tm.user_id = $4
+               ) AS "team_member!"
+        FROM submissions s
+        JOIN events e ON e.id = s.event_id
+        WHERE s.event_id = $1 AND s.idempotency_key = $2 AND e.organization_id = $3
+        "#,
+        command.event_id.0,
+        command.idempotency_key,
+        command.organization_id.0,
+        command.actor.0,
+    )
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(unavailable)?;
+    let Some(row) = row else {
+        return Ok(None);
+    };
+    if row.user_id != Some(command.actor.0) && !row.team_member {
+        return Err(DomainError::Conflict(
+            "idempotency key is already in use".into(),
+        ));
+    }
+    if row.challenge_id != Some(command.challenge_id.0) {
+        return Err(DomainError::Conflict(
+            "idempotency key belongs to another challenge".into(),
+        ));
+    }
+    Ok(Some(SubmissionRecord {
+        id: row.id,
+        challenge_id: row.challenge_id.ok_or_else(|| {
+            DomainError::Unavailable("stored challenge submission has no challenge".into())
+        })?,
+        outcome: row.outcome,
+        awarded_points: row.awarded_points,
+        first_blood: row.first_blood,
+        attempts_remaining: row.attempts_remaining,
+        submitted_at: row.submitted_at,
+    }))
+}
+
+async fn lock_challenge(
+    tx: &mut Transaction<'_, Postgres>,
+    command: &NewSubmission<'_>,
+) -> DomainResult<LockedChallenge> {
+    let row = sqlx::query!(
+        r#"
+        SELECT c.state,c.scoring,c.visibility,c.max_attempts,
+               e.state AS event_state,e.participation,e.scoreboard_frozen,
+               e.starts_at,e.ends_at,e.team_size_limit,
+               COALESCE((e.config->>'first_blood_bonus')::bigint, $4) AS "first_blood_bonus!"
+        FROM challenges c
+        JOIN events e ON e.id = c.event_id
+        WHERE c.id = $1 AND c.event_id = $2 AND e.organization_id = $3
+        FOR UPDATE OF c
+        "#,
+        command.challenge_id.0,
+        command.event_id.0,
+        command.organization_id.0,
+        DEFAULT_FIRST_BLOOD_BONUS,
+    )
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(unavailable)?
+    .ok_or(DomainError::NotFound)?;
+    Ok(LockedChallenge {
+        state: row.state,
+        scoring: row.scoring,
+        visibility: row.visibility,
+        max_attempts: row.max_attempts,
+        event_state: row.event_state,
+        participation: row.participation,
+        scoreboard_frozen: row.scoreboard_frozen,
+        starts_at: row.starts_at,
+        ends_at: row.ends_at,
+        team_size_limit: row.team_size_limit,
+        first_blood_bonus: row.first_blood_bonus,
+    })
+}
+
+fn validate_event_window(challenge: &LockedChallenge, now: DateTime<Utc>) -> DomainResult<()> {
+    if challenge.event_state != "live"
+        || challenge.starts_at.is_some_and(|start| now < start)
+        || challenge.ends_at.is_some_and(|end| now >= end)
+    {
+        return Err(DomainError::Conflict(
+            "event is not accepting submissions".into(),
+        ));
+    }
+    Ok(())
+}
+
+async fn resolve_competitor(
+    tx: &mut Transaction<'_, Postgres>,
+    command: &NewSubmission<'_>,
+    challenge: &LockedChallenge,
+) -> DomainResult<CompetitorId> {
+    let team_id = sqlx::query_scalar!(
+        r#"
+        SELECT tm.team_id
+        FROM team_members tm
+        JOIN teams t ON t.id = tm.team_id
+        WHERE tm.user_id = $1 AND tm.organization_id = $2
+        "#,
+        command.actor.0,
+        command.organization_id.0,
+    )
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(unavailable)?;
+    let competitor = match challenge.participation.as_str() {
+        "individual" => CompetitorId::User(command.actor),
+        "team" => CompetitorId::Team(TeamId(team_id.ok_or_else(|| {
+            DomainError::Validation("join a team before submitting to this event".into())
+        })?)),
+        "hybrid" => match team_id {
+            Some(id) => CompetitorId::Team(TeamId(id)),
+            None => CompetitorId::User(command.actor),
+        },
+        _ => {
+            return Err(DomainError::Unavailable(
+                "event contains an invalid participation mode".into(),
+            ));
+        }
+    };
+    if let (CompetitorId::Team(team_id), Some(limit)) = (competitor, challenge.team_size_limit) {
+        let members = sqlx::query_scalar!(
+            "SELECT count(*) AS \"count!\" FROM team_members WHERE team_id = $1",
+            team_id.0,
+        )
+        .fetch_one(&mut **tx)
+        .await
+        .map_err(unavailable)?;
+        if members > i64::from(limit) {
+            return Err(DomainError::Validation(
+                "team exceeds this event's size limit".into(),
+            ));
+        }
+    }
+    Ok(competitor)
+}
+
+async fn register_competitor(
+    tx: &mut Transaction<'_, Postgres>,
+    command: &NewSubmission<'_>,
+    competitor: CompetitorId,
+) -> DomainResult<()> {
+    let (user_id, team_id) = competitor_columns(competitor);
+    sqlx::query!(
+        r#"
+        INSERT INTO event_participants (
+            event_id,user_id,team_id,division_id,bracket_id,registered_at
+        ) VALUES ($1,$2,$3,NULL,NULL,$4)
+        ON CONFLICT DO NOTHING
+        "#,
+        command.event_id.0,
+        user_id,
+        team_id,
+        command.now,
+    )
+    .execute(&mut **tx)
+    .await
+    .map_err(unavailable)?;
+    Ok(())
+}
+
+async fn validate_challenge_visibility(
+    tx: &mut Transaction<'_, Postgres>,
+    command: &NewSubmission<'_>,
+    competitor: CompetitorId,
+    challenge: &LockedChallenge,
+) -> DomainResult<()> {
+    if !matches!(challenge.state.as_str(), "published" | "scheduled") {
+        return Err(DomainError::NotFound);
+    }
+    let (user_id, team_id) = competitor_columns(competitor);
+    let division_id = sqlx::query_scalar!(
+        r#"
+        SELECT division_id FROM event_participants
+        WHERE event_id = $1 AND user_id IS NOT DISTINCT FROM $2
+          AND team_id IS NOT DISTINCT FROM $3
+        "#,
+        command.event_id.0,
+        user_id,
+        team_id,
+    )
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(unavailable)?
+    .flatten();
+    let solves = sqlx::query_scalar!(
+        r#"
+        SELECT challenge_id FROM challenge_solves
+        WHERE user_id IS NOT DISTINCT FROM $1 AND team_id IS NOT DISTINCT FROM $2
+        "#,
+        user_id,
+        team_id,
+    )
+    .fetch_all(&mut **tx)
+    .await
+    .map_err(unavailable)?
+    .into_iter()
+    .map(ChallengeId)
+    .collect::<BTreeSet<_>>();
+    let visibility = serde_json::from_value::<VisibilityRule>(challenge.visibility.clone())
+        .map_err(|error| {
+            DomainError::Unavailable(format!("invalid challenge visibility: {error}"))
+        })?;
+    if visibility.allows(command.now, division_id.map(DivisionId), &solves) {
+        Ok(())
+    } else {
+        Err(DomainError::NotFound)
+    }
+}
+
+async fn competitor_has_solved(
+    tx: &mut Transaction<'_, Postgres>,
+    challenge_id: ChallengeId,
+    competitor: CompetitorId,
+) -> DomainResult<bool> {
+    let (user_id, team_id) = competitor_columns(competitor);
+    sqlx::query_scalar!(
+        r#"
+        SELECT EXISTS(
+            SELECT 1 FROM challenge_solves
+            WHERE challenge_id = $1
+              AND user_id IS NOT DISTINCT FROM $2
+              AND team_id IS NOT DISTINCT FROM $3
+        ) AS "exists!"
+        "#,
+        challenge_id.0,
+        user_id,
+        team_id,
+    )
+    .fetch_one(&mut **tx)
+    .await
+    .map_err(unavailable)
+}
+
+async fn failed_attempts(
+    tx: &mut Transaction<'_, Postgres>,
+    challenge_id: ChallengeId,
+    competitor: CompetitorId,
+) -> DomainResult<i64> {
+    let (user_id, team_id) = competitor_columns(competitor);
+    sqlx::query_scalar!(
+        r#"
+        SELECT count(*) AS "count!" FROM submissions
+        WHERE challenge_id = $1 AND outcome = 'incorrect'
+          AND (
+              ($3::uuid IS NOT NULL AND team_id = $3)
+              OR ($3::uuid IS NULL AND user_id = $2 AND team_id IS NULL)
+          )
+        "#,
+        challenge_id.0,
+        user_id,
+        team_id,
+    )
+    .fetch_one(&mut **tx)
+    .await
+    .map_err(unavailable)
+}
+
+fn remaining_attempts(
+    max_attempts: Option<i32>,
+    failed_attempts: i64,
+) -> DomainResult<Option<i32>> {
+    let Some(max_attempts) = max_attempts else {
+        return Ok(None);
+    };
+    let failed_attempts = i32::try_from(failed_attempts)
+        .map_err(|_| DomainError::LimitExceeded("challenge attempts".into()))?;
+    let remaining = max_attempts.saturating_sub(failed_attempts);
+    if remaining == 0 {
+        Err(DomainError::LimitExceeded(
+            "challenge attempt budget exhausted".into(),
+        ))
+    } else {
+        Ok(Some(remaining))
+    }
+}
+
+async fn load_answer_rules(
+    tx: &mut Transaction<'_, Postgres>,
+    challenge_id: ChallengeId,
+) -> DomainResult<Vec<AnswerRule>> {
+    let rows = sqlx::query_scalar!(
+        "SELECT rule FROM challenge_answers WHERE challenge_id = $1 ORDER BY position,id",
+        challenge_id.0,
+    )
+    .fetch_all(&mut **tx)
+    .await
+    .map_err(unavailable)?;
+    rows.into_iter()
+        .map(|row| {
+            serde_json::from_value(row).map_err(|error| {
+                DomainError::Unavailable(format!("invalid stored answer rule: {error}"))
+            })
+        })
+        .collect()
+}
+
+fn evaluate_answer(rules: &[AnswerRule], answer: &str) -> DomainResult<SubmissionOutcome> {
+    let mut pending = false;
+    for rule in rules {
+        match rule.evaluate(answer)? {
+            AnswerOutcome::Correct => return Ok(SubmissionOutcome::Correct),
+            AnswerOutcome::PendingReview => pending = true,
+            AnswerOutcome::RequiresDynamicVerification => {
+                return Err(DomainError::Unavailable(
+                    "dynamic answer verifier is not enabled".into(),
+                ));
+            }
+            AnswerOutcome::Incorrect => {}
+        }
+    }
+    Ok(if pending {
+        SubmissionOutcome::Pending
+    } else {
+        SubmissionOutcome::Incorrect
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn insert_submission(
+    tx: &mut Transaction<'_, Postgres>,
+    command: &NewSubmission<'_>,
+    competitor: CompetitorId,
+    submission_id: SubmissionId,
+    outcome: SubmissionOutcome,
+    answer_digest: &[u8],
+    attempts_remaining: Option<i32>,
+) -> DomainResult<()> {
+    let (_, team_id) = competitor_columns(competitor);
+    sqlx::query!(
+        r#"
+        INSERT INTO submissions (
+            id,event_id,challenge_id,user_id,team_id,outcome,answer_digest,
+            checker_message,idempotency_key,session_id,submitted_at,
+            attempts_remaining
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,NULL,$8,$9,$10,$11)
+        "#,
+        submission_id.0,
+        command.event_id.0,
+        command.challenge_id.0,
+        command.actor.0,
+        team_id,
+        outcome_key(outcome),
+        answer_digest,
+        command.idempotency_key,
+        command.session_id,
+        command.now,
+        attempts_remaining,
+    )
+    .execute(&mut **tx)
+    .await
+    .map_err(conflict_or_unavailable)?;
+    Ok(())
+}
+
+async fn award_solve(
+    tx: &mut Transaction<'_, Postgres>,
+    command: &NewSubmission<'_>,
+    challenge: &LockedChallenge,
+    submission_id: SubmissionId,
+    competitor: CompetitorId,
+) -> DomainResult<SolveAward> {
+    let prior_solves = sqlx::query_scalar!(
+        "SELECT count(*) AS \"count!\" FROM challenge_solves WHERE challenge_id = $1",
+        command.challenge_id.0,
+    )
+    .fetch_one(&mut **tx)
+    .await
+    .map_err(unavailable)?;
+    let scoring = serde_json::from_value::<ScoringRule>(challenge.scoring.clone())
+        .map_err(|error| DomainError::Unavailable(format!("invalid scoring rule: {error}")))?;
+    let solve_points = scoring.solve_value(
+        u64::try_from(prior_solves)
+            .map_err(|_| DomainError::Unavailable("negative solve count".into()))?,
+    )?;
+    let first_blood = prior_solves == 0;
+    let bonus = if first_blood {
+        challenge.first_blood_bonus.max(0)
+    } else {
+        0
+    };
+    let (user_id, team_id) = competitor_columns(competitor);
+    sqlx::query!(
+        r#"
+        INSERT INTO challenge_solves (
+            challenge_id,user_id,team_id,submission_id,solved_at
+        ) VALUES ($1,$2,$3,$4,$5)
+        "#,
+        command.challenge_id.0,
+        user_id,
+        team_id,
+        submission_id.0,
+        command.now,
+    )
+    .execute(&mut **tx)
+    .await
+    .map_err(conflict_or_unavailable)?;
+    let division_id = participant_division(tx, command.event_id, competitor).await?;
+
+    let solve_sequence = next_score_sequence(tx).await?;
+    let reason = serde_json::to_value(ScoreReason::Solve {
+        challenge_id: command.challenge_id,
+    })
+    .map_err(serialization_error)?;
+    insert_score_entry(
+        tx,
+        command,
+        competitor,
+        division_id,
+        solve_sequence,
+        solve_points,
+        &reason,
+        challenge.scoreboard_frozen,
+    )
+    .await?;
+
+    let mut events = vec![score_event(command, competitor, solve_points)];
+    persist_audit_event(
+        tx,
+        &events[0],
+        "score.challenge_solve",
+        "score_entry",
+        &solve_sequence.to_string(),
+    )
+    .await?;
+    if bonus > 0 {
+        let bonus_sequence = next_score_sequence(tx).await?;
+        let reason = serde_json::to_value(ScoreReason::FirstBlood {
+            challenge_id: command.challenge_id,
+        })
+        .map_err(serialization_error)?;
+        insert_score_entry(
+            tx,
+            command,
+            competitor,
+            division_id,
+            bonus_sequence,
+            bonus,
+            &reason,
+            challenge.scoreboard_frozen,
+        )
+        .await?;
+        let score_event = score_event(command, competitor, bonus);
+        persist_audit_event(
+            tx,
+            &score_event,
+            "score.first_blood_bonus",
+            "score_entry",
+            &bonus_sequence.to_string(),
+        )
+        .await?;
+        events.push(score_event);
+    }
+    if first_blood {
+        let first_blood_event = EventEnvelope::new(
+            command.organization_id,
+            Some(command.event_id),
+            Some(command.actor),
+            command.idempotency_key,
+            command.now,
+            DomainEvent::FirstBlood {
+                challenge_id: command.challenge_id,
+                competitor,
+            },
+        );
+        persist_audit_event(
+            tx,
+            &first_blood_event,
+            "submission.first_blood",
+            "challenge",
+            &command.challenge_id.to_string(),
+        )
+        .await?;
+        events.push(first_blood_event);
+    }
+    Ok(SolveAward {
+        awarded_points: solve_points.saturating_add(bonus),
+        first_blood,
+        events,
+    })
+}
+
+async fn participant_division(
+    tx: &mut Transaction<'_, Postgres>,
+    event_id: EventId,
+    competitor: CompetitorId,
+) -> DomainResult<Option<Uuid>> {
+    let (user_id, team_id) = competitor_columns(competitor);
+    sqlx::query_scalar!(
+        r#"
+        SELECT division_id FROM event_participants
+        WHERE event_id = $1 AND user_id IS NOT DISTINCT FROM $2
+          AND team_id IS NOT DISTINCT FROM $3
+        "#,
+        event_id.0,
+        user_id,
+        team_id,
+    )
+    .fetch_one(&mut **tx)
+    .await
+    .map_err(unavailable)
+}
+
+async fn next_score_sequence(tx: &mut Transaction<'_, Postgres>) -> DomainResult<i64> {
+    sqlx::query_scalar!("SELECT nextval('score_entry_sequence') AS \"sequence!\"")
+        .fetch_one(&mut **tx)
+        .await
+        .map_err(unavailable)
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn insert_score_entry(
+    tx: &mut Transaction<'_, Postgres>,
+    command: &NewSubmission<'_>,
+    competitor: CompetitorId,
+    division_id: Option<Uuid>,
+    sequence: i64,
+    points: i64,
+    reason: &serde_json::Value,
+    hidden_by_freeze: bool,
+) -> DomainResult<()> {
+    let (user_id, team_id) = competitor_columns(competitor);
+    sqlx::query!(
+        r#"
+        INSERT INTO score_entries (
+            event_id,sequence,user_id,team_id,division_id,points,reason,
+            occurred_at,hidden_by_freeze
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+        "#,
+        command.event_id.0,
+        sequence,
+        user_id,
+        team_id,
+        division_id,
+        points,
+        reason,
+        command.now,
+        hidden_by_freeze,
+    )
+    .execute(&mut **tx)
+    .await
+    .map_err(unavailable)?;
+    Ok(())
+}
+
+fn submission_event(
+    command: &NewSubmission<'_>,
+    submission_id: SubmissionId,
+    competitor: CompetitorId,
+    outcome: SubmissionOutcome,
+) -> EventEnvelope {
+    EventEnvelope::new(
+        command.organization_id,
+        Some(command.event_id),
+        Some(command.actor),
+        command.idempotency_key,
+        command.now,
+        DomainEvent::SubmissionReceived {
+            submission_id,
+            challenge_id: command.challenge_id,
+            competitor,
+            outcome,
+        },
+    )
+}
+
+fn score_event(command: &NewSubmission<'_>, competitor: CompetitorId, delta: i64) -> EventEnvelope {
+    EventEnvelope::new(
+        command.organization_id,
+        Some(command.event_id),
+        Some(command.actor),
+        command.idempotency_key,
+        command.now,
+        DomainEvent::ScoreChanged { competitor, delta },
+    )
+}
+
+const fn competitor_columns(competitor: CompetitorId) -> (Option<Uuid>, Option<Uuid>) {
+    match competitor {
+        CompetitorId::User(user_id) => (Some(user_id.0), None),
+        CompetitorId::Team(team_id) => (None, Some(team_id.0)),
+    }
+}
+
+const fn outcome_key(outcome: SubmissionOutcome) -> &'static str {
+    match outcome {
+        SubmissionOutcome::Correct => "correct",
+        SubmissionOutcome::Incorrect => "incorrect",
+        SubmissionOutcome::Partial => "partial",
+        SubmissionOutcome::Pending => "pending",
+        SubmissionOutcome::Discarded => "discarded",
+        SubmissionOutcome::RateLimited => "rate_limited",
+        SubmissionOutcome::OwnFlag => "own_flag",
+        SubmissionOutcome::Duplicate => "duplicate",
+        SubmissionOutcome::Expired => "expired",
+    }
+}
+
+fn serialization_error(error: serde_json::Error) -> DomainError {
+    DomainError::Unavailable(format!("submission serialization failed: {error}"))
+}
+
+fn unavailable(error: impl std::fmt::Display) -> DomainError {
+    DomainError::Unavailable(format!("postgres submissions: {error}"))
+}
+
+fn conflict_or_unavailable(error: sqlx::Error) -> DomainError {
+    if error
+        .as_database_error()
+        .and_then(sqlx::error::DatabaseError::code)
+        .as_deref()
+        == Some("23505")
+    {
+        DomainError::Conflict("submission was already recorded".into())
+    } else {
+        unavailable(error)
+    }
+}

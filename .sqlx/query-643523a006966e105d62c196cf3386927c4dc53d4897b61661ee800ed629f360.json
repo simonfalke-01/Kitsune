@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO score_entries (\n            event_id,sequence,user_id,team_id,division_id,points,reason,\n            occurred_at,hidden_by_freeze\n        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int8",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Int8",
+        "Jsonb",
+        "Timestamptz",
+        "Bool"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "643523a006966e105d62c196cf3386927c4dc53d4897b61661ee800ed629f360"
+}

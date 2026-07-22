@@ -9,11 +9,17 @@ export type ApiErrorBody = components['schemas']['ErrorBody'];
 export type EventSummary = components['schemas']['EventResponse'];
 export type CreateEventInput = components['schemas']['CreateEventRequest'];
 export type UpdateEventStateInput = components['schemas']['UpdateEventStateRequest'];
+export type UpdateScoreboardControlsInput =
+  components['schemas']['UpdateScoreboardControlsRequest'];
 export type ChallengeSummary = components['schemas']['ChallengeResponse'];
 export type CreateChallengeInput = components['schemas']['CreateChallengeRequest'];
 export type TeamSummary = components['schemas']['TeamResponse'];
 export type CreateTeamInput = components['schemas']['CreateTeamRequest'];
 export type JoinTeamInput = components['schemas']['JoinTeamRequest'];
+export type SubmitAnswerInput = components['schemas']['SubmitAnswerRequest'];
+export type SubmissionReceipt = components['schemas']['SubmissionResponse'];
+export type Scoreboard = components['schemas']['ScoreboardResponse'];
+export type ScoreboardRow = components['schemas']['ScoreboardRowResponse'];
 
 export const api = createClient<paths>({
   baseUrl: '',

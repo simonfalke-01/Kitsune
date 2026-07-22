@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT count(*) AS \"count!\" FROM submissions\n        WHERE challenge_id = $1 AND outcome = 'incorrect'\n          AND (\n              ($3::uuid IS NOT NULL AND team_id = $3)\n              OR ($3::uuid IS NULL AND user_id = $2 AND team_id IS NULL)\n          )\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "f3a10cd6e1b3cbae7c58ff2d4221aa238ec0dc5fa0266cd23d297442e6ee8c9f"
+}
