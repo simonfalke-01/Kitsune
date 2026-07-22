@@ -121,6 +121,11 @@ Updated: 2026-07-22 (Asia/Singapore)
 - Frontend control flow now requires explicit braces through ESLint, and the
   formatter expands every such body into readable multiline code. The policy
   was applied across the Svelte and TypeScript application before verification.
+- Tenant-scoped OIDC provider persistence now seals confidential configuration,
+  stores digest-only state/browser bindings and sealed PKCE/nonce flow material,
+  enforces one-time expiry and provider-disable races, provisions canonical
+  player grants, applies explicit-only verified-email linking, and commits login
+  audit/outbox events atomically. Its PostgreSQL journey and strict Clippy pass.
 
 ## Risks being actively retired
 
@@ -131,3 +136,6 @@ Updated: 2026-07-22 (Asia/Singapore)
 - Recovery initiation is enumeration-safe and complete at the persistence/API
   boundary; SMTP delivery remains explicitly open, so recovery is not yet marked
   complete in the milestone ledger.
+- OIDC protocol discovery/exchange, callback cookies, REST/OpenAPI management,
+  provider UI, and browser coverage are the active continuation of the now-green
+  persistence boundary.

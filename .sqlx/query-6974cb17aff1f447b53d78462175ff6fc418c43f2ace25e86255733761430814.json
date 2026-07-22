@@ -1,0 +1,113 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT f.id AS flow_id,p.id AS provider_id,p.organization_id,\n                   o.slug AS \"organization_slug!\",p.key AS provider_key,p.display_name,\n                   p.issuer_url,p.client_id,p.encrypted_client_secret,p.redirect_uri,\n                   p.auto_provision,p.allow_email_link,f.browser_binding_digest,\n                   f.encrypted_pkce_verifier,f.encrypted_nonce,f.return_path\n            FROM oidc_flows f\n            JOIN oidc_providers p\n              ON p.id = f.provider_id AND p.organization_id = f.organization_id\n            JOIN organizations o ON o.id = p.organization_id\n            WHERE f.state_digest = $1 AND f.consumed_at IS NULL\n              AND f.expires_at > $2 AND p.enabled = true\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "flow_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "provider_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "organization_slug!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "provider_key",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "issuer_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "client_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "encrypted_client_secret",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 9,
+        "name": "redirect_uri",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "auto_provision",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 11,
+        "name": "allow_email_link",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 12,
+        "name": "browser_binding_digest",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 13,
+        "name": "encrypted_pkce_verifier",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 14,
+        "name": "encrypted_nonce",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 15,
+        "name": "return_path",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Bytea",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "6974cb17aff1f447b53d78462175ff6fc418c43f2ace25e86255733761430814"
+}

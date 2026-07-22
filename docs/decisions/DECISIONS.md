@@ -194,3 +194,18 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Use rand’s free `fill` function and track rand 0.10 — the stable
   call shape avoids extension-trait churn while keeping security-sensitive byte
   generation on the current maintained release.
+- 2026-07-22 — Bind every OIDC authorization-code flow to PKCE S256, an OpenID
+  nonce, one-time state, and a separate HttpOnly browser cookie — intercepted
+  codes, callback CSRF, and state copied into another browser all fail closed.
+- 2026-07-22 — Store OIDC client secrets, PKCE verifiers, and nonces with
+  authenticated encryption while storing state and browser bindings only as
+  SHA-256 digests — the callback can complete after a restart without leaving
+  reusable browser credentials or provider secrets readable in PostgreSQL.
+- 2026-07-22 — Never link an OIDC identity solely because its verified email
+  matches by default — organizers must explicitly enable verified-email linking,
+  while new accounts are provisioned with the canonical player role when that
+  provider's independent auto-provision policy permits it.
+- 2026-07-22 — Re-read an OIDC provider's enabled and provisioning policy inside
+  the identity transaction — a provider disabled during token exchange cannot
+  complete an in-flight login, and policy changes do not use stale callback
+  state.

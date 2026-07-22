@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE oidc_flows SET consumed_at = $3\n        WHERE id = $1 AND provider_id = $2 AND consumed_at IS NULL AND expires_at > $3\n          AND EXISTS (\n              SELECT 1 FROM oidc_providers p\n              WHERE p.id = oidc_flows.provider_id\n                AND p.organization_id = oidc_flows.organization_id\n                AND p.enabled = true\n          )\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0cca40d18dea49d1aeccc94bc8144dc5f106fe22292a71234790a8561c4722ac"
+}

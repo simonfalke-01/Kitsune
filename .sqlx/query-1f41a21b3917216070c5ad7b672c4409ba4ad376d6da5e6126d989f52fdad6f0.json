@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT p.key,p.display_name\n            FROM oidc_providers p\n            JOIN organizations o ON o.id = p.organization_id\n            WHERE o.slug = $1 AND p.enabled = true\n            ORDER BY p.display_name,p.id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "key",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "display_name",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "1f41a21b3917216070c5ad7b672c4409ba4ad376d6da5e6126d989f52fdad6f0"
+}

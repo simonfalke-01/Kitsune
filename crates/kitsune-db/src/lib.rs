@@ -8,6 +8,7 @@ use std::time::Duration;
 pub mod auth;
 pub mod engagement;
 pub mod oauth;
+pub mod oidc;
 pub mod resources;
 pub mod submissions;
 pub mod teams;

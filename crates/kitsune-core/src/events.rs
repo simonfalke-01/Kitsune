@@ -97,6 +97,8 @@ pub enum DomainEvent {
     ApiTokenChanged { token_id: Uuid, state: String },
     /// OAuth2 confidential-client lifecycle changed.
     OAuthClientChanged { client_id: Uuid, state: String },
+    /// OpenID Connect provider lifecycle changed.
+    OidcProviderChanged { provider_id: Uuid, state: String },
     /// Event lifecycle or configuration changed.
     EventChanged { event_id: EventId },
     /// Team created.
@@ -187,6 +189,7 @@ impl DomainEvent {
             Self::AuthenticationFailed { .. } => "auth.failed",
             Self::ApiTokenChanged { .. } => "auth.api_token.changed",
             Self::OAuthClientChanged { .. } => "auth.oauth_client.changed",
+            Self::OidcProviderChanged { .. } => "auth.oidc_provider.changed",
             Self::EventChanged { .. } => "event.changed",
             Self::TeamCreated { .. } => "identity.team.created",
             Self::TeamMembershipChanged { .. } => "identity.team.membership_changed",

@@ -1,0 +1,93 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE oidc_providers SET\n                display_name = $4,\n                issuer_url = $5,\n                client_id = $6,\n                encrypted_client_secret = COALESCE($7, encrypted_client_secret),\n                redirect_uri = $8,\n                enabled = $9,\n                auto_provision = $10,\n                allow_email_link = $11,\n                updated_by = $3,\n                updated_at = $12\n            WHERE id = $1 AND organization_id = $2\n            RETURNING id,key,display_name,issuer_url,client_id,redirect_uri,\n                      enabled,auto_provision,allow_email_link,created_at,updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "key",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "issuer_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "client_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "redirect_uri",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "enabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "auto_provision",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "allow_email_link",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Bytea",
+        "Text",
+        "Bool",
+        "Bool",
+        "Bool",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "aa523d3dabcefa8e79677b56be92b517982b14ab2a0f265c86b2340f52c9d1ef"
+}

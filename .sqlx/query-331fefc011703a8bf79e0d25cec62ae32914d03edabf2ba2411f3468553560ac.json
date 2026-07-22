@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO oidc_flows (\n                id,provider_id,organization_id,state_digest,browser_binding_digest,\n                encrypted_pkce_verifier,encrypted_nonce,return_path,expires_at,created_at\n            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Bytea",
+        "Bytea",
+        "Bytea",
+        "Bytea",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "331fefc011703a8bf79e0d25cec62ae32914d03edabf2ba2411f3468553560ac"
+}

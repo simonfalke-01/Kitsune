@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        INSERT INTO role_grants (\n            id,user_id,role_id,organization_id,event_id,team_id,granted_by,granted_at\n        ) VALUES ($1,$2,$3,$4,NULL,NULL,NULL,$5)\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ad9f53ed5f98757a1774d39d9b0ce019895c719153cef0621ce77f3ea587ba68"
+}

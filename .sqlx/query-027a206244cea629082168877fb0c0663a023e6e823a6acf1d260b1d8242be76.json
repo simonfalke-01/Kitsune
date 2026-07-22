@@ -1,0 +1,47 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id,organization_id,issuer_url,auto_provision,allow_email_link\n        FROM oidc_providers\n        WHERE id = $1 AND organization_id = $2 AND enabled = true\n        FOR SHARE\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "issuer_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "auto_provision",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "allow_email_link",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "027a206244cea629082168877fb0c0663a023e6e823a6acf1d260b1d8242be76"
+}

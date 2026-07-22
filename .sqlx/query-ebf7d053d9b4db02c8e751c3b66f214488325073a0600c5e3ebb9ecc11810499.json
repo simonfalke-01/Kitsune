@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT count(*) AS \"count!\"\n            FROM audit_log\n            WHERE organization_id = $1\n              AND action IN (\n                  'auth.oidc_provider.create',\n                  'auth.oidc.login',\n                  'auth.oidc_provider.update'\n              )\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "ebf7d053d9b4db02c8e751c3b66f214488325073a0600c5e3ebb9ecc11810499"
+}

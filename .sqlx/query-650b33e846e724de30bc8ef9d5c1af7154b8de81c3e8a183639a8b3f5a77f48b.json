@@ -1,0 +1,83 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT p.id,p.organization_id,o.slug AS organization_slug,p.key,\n                   p.display_name,p.issuer_url,p.client_id,p.encrypted_client_secret,\n                   p.redirect_uri,p.auto_provision,p.allow_email_link\n            FROM oidc_providers p\n            JOIN organizations o ON o.id = p.organization_id\n            WHERE o.slug = $1 AND p.key = $2 AND p.enabled = true\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "organization_slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "key",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "issuer_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "client_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "encrypted_client_secret",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 8,
+        "name": "redirect_uri",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "auto_provision",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 10,
+        "name": "allow_email_link",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "650b33e846e724de30bc8ef9d5c1af7154b8de81c3e8a183639a8b3f5a77f48b"
+}

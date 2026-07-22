@@ -1,0 +1,48 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT u.id,u.organization_id,u.display_name,u.email_normalized,u.email_verified\n        FROM auth_identities i\n        JOIN users u ON u.id = i.user_id\n        WHERE i.provider_key = $1 AND i.subject = $2\n          AND u.organization_id = $3 AND u.disabled = false\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "email_normalized",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "email_verified",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "c930c72184b8bf5e2f330a839701f5227f2f84c4e26f430bf6e1a044a0f96813"
+}
