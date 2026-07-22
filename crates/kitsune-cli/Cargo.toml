@@ -11,8 +11,11 @@ name = "kit"
 path = "src/main.rs"
 
 [dependencies]
+anyhow.workspace = true
+clap.workspace = true
+kitsune-api = { path = "../kitsune-api" }
 kitsune-core = { path = "../kitsune-core" }
+serde_json.workspace = true
 
 [lints]
 workspace = true
-
