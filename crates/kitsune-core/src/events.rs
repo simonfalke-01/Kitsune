@@ -93,6 +93,8 @@ pub enum DomainEvent {
         identity_hint: String,
         method: String,
     },
+    /// Event lifecycle or configuration changed.
+    EventChanged { event_id: EventId },
     /// Team created.
     TeamCreated { team_id: TeamId },
     /// Team membership changed.
@@ -154,6 +156,7 @@ impl DomainEvent {
             Self::UserCreated { .. } => "identity.user.created",
             Self::AuthenticationSucceeded { .. } => "auth.succeeded",
             Self::AuthenticationFailed { .. } => "auth.failed",
+            Self::EventChanged { .. } => "event.changed",
             Self::TeamCreated { .. } => "identity.team.created",
             Self::TeamMembershipChanged { .. } => "identity.team.membership_changed",
             Self::ChallengeChanged { .. } => "challenge.changed",

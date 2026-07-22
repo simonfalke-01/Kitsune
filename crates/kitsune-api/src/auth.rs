@@ -8,8 +8,8 @@ use argon2::{
 };
 use axum::{
     Json,
-    extract::{Path, State},
-    http::{HeaderMap, StatusCode},
+    extract::{FromRequestParts, Path, State},
+    http::{HeaderMap, StatusCode, request::Parts},
 };
 use axum_extra::extract::{
     PrivateCookieJar,
@@ -289,6 +289,64 @@ pub struct SessionIdentity {
     /// Account/session projection.
     pub account: SessionAccount,
     csrf_digest: Vec<u8>,
+}
+
+/// Deny-by-default authenticated actor extractor for protected resources.
+/// Handlers must additionally name the fine-grained permission they require.
+pub struct Actor {
+    /// Account and session scope.
+    pub session: SessionIdentity,
+    permissions: std::collections::HashSet<String>,
+}
+
+impl Actor {
+    /// Rejects the request unless the resolved scoped grants contain `key`.
+    pub fn require(&self, key: &str) -> ApiResult<()> {
+        if self.permissions.contains(key) {
+            Ok(())
+        } else {
+            Err(ApiError::from(DomainError::Forbidden))
+        }
+    }
+
+    /// Enforces CSRF on cookie-authenticated mutations.
+    pub fn require_csrf(&self, headers: &HeaderMap) -> ApiResult<()> {
+        self.session.require_csrf(headers)
+    }
+
+    /// Returns true for a granted permission without weakening handler checks.
+    pub fn can(&self, key: &str) -> bool {
+        self.permissions.contains(key)
+    }
+}
+
+impl FromRequestParts<AppState> for Actor {
+    type Rejection = ApiError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
+        let jar = PrivateCookieJar::from_request_parts(parts, state)
+            .await
+            .map_err(|_| ApiError::unauthorized())?;
+        let session = SessionIdentity::require(&state.auth_repository, &jar).await?;
+        let permissions = state
+            .auth_repository
+            .permission_keys(
+                session.account.user_id,
+                session.account.organization_id,
+                None,
+            )
+            .await
+            .map_err(ApiError::from)?
+            .into_iter()
+            .collect();
+        Ok(Self {
+            session,
+            permissions,
+        })
+    }
 }
 
 impl SessionIdentity {
@@ -1096,7 +1154,7 @@ fn validate_user_fields(display_name: &str, email: &str) -> ApiResult<()> {
     Ok(())
 }
 
-fn validate_slug(slug: &str) -> ApiResult<()> {
+pub(crate) fn validate_slug(slug: &str) -> ApiResult<()> {
     if slug.is_empty()
         || slug.len() > 63
         || !slug

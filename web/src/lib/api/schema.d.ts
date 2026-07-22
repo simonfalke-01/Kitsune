@@ -180,6 +180,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_events"];
+        put?: never;
+        post: operations["create_event"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/challenges": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_challenges"];
+        put?: never;
+        post: operations["create_challenge"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/setup": {
         parameters: {
             query?: never;
@@ -232,6 +264,171 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Author-submitted answer rule. Exact plaintext is digested before storage. */
+        AnswerInput: {
+            case_insensitive: boolean;
+            /** @enum {string} */
+            kind: "exact";
+            value: string;
+        } | {
+            case_insensitive: boolean;
+            /** @enum {string} */
+            kind: "regex";
+            pattern: string;
+        } | {
+            /** @enum {string} */
+            kind: "choice";
+            value: string;
+        } | {
+            /** @enum {string} */
+            kind: "dynamic";
+        } | {
+            /** @enum {string} */
+            kind: "manual";
+        };
+        /** @description Challenge behavior input. */
+        ChallengeKindInput: {
+            /** @enum {string} */
+            type: "static_flag";
+        } | {
+            choices: string[];
+            /** @enum {string} */
+            type: "multiple_choice";
+        } | {
+            template: string;
+            /** @enum {string} */
+            type: "dynamic_instance";
+        } | {
+            /** @enum {string} */
+            type: "file_backed";
+        } | {
+            connection: string;
+            /** @enum {string} */
+            type: "remote_service";
+        } | {
+            /** @enum {string} */
+            type: "manual_verification";
+        } | {
+            kind: string;
+            plugin: string;
+            /** @enum {string} */
+            type: "plugin";
+        };
+        /** @description Player-safe challenge response. Answer rules never appear here. */
+        ChallengeResponse: {
+            /** @description Category. */
+            category: string;
+            /** @description Markdown description. */
+            description: string;
+            /**
+             * Format: uuid
+             * @description Event ID.
+             */
+            event_id: string;
+            /**
+             * Format: uuid
+             * @description ID.
+             */
+            id: string;
+            /** @description Behavior schema. */
+            kind: Record<string, never>;
+            /**
+             * Format: int32
+             * @description Attempt limit.
+             */
+            max_attempts?: number | null;
+            /** @description Name. */
+            name: string;
+            /**
+             * Format: int32
+             * @description Board position.
+             */
+            position: number;
+            /** @description Scoring schema. */
+            scoring: Record<string, never>;
+            /** @description Lifecycle. */
+            state: string;
+            /** @description Survey schema. */
+            survey: Record<string, never>;
+            /** @description Tags. */
+            tags: string[];
+            /** @description Visibility schema. */
+            visibility: Record<string, never>;
+            /** @description Writeups enabled. */
+            writeups_enabled: boolean;
+        };
+        /**
+         * @description Challenge lifecycle input.
+         * @enum {string}
+         */
+        ChallengeStateInput: "draft" | "testing" | "scheduled" | "published" | "hidden" | "archived";
+        /** @description New challenge aggregate. */
+        CreateChallengeRequest: {
+            /** @description Accepted rules. */
+            answers: components["schemas"]["AnswerInput"][];
+            /** @description Board category. */
+            category: string;
+            /** @description Markdown body. */
+            description: string;
+            /** @description Hints. */
+            hints: components["schemas"]["HintInput"][];
+            /** @description Behavior. */
+            kind: components["schemas"]["ChallengeKindInput"];
+            /**
+             * Format: int32
+             * @description Optional failure ceiling.
+             */
+            max_attempts?: number | null;
+            /** @description Name. */
+            name: string;
+            /**
+             * Format: int32
+             * @description Board order.
+             */
+            position: number;
+            /** @description Score policy. */
+            scoring: components["schemas"]["ScoringInput"];
+            /** @description Lifecycle. */
+            state: components["schemas"]["ChallengeStateInput"];
+            /** @description Survey schema. */
+            survey: components["schemas"]["SurveyInput"][];
+            /** @description Search and grouping tags. */
+            tags: string[];
+            /** @description Visibility rules. */
+            visibility: components["schemas"]["VisibilityInput"];
+            /** @description Permit writeup submission. */
+            writeups_enabled: boolean;
+        };
+        /** @description New event document. */
+        CreateEventRequest: {
+            /** @description Markdown overview. */
+            description: string;
+            /**
+             * Format: date-time
+             * @description Optional closing instant.
+             */
+            ends_at?: string | null;
+            /** @description At least one enabled mode. */
+            modes: components["schemas"]["ModeInput"][];
+            /** @description Display name. */
+            name: string;
+            /** @description Scoring identity policy. */
+            participation: components["schemas"]["ParticipationInput"];
+            /** @description URL-safe key. */
+            slug: string;
+            /**
+             * Format: date-time
+             * @description Optional opening instant.
+             */
+            starts_at?: string | null;
+            /** @description Initial lifecycle. */
+            state: components["schemas"]["EventStateInput"];
+            /**
+             * Format: int32
+             * @description Optional team size limit.
+             */
+            team_size_limit?: number | null;
+        };
         /** @description Machine-readable error response. */
         ErrorBody: {
             /** @description Stable error code. */
@@ -239,6 +436,50 @@ export interface components {
             /** @description Safe human-readable detail. */
             message: string;
         };
+        /** @description Safe event response. */
+        EventResponse: {
+            /** @description Description. */
+            description: string;
+            /**
+             * Format: date-time
+             * @description End.
+             */
+            ends_at?: string | null;
+            /**
+             * Format: uuid
+             * @description ID.
+             */
+            id: string;
+            /** @description Modes. */
+            modes: string[];
+            /** @description Name. */
+            name: string;
+            /** @description Participation. */
+            participation: string;
+            /** @description Freeze state. */
+            scoreboard_frozen: boolean;
+            /** @description Hidden state. */
+            scoreboard_hidden: boolean;
+            /** @description Slug. */
+            slug: string;
+            /**
+             * Format: date-time
+             * @description Start.
+             */
+            starts_at?: string | null;
+            /** @description Lifecycle. */
+            state: string;
+            /**
+             * Format: int32
+             * @description Team limit.
+             */
+            team_size_limit?: number | null;
+        };
+        /**
+         * @description Event lifecycle input.
+         * @enum {string}
+         */
+        EventStateInput: "draft" | "scheduled" | "live" | "paused" | "ended" | "archived";
         /** @description Health document. */
         HealthResponse: {
             /** @description Stable status. */
@@ -250,6 +491,21 @@ export interface components {
             uptime_seconds: number;
             /** @description Server version. */
             version: string;
+        };
+        /** @description Hint authoring input. */
+        HintInput: {
+            /** @description Markdown content. */
+            content: string;
+            /**
+             * Format: int64
+             * @description Point cost.
+             */
+            cost: number;
+            /**
+             * Format: int32
+             * @description Stable positive key.
+             */
+            id: number;
         };
         /** @description Local login input. */
         LoginRequest: {
@@ -265,6 +521,16 @@ export interface components {
              */
             password: string;
         };
+        /**
+         * @description First-party game mode key.
+         * @enum {string}
+         */
+        ModeInput: "jeopardy" | "koth" | "attack_defense" | "workshop";
+        /**
+         * @description Event scoring identity policy.
+         * @enum {string}
+         */
+        ParticipationInput: "individual" | "team" | "hybrid";
         /** @description Readiness document. */
         ReadinessResponse: {
             /** @description PostgreSQL dependency state. */
@@ -307,6 +573,27 @@ export interface components {
              * @description Account password (12–128 characters).
              */
             password: string;
+        };
+        /** @description Scoring configuration. */
+        ScoringInput: {
+            /** @enum {string} */
+            kind: "static";
+            /** Format: int64 */
+            points: number;
+        } | {
+            /** Format: int64 */
+            decay: number;
+            /** Format: int64 */
+            initial: number;
+            /** @enum {string} */
+            kind: "dynamic";
+            /** Format: int64 */
+            minimum: number;
+        } | {
+            /** @enum {string} */
+            kind: "plugin";
+            plugin: string;
+            strategy: string;
         };
         /** @description Session bootstrap used by the Svelte client. */
         SessionResponse: {
@@ -368,6 +655,20 @@ export interface components {
             /** @description True when no user exists and setup can be completed. */
             required: boolean;
         };
+        /** @description Post-solve survey item. */
+        SurveyInput: {
+            /** @description Stable key. */
+            key: string;
+            /** @description Prompt. */
+            prompt: string;
+            /** @description Optional inclusive integer bounds. */
+            range?: [
+                number,
+                number
+            ] | null;
+            /** @description Required answer. */
+            required: boolean;
+        };
         /** @description One opaque token input. */
         TokenRequest: {
             /** @description URL-safe one-time token. */
@@ -403,6 +704,23 @@ export interface components {
              * @description Organization ID.
              */
             organization_id: string;
+        };
+        /** @description Visibility window, division targeting, and unlock graph. */
+        VisibilityInput: {
+            /** @description Empty means every division. */
+            division_ids: string[];
+            /** @description All must be solved. */
+            prerequisites: string[];
+            /**
+             * Format: date-time
+             * @description Earliest visibility.
+             */
+            visible_from?: string | null;
+            /**
+             * Format: date-time
+             * @description Exclusive hide instant.
+             */
+            visible_until?: string | null;
         };
     };
     responses: never;
@@ -814,6 +1132,192 @@ export interface operations {
                 };
             };
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_events: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventResponse"][];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    create_event: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateEventRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_challenges: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChallengeResponse"][];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    create_challenge: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateChallengeRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChallengeResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

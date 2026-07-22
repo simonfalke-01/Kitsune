@@ -1,0 +1,115 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO challenges (\n                id,event_id,name,category,description,kind,state,scoring,visibility,\n                tags,max_attempts,writeups_enabled,position,created_by,created_at,\n                updated_at,survey\n            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$15,$16)\n            RETURNING id,event_id,name,category,description,kind,state,scoring,\n                      visibility,tags,max_attempts,writeups_enabled,position,survey\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "event_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "category",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "description",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "kind",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "state",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "scoring",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 8,
+        "name": "visibility",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 9,
+        "name": "tags",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 10,
+        "name": "max_attempts",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 11,
+        "name": "writeups_enabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 12,
+        "name": "position",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 13,
+        "name": "survey",
+        "type_info": "Jsonb"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Jsonb",
+        "Text",
+        "Jsonb",
+        "Jsonb",
+        "TextArray",
+        "Int4",
+        "Bool",
+        "Int4",
+        "Uuid",
+        "Timestamptz",
+        "Jsonb"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "054649a545352caf53baf0a977e52192fb262a36efbc7ad898e8ccc84360b4d8"
+}

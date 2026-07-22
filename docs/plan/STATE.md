@@ -6,10 +6,11 @@ Updated: 2026-07-22 (Asia/Singapore)
 
 - Current milestone: 02 — deterministic core and persistence.
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: complete provider/MFA/token suite and domain REST resources.
+- In progress: complete provider/token suite and expand domain REST resources.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
-- Next: OIDC/passkey/SAML/TOTP adapters, RBAC extractor, and event/challenge API.
+- Next: wire event/challenge screens, then implement OIDC, passkeys, SAML, and
+  programmatic tokens.
 
 ## Verified
 
@@ -34,6 +35,14 @@ Updated: 2026-07-22 (Asia/Singapore)
 - SvelteKit production build passes strict TypeScript/Svelte diagnostics,
   ESLint/Prettier, and 4 Vitest assertions. The generated TypeScript client is
   derived from the code-generated OpenAPI 3.1 document.
+- Tenant-scoped event and challenge create/list APIs now enforce explicit RBAC
+  and CSRF, hash exact answers before persistence, filter player visibility by
+  lifecycle/time/division/prerequisites, and atomically emit audit/outbox rows.
+  Eight API tests, strict Clippy, SQLx offline compilation, and the regenerated
+  OpenAPI/TypeScript contract are green.
+- Repository-wide Rustfmt, Prettier, and EditorConfig policy is executable from
+  the root; dense pre-existing Svelte markup was expanded and all format checks
+  are enforced by the lint gate.
 - Neutral Kon slots, separate tone/branding controls, the free de-brand path and
   support nudge, disabled-by-default white-label entitlement UX, dark/light
   tokens, responsive player shell, organizer shell, automation canvas, and

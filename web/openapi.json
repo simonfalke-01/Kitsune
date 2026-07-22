@@ -1,6 +1,499 @@
 {
   "components": {
     "schemas": {
+      "AnswerInput": {
+        "description": "Author-submitted answer rule. Exact plaintext is digested before storage.",
+        "oneOf": [
+          {
+            "description": "Exact flag.",
+            "properties": {
+              "case_insensitive": {
+                "type": "boolean"
+              },
+              "kind": {
+                "enum": [
+                  "exact"
+                ],
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "value",
+              "case_insensitive",
+              "kind"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Bounded regex.",
+            "properties": {
+              "case_insensitive": {
+                "type": "boolean"
+              },
+              "kind": {
+                "enum": [
+                  "regex"
+                ],
+                "type": "string"
+              },
+              "pattern": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "pattern",
+              "case_insensitive",
+              "kind"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Multiple-choice value.",
+            "properties": {
+              "kind": {
+                "enum": [
+                  "choice"
+                ],
+                "type": "string"
+              },
+              "value": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "value",
+              "kind"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Per-identity verifier.",
+            "properties": {
+              "kind": {
+                "enum": [
+                  "dynamic"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Organizer review.",
+            "properties": {
+              "kind": {
+                "enum": [
+                  "manual"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "ChallengeKindInput": {
+        "description": "Challenge behavior input.",
+        "oneOf": [
+          {
+            "description": "One or more text/regex answers.",
+            "properties": {
+              "type": {
+                "enum": [
+                  "static_flag"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Declared choices.",
+            "properties": {
+              "choices": {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              "type": {
+                "enum": [
+                  "multiple_choice"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "choices",
+              "type"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Orchestrated identity-specific service.",
+            "properties": {
+              "template": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "dynamic_instance"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "template",
+              "type"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Downloadable artifact.",
+            "properties": {
+              "type": {
+                "enum": [
+                  "file_backed"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "TCP or HTTP service.",
+            "properties": {
+              "connection": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "remote_service"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "connection",
+              "type"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Organizer review.",
+            "properties": {
+              "type": {
+                "enum": [
+                  "manual_verification"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Capability-bound plugin type.",
+            "properties": {
+              "kind": {
+                "type": "string"
+              },
+              "plugin": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "plugin"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "plugin",
+              "kind",
+              "type"
+            ],
+            "type": "object"
+          }
+        ]
+      },
+      "ChallengeResponse": {
+        "description": "Player-safe challenge response. Answer rules never appear here.",
+        "properties": {
+          "category": {
+            "description": "Category.",
+            "type": "string"
+          },
+          "description": {
+            "description": "Markdown description.",
+            "type": "string"
+          },
+          "event_id": {
+            "description": "Event ID.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "description": "ID.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "kind": {
+            "description": "Behavior schema.",
+            "type": "object"
+          },
+          "max_attempts": {
+            "description": "Attempt limit.",
+            "format": "int32",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "name": {
+            "description": "Name.",
+            "type": "string"
+          },
+          "position": {
+            "description": "Board position.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "scoring": {
+            "description": "Scoring schema.",
+            "type": "object"
+          },
+          "state": {
+            "description": "Lifecycle.",
+            "type": "string"
+          },
+          "survey": {
+            "description": "Survey schema.",
+            "type": "object"
+          },
+          "tags": {
+            "description": "Tags.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "visibility": {
+            "description": "Visibility schema.",
+            "type": "object"
+          },
+          "writeups_enabled": {
+            "description": "Writeups enabled.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "event_id",
+          "name",
+          "category",
+          "description",
+          "kind",
+          "state",
+          "scoring",
+          "visibility",
+          "tags",
+          "writeups_enabled",
+          "position",
+          "survey"
+        ],
+        "type": "object"
+      },
+      "ChallengeStateInput": {
+        "description": "Challenge lifecycle input.",
+        "enum": [
+          "draft",
+          "testing",
+          "scheduled",
+          "published",
+          "hidden",
+          "archived"
+        ],
+        "type": "string"
+      },
+      "CreateChallengeRequest": {
+        "description": "New challenge aggregate.",
+        "properties": {
+          "answers": {
+            "description": "Accepted rules.",
+            "items": {
+              "$ref": "#/components/schemas/AnswerInput"
+            },
+            "type": "array"
+          },
+          "category": {
+            "description": "Board category.",
+            "type": "string"
+          },
+          "description": {
+            "description": "Markdown body.",
+            "type": "string"
+          },
+          "hints": {
+            "description": "Hints.",
+            "items": {
+              "$ref": "#/components/schemas/HintInput"
+            },
+            "type": "array"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ChallengeKindInput",
+            "description": "Behavior."
+          },
+          "max_attempts": {
+            "description": "Optional failure ceiling.",
+            "format": "int32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "name": {
+            "description": "Name.",
+            "type": "string"
+          },
+          "position": {
+            "description": "Board order.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "scoring": {
+            "$ref": "#/components/schemas/ScoringInput",
+            "description": "Score policy."
+          },
+          "state": {
+            "$ref": "#/components/schemas/ChallengeStateInput",
+            "description": "Lifecycle."
+          },
+          "survey": {
+            "description": "Survey schema.",
+            "items": {
+              "$ref": "#/components/schemas/SurveyInput"
+            },
+            "type": "array"
+          },
+          "tags": {
+            "description": "Search and grouping tags.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "visibility": {
+            "$ref": "#/components/schemas/VisibilityInput",
+            "description": "Visibility rules."
+          },
+          "writeups_enabled": {
+            "description": "Permit writeup submission.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "category",
+          "description",
+          "kind",
+          "state",
+          "scoring",
+          "visibility",
+          "tags",
+          "writeups_enabled",
+          "position",
+          "answers",
+          "hints",
+          "survey"
+        ],
+        "type": "object"
+      },
+      "CreateEventRequest": {
+        "description": "New event document.",
+        "properties": {
+          "description": {
+            "description": "Markdown overview.",
+            "type": "string"
+          },
+          "ends_at": {
+            "description": "Optional closing instant.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "modes": {
+            "description": "At least one enabled mode.",
+            "items": {
+              "$ref": "#/components/schemas/ModeInput"
+            },
+            "type": "array"
+          },
+          "name": {
+            "description": "Display name.",
+            "type": "string"
+          },
+          "participation": {
+            "$ref": "#/components/schemas/ParticipationInput",
+            "description": "Scoring identity policy."
+          },
+          "slug": {
+            "description": "URL-safe key.",
+            "type": "string"
+          },
+          "starts_at": {
+            "description": "Optional opening instant.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state": {
+            "$ref": "#/components/schemas/EventStateInput",
+            "description": "Initial lifecycle."
+          },
+          "team_size_limit": {
+            "description": "Optional team size limit.",
+            "format": "int32",
+            "minimum": 0,
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "name",
+          "slug",
+          "description",
+          "state",
+          "participation",
+          "modes"
+        ],
+        "type": "object"
+      },
       "ErrorBody": {
         "description": "Machine-readable error response.",
         "properties": {
@@ -18,6 +511,99 @@
           "message"
         ],
         "type": "object"
+      },
+      "EventResponse": {
+        "description": "Safe event response.",
+        "properties": {
+          "description": {
+            "description": "Description.",
+            "type": "string"
+          },
+          "ends_at": {
+            "description": "End.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "description": "ID.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "modes": {
+            "description": "Modes.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "description": "Name.",
+            "type": "string"
+          },
+          "participation": {
+            "description": "Participation.",
+            "type": "string"
+          },
+          "scoreboard_frozen": {
+            "description": "Freeze state.",
+            "type": "boolean"
+          },
+          "scoreboard_hidden": {
+            "description": "Hidden state.",
+            "type": "boolean"
+          },
+          "slug": {
+            "description": "Slug.",
+            "type": "string"
+          },
+          "starts_at": {
+            "description": "Start.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state": {
+            "description": "Lifecycle.",
+            "type": "string"
+          },
+          "team_size_limit": {
+            "description": "Team limit.",
+            "format": "int32",
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug",
+          "description",
+          "state",
+          "participation",
+          "modes",
+          "scoreboard_frozen",
+          "scoreboard_hidden"
+        ],
+        "type": "object"
+      },
+      "EventStateInput": {
+        "description": "Event lifecycle input.",
+        "enum": [
+          "draft",
+          "scheduled",
+          "live",
+          "paused",
+          "ended",
+          "archived"
+        ],
+        "type": "string"
       },
       "HealthResponse": {
         "description": "Health document.",
@@ -41,6 +627,32 @@
           "status",
           "version",
           "uptime_seconds"
+        ],
+        "type": "object"
+      },
+      "HintInput": {
+        "description": "Hint authoring input.",
+        "properties": {
+          "content": {
+            "description": "Markdown content.",
+            "type": "string"
+          },
+          "cost": {
+            "description": "Point cost.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "id": {
+            "description": "Stable positive key.",
+            "format": "int32",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "content",
+          "cost"
         ],
         "type": "object"
       },
@@ -74,6 +686,25 @@
           "password"
         ],
         "type": "object"
+      },
+      "ModeInput": {
+        "description": "First-party game mode key.",
+        "enum": [
+          "jeopardy",
+          "koth",
+          "attack_defense",
+          "workshop"
+        ],
+        "type": "string"
+      },
+      "ParticipationInput": {
+        "description": "Event scoring identity policy.",
+        "enum": [
+          "individual",
+          "team",
+          "hybrid"
+        ],
+        "type": "string"
       },
       "ReadinessResponse": {
         "description": "Readiness document.",
@@ -174,6 +805,85 @@
           "password"
         ],
         "type": "object"
+      },
+      "ScoringInput": {
+        "description": "Scoring configuration.",
+        "oneOf": [
+          {
+            "description": "Fixed value.",
+            "properties": {
+              "kind": {
+                "enum": [
+                  "static"
+                ],
+                "type": "string"
+              },
+              "points": {
+                "format": "int64",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "points",
+              "kind"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Solve-count decay.",
+            "properties": {
+              "decay": {
+                "format": "int64",
+                "minimum": 0,
+                "type": "integer"
+              },
+              "initial": {
+                "format": "int64",
+                "type": "integer"
+              },
+              "kind": {
+                "enum": [
+                  "dynamic"
+                ],
+                "type": "string"
+              },
+              "minimum": {
+                "format": "int64",
+                "type": "integer"
+              }
+            },
+            "required": [
+              "initial",
+              "minimum",
+              "decay",
+              "kind"
+            ],
+            "type": "object"
+          },
+          {
+            "description": "Plugin implementation.",
+            "properties": {
+              "kind": {
+                "enum": [
+                  "plugin"
+                ],
+                "type": "string"
+              },
+              "plugin": {
+                "type": "string"
+              },
+              "strategy": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "plugin",
+              "strategy",
+              "kind"
+            ],
+            "type": "object"
+          }
+        ]
       },
       "SessionResponse": {
         "description": "Session bootstrap used by the Svelte client.",
@@ -291,6 +1001,47 @@
         ],
         "type": "object"
       },
+      "SurveyInput": {
+        "description": "Post-solve survey item.",
+        "properties": {
+          "key": {
+            "description": "Stable key.",
+            "type": "string"
+          },
+          "prompt": {
+            "description": "Prompt.",
+            "type": "string"
+          },
+          "range": {
+            "description": "Optional inclusive integer bounds.",
+            "items": false,
+            "prefixItems": [
+              {
+                "format": "int32",
+                "type": "integer"
+              },
+              {
+                "format": "int32",
+                "type": "integer"
+              }
+            ],
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "required": {
+            "description": "Required answer.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "prompt",
+          "required"
+        ],
+        "type": "object"
+      },
       "TokenRequest": {
         "description": "One opaque token input.",
         "properties": {
@@ -367,6 +1118,48 @@
           "display_name",
           "email",
           "email_verified"
+        ],
+        "type": "object"
+      },
+      "VisibilityInput": {
+        "description": "Visibility window, division targeting, and unlock graph.",
+        "properties": {
+          "division_ids": {
+            "description": "Empty means every division.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "prerequisites": {
+            "description": "All must be solved.",
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "visible_from": {
+            "description": "Earliest visibility.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "visible_until": {
+            "description": "Exclusive hide instant.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "division_ids",
+          "prerequisites"
         ],
         "type": "object"
       }
@@ -873,6 +1666,252 @@
         ]
       }
     },
+    "/api/v1/events": {
+      "get": {
+        "operationId": "list_events",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/EventResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "events"
+        ]
+      },
+      "post": {
+        "operationId": "create_event",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateEventRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "events"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/challenges": {
+      "get": {
+        "operationId": "list_challenges",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ChallengeResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "challenges"
+        ]
+      },
+      "post": {
+        "operationId": "create_challenge",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateChallengeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChallengeResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "challenges"
+        ]
+      }
+    },
     "/api/v1/setup": {
       "get": {
         "operationId": "setup_status",
@@ -1020,6 +2059,14 @@
     {
       "description": "Setup, sessions, and authentication",
       "name": "auth"
+    },
+    {
+      "description": "Competition and workshop events",
+      "name": "events"
+    },
+    {
+      "description": "Challenge board and authoring",
+      "name": "challenges"
     }
   ]
 }

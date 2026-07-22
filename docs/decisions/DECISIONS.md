@@ -63,3 +63,13 @@ Format: `YYYY-MM-DD — decision — rationale`.
   this prevents account enumeration; the token is persisted for the optional
   mailer to deliver, and the UI clearly says delivery requires a configured
   channel rather than exposing secrets in responses or logs.
+- 2026-07-22 — Make readable formatting a repository contract through Rustfmt,
+  Prettier, EditorConfig, and the root `format` task — deterministic tooling plus
+  deliberately expanded component markup prevents compressed one-line code from
+  returning during feature work.
+- 2026-07-22 — Resolve authenticated actors through one deny-by-default extractor
+  and require named permissions inside each resource handler — tenant identity
+  cannot be supplied by clients and authorization remains locally auditable.
+- 2026-07-22 — Commit resource mutations, immutable audit records, and outbox
+  envelopes in one PostgreSQL transaction before in-process publication — the
+  durable record stays authoritative if immediate fanout is interrupted.

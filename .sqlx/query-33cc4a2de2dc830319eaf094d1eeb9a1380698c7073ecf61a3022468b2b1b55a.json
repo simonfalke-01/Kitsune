@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT DISTINCT cs.challenge_id\n            FROM challenge_solves cs\n            JOIN challenges c ON c.id = cs.challenge_id\n            JOIN events e ON e.id = c.event_id\n            LEFT JOIN team_members tm ON tm.team_id = cs.team_id\n            WHERE c.event_id = $1 AND e.organization_id = $2\n              AND (cs.user_id = $3 OR tm.user_id = $3)\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "challenge_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "33cc4a2de2dc830319eaf094d1eeb9a1380698c7073ecf61a3022468b2b1b55a"
+}

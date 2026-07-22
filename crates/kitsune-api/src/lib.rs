@@ -3,6 +3,7 @@
 mod auth;
 mod error;
 mod realtime;
+mod resources;
 
 use std::{sync::Arc, time::Instant};
 
@@ -27,7 +28,7 @@ use tower_http::{
 use utoipa::{OpenApi, ToSchema};
 use utoipa_swagger_ui::SwaggerUi;
 
-pub use auth::{AuthService, SessionIdentity};
+pub use auth::{Actor, AuthService, SessionIdentity};
 pub use error::{ApiError, ApiResult, ErrorBody};
 
 /// Shared application dependencies. Trait objects keep scaled adapters
@@ -126,6 +127,10 @@ pub struct ReadinessResponse {
         auth::confirm_totp,
         auth::list_sessions,
         auth::revoke_session
+        ,resources::list_events,
+        resources::create_event,
+        resources::list_challenges,
+        resources::create_challenge
     ),
     components(schemas(
         HealthResponse,
@@ -142,12 +147,28 @@ pub struct ReadinessResponse {
         auth::TotpConfirmRequest,
         auth::RecoveryCodesResponse,
         auth::SessionSummaryResponse,
+        resources::EventStateInput,
+        resources::ParticipationInput,
+        resources::ModeInput,
+        resources::CreateEventRequest,
+        resources::EventResponse,
+        resources::ChallengeKindInput,
+        resources::ChallengeStateInput,
+        resources::ScoringInput,
+        resources::VisibilityInput,
+        resources::AnswerInput,
+        resources::HintInput,
+        resources::SurveyInput,
+        resources::CreateChallengeRequest,
+        resources::ChallengeResponse,
         auth::SessionResponse,
         auth::UserResponse
     )),
     tags(
         (name = "system", description = "Health and diagnostics"),
         (name = "auth", description = "Setup, sessions, and authentication")
+        ,(name = "events", description = "Competition and workshop events"),
+        (name = "challenges", description = "Challenge board and authoring")
     )
 )]
 pub struct ApiDoc;
@@ -212,6 +233,14 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/auth/sessions/{session_id}",
             axum::routing::delete(auth::revoke_session),
+        )
+        .route(
+            "/api/v1/events",
+            get(resources::list_events).post(resources::create_event),
+        )
+        .route(
+            "/api/v1/events/{event_id}/challenges",
+            get(resources::list_challenges).post(resources::create_challenge),
         )
         .route("/api/v1/realtime/ws", get(realtime::websocket))
         .route("/api/v1/realtime/sse", get(realtime::sse))
@@ -518,6 +547,209 @@ mod tests {
         let sessions: serde_json::Value = serde_json::from_slice(&body).expect("sessions");
         assert_eq!(sessions.as_array().expect("array").len(), 1);
         assert_eq!(sessions[0]["current"], true);
+    }
+
+    #[sqlx::test(migrator = "MIGRATOR")]
+    async fn event_and_challenge_resources_are_tenant_scoped_and_rbac_guarded(pool: PgPool) {
+        let app = router(test_state(pool.clone()));
+        let setup = Request::builder()
+            .method("POST")
+            .uri("/api/v1/setup")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "organization_name": "Outfox Open",
+                    "organization_slug": "outfox",
+                    "display_name": "Organizer",
+                    "email": "organizer@example.test",
+                    "password": "correct horse foxfire battery"
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        let response = app.clone().oneshot(setup).await.expect("setup");
+        let admin_cookies = response_cookies(response.headers());
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let admin_session: serde_json::Value = serde_json::from_slice(&body).expect("session");
+        let admin_csrf = admin_session["csrf_token"].as_str().expect("csrf");
+
+        let create_event = Request::builder()
+            .method("POST")
+            .uri("/api/v1/events")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "name": "Outfox Open 2026",
+                    "slug": "outfox-open-2026",
+                    "description": "A live security competition.",
+                    "state": "live",
+                    "participation": "individual",
+                    "modes": ["jeopardy", "workshop"],
+                    "starts_at": null,
+                    "ends_at": null,
+                    "team_size_limit": null
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(create_event)
+            .await
+            .expect("create event");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let event: serde_json::Value = serde_json::from_slice(&body).expect("event");
+        let event_id = event["id"].as_str().expect("event id");
+
+        for (name, state) in [("Hidden trail", "draft"), ("Foxfire 101", "published")] {
+            let create = Request::builder()
+                .method("POST")
+                .uri(format!("/api/v1/events/{event_id}/challenges"))
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::COOKIE, &admin_cookies)
+                .header("x-csrf-token", admin_csrf)
+                .body(Body::from(
+                    serde_json::json!({
+                        "name": name,
+                        "category": "Web",
+                        "description": "Find the foxfire.",
+                        "kind": {"type": "static_flag"},
+                        "state": state,
+                        "scoring": {"kind": "dynamic", "initial": 500, "minimum": 100, "decay": 50},
+                        "visibility": {"visible_from": null, "visible_until": null, "division_ids": [], "prerequisites": []},
+                        "tags": ["intro"],
+                        "max_attempts": 10,
+                        "writeups_enabled": true,
+                        "position": 0,
+                        "answers": [{"kind": "exact", "value": "kit{never-persist-plaintext}", "case_insensitive": false}],
+                        "hints": [{"id": 1, "content": "Look closely.", "cost": 10}],
+                        "survey": [{"key": "difficulty", "prompt": "How hard?", "range": [1, 5], "required": true}]
+                    })
+                    .to_string(),
+                ))
+                .expect("request");
+            assert_eq!(
+                app.clone()
+                    .oneshot(create)
+                    .await
+                    .expect("create challenge")
+                    .status(),
+                StatusCode::CREATED
+            );
+        }
+
+        let admin_list = Request::builder()
+            .uri(format!("/api/v1/events/{event_id}/challenges"))
+            .header(header::COOKIE, &admin_cookies)
+            .body(Body::empty())
+            .expect("request");
+        let response = app.clone().oneshot(admin_list).await.expect("admin list");
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let challenges: serde_json::Value = serde_json::from_slice(&body).expect("challenges");
+        assert_eq!(challenges.as_array().expect("array").len(), 2);
+        assert!(challenges[0].get("answers").is_none());
+
+        let register = Request::builder()
+            .method("POST")
+            .uri("/api/v1/auth/register")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "organization": "outfox",
+                    "display_name": "Player",
+                    "email": "player@example.test",
+                    "password": "another correct foxfire secret"
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        let response = app.clone().oneshot(register).await.expect("register");
+        let player_cookies = response_cookies(response.headers());
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let player_session: serde_json::Value = serde_json::from_slice(&body).expect("session");
+        let player_csrf = player_session["csrf_token"].as_str().expect("csrf");
+
+        let player_list = Request::builder()
+            .uri(format!("/api/v1/events/{event_id}/challenges"))
+            .header(header::COOKIE, &player_cookies)
+            .body(Body::empty())
+            .expect("request");
+        let response = app.clone().oneshot(player_list).await.expect("player list");
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let challenges: serde_json::Value = serde_json::from_slice(&body).expect("challenges");
+        assert_eq!(challenges.as_array().expect("array").len(), 1);
+        assert_eq!(challenges[0]["name"], "Foxfire 101");
+
+        let forbidden = Request::builder()
+            .method("POST")
+            .uri("/api/v1/events")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "name": "Forbidden Event",
+                    "slug": "forbidden-event",
+                    "description": "This write must not reach the repository.",
+                    "state": "draft",
+                    "participation": "individual",
+                    "modes": ["jeopardy"],
+                    "starts_at": null,
+                    "ends_at": null,
+                    "team_size_limit": null
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        assert_eq!(
+            app.oneshot(forbidden).await.expect("forbidden").status(),
+            StatusCode::FORBIDDEN
+        );
+
+        let answer_json = sqlx::query_scalar!("SELECT rule::text FROM challenge_answers LIMIT 1")
+            .fetch_one(&pool)
+            .await
+            .expect("answer rule query")
+            .expect("answer rule");
+        assert!(!answer_json.contains("never-persist-plaintext"));
+        let audit_count = sqlx::query_scalar!("SELECT count(*) AS \"count!\" FROM audit_log")
+            .fetch_one(&pool)
+            .await
+            .expect("audit count");
+        let outbox_count = sqlx::query_scalar!("SELECT count(*) AS \"count!\" FROM event_outbox")
+            .fetch_one(&pool)
+            .await
+            .expect("outbox count");
+        assert_eq!(audit_count, 3);
+        assert_eq!(outbox_count, 3);
     }
 
     fn response_cookies(headers: &axum::http::HeaderMap) -> String {

@@ -20,6 +20,7 @@ kitsune-automation = { path = "../kitsune-automation" }
 kitsune-core = { path = "../kitsune-core" }
 kitsune-db = { path = "../kitsune-db" }
 rand.workspace = true
+secrecy.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 sha2.workspace = true

@@ -56,6 +56,10 @@ or scaffolding alone.
 - [ ] OIDC/OAuth2, passkeys/WebAuthn, and SAML.
 - [ ] PASETO API tokens and OAuth2 client credentials.
 - [ ] Deny-by-default RBAC extractor on every protected endpoint.
+- [x] Deny-by-default actor extraction plus permission/CSRF enforcement on the
+  event and challenge resource endpoints.
+- [x] Tenant-scoped event and challenge create/list APIs with player-safe
+  projections, visibility evaluation, hashed exact answers, audit, and outbox.
 - [ ] Complete versioned REST resources and OpenAPI contracts.
 
 ## Frontend vertical slice
@@ -74,3 +78,9 @@ or scaffolding alone.
 - [ ] Wire player and organizer resources to the complete domain REST API.
 - [ ] Complete all mode-specific, auth-provider, plugin, integration, and
   administrative surfaces.
+
+## Repository quality
+
+- [x] Root formatter command covers Rust and pnpm workspaces.
+- [x] Rustfmt, Prettier, EditorConfig, and CI format enforcement agree.
+- [x] Dense one-line Svelte markup expanded into readable component blocks.
