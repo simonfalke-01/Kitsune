@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import { expect, test, type CDPSession, type Page, type TestInfo } from '@playwright/test';
 
 const OWNER = {
   organization: 'e2e-shrine',
@@ -48,9 +48,45 @@ function projectKey(testInfo: TestInfo): string {
   return testInfo.project.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
 }
 
+type VirtualAuthenticator = {
+  id: string;
+  session: CDPSession;
+};
+
+async function enableVirtualAuthenticator(page: Page): Promise<VirtualAuthenticator> {
+  const session = await page.context().newCDPSession(page);
+  await session.send('WebAuthn.enable', { enableUI: false });
+  const { authenticatorId } = await session.send('WebAuthn.addVirtualAuthenticator', {
+    options: {
+      protocol: 'ctap2',
+      transport: 'usb',
+      hasResidentKey: false,
+      hasUserVerification: true,
+      isUserVerified: true,
+      automaticPresenceSimulation: true
+    }
+  });
+  await session.send('WebAuthn.setUserVerified', {
+    authenticatorId,
+    isUserVerified: true
+  });
+  await session.send('WebAuthn.setAutomaticPresenceSimulation', {
+    authenticatorId,
+    enabled: true
+  });
+  return {
+    id: authenticatorId,
+    session
+  };
+}
+
 test('organizer authors a published challenge visible on the player board', async ({
   page
 }, testInfo) => {
+  // Chrome must begin intercepting WebAuthn before the first navigation. Creating
+  // the test authenticator later in a long, multi-route flow can leave a desktop
+  // browser waiting on native presence even when automatic presence is enabled.
+  const virtualAuthenticator = await enableVirtualAuthenticator(page);
   await authenticate(page);
   const key = projectKey(testInfo);
   const run = Date.now().toString(36);
@@ -266,8 +302,23 @@ test('organizer authors a published challenge visible on the player board', asyn
   await expect(page.getByText('Captain', { exact: true })).toBeVisible();
 
   const tokenName = `Challenge reader ${testInfo.project.name} ${run}`;
+  const passkeyName = `E2E passkey ${testInfo.project.name} ${run}`;
   await page.goto('/account/security');
   await expect(page.getByRole('heading', { name: 'Guard your trail.' })).toBeVisible();
+  const passkeyManager = page.locator('.card').filter({
+    has: page.getByRole('heading', { name: 'Passkeys' })
+  });
+  await passkeyManager.getByLabel('Passkey name').fill(passkeyName);
+  const passkeyRegistered = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      response.url().endsWith('/api/v1/auth/passkeys/register/finish')
+  );
+  await passkeyManager.getByRole('button', { name: 'Add passkey' }).click();
+  expect((await passkeyRegistered).status()).toBe(201);
+  const passkeyCard = passkeyManager.locator('article').filter({ hasText: passkeyName });
+  await expect(passkeyCard.getByText('Active', { exact: true })).toBeVisible();
+
   const apiTokenManager = page.locator('.card').filter({
     has: page.getByRole('heading', { name: 'API tokens' })
   });
@@ -361,4 +412,38 @@ test('organizer authors a published challenge visible on the player board', asyn
   await tokenCard.getByRole('button', { name: `Revoke ${tokenName}` }).click();
   expect((await tokenRevoked).status()).toBe(204);
   await expect(tokenCard.getByText('Revoked', { exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: 'Sign out' }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.getByLabel('Organization').fill(OWNER.organization);
+  await page.getByLabel('Email').fill(OWNER.email);
+  const passkeyAuthenticated = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      response.url().endsWith('/api/v1/auth/passkeys/login/finish')
+  );
+  await page.getByRole('button', { name: 'Use passkey' }).click();
+  expect((await passkeyAuthenticated).status()).toBe(200);
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+
+  await page.goto('/account/security');
+  const authenticatedPasskeyManager = page.locator('.card').filter({
+    has: page.getByRole('heading', { name: 'Passkeys' })
+  });
+  const authenticatedPasskey = authenticatedPasskeyManager
+    .locator('article')
+    .filter({ hasText: passkeyName });
+  await expect(authenticatedPasskey.getByText(/^Last used /)).toBeVisible();
+  const passkeyRevoked = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'DELETE' && response.url().includes('/api/v1/auth/passkeys/')
+  );
+  await authenticatedPasskey.getByRole('button', { name: `Revoke ${passkeyName}` }).click();
+  expect((await passkeyRevoked).status()).toBe(204);
+  await expect(authenticatedPasskey.getByText('Revoked', { exact: true })).toBeVisible();
+  await virtualAuthenticator.session.send('WebAuthn.removeVirtualAuthenticator', {
+    authenticatorId: virtualAuthenticator.id
+  });
+  await virtualAuthenticator.session.send('WebAuthn.disable');
 });

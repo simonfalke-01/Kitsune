@@ -37,6 +37,9 @@ export type OidcProvider = components['schemas']['OidcProviderResponse'];
 export type PublicOidcProvider = components['schemas']['PublicOidcProviderResponse'];
 export type CreateOidcProviderInput = components['schemas']['CreateOidcProviderRequest'];
 export type UpdateOidcProviderInput = components['schemas']['UpdateOidcProviderRequest'];
+export type PasskeySummary = components['schemas']['PasskeyResponse'];
+export type PasskeyCeremony = components['schemas']['PasskeyCeremonyResponse'];
+export type PasskeyBrowserCredential = components['schemas']['PasskeyBrowserCredential'];
 
 export const api = createClient<paths>({
   baseUrl: '',

@@ -8,7 +8,8 @@
   import { copy, toned } from '$lib/i18n/index.svelte';
   import { session } from '$lib/stores/session.svelte';
   import { realtime } from '$lib/stores/realtime.svelte';
-  import { api, type PublicOidcProvider } from '$lib/api/client';
+  import { api, errorMessage, type PublicOidcProvider } from '$lib/api/client';
+  import { authenticatePasskey } from '$lib/auth/passkeys';
 
   let organization = $state('');
   let email = $state('');
@@ -17,6 +18,8 @@
   let mfaRequired = $state(false);
   let providers = $state<PublicOidcProvider[]>([]);
   let providerRequest = 0;
+  let passkeyBusy = $state(false);
+  let passkeyError = $state<string | null>(null);
   let oidcError = $derived(page.url.searchParams.has('oidc_error'));
 
   $effect(() => {
@@ -57,6 +60,50 @@
     } else if (session.errorCode === 'mfa_required') {
       mfaRequired = true;
       session.error = null;
+    }
+  }
+
+  async function signInWithPasskey() {
+    if (!organization.trim() || !email.trim()) {
+      passkeyError = 'Enter your organization and email first.';
+      return;
+    }
+    passkeyBusy = true;
+    passkeyError = null;
+    session.error = null;
+    try {
+      const started = await api.POST('/api/v1/auth/passkeys/login/start', {
+        body: {
+          organization: organization.trim(),
+          email: email.trim(),
+          return_to: '/'
+        }
+      });
+      if (!started.data) {
+        passkeyError = errorMessage(started.error, 'No passkey is available for this account.');
+        return;
+      }
+      const credential = await authenticatePasskey(started.data.options);
+      const completed = await api.POST('/api/v1/auth/passkeys/login/finish', {
+        body: { credential }
+      });
+      if (!completed.data) {
+        passkeyError = errorMessage(completed.error, 'The passkey could not verify this sign-in.');
+        return;
+      }
+      session.current = completed.data;
+      realtime.start();
+      await goto('/');
+    } catch (cause) {
+      if (cause instanceof DOMException && cause.name === 'NotAllowedError') {
+        passkeyError = 'The passkey prompt was cancelled or timed out.';
+      } else if (cause instanceof Error) {
+        passkeyError = cause.message;
+      } else {
+        passkeyError = 'The passkey ceremony could not be completed.';
+      }
+    } finally {
+      passkeyBusy = false;
     }
   }
 </script>
@@ -122,14 +169,22 @@
           The identity provider could not verify this sign-in. Try again or use a local account.
         </p>
       {/if}
+      {#if passkeyError}
+        <p class="error-text" role="alert">{passkeyError}</p>
+      {/if}
       <Button type="submit" loading={session.loading}>
         <KeyRound size={16} />
         Sign in
       </Button>
       <div class="alternatives" aria-label="Other sign-in methods">
-        <button type="button" disabled title="Available when passkeys are configured">
+        <button
+          type="button"
+          disabled={passkeyBusy || !organization.trim() || !email.trim()}
+          aria-busy={passkeyBusy}
+          onclick={signInWithPasskey}
+        >
           <ScanFace size={15} />
-          Passkey
+          {passkeyBusy ? 'Waiting for passkey…' : 'Use passkey'}
         </button>
         {#each providers as provider (provider.key)}
           <a href={`${provider.start_path}?return_to=%2F`}>
@@ -238,6 +293,16 @@
     background: var(--surface);
     color: var(--ink-secondary);
     font-weight: 650;
+  }
+  .alternatives button:not(:disabled) {
+    background: var(--surface);
+    color: var(--ink-secondary);
+    font-weight: 650;
+    cursor: pointer;
+  }
+  .alternatives button:not(:disabled):hover {
+    border-color: var(--line-strong);
+    color: var(--ink);
   }
   .alternatives a:hover {
     border-color: var(--line-strong);

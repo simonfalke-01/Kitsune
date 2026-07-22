@@ -7,6 +7,7 @@
   import Card from '$lib/components/Card.svelte';
   import Badge from '$lib/components/Badge.svelte';
   import OAuthClientManager from '$lib/components/OAuthClientManager.svelte';
+  import PasskeyManager from '$lib/components/PasskeyManager.svelte';
   import { session } from '$lib/stores/session.svelte';
 
   type SessionSummary = import('$lib/api/schema').components['schemas']['SessionSummaryResponse'];
@@ -212,6 +213,8 @@
   {#if error}
     <p class="error-text" role="alert">{error}</p>
   {/if}
+
+  <PasskeyManager />
 
   <Card elevated>
     <div class="section-head">
