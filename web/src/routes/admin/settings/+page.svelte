@@ -58,9 +58,10 @@
           <span>🦊</span>
           <p>
             {en.branding.nudge}
-            <a href="https://github.com/sponsors/simonfalke-01" target="_blank" rel="noreferrer"
-              >Support Kitsune <ExternalLink size={13} /></a
-            >
+            <a href="https://github.com/sponsors/simonfalke-01" target="_blank" rel="noreferrer">
+              Support Kitsune
+              <ExternalLink size={13} />
+            </a>
           </p>
         </div>
       {/if}
@@ -72,7 +73,10 @@
           <h2>Official white-label</h2>
           <p>One-click custom identity for supporter and enterprise installations.</p>
         </div>
-        <Badge tone="accent"><LockKeyhole size={12} /> Entitlement</Badge>
+        <Badge tone="accent">
+          <LockKeyhole size={12} />
+          Entitlement
+        </Badge>
       </div>
       <Toggle
         bind:checked={whiteLabel}
@@ -95,12 +99,13 @@
           </p>
         </div>
       </div>
-      <label class="field"
-        ><span>Profile</span><select
-          ><option>Lean — zero configuration</option><option>Full — advanced defaults</option
-          ></select
-        ></label
-      >
+      <label class="field">
+        <span>Profile</span>
+        <select>
+          <option>Lean — zero configuration</option>
+          <option>Full — advanced defaults</option>
+        </select>
+      </label>
     </Card>
   </div>
 </section>

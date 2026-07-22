@@ -22,20 +22,24 @@
 </script>
 
 <header class="header">
-  <a class="brand-link" href="/" aria-label="Kitsune home"><BrandMark /></a>
+  <a class="brand-link" href="/" aria-label="Kitsune home">
+    <BrandMark />
+  </a>
   {#if session.authenticated}
     <nav aria-label="Primary navigation">
       {#each links as link (link.href)}
         <a
           href={link.href}
           aria-current={page.url.pathname.startsWith(link.href) ? 'page' : undefined}
-          >{link.label}</a
         >
+          {link.label}
+        </a>
       {/each}
       {#if session.can('event_manage')}
-        <a href="/admin" aria-current={page.url.pathname.startsWith('/admin') ? 'page' : undefined}
-          ><ShieldCheck size={14} />Admin</a
-        >
+        <a href="/admin" aria-current={page.url.pathname.startsWith('/admin') ? 'page' : undefined}>
+          <ShieldCheck size={14} />
+          Admin
+        </a>
       {/if}
     </nav>
   {/if}
@@ -46,11 +50,17 @@
       aria-label={preferences.theme === 'dark' ? 'Use light theme' : 'Use dark theme'}
       onclick={() => preferences.setTheme(preferences.theme === 'dark' ? 'light' : 'dark')}
     >
-      {#if preferences.theme === 'dark'}<Sun size={17} />{:else}<Moon size={17} />{/if}
+      {#if preferences.theme === 'dark'}
+        <Sun size={17} />
+      {:else}
+        <Moon size={17} />
+      {/if}
     </button>
     {#if session.authenticated}
       <a class="identity" href="/account/security">{session.current?.user.display_name}</a>
-      <Button variant="quiet" ariaLabel="Sign out" onclick={signOut}><LogOut size={16} /></Button>
+      <Button variant="quiet" ariaLabel="Sign out" onclick={signOut}>
+        <LogOut size={16} />
+      </Button>
     {:else}
       <a class="sign-in" href="/login">Sign in</a>
     {/if}

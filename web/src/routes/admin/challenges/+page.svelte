@@ -19,9 +19,14 @@
       <p class="lede">Author in the browser or bring a validated <code>challenge.yml</code>.</p>
     </div>
     <div class="actions">
-      <Button variant="secondary"><Upload size={16} />Import YAML</Button>
-      <Button onclick={() => (showComposer = !showComposer)}><Plus size={16} />New challenge</Button
-      >
+      <Button variant="secondary">
+        <Upload size={16} />
+        Import YAML
+      </Button>
+      <Button onclick={() => (showComposer = !showComposer)}>
+        <Plus size={16} />
+        New challenge
+      </Button>
     </div>
   </div>
 
@@ -33,46 +38,43 @@
           <span>Draft</span>
         </div>
         <div class="form-grid">
-          <label class="field"
-            ><span>Title</span><input
-              bind:value={title}
-              required
-              placeholder="The disappearing endpoint"
-            /></label
-          >
-          <label class="field"><span>Category</span><input bind:value={category} required /></label>
-          <label class="field"
-            ><span>Type</span><select bind:value={challengeType}
-              ><option value="static-flag">Static flag</option><option value="regex"
-                >Regex / multiple answer</option
-              ><option value="multiple-choice">Multiple choice</option><option value="dynamic"
-                >Per-team instance</option
-              ><option value="remote">Remote service</option><option value="manual"
-                >Manual verification</option
-              ></select
-            ></label
-          >
-          <label class="field"
-            ><span>Starting points</span><input type="number" min="0" bind:value={points} /></label
-          >
-          <label class="field wide"
-            ><span>Description</span><textarea
+          <label class="field">
+            <span>Title</span>
+            <input bind:value={title} required placeholder="The disappearing endpoint" />
+          </label>
+          <label class="field">
+            <span>Category</span>
+            <input bind:value={category} required />
+          </label>
+          <label class="field">
+            <span>Type</span>
+            <select bind:value={challengeType}>
+              <option value="static-flag">Static flag</option>
+              <option value="regex">Regex / multiple answer</option>
+              <option value="multiple-choice">Multiple choice</option>
+              <option value="dynamic">Per-team instance</option>
+              <option value="remote">Remote service</option>
+              <option value="manual">Manual verification</option>
+            </select>
+          </label>
+          <label class="field">
+            <span>Starting points</span>
+            <input type="number" min="0" bind:value={points} />
+          </label>
+          <label class="field wide">
+            <span>Description</span>
+            <textarea
               rows="7"
-              placeholder="Give players a clear trailhead without giving away the path."
-            ></textarea></label
-          >
-          <label class="field wide"
-            ><span>Accepted answer</span><input
-              type="password"
-              autocomplete="new-password"
-              placeholder={'kit{...}'}
-            /></label
-          >
+              placeholder="Give players a clear trailhead without giving away the path."></textarea>
+          </label>
+          <label class="field wide">
+            <span>Accepted answer</span>
+            <input type="password" autocomplete="new-password" placeholder={'kit{...}'} />
+          </label>
         </div>
         <div class="form-actions">
-          <Button variant="quiet" onclick={() => (showComposer = false)}>Cancel</Button><Button
-            type="submit">Save draft</Button
-          >
+          <Button variant="quiet" onclick={() => (showComposer = false)}>Cancel</Button>
+          <Button type="submit">Save draft</Button>
         </div>
       </form>
     </Card>
@@ -81,9 +83,12 @@
       title="No challenges authored"
       detail="Open the composer or import your ctfcli-compatible challenge collection."
     >
-      {#snippet action()}<Button onclick={() => (showComposer = true)}
-          ><Plus size={16} />Create challenge</Button
-        >{/snippet}
+      {#snippet action()}
+        <Button onclick={() => (showComposer = true)}>
+          <Plus size={16} />
+          Create challenge
+        </Button>
+      {/snippet}
     </EmptyState>
   {/if}
 </section>

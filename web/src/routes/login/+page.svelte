@@ -84,15 +84,22 @@
           <input bind:value={mfaCode} autocomplete="one-time-code" inputmode="numeric" required />
         </label>
       {/if}
-      {#if session.error}<p class="error-text" role="alert">{session.error}</p>{/if}
-      <Button type="submit" loading={session.loading}><KeyRound size={16} /> Sign in</Button>
+      {#if session.error}
+        <p class="error-text" role="alert">{session.error}</p>
+      {/if}
+      <Button type="submit" loading={session.loading}>
+        <KeyRound size={16} />
+        Sign in
+      </Button>
       <div class="alternatives" aria-label="Other sign-in methods">
-        <button type="button" disabled title="Available when passkeys are configured"
-          ><ScanFace size={15} /> Passkey</button
-        >
-        <button type="button" disabled title="Available when SSO is configured"
-          ><Radio size={15} /> SSO</button
-        >
+        <button type="button" disabled title="Available when passkeys are configured">
+          <ScanFace size={15} />
+          Passkey
+        </button>
+        <button type="button" disabled title="Available when SSO is configured">
+          <Radio size={15} />
+          SSO
+        </button>
       </div>
       <a class="recovery" href="/recover">Recover your account</a>
       <a class="recovery" href="/register">Create a local account</a>

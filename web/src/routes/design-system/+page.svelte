@@ -15,44 +15,49 @@
     Tokens, primitives, and interaction rules shared by every mode and extension surface.
   </p>
   <div class="catalog">
-    <Card
-      ><h2>Identity</h2>
-      <div class="sample"><BrandMark /></div></Card
-    >
-    <Card
-      ><h2>Actions</h2>
+    <Card>
+      <h2>Identity</h2>
+      <div class="sample">
+        <BrandMark />
+      </div>
+    </Card>
+    <Card>
+      <h2>Actions</h2>
       <div class="sample wrap">
-        <Button>Primary</Button><Button variant="secondary">Secondary</Button><Button
-          variant="quiet">Quiet</Button
-        ><Button variant="danger">Danger</Button>
-      </div></Card
-    >
-    <Card
-      ><h2>Status</h2>
+        <Button>Primary</Button>
+        <Button variant="secondary">Secondary</Button>
+        <Button variant="quiet">Quiet</Button>
+        <Button variant="danger">Danger</Button>
+      </div>
+    </Card>
+    <Card>
+      <h2>Status</h2>
       <div class="sample wrap">
-        <Badge>Neutral</Badge><Badge tone="success">Healthy</Badge><Badge tone="warning"
-          >Waiting</Badge
-        ><Badge tone="accent">Foxfire</Badge>
-      </div></Card
-    >
-    <Card
-      ><h2>Controls</h2>
+        <Badge>Neutral</Badge>
+        <Badge tone="success">Healthy</Badge>
+        <Badge tone="warning">Waiting</Badge>
+        <Badge tone="accent">Foxfire</Badge>
+      </div>
+    </Card>
+    <Card>
+      <h2>Controls</h2>
       <div class="sample">
         <Toggle
           bind:checked={switched}
           label="Example capability"
           description="Headless and keyboard-accessible through Bits UI."
         />
-      </div></Card
-    >
-    <Card
-      ><h2>Color tokens</h2>
+      </div>
+    </Card>
+    <Card>
+      <h2>Color tokens</h2>
       <div class="swatches">
-        <span class="accent">Accent</span><span class="foxfire">Foxfire</span><span class="surface"
-          >Surface</span
-        ><span class="muted-token">Muted</span>
-      </div></Card
-    >
+        <span class="accent">Accent</span>
+        <span class="foxfire">Foxfire</span>
+        <span class="surface">Surface</span>
+        <span class="muted-token">Muted</span>
+      </div>
+    </Card>
   </div>
 </section>
 

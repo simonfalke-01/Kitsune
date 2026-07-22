@@ -16,13 +16,15 @@
       <p class="lede">Choose carefully. Every trail tells you something.</p>
     </div>
     <div class="tools">
-      <label
-        ><span class="sr-only">Search challenges</span><Search size={15} /><input
-          bind:value={query}
-          placeholder="Search"
-        /></label
-      >
-      <button type="button"><Filter size={15} /> Filter</button>
+      <label>
+        <span class="sr-only">Search challenges</span>
+        <Search size={15} />
+        <input bind:value={query} placeholder="Search" />
+      </label>
+      <button type="button">
+        <Filter size={15} />
+        Filter
+      </button>
     </div>
   </div>
   <EmptyState

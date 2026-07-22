@@ -14,14 +14,17 @@
       <h1 class="title">Scoreboard</h1>
       <p class="lede">Every point, in the order it was earned.</p>
     </div>
-    <Badge tone={realtime.connected ? 'success' : 'warning'}
-      ><Radio size={11} /> {realtime.connected ? 'Live' : 'Offline'}</Badge
-    >
+    <Badge tone={realtime.connected ? 'success' : 'warning'}>
+      <Radio size={11} />
+      {realtime.connected ? 'Live' : 'Offline'}
+    </Badge>
   </div>
   <EmptyState title="No standings yet." detail="Scores appear here after the first accepted flag.">
-    {#snippet action()}<div class="trophy">
+    {#snippet action()}
+      <div class="trophy">
         <Trophy size={18} /> Earliest to reach a tied score ranks first.
-      </div>{/snippet}
+      </div>
+    {/snippet}
   </EmptyState>
 </div>
 

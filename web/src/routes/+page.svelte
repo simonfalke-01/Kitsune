@@ -27,18 +27,28 @@
       </Badge>
     </div>
     <div class="quick grid grid-3" aria-label="Quick actions">
-      <a href="/challenges"
-        ><Sparkles size={18} /><span>Challenge board</span><ArrowRight size={15} /></a
-      >
-      <a href="/scoreboard"
-        ><Shield size={18} /><span>Live scoreboard</span><ArrowRight size={15} /></a
-      >
+      <a href="/challenges">
+        <Sparkles size={18} />
+        <span>Challenge board</span>
+        <ArrowRight size={15} />
+      </a>
+      <a href="/scoreboard">
+        <Shield size={18} />
+        <span>Live scoreboard</span>
+        <ArrowRight size={15} />
+      </a>
       {#if session.can('automation_manage')}
-        <a href="/admin/automation"
-          ><Workflow size={18} /><span>Automations</span><ArrowRight size={15} /></a
-        >
+        <a href="/admin/automation">
+          <Workflow size={18} />
+          <span>Automations</span>
+          <ArrowRight size={15} />
+        </a>
       {:else}
-        <a href="/team"><Shield size={18} /><span>Your team</span><ArrowRight size={15} /></a>
+        <a href="/team">
+          <Shield size={18} />
+          <span>Your team</span>
+          <ArrowRight size={15} />
+        </a>
       {/if}
     </div>
     <div class="event-empty">
@@ -58,7 +68,10 @@
         platform built to stay out of your way.
       </p>
       <div class="hero-actions">
-        <a class="primary-link" href="/login">Enter Kitsune <ArrowRight size={16} /></a>
+        <a class="primary-link" href="/login">
+          Enter Kitsune
+          <ArrowRight size={16} />
+        </a>
         <a class="secondary-link" href="/setup">Set up an event</a>
       </div>
     </div>

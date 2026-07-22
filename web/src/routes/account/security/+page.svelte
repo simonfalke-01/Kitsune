@@ -80,6 +80,12 @@
   async function copyCodes() {
     await navigator.clipboard.writeText(recoveryCodes.join('\n'));
   }
+
+  function describeSession(item: SessionSummary): string {
+    const lastSeen = new Date(item.last_seen_at).toLocaleString();
+    const expires = new Date(item.expires_at).toLocaleString();
+    return `Last active ${lastSeen} · Expires ${expires}`;
+  }
 </script>
 
 <svelte:head><title>Account security — Kitsune</title></svelte:head>
@@ -96,40 +102,51 @@
         <h2>Authenticator app</h2>
         <p>TOTP codes use a 30-second window and cannot be replayed.</p>
       </div>
-      <Badge tone={recoveryCodes.length ? 'success' : 'neutral'}
-        >{recoveryCodes.length ? 'Enabled' : 'Optional'}</Badge
-      >
+      <Badge tone={recoveryCodes.length ? 'success' : 'neutral'}>
+        {recoveryCodes.length ? 'Enabled' : 'Optional'}
+      </Badge>
     </div>
     {#if recoveryCodes.length}
       <div class="codes">
         <div>
-          <strong>Store these recovery codes now.</strong><span
-            >Each works once. They will not be shown again.</span
-          >
+          <strong>Store these recovery codes now.</strong>
+          <span>Each works once. They will not be shown again.</span>
         </div>
         <pre>{recoveryCodes.join('\n')}</pre>
-        <Button variant="secondary" onclick={copyCodes}><Copy size={15} />Copy codes</Button>
+        <Button variant="secondary" onclick={copyCodes}>
+          <Copy size={15} />
+          Copy codes
+        </Button>
       </div>
     {:else if enrollment}
       <div class="enroll">
         <p>Scan this provisioning URI with your authenticator or enter the secret manually.</p>
         <code>{enrollment.secret}</code>
         <details>
-          <summary>Show provisioning URI</summary><code>{enrollment.provisioning_uri}</code>
+          <summary>Show provisioning URI</summary>
+          <code>{enrollment.provisioning_uri}</code>
         </details>
         <form onsubmit={confirmTotp}>
-          <label class="field"
-            ><span>Current six-digit code</span><input
+          <label class="field">
+            <span>Current six-digit code</span>
+            <input
               bind:value={confirmationCode}
               inputmode="numeric"
               autocomplete="one-time-code"
               required
-            /></label
-          ><Button type="submit" loading={busy}><ShieldCheck size={16} />Confirm and enable</Button>
+            />
+          </label>
+          <Button type="submit" loading={busy}>
+            <ShieldCheck size={16} />
+            Confirm and enable
+          </Button>
         </form>
       </div>
     {:else}
-      <Button onclick={startTotp} loading={busy}><KeyRound size={16} />Set up authenticator</Button>
+      <Button onclick={startTotp} loading={busy}>
+        <KeyRound size={16} />
+        Set up authenticator
+      </Button>
     {/if}
     {#if error}<p class="error-text" role="alert">{error}</p>{/if}
   </Card>
@@ -145,15 +162,12 @@
       {#each sessions as item (item.id)}
         <article>
           <div>
-            <strong>{item.current ? 'This session' : 'Kitsune session'}</strong><span
-              >Last active {new Date(item.last_seen_at).toLocaleString()} · Expires {new Date(
-                item.expires_at
-              ).toLocaleString()}</span
-            >
+            <strong>{item.current ? 'This session' : 'Kitsune session'}</strong>
+            <span>{describeSession(item)}</span>
           </div>
-          <Button variant="quiet" ariaLabel="Revoke session" onclick={() => revoke(item.id)}
-            ><Trash2 size={16} /></Button
-          >
+          <Button variant="quiet" ariaLabel="Revoke session" onclick={() => revoke(item.id)}>
+            <Trash2 size={16} />
+          </Button>
         </article>
       {:else}
         <p class="muted">No active sessions.</p>

@@ -13,6 +13,10 @@ test:
   cargo test --workspace
   pnpm test
 
+format:
+  cargo fmt --all
+  pnpm format
+
 lint:
   cargo fmt --all -- --check
   cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -31,4 +35,3 @@ build:
 
 openapi:
   cargo run -p kitsune-cli -- openapi --output web/openapi.json
-

@@ -53,7 +53,10 @@
         <CheckCircle2 size={24} />
         <h1>Setup is complete.</h1>
         <p>This Kitsune already has an owner. Sign in to continue.</p>
-        <a href="/login">Go to sign in <ArrowRight size={15} /></a>
+        <a href="/login">
+          Go to sign in
+          <ArrowRight size={15} />
+        </a>
       </div>
     </Card>
   {:else}
@@ -99,10 +102,13 @@
           />
           <small class="field-hint">At least 12 characters. A passphrase works beautifully.</small>
         </label>
-        {#if session.error}<p class="error-text" role="alert">{session.error}</p>{/if}
-        <Button type="submit" loading={session.loading}
-          >Create Kitsune <ArrowRight size={15} /></Button
-        >
+        {#if session.error}
+          <p class="error-text" role="alert">{session.error}</p>
+        {/if}
+        <Button type="submit" loading={session.loading}>
+          Create Kitsune
+          <ArrowRight size={15} />
+        </Button>
       </form>
     </Card>
   {/if}

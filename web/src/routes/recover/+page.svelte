@@ -48,19 +48,26 @@
   <Card elevated>
     {#if token}
       <form onsubmit={complete}>
-        <label class="field"
-          ><span>New password</span><input
+        <label class="field">
+          <span>New password</span>
+          <input
             bind:value={password}
             type="password"
             minlength="12"
             maxlength="128"
             autocomplete="new-password"
             required
-          /></label
-        >{#if error}<p class="error-text" role="alert">{error}</p>{/if}<Button
-          type="submit"
-          loading={busy}><KeyRound size={16} />Replace password</Button
-        >
+          />
+        </label>
+
+        {#if error}
+          <p class="error-text" role="alert">{error}</p>
+        {/if}
+
+        <Button type="submit" loading={busy}>
+          <KeyRound size={16} />
+          Replace password
+        </Button>
       </form>
     {:else if sent}
       <div class="sent">
@@ -73,19 +80,24 @@
       </div>
     {:else}
       <form onsubmit={start}>
-        <label class="field"
-          ><span>Organization key</span><input bind:value={organization} required /></label
-        ><label class="field"
-          ><span>Email</span><input
-            bind:value={email}
-            type="email"
-            autocomplete="email"
-            required
-          /></label
-        >{#if error}<p class="error-text" role="alert">{error}</p>{/if}<Button
-          type="submit"
-          loading={busy}><Send size={16} />Send recovery link</Button
-        >
+        <label class="field">
+          <span>Organization key</span>
+          <input bind:value={organization} required />
+        </label>
+
+        <label class="field">
+          <span>Email</span>
+          <input bind:value={email} type="email" autocomplete="email" required />
+        </label>
+
+        {#if error}
+          <p class="error-text" role="alert">{error}</p>
+        {/if}
+
+        <Button type="submit" loading={busy}>
+          <Send size={16} />
+          Send recovery link
+        </Button>
       </form>
     {/if}
   </Card>

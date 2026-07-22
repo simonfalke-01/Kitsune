@@ -27,8 +27,8 @@
 
 <svelte:head><title>Verify email — Kitsune</title></svelte:head>
 <section class="page page-narrow verify">
-  <Card elevated
-    ><p class="eyebrow">Email verification</p>
+  <Card elevated>
+    <p class="eyebrow">Email verification</p>
     <h1>
       {verificationStatus === 'working'
         ? 'Following the foxfire…'
@@ -37,11 +37,12 @@
           : 'The link went cold.'}
     </h1>
     <p>{detail}</p>
-    {#if verificationStatus !== 'working'}<a
-        href={verificationStatus === 'done' ? '/challenges' : '/login'}
-        >{verificationStatus === 'done' ? 'Open challenges' : 'Return to sign in'}</a
-      >{/if}</Card
-  >
+    {#if verificationStatus !== 'working'}
+      <a href={verificationStatus === 'done' ? '/challenges' : '/login'}>
+        {verificationStatus === 'done' ? 'Open challenges' : 'Return to sign in'}
+      </a>
+    {/if}
+  </Card>
 </section>
 
 <style>

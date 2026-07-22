@@ -39,41 +39,43 @@
   </div>
   <Card elevated>
     <form onsubmit={submit}>
-      <label class="field"
-        ><span>Organization key</span><input
+      <label class="field">
+        <span>Organization key</span>
+        <input
           bind:value={organization}
           required
           autocomplete="organization"
           placeholder="night-shrine"
-        /></label
-      >
-      <label class="field"
-        ><span>Display name</span><input
-          bind:value={displayName}
-          required
-          autocomplete="nickname"
-        /></label
-      >
-      <label class="field"
-        ><span>Email</span><input
-          bind:value={email}
-          required
-          type="email"
-          autocomplete="email"
-        /></label
-      >
-      <label class="field"
-        ><span>Password</span><input
+        />
+      </label>
+      <label class="field">
+        <span>Display name</span>
+        <input bind:value={displayName} required autocomplete="nickname" />
+      </label>
+      <label class="field">
+        <span>Email</span>
+        <input bind:value={email} required type="email" autocomplete="email" />
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <input
           bind:value={password}
           required
           minlength="12"
           maxlength="128"
           type="password"
           autocomplete="new-password"
-        /></label
-      >
-      {#if session.error}<p class="error-text" role="alert">{session.error}</p>{/if}
-      <Button type="submit" loading={session.loading}><UserPlus size={16} />Create account</Button>
+        />
+      </label>
+
+      {#if session.error}
+        <p class="error-text" role="alert">{session.error}</p>
+      {/if}
+
+      <Button type="submit" loading={session.loading}>
+        <UserPlus size={16} />
+        Create account
+      </Button>
     </form>
   </Card>
   <a class="back" href="/login">Already have an account? Sign in</a>

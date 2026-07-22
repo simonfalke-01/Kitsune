@@ -24,7 +24,10 @@
   <div class="stat-grid">
     {#each stats as stat (stat.label)}
       <Card>
-        <div class="stat-head"><stat.icon size={17} /><span>{stat.label}</span></div>
+        <div class="stat-head">
+          <stat.icon size={17} />
+          <span>{stat.label}</span>
+        </div>
         <strong>{stat.value}</strong>
         <small>{stat.detail}</small>
       </Card>
@@ -40,7 +43,8 @@
       <Badge>Waiting</Badge>
     </div>
     <div class="quiet">
-      <span></span>No activity yet. The foxfire will stir when your event begins.
+      <span></span>
+      No activity yet. The foxfire will stir when your event begins.
     </div>
   </Card>
 </section>

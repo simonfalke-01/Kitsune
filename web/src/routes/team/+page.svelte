@@ -15,27 +15,30 @@
       title="You have not joined a team."
       detail="Create one or enter an invite code when the event opens team registration."
     >
-      {#snippet action()}<span class="hint"
-          ><Users size={16} /> Team membership is event-aware.</span
-        >{/snippet}
+      {#snippet action()}
+        <span class="hint">
+          <Users size={16} />
+          Team membership is event-aware.
+        </span>
+      {/snippet}
     </EmptyState>
   </div>
   <div class="reference grid grid-3" aria-label="Team capabilities">
-    <Card
-      ><Crown size={17} />
+    <Card>
+      <Crown size={17} />
       <h2>Captain controls</h2>
-      <p>Invite, approve, remove, and transfer leadership.</p></Card
-    >
-    <Card
-      ><Copy size={17} />
+      <p>Invite, approve, remove, and transfer leadership.</p>
+    </Card>
+    <Card>
+      <Copy size={17} />
       <h2>Private invite codes</h2>
-      <p>Rotatable codes are stored as one-way digests.</p></Card
-    >
-    <Card
-      ><Users size={17} />
+      <p>Rotatable codes are stored as one-way digests.</p>
+    </Card>
+    <Card>
+      <Users size={17} />
       <h2>Clear limits</h2>
-      <p>Size policies are visible before anyone joins.</p></Card
-    >
+      <p>Size policies are visible before anyone joins.</p>
+    </Card>
   </div>
 </div>
 

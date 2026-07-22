@@ -6,8 +6,8 @@
   "scripts": {
     "build": "pnpm --recursive build",
     "check": "pnpm --recursive check",
+    "format": "pnpm --recursive format",
     "lint": "pnpm --recursive lint",
     "test": "pnpm --recursive test"
   }
 }
-

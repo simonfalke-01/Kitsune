@@ -24,44 +24,55 @@
       </p>
     </div>
     <div class="actions">
-      <Button variant="secondary" loading={testing} onclick={dryRun}
-        ><Play size={16} />Dry run</Button
-      ><Button onclick={() => (enabled = !enabled)}
-        >{enabled ? 'Disable flow' : 'Enable flow'}</Button
-      >
+      <Button variant="secondary" loading={testing} onclick={dryRun}>
+        <Play size={16} />
+        Dry run
+      </Button>
+      <Button onclick={() => (enabled = !enabled)}>
+        {enabled ? 'Disable flow' : 'Enable flow'}
+      </Button>
     </div>
   </div>
 
   <Card padded={false} elevated>
     <div class="flowbar">
-      <div><strong>Celebrate first blood</strong><span>Version 1 · draft</span></div>
+      <div>
+        <strong>Celebrate first blood</strong>
+        <span>Version 1 · draft</span>
+      </div>
       <Badge tone={enabled ? 'success' : 'warning'}>{enabled ? 'Active' : 'Draft'}</Badge>
     </div>
     <div class="canvas" aria-label="Automation flow editor">
       <article class="node trigger">
         <div class="node-icon"><Radio size={17} /></div>
         <div>
-          <small>Trigger</small><strong>First blood earned</strong><span
-            >Any Jeopardy challenge</span
-          >
+          <small>Trigger</small>
+          <strong>First blood earned</strong>
+          <span>Any Jeopardy challenge</span>
         </div>
       </article>
       <div class="edge" aria-hidden="true"></div>
       <article class="node condition">
         <div class="node-icon"><Filter size={17} /></div>
         <div>
-          <small>Condition</small><strong>Division is student</strong><span>Typed event filter</span
-          >
+          <small>Condition</small>
+          <strong>Division is student</strong>
+          <span>Typed event filter</span>
         </div>
       </article>
       <div class="edge" aria-hidden="true"></div>
       <article class="node action">
         <div class="node-icon"><Send size={17} /></div>
         <div>
-          <small>Action</small><strong>Post to Discord</strong><span>Integration disabled</span>
+          <small>Action</small>
+          <strong>Post to Discord</strong>
+          <span>Integration disabled</span>
         </div>
       </article>
-      <button class="add-node" type="button"><Plus size={17} /><span>Add action</span></button>
+      <button class="add-node" type="button">
+        <Plus size={17} />
+        <span>Add action</span>
+      </button>
     </div>
   </Card>
 </section>
