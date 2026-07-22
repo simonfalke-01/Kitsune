@@ -73,6 +73,14 @@ scoped and revocable. OIDC uses Authorization Code with PKCE S256, one-time
 state, nonce, and a separately encrypted browser binding. Callback URLs come
 only from the server's canonical public origin. Provider secrets and transient
 verifiers are authenticated-encrypted; only state and binding digests persist.
+WebAuthn uses that same canonical public origin as its exact relying-party
+origin and host-derived RP ID. Registration requires user verification; its
+serialized verifier state is bounded and authenticated-encrypted in PostgreSQL,
+while the browser keeps only an HttpOnly, Strict, path-scoped flow ID plus
+random binding. The repository validates the digest in constant time, consumes
+successful ceremonies transactionally, advances stored credential state and
+signature counters, and records audit/outbox events. A credential cannot be
+removed if it is the account's last usable login method.
 Private identity providers require an exact trusted origin in server
 configuration. All egress resolves and validates every address, then pins those
 validated addresses into the request client for every redirect hop so DNS

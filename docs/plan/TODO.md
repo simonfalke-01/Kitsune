@@ -22,7 +22,7 @@ or scaffolding alone.
 - [x] Strongly typed organization/event/identity/team/division/bracket model.
 - [x] Scoped RBAC permission evaluation.
 - [x] Challenge types, visibility, answer validation, prerequisite graph, hints,
-  writeup/survey schema, static/dynamic/plugin score rules.
+      writeup/survey schema, static/dynamic/plugin score rules.
 - [x] Append-only score replay, freeze filtering, deterministic tie break.
 - [x] Typed domain event and infrastructure port contracts.
 - [x] Jeopardy, KotH, A&D, and workshop core engines with focused tests.
@@ -31,7 +31,7 @@ or scaffolding alone.
 - [ ] Feature repositories and mode-state optimistic concurrency.
 - [x] Bounded in-process cache and filtered EventBus.
 - [x] Automation DAG validation, branching, dry-run, execution trace, and action
-  registry seam.
+      registry seam.
 - [x] HMAC-signed retrying webhooks and shared DNS/IP/redirect SSRF defense.
 - [ ] NATS/Redis scaled adapters.
 - [ ] Milestone-wide format, strict Clippy, unit, and integration gate.
@@ -41,65 +41,71 @@ or scaffolding alone.
 - [x] Zero-input first-run organization/super-admin transaction.
 - [x] Argon2id local authentication with timing-shaped unknown-user checks.
 - [x] Encrypted opaque cookies, server-side session digests, expiry, revocation,
-  and constant-time CSRF validation.
+      and constant-time CSRF validation.
 - [x] Login/setup rate budgets on the shared Cache contract.
 - [x] Scoped permission query and full first-admin role grant.
 - [x] Axum health/readiness, security headers, tracing, OpenAPI 3.1/Swagger.
 - [x] Authenticated WebSocket with SSE fallback over EventBus.
 - [x] API+PostgreSQL setup/session/CSRF/logout integration test.
 - [x] Local registration/recovery/email verification/session management UI/API
-  persistence and security boundaries.
+      persistence and security boundaries.
 - [x] Local registration and account-owned active-session UI/API.
 - [x] Email-verification and recovery one-time token persistence/API.
 - [ ] Deliver verification and recovery messages through configured SMTP.
 - [x] TOTP setup, encrypted secret storage, replay protection, recovery codes,
-  MFA login challenge, and account security UI.
-- [ ] OIDC/OAuth2, passkeys/WebAuthn, and SAML.
+      MFA login challenge, and account security UI.
+- [x] Passkeys/WebAuthn: exact-origin relying party, required user verification,
+      encrypted one-time server ceremony state, browser binding, credential counter
+      updates, safe self-service revocation, generated API/UI, and desktop/mobile
+      WebAuthn emulator coverage.
+- [ ] SAML federation with signed assertions, metadata ingestion, safe ACS
+      routing, tenant/provider policy, provisioning/linking, audit/outbox, and
+      organizer/login UI.
 - [x] OIDC provider/flow/identity PostgreSQL boundary with encrypted secrets,
-  PKCE/nonce material, digest-only state/browser binding, tenant constraints,
-  auto-provisioning policy, explicit email-link policy, and durable audit/outbox.
+      PKCE/nonce material, digest-only state/browser binding, tenant constraints,
+      auto-provisioning policy, explicit email-link policy, and durable audit/outbox.
 - [x] OIDC discovery, authorization-code exchange, ID-token validation, public
-  start/callback routes, organizer management API/UI, and browser coverage.
+      start/callback routes, organizer management API/UI, and browser coverage.
 - [x] PASETO v4.local API tokens with digest-only persistence, mandatory expiry,
-  live-RBAC/event scoping, revocation, audit/outbox, OpenAPI, UI, and browser
-  coverage.
+      live-RBAC/event scoping, revocation, audit/outbox, OpenAPI, UI, and browser
+      coverage.
 - [x] OAuth2 confidential-client management and client-credentials exchange with
-  digest-only secrets, short-lived PASETO access, live RBAC/event scoping,
-  immediate revocation, durable auth audit/outbox, OpenAPI, UI, and browser
-  coverage.
+      digest-only secrets, short-lived PASETO access, live RBAC/event scoping,
+      immediate revocation, durable auth audit/outbox, OpenAPI, UI, and browser
+      coverage.
 - [ ] Deny-by-default RBAC extractor on every protected endpoint.
 - [x] Deny-by-default actor extraction plus permission/CSRF enforcement on the
-  event and challenge resource endpoints.
+      event and challenge resource endpoints.
 - [x] Tenant-scoped event and challenge create/list APIs with player-safe
-  projections, visibility evaluation, hashed exact answers, audit, and outbox.
+      projections, visibility evaluation, hashed exact answers, audit, and outbox.
 - [x] Domain-validated event lifecycle transition API and organizer live/pause/
-  resume/end controls with audit, outbox, realtime, and browser coverage.
+      resume/end controls with audit, outbox, realtime, and browser coverage.
 - [x] Team create/join/list and captain-transfer REST/UI slice with one-time
-  digest-only invite codes, upgrade-safe role grants, tenant isolation, audit,
-  outbox, PostgreSQL constraints, and desktop/mobile browser coverage.
+      digest-only invite codes, upgrade-safe role grants, tenant isolation, audit,
+      outbox, PostgreSQL constraints, and desktop/mobile browser coverage.
 - [ ] Team invite rotation, leave/removal, merge/transfer administration,
-  event registration, and event-specific size-limit enforcement.
+      event registration, and event-specific size-limit enforcement.
 - [x] Exact/regex/choice/manual submission validation, digest-only receipts,
-  client idempotency, immutable score ledger, solves, first blood, authored and
-  runtime attempt limits, and individual/team competitor resolution.
+      client idempotency, immutable score ledger, solves, first blood, authored and
+      runtime attempt limits, and individual/team competitor resolution.
 - [x] Ranked REST/web scoreboard with division filter, realtime refresh,
-  audited freeze/unfreeze and hide/reveal controls, and frozen-ledger visibility
-  regression coverage.
+      audited freeze/unfreeze and hide/reveal controls, and frozen-ledger visibility
+      regression coverage.
 - [x] Multi-hint organizer authoring, sealed player projections, idempotent
-  user/team unlocks, one-time score deductions, freeze-aware ledger entries,
-  audit/outbox/realtime events, and browser coverage.
+      user/team unlocks, one-time score deductions, freeze-aware ledger entries,
+      audit/outbox/realtime events, and browser coverage.
 - [x] Competitor-owned writeup persistence/review state machine and validated,
-  aggregate-only post-solve survey API.
+      aggregate-only post-solve survey API.
 - [x] Player writeup/survey forms and organizer review/analytics surface with
-  browser coverage.
+      browser coverage.
 - [x] Append-only historical score REST/OpenAPI projection, responsive graph,
-  hidden/freeze/division parity, and bounded browser realtime coalescing.
+      hidden/freeze/division parity, and bounded browser realtime coalescing.
 - [ ] Dynamic-instance and plugin answer verifiers, server-side cross-node score
-  batching/cache, and competitor profile links.
+      batching/cache, and competitor profile links.
 - [x] Encrypted manual-verification persistence, RBAC review API, duplicate
-  pending protection, and transactional accept/discard scoring.
+      pending protection, and transactional accept/discard scoring.
 - [x] Wire the organizer manual-verification queue and player pending outcome
-  through desktop/mobile browser coverage.
+      through desktop/mobile browser coverage.
 - [ ] Complete versioned REST resources and OpenAPI contracts.
 
 ## Frontend vertical slice
@@ -108,51 +114,51 @@ or scaffolding alone.
 - [x] OpenAPI-generated TypeScript schema and typed fetch seam.
 - [x] Session and reconnecting authenticated realtime stores.
 - [x] Responsive player navigation, login, first-run setup, board, scoreboard,
-  and team states.
+      and team states.
 - [x] Organizer live-ops, challenge-authoring, automation-canvas, and settings
-  surfaces with working local interactions.
+      surfaces with working local interactions.
 - [x] Bits UI headless switch primitive and docs-quality component catalog.
 - [x] Dark/light preference, i18n tone catalog, neutral mascot slot, free
-  de-brand support nudge, and white-label entitlement state.
+      de-brand support nudge, and white-label entitlement state.
 - [x] Strict Svelte check, ESLint/Prettier, component tests, and production build.
 - [ ] Wire player and organizer resources to the complete domain REST API.
 - [x] Wire event setup, selection, challenge authoring, and player challenge
-  board to the generated REST client and realtime invalidation.
+      board to the generated REST client and realtime invalidation.
 - [x] Exercise the event-to-published-challenge journey with PostgreSQL-backed
-  Playwright on desktop/mobile and axe.
+      Playwright on desktop/mobile and axe.
 - [x] Wire the player team page to create/join/list/captain APIs and cover team
-  creation through the real desktop/mobile browser journey.
+      creation through the real desktop/mobile browser journey.
 - [x] Wire inline flag submission, solved state, first-blood feedback, live
-  ranked standings, and organizer scoreboard controls through the generated API
-  and exercise them on desktop/mobile with axe.
+      ranked standings, and organizer scoreboard controls through the generated API
+      and exercise them on desktop/mobile with axe.
 - [ ] Complete all mode-specific, auth-provider, plugin, integration, and
-  administrative surfaces.
+      administrative surfaces.
 
 ## Milestone 05 observability and integration detail
 
 - [ ] Expose bounded Prometheus metrics for API, realtime, game ticks,
-  submissions, automation, and orchestration without tenant-cardinality leaks.
+      submissions, automation, and orchestration without tenant-cardinality leaks.
 - [ ] Export traces and logs through configurable OpenTelemetry endpoints while
-  preserving a zero-configuration local default.
+      preserving a zero-configuration local default.
 - [ ] Ship Grafana provisioning definitions for Prometheus and an OTLP-capable
-  observability backend, maintained dashboards, and documented direct data-source
-  connection steps.
+      observability backend, maintained dashboards, and documented direct data-source
+      connection steps.
 - [ ] Surface event, submission, instance, automation, and system health in the
-  organizer live-ops interface with actionable degraded-state explanations.
+      organizer live-ops interface with actionable degraded-state explanations.
 
 ## Milestone 06 orchestration detail
 
 - [ ] Provision isolated per-team or per-player Jeopardy instances on demand and
-  per-team A&D vulnboxes before their required rounds.
+      per-team A&D vulnboxes before their required rounds.
 - [ ] Implement idempotent provisioning, health-aware readiness, configurable
-  warm capacity, event/team concurrency quotas, resource caps, and admission
-  backpressure across Kubernetes, Docker/Podman, and Nomad adapters.
+      warm capacity, event/team concurrency quotas, resource caps, and admission
+      backpressure across Kubernetes, Docker/Podman, and Nomad adapters.
 - [ ] Implement Kubernetes-native demand and capacity signals suitable for HPA/
-  KEDA deployment, while keeping instance ownership and lifecycle decisions in
-  Kitsune's orchestrator service.
+      KEDA deployment, while keeping instance ownership and lifecycle decisions in
+      Kitsune's orchestrator service.
 - [ ] Reap expired or abandoned instances, rotate flags without cross-team
-  exposure, and report lifecycle/capacity state in realtime to players and
-  organizers.
+      exposure, and report lifecycle/capacity state in realtime to players and
+      organizers.
 
 ## Repository quality
 

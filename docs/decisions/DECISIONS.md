@@ -232,3 +232,29 @@ Format: `YYYY-MM-DD — decision — rationale`.
   while retaining focused action assertions — desktop and emulated-mobile paths
   exercise real cryptography, PostgreSQL, API, UI, and axe without inheriting a
   unit-test-oriented thirty-second deadline.
+- 2026-07-22 — Use the stable `webauthn-rs` standard-passkey flow with required
+  user verification and email-first passwordless login — it supports broad
+  authenticators without requiring resident/discoverable credentials, while a
+  future conditional-mediation enhancement can remain additive.
+- 2026-07-22 — Persist serialized WebAuthn ceremony state only as bounded,
+  authenticated-encrypted server-side data and put only a random flow binding in
+  an HttpOnly Strict cookie — protocol state survives a restart without becoming
+  browser-controlled or replayable from a copied database row.
+- 2026-07-22 — Derive the WebAuthn RP ID from the canonical configured public
+  origin and never from request headers — the browser verifier, cookies, and
+  deployment topology share one auditable authority boundary.
+- 2026-07-22 — Keep revoked passkey records and their generic identity bindings
+  for audit and ownership integrity — revocation is durable and a credential
+  cannot silently migrate to another account; re-enrollment uses a new
+  authenticator credential.
+- 2026-07-22 — Disable account-security mutations until the deduplicated
+  session bootstrap completes — protected actions must never appear available
+  only to discard a real user interaction because the CSRF-bearing session is
+  still loading.
+- 2026-07-22 — Run browser WebAuthn tests through `localhost` with an explicit
+  CDP virtual authenticator and automatic user presence — it is a trustworthy
+  local RP origin and yields deterministic desktop and mobile ceremony coverage
+  without weakening production origin validation.
+- 2026-07-22 — Compare persisted timestamps at PostgreSQL's microsecond
+  precision in repository tests — the database intentionally rounds Rust's
+  nanosecond values, so tests assert the real storage contract across platforms.

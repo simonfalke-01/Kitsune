@@ -5,12 +5,12 @@ Updated: 2026-07-22 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: finish the federated/provider authentication suite, then complete
-  the remaining dynamic/plugin Jeopardy verifier seams.
+- In progress: finish SAML federation, then complete the remaining dynamic/plugin
+  Jeopardy verifier seams.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
-- Next: implement passkeys and SAML, then complete the remaining dynamic/plugin
-  Jeopardy verifier seams.
+- Next: implement SAML, then complete the remaining dynamic/plugin Jeopardy
+  verifier seams.
 
 ## Verified
 
@@ -139,6 +139,18 @@ Updated: 2026-07-22 (Asia/Singapore)
   reserves scroll space for its fixed control bar, and completes the full
   browser journey without pointer interception. Disabled setting descriptions
   retain AA contrast while only their unavailable switch is visually muted.
+- WebAuthn passkeys are now complete end to end. The server derives an exact RP
+  ID and origin from canonical public configuration, requires user verification,
+  encrypts serialized verifier state server-side, binds each five-minute
+  ceremony to an HttpOnly cookie digest, consumes successful ceremonies exactly
+  once, updates signature state, and prevents revoking a final login method.
+  Registration, passwordless login, safe credential management, audit/outbox
+  events, generated OpenAPI/TypeScript types, and the account/login UI are
+  covered by PostgreSQL tests plus desktop/mobile WebAuthn emulator and axe
+  journeys.
+- Passkey verification is green with Rust 1.97 CI-parity format/Clippy/tests,
+  regenerated OpenAPI and TypeScript contracts, frontend lint/typecheck/Vitest/
+  production build, and the full Playwright desktop/mobile suite.
 
 ## Risks being actively retired
 
@@ -149,5 +161,5 @@ Updated: 2026-07-22 (Asia/Singapore)
 - Recovery initiation is enumeration-safe and complete at the persistence/API
   boundary; SMTP delivery remains explicitly open, so recovery is not yet marked
   complete in the milestone ledger.
-- Passkey/WebAuthn and SAML protocol boundaries are the next authentication
-  slices; neither will require external configuration for lean-mode boot.
+- SAML is the remaining federation authentication slice and will not require
+  external configuration for lean-mode boot.
