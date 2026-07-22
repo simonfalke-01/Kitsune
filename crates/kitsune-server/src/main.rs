@@ -1,5 +1,224 @@
-//! Kitsune server entry point.
+//! Kitsune dependency composition and server process.
 
-fn main() {
-    println!("Kitsune server {}", env!("CARGO_PKG_VERSION"));
+use std::{net::SocketAddr, path::PathBuf, sync::Arc};
+
+use anyhow::{Context, Result};
+use axum_extra::extract::cookie::Key;
+use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
+use kitsune_api::{AppState, AuthService};
+use kitsune_automation::{InProcessCache, InProcessEventBus};
+use kitsune_core::config::{FeatureFlags, RuntimeProfile};
+use kitsune_db::{PostgresStore, auth::AuthRepository};
+use rand::Rng as _;
+use serde::Deserialize;
+use tokio::signal;
+use tracing::{info, warn};
+use tracing_subscriber::EnvFilter;
+
+/// Layered runtime configuration. Every field has a bootable default for the
+/// blessed Compose topology.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(default)]
+struct ServerConfig {
+    profile: RuntimeProfile,
+    features: Option<FeatureFlags>,
+    database_url: String,
+    listen: SocketAddr,
+    database_max_connections: u32,
+    data_dir: PathBuf,
+    secure_cookies: bool,
+    auto_migrate: bool,
+}
+
+impl Default for ServerConfig {
+    fn default() -> Self {
+        Self {
+            profile: RuntimeProfile::Lean,
+            features: None,
+            database_url: "postgres://kitsune:kitsune@127.0.0.1:5432/kitsune".into(),
+            listen: "0.0.0.0:3000".parse().expect("static listen address"),
+            database_max_connections: 20,
+            data_dir: PathBuf::from("data"),
+            secure_cookies: false,
+            auto_migrate: true,
+        }
+    }
+}
+
+impl ServerConfig {
+    fn load() -> Result<Self> {
+        let defaults = Self::default();
+        let builder = config::Config::builder()
+            .set_default("profile", "lean")?
+            .set_default("database_url", defaults.database_url)?
+            .set_default("listen", defaults.listen.to_string())?
+            .set_default(
+                "database_max_connections",
+                i64::from(defaults.database_max_connections),
+            )?
+            .set_default("data_dir", defaults.data_dir.to_string_lossy().to_string())?
+            .set_default("secure_cookies", defaults.secure_cookies)?
+            .set_default("auto_migrate", defaults.auto_migrate)?
+            .add_source(config::File::with_name("kit.toml").required(false))
+            .add_source(config::File::with_name("config").required(false))
+            .add_source(
+                config::Environment::with_prefix("KITSUNE")
+                    .prefix_separator("__")
+                    .separator("__")
+                    .try_parsing(true),
+            );
+        builder
+            .build()?
+            .try_deserialize()
+            .context("invalid Kitsune configuration")
+    }
+
+    fn effective_features(&self) -> FeatureFlags {
+        self.features
+            .clone()
+            .unwrap_or_else(|| FeatureFlags::for_profile(self.profile))
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("info")),
+        )
+        .json()
+        .with_current_span(true)
+        .with_span_list(true)
+        .init();
+
+    let config = ServerConfig::load()?;
+    let features = config.effective_features();
+    let cookie_key = load_or_generate_cookie_key(&config.data_dir).await?;
+    let store = PostgresStore::connect(&config.database_url, config.database_max_connections)
+        .await
+        .context("connect PostgreSQL")?;
+    if config.auto_migrate {
+        store.migrate().await.context("apply database migrations")?;
+    }
+    store.ready().await.context("database readiness")?;
+
+    let cache = Arc::new(InProcessCache::new(100_000).context("lean cache")?);
+    let event_bus = Arc::new(InProcessEventBus::new(16_384).context("lean event bus")?);
+    let auth_repository = AuthRepository::new(store.pool().clone());
+    let state = AppState::new(
+        store,
+        auth_repository,
+        AuthService::new().context("authentication service")?,
+        cache,
+        event_bus,
+        cookie_key,
+        config.secure_cookies,
+    );
+    let app = kitsune_api::router(state);
+    let listener = tokio::net::TcpListener::bind(config.listen)
+        .await
+        .with_context(|| format!("bind {}", config.listen))?;
+    info!(
+        address = %config.listen,
+        profile = ?config.profile,
+        features = ?features,
+        "Kitsune is ready"
+    );
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .context("serve HTTP")
+}
+
+async fn load_or_generate_cookie_key(data_dir: &std::path::Path) -> Result<Key> {
+    let path = data_dir.join("secrets").join("cookie.key");
+    match tokio::fs::read_to_string(&path).await {
+        Ok(encoded) => {
+            let bytes = URL_SAFE_NO_PAD
+                .decode(encoded.trim())
+                .context("decode cookie key")?;
+            if bytes.len() < 64 {
+                anyhow::bail!("cookie key must contain at least 64 bytes");
+            }
+            Ok(Key::from(&bytes))
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            let parent = path.parent().context("cookie key parent")?;
+            tokio::fs::create_dir_all(parent).await?;
+            let mut bytes = [0_u8; 64];
+            rand::rng().fill(&mut bytes);
+            let encoded = URL_SAFE_NO_PAD.encode(bytes);
+            let mut options = tokio::fs::OpenOptions::new();
+            options.write(true).create_new(true);
+            #[cfg(unix)]
+            {
+                options.mode(0o600);
+            }
+            match options.open(&path).await {
+                Ok(mut file) => {
+                    use tokio::io::AsyncWriteExt;
+                    file.write_all(encoded.as_bytes()).await?;
+                    file.sync_all().await?;
+                    info!(path = %path.display(), "generated cookie encryption key");
+                    Ok(Key::from(&bytes))
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+                    warn!("another process generated the cookie key; reloading it");
+                    let encoded = tokio::fs::read_to_string(&path).await?;
+                    let bytes = URL_SAFE_NO_PAD.decode(encoded.trim())?;
+                    Ok(Key::from(&bytes))
+                }
+                Err(error) => Err(error.into()),
+            }
+        }
+        Err(error) => Err(error.into()),
+    }
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl-C handler");
+    };
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install SIGTERM handler")
+            .recv()
+            .await;
+    };
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+    tokio::select! {
+        () = ctrl_c => {},
+        () = terminate => {},
+    }
+    info!("graceful shutdown requested");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn lean_defaults_keep_heavy_features_off() {
+        let config = ServerConfig::default();
+        let features = config.effective_features();
+        assert!(features.jeopardy);
+        assert!(!features.attack_defense);
+        assert!(!features.orchestration);
+        assert!(!features.smtp);
+    }
+
+    #[tokio::test]
+    async fn cookie_key_is_generated_once_and_reloaded() {
+        let path = std::env::temp_dir().join(format!("kitsune-key-{}", uuid::Uuid::now_v7()));
+        let first = load_or_generate_cookie_key(&path).await.expect("first key");
+        let second = load_or_generate_cookie_key(&path)
+            .await
+            .expect("second key");
+        assert_eq!(first.master(), second.master());
+        tokio::fs::remove_dir_all(path).await.expect("cleanup");
+    }
 }

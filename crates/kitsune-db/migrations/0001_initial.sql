@@ -562,7 +562,7 @@ CREATE TABLE command_receipts (
 
 CREATE TABLE event_outbox (
     id uuid PRIMARY KEY,
-    organization_id uuid NOT NULL REFERENCES organizations(id) ON DELETE CASCADE,
+    organization_id uuid REFERENCES organizations(id) ON DELETE CASCADE,
     event_id uuid REFERENCES events(id) ON DELETE CASCADE,
     kind text NOT NULL,
     envelope jsonb NOT NULL,
@@ -577,4 +577,3 @@ CREATE TABLE event_deliveries (
     delivered_at timestamptz NOT NULL,
     PRIMARY KEY (event_id, consumer)
 );
-

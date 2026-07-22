@@ -35,3 +35,20 @@ or scaffolding alone.
 - [x] HMAC-signed retrying webhooks and shared DNS/IP/redirect SSRF defense.
 - [ ] NATS/Redis scaled adapters.
 - [ ] Milestone-wide format, strict Clippy, unit, and integration gate.
+
+## Milestone 03
+
+- [x] Zero-input first-run organization/super-admin transaction.
+- [x] Argon2id local authentication with timing-shaped unknown-user checks.
+- [x] Encrypted opaque cookies, server-side session digests, expiry, revocation,
+  and constant-time CSRF validation.
+- [x] Login/setup rate budgets on the shared Cache contract.
+- [x] Scoped permission query and full first-admin role grant.
+- [x] Axum health/readiness, security headers, tracing, OpenAPI 3.1/Swagger.
+- [x] Authenticated WebSocket with SSE fallback over EventBus.
+- [x] API+PostgreSQL setup/session/CSRF/logout integration test.
+- [ ] Local registration/recovery/email verification/session management UI/API.
+- [ ] OIDC/OAuth2, passkeys/WebAuthn, SAML, TOTP, recovery codes.
+- [ ] PASETO API tokens and OAuth2 client credentials.
+- [ ] Deny-by-default RBAC extractor on every protected endpoint.
+- [ ] Complete versioned REST resources and OpenAPI contracts.

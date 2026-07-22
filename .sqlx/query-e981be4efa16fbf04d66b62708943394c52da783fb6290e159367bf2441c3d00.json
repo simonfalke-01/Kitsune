@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT DISTINCT unnest(r.permissions) AS \"permission!\"\n            FROM role_grants g\n            JOIN roles r ON r.id = g.role_id\n            WHERE g.user_id = $1 AND g.organization_id = $2\n              AND (g.event_id IS NULL OR g.event_id = $3)\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "permission!",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "e981be4efa16fbf04d66b62708943394c52da783fb6290e159367bf2441c3d00"
+}

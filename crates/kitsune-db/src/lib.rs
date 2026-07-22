@@ -5,6 +5,8 @@
 
 use std::time::Duration;
 
+pub mod auth;
+
 use async_trait::async_trait;
 use chrono::Utc;
 use kitsune_core::{
@@ -147,7 +149,7 @@ impl DataStore for PostgresStore {
                 ) VALUES ($1,$2,$3,$4,$5,$6,$7)
                 "#,
                 event.id,
-                event.organization_id.0,
+                event.organization_id.map(|id| id.0),
                 event.event_id.map(|id| id.0),
                 event.kind(),
                 envelope,

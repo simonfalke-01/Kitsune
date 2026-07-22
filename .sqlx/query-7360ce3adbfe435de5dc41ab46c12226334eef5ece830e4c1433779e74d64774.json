@@ -1,0 +1,59 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT s.id AS session_id, s.expires_at, s.csrf_digest,\n                   u.id AS user_id, u.organization_id, u.display_name, u.email_normalized\n            FROM sessions s\n            JOIN users u ON u.id = s.user_id\n            WHERE s.token_digest = $1 AND s.revoked_at IS NULL\n              AND s.expires_at > $2 AND u.disabled = false\n            FOR UPDATE OF s\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "session_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "expires_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 2,
+        "name": "csrf_digest",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 3,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "email_normalized",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Bytea",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "7360ce3adbfe435de5dc41ab46c12226334eef5ece830e4c1433779e74d64774"
+}

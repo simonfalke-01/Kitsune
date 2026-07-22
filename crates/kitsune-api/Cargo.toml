@@ -7,8 +7,34 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
+argon2.workspace = true
+async-trait.workspace = true
+axum.workspace = true
+axum-extra.workspace = true
+base64.workspace = true
+chrono.workspace = true
+futures.workspace = true
+hex.workspace = true
+kitsune-automation = { path = "../kitsune-automation" }
 kitsune-core = { path = "../kitsune-core" }
+kitsune-db = { path = "../kitsune-db" }
+rand.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+subtle.workspace = true
+time.workspace = true
+tokio.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+tracing.workspace = true
+utoipa.workspace = true
+utoipa-swagger-ui.workspace = true
+uuid.workspace = true
 
 [lints]
 workspace = true
 
+[dev-dependencies]
+http-body-util = "0.1.3"
+sqlx.workspace = true

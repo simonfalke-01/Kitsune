@@ -5,8 +5,9 @@ Updated: 2026-07-22 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: 02 — deterministic core and persistence.
-- In progress: feature repositories and API/auth vertical slice.
-- Next: secure local authentication/session service and Axum/OpenAPI shell.
+- Current milestone: 03 — secured API, authentication, and realtime.
+- In progress: complete provider/MFA/token suite and domain REST resources.
+- Next: OIDC/passkey/SAML/TOTP adapters, RBAC extractor, and event/challenge API.
 
 ## Verified
 
@@ -20,6 +21,10 @@ Updated: 2026-07-22 (Asia/Singapore)
 - Lean cache/EventBus, typed automation DAG validation/execution, centralized
   public-network egress policy, and signed redirect-safe webhook delivery pass 7
   focused tests and strict Clippy.
+- Live Axum server smoke passes schema migration, auto-generated 0600 cookie key,
+  `/health`, `/ready`, OpenAPI 3.1, first-run admin creation, encrypted cookies,
+  session recovery, 15-permission super-admin grant, CSRF rejection, logout, and
+  graceful shutdown.
 
 ## Risks being actively retired
 

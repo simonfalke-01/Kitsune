@@ -19,8 +19,9 @@ pub struct EventEnvelope {
     pub id: Uuid,
     /// Schema version for the event payload.
     pub schema_version: u16,
-    /// Owning organization.
-    pub organization_id: OrganizationId,
+    /// Owning organization, absent only for pre-tenant platform events such as
+    /// a failed login against an unknown organization key.
+    pub organization_id: Option<OrganizationId>,
     /// Optional event scope.
     pub event_id: Option<EventId>,
     /// Correlation ID spanning a command and its effects.
@@ -46,10 +47,28 @@ impl EventEnvelope {
         Self {
             id: Uuid::now_v7(),
             schema_version: 1,
-            organization_id,
+            organization_id: Some(organization_id),
             event_id,
             correlation_id,
             actor_id,
+            occurred_at,
+            event,
+        }
+    }
+
+    /// Wraps a pre-tenant platform event without inventing an organization ID.
+    pub fn new_platform(
+        correlation_id: Uuid,
+        occurred_at: DateTime<Utc>,
+        event: DomainEvent,
+    ) -> Self {
+        Self {
+            id: Uuid::now_v7(),
+            schema_version: 1,
+            organization_id: None,
+            event_id: None,
+            correlation_id,
+            actor_id: None,
             occurred_at,
             event,
         }

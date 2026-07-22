@@ -39,3 +39,13 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Keep the lean EventBus intentionally non-durable and pair it with
   the PostgreSQL outbox — zero-config fanout stays fast while durable consumers
   can resume independently of process-local broadcast buffers.
+- 2026-07-22 — Use encrypted private cookies containing random opaque session
+  tokens whose SHA-256 digests are stored server-side — cookie confidentiality,
+  immediate revocation, and database session management all hold without putting
+  account claims in browser-controlled state.
+- 2026-07-22 — Represent pre-tenant security events with an absent organization
+  scope — inventing a tenant ID for a login against an unknown slug would corrupt
+  audit semantics and violate the outbox foreign key.
+- 2026-07-22 — Default Secure cookies off only in the direct lean HTTP topology
+  and make the layered setting authoritative — TLS deployments and shipped scale
+  manifests enable it, while localhost remains usable without hidden setup.

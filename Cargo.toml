@@ -25,6 +25,7 @@ anyhow = "1.0.100"
 argon2 = { version = "0.5.3", features = ["std"] }
 async-trait = "0.1.89"
 axum = { version = "0.8.8", features = ["macros", "ws", "multipart"] }
+axum-extra = { version = "0.12.6", features = ["cookie-private", "cookie-key-expansion"] }
 base64 = "0.22.1"
 bytes = "1.11.0"
 chrono = { version = "0.4.43", features = ["serde"] }
@@ -48,6 +49,7 @@ sha2 = "0.10.9"
 sqlx = { version = "0.8.6", default-features = false, features = ["runtime-tokio-rustls", "postgres", "migrate", "macros", "chrono", "uuid", "json"] }
 subtle = "2.6.1"
 thiserror = "2.0.17"
+time = "0.3.54"
 tokio = { version = "1.49.0", features = ["full"] }
 tokio-stream = { version = "0.1.18", features = ["sync"] }
 tower = { version = "0.5.2", features = ["util"] }
