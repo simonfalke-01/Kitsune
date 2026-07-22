@@ -1,0 +1,14 @@
+[package]
+name = "kitsune-api"
+description = "Kitsune HTTP, realtime, authentication, and OpenAPI surface"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+kitsune-core = { path = "../kitsune-core" }
+
+[lints]
+workspace = true
+

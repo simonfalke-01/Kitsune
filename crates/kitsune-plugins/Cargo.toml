@@ -1,0 +1,14 @@
+[package]
+name = "kitsune-plugins"
+description = "Capability-secured Wasmtime Component Model plugin host"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+kitsune-core = { path = "../kitsune-core" }
+
+[lints]
+workspace = true
+

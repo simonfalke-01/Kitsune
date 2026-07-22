@@ -1,0 +1,18 @@
+[package]
+name = "kitsune-cli"
+description = "The kit operator CLI"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "kit"
+path = "src/main.rs"
+
+[dependencies]
+kitsune-core = { path = "../kitsune-core" }
+
+[lints]
+workspace = true
+

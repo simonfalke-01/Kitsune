@@ -1,0 +1,13 @@
+{
+  "name": "kitsune-workspace",
+  "private": true,
+  "license": "SEE LICENSE IN LICENSE",
+  "packageManager": "pnpm@10.13.1",
+  "scripts": {
+    "build": "pnpm --recursive build",
+    "check": "pnpm --recursive check",
+    "lint": "pnpm --recursive lint",
+    "test": "pnpm --recursive test"
+  }
+}
+

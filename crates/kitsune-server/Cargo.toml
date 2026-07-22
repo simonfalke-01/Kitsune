@@ -1,0 +1,20 @@
+[package]
+name = "kitsune-server"
+description = "Kitsune dependency composition and server binary"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+
+[dependencies]
+kitsune-api = { path = "../kitsune-api" }
+kitsune-automation = { path = "../kitsune-automation" }
+kitsune-core = { path = "../kitsune-core" }
+kitsune-db = { path = "../kitsune-db" }
+kitsune-integrations = { path = "../kitsune-integrations" }
+kitsune-orchestrator = { path = "../kitsune-orchestrator" }
+kitsune-plugins = { path = "../kitsune-plugins" }
+
+[lints]
+workspace = true
+
