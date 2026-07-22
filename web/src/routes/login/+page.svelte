@@ -1,14 +1,19 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { page } from '$app/state';
-  import { KeyRound, Radio, ScanFace } from '@lucide/svelte';
+  import { FileKey, KeyRound, Radio, ScanFace } from '@lucide/svelte';
   import BrandMark from '$lib/components/BrandMark.svelte';
   import Button from '$lib/components/Button.svelte';
   import Card from '$lib/components/Card.svelte';
   import { copy, toned } from '$lib/i18n/index.svelte';
   import { session } from '$lib/stores/session.svelte';
   import { realtime } from '$lib/stores/realtime.svelte';
-  import { api, errorMessage, type PublicOidcProvider } from '$lib/api/client';
+  import {
+    api,
+    errorMessage,
+    type PublicOidcProvider,
+    type PublicSamlProvider
+  } from '$lib/api/client';
   import { authenticatePasskey } from '$lib/auth/passkeys';
 
   let organization = $state('');
@@ -16,16 +21,19 @@
   let password = $state('');
   let mfaCode = $state('');
   let mfaRequired = $state(false);
-  let providers = $state<PublicOidcProvider[]>([]);
+  let oidcProviders = $state<PublicOidcProvider[]>([]);
+  let samlProviders = $state<PublicSamlProvider[]>([]);
   let providerRequest = 0;
   let passkeyBusy = $state(false);
   let passkeyError = $state<string | null>(null);
   let oidcError = $derived(page.url.searchParams.has('oidc_error'));
+  let samlError = $derived(page.url.searchParams.has('saml_error'));
 
   $effect(() => {
     const requestedOrganization = organization.trim();
     if (!/^[a-z0-9][a-z0-9-]{0,62}$/.test(requestedOrganization)) {
-      providers = [];
+      oidcProviders = [];
+      samlProviders = [];
       return;
     }
     const request = ++providerRequest;
@@ -36,13 +44,19 @@
   });
 
   async function loadProviders(requestedOrganization: string, request: number) {
-    const result = await api.GET('/api/v1/auth/oidc/providers/public', {
-      params: { query: { organization: requestedOrganization } }
-    });
+    const [oidcResult, samlResult] = await Promise.all([
+      api.GET('/api/v1/auth/oidc/providers/public', {
+        params: { query: { organization: requestedOrganization } }
+      }),
+      api.GET('/api/v1/auth/saml/providers/public', {
+        params: { query: { organization: requestedOrganization } }
+      })
+    ]);
     if (request !== providerRequest) {
       return;
     }
-    providers = result.data ?? [];
+    oidcProviders = oidcResult.data ?? [];
+    samlProviders = samlResult.data ?? [];
   }
 
   async function submit(event: SubmitEvent) {
@@ -169,6 +183,11 @@
           The identity provider could not verify this sign-in. Try again or use a local account.
         </p>
       {/if}
+      {#if samlError}
+        <p class="error-text" role="alert">
+          The SAML assertion could not be verified. Try again or use a local account.
+        </p>
+      {/if}
       {#if passkeyError}
         <p class="error-text" role="alert">{passkeyError}</p>
       {/if}
@@ -186,9 +205,15 @@
           <ScanFace size={15} />
           {passkeyBusy ? 'Waiting for passkey…' : 'Use passkey'}
         </button>
-        {#each providers as provider (provider.key)}
+        {#each oidcProviders as provider (`oidc-${provider.key}`)}
           <a href={`${provider.start_path}?return_to=%2F`}>
             <Radio size={15} />
+            {provider.display_name}
+          </a>
+        {/each}
+        {#each samlProviders as provider (`saml-${provider.key}`)}
+          <a href={`${provider.start_path}?return_to=%2F`}>
+            <FileKey size={15} />
             {provider.display_name}
           </a>
         {/each}

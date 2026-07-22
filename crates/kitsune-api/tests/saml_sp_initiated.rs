@@ -1,4 +1,8 @@
-use std::{collections::BTreeSet, sync::Arc, time::SystemTime};
+use std::{
+    collections::BTreeSet,
+    sync::{Arc, OnceLock},
+    time::SystemTime,
+};
 
 use axum::{
     body::Body,
@@ -242,7 +246,7 @@ async fn signed_saml_flow_is_correlated_provisioned_and_replay_safe(pool: PgPool
             &format!("/api/v1/auth/saml/providers/{provider_id}"),
             serde_json::json!({
                 "display_name": "Shrine Identity",
-                "metadata_xml": provider_body["metadata_xml"],
+                "metadata_xml": null,
                 "metadata_url": null,
                 "metadata_signing_certificate": null,
                 "email_attribute": null,
@@ -334,7 +338,7 @@ fn identity_response(
 }
 
 fn identity_provider() -> (Saml<saml_rs::Idp>, String) {
-    let credentials = SamlCredentials::generate().expect("IdP credentials");
+    let credentials = test_credentials();
     let config = IdpConfig::builder(EntityId::try_new(IDP_ENTITY_ID).expect("IdP entity ID"))
         .sso_endpoint(SsoEndpoint::redirect(IDP_SSO_URL).expect("SSO endpoint"))
         .credentials(Credentials {
@@ -353,11 +357,7 @@ fn identity_provider() -> (Saml<saml_rs::Idp>, String) {
 fn test_state(pool: PgPool) -> AppState {
     let store = PostgresStore::from_pool(pool.clone());
     let public_origin = Url::parse(PUBLIC_ORIGIN).expect("public origin");
-    let service = SamlService::new(
-        SamlCredentials::generate().expect("SP credentials"),
-        BTreeSet::new(),
-    )
-    .expect("SAML service");
+    let service = SamlService::new(test_credentials(), BTreeSet::new()).expect("SAML service");
     AppState::new(
         store,
         AuthRepository::new(pool),
@@ -375,6 +375,13 @@ fn test_state(pool: PgPool) -> AppState {
     )
     .with_passkeys(PasskeyService::new(&public_origin).expect("passkeys"))
     .with_saml(service)
+}
+
+fn test_credentials() -> SamlCredentials {
+    static CREDENTIALS: OnceLock<SamlCredentials> = OnceLock::new();
+    CREDENTIALS
+        .get_or_init(|| SamlCredentials::generate().expect("test SAML credentials"))
+        .clone()
 }
 
 fn validation() -> SamlValidationContext<'static> {

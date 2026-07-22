@@ -58,7 +58,7 @@ or scaffolding alone.
       encrypted one-time server ceremony state, browser binding, credential counter
       updates, safe self-service revocation, generated API/UI, and desktop/mobile
       WebAuthn emulator coverage.
-- [ ] SAML federation with signed assertions, metadata ingestion, safe ACS
+- [x] SAML federation with signed assertions, metadata ingestion, safe ACS
       routing, tenant/provider policy, provisioning/linking, audit/outbox, and
       organizer/login UI.
 - [x] OIDC provider/flow/identity PostgreSQL boundary with encrypted secrets,

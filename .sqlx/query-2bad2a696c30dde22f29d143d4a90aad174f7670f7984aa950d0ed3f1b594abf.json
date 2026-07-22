@@ -1,0 +1,47 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT idp_entity_id,idp_metadata,metadata_url,\n                   metadata_signing_certificate,metadata_verified\n            FROM saml_providers\n            WHERE organization_id = $1 AND id = $2\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "idp_entity_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "idp_metadata",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "metadata_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "metadata_signing_certificate",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "metadata_verified",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "2bad2a696c30dde22f29d143d4a90aad174f7670f7984aa950d0ed3f1b594abf"
+}

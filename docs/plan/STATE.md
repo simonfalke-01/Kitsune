@@ -5,12 +5,11 @@ Updated: 2026-07-22 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: finish SAML federation, then complete the remaining dynamic/plugin
-  Jeopardy verifier seams.
+- In progress: complete the remaining dynamic-instance and plugin Jeopardy
+  verifier seams.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
-- Next: implement SAML, then complete the remaining dynamic/plugin Jeopardy
-  verifier seams.
+- Next: implement dynamic-instance answer verification, then plugin verification.
 
 ## Verified
 
@@ -101,8 +100,8 @@ Updated: 2026-07-22 (Asia/Singapore)
   journeys cover the graph and final totals.
 - Main-branch CI now compiles SQLx from committed offline metadata, runs the real
   Playwright journey against a prebuilt server, and grants the RustSec action
-  only check-write permission. The lockfile-only SQLx/MySQL RSA advisory is
-  documented and absent from every all-feature Kitsune dependency graph.
+  only check-write permission. The narrow RSA decryption advisory exception is
+  documented; SAML encrypted-assertion decryption remains disabled.
 - Scoped PASETO v4.local API tokens now use a domain-separated installation key,
   digest-only persistence, mandatory expiry, coarse last-use telemetry, event
   allow-lists, live-RBAC intersection, immediate revocation, and atomic audit/
@@ -151,6 +150,16 @@ Updated: 2026-07-22 (Asia/Singapore)
 - Passkey verification is green with Rust 1.97 CI-parity format/Clippy/tests,
   regenerated OpenAPI and TypeScript contracts, frontend lint/typecheck/Vitest/
   production build, and the full Playwright desktop/mobile suite.
+- SAML 2.0 federation is complete through the protocol, persistence, API, and
+  product surfaces. AuthnRequests are signed; assertions require signatures and
+  issuer/audience/destination/recipient/time/InResponseTo validation; browser
+  flows use sealed RelayState plus independently digested cookies; response and
+  assertion IDs are reserved transactionally in PostgreSQL. Metadata supports
+  bounded paste or SSRF-safe URL ingestion with optional pinned XML-signature
+  trust. Stable 0600 first-boot SP credentials, metadata/ACS endpoints, explicit
+  provisioning/link policy, organizer management, public login discovery,
+  generated OpenAPI types, and responsive axe-clean UI are exercised by a real
+  signed IdP integration plus the complete desktop/mobile browser journey.
 
 ## Risks being actively retired
 
@@ -161,5 +170,6 @@ Updated: 2026-07-22 (Asia/Singapore)
 - Recovery initiation is enumeration-safe and complete at the persistence/API
   boundary; SMTP delivery remains explicitly open, so recovery is not yet marked
   complete in the milestone ledger.
-- SAML is the remaining federation authentication slice and will not require
-  external configuration for lean-mode boot.
+- SAML assertion encryption is intentionally disabled while its RustCrypto RSA
+  key-transport backend remains subject to RUSTSEC-2023-0071; signed plaintext
+  assertions are the supported profile and the audit exception is documented.

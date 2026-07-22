@@ -682,6 +682,74 @@
         ],
         "type": "object"
       },
+      "CreateSamlProviderRequest": {
+        "description": "Provider creation input. Service-provider URLs are always derived from the\ncanonical browser origin rather than accepted from the browser.",
+        "properties": {
+          "allow_email_link": {
+            "description": "Link to an existing verified account by assertion email.",
+            "type": "boolean"
+          },
+          "auto_provision": {
+            "description": "Create a player after the first valid assertion.",
+            "type": "boolean"
+          },
+          "display_name": {
+            "description": "Human-readable login button label.",
+            "type": "string"
+          },
+          "display_name_attribute": {
+            "description": "Exact signed assertion attribute containing display name.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email_attribute": {
+            "description": "Exact signed assertion attribute containing email.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "enabled": {
+            "description": "Expose the provider on the login page.",
+            "type": "boolean"
+          },
+          "key": {
+            "description": "Organization-local URL key.",
+            "type": "string"
+          },
+          "metadata_signing_certificate": {
+            "description": "Optional pinned PEM certificate that must sign the metadata document.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata_url": {
+            "description": "HTTPS metadata URL fetched through Kitsune's SSRF policy.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata_xml": {
+            "description": "Pasted IdP metadata XML. Exactly one metadata source is required.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "key",
+          "display_name",
+          "enabled",
+          "auto_provision",
+          "allow_email_link"
+        ],
+        "type": "object"
+      },
       "CreateTeamRequest": {
         "description": "New team input.",
         "properties": {
@@ -1461,6 +1529,29 @@
         ],
         "type": "object"
       },
+      "PublicSamlProviderResponse": {
+        "description": "Public login-page provider projection.",
+        "properties": {
+          "display_name": {
+            "description": "Human-readable login button label.",
+            "type": "string"
+          },
+          "key": {
+            "description": "Organization-local URL key.",
+            "type": "string"
+          },
+          "start_path": {
+            "description": "Same-origin route beginning SP-initiated SSO.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "display_name",
+          "start_path"
+        ],
+        "type": "object"
+      },
       "ReadinessResponse": {
         "description": "Readiness document.",
         "properties": {
@@ -1598,6 +1689,115 @@
         },
         "required": [
           "state"
+        ],
+        "type": "object"
+      },
+      "SamlAcsForm": {
+        "properties": {
+          "RelayState": {
+            "description": "Exact one-time correlation state.",
+            "type": "string"
+          },
+          "SAMLResponse": {
+            "description": "Base64-encoded SAML response.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "SAMLResponse",
+          "RelayState"
+        ],
+        "type": "object"
+      },
+      "SamlProviderResponse": {
+        "description": "Safe organizer provider projection.",
+        "properties": {
+          "acs_uri": {
+            "description": "Canonical HTTP-POST assertion consumer service URL.",
+            "type": "string"
+          },
+          "allow_email_link": {
+            "description": "Explicit assertion-email linking policy.",
+            "type": "boolean"
+          },
+          "auto_provision": {
+            "description": "First-login provisioning policy.",
+            "type": "boolean"
+          },
+          "created_at": {
+            "description": "Creation time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "display_name": {
+            "description": "Human-readable login button label.",
+            "type": "string"
+          },
+          "display_name_attribute": {
+            "description": "Optional exact display-name attribute mapping.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email_attribute": {
+            "description": "Optional exact email attribute mapping.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "enabled": {
+            "description": "Provider availability.",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "Provider identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "idp_entity_id": {
+            "description": "IdP entity ID parsed from metadata.",
+            "type": "string"
+          },
+          "key": {
+            "description": "Organization-local URL key.",
+            "type": "string"
+          },
+          "metadata_url": {
+            "description": "Optional source URL used to ingest metadata.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata_verified": {
+            "description": "Whether a pinned certificate verified the metadata signature.",
+            "type": "boolean"
+          },
+          "sp_entity_id": {
+            "description": "Canonical Kitsune SP entity ID and metadata URL.",
+            "type": "string"
+          },
+          "updated_at": {
+            "description": "Last update time.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "display_name",
+          "idp_entity_id",
+          "metadata_verified",
+          "sp_entity_id",
+          "acs_uri",
+          "enabled",
+          "auto_provision",
+          "allow_email_link",
+          "created_at",
+          "updated_at"
         ],
         "type": "object"
       },
@@ -2427,6 +2627,69 @@
           "display_name",
           "issuer_url",
           "client_id",
+          "enabled",
+          "auto_provision",
+          "allow_email_link"
+        ],
+        "type": "object"
+      },
+      "UpdateSamlProviderRequest": {
+        "description": "Complete provider replacement input.",
+        "properties": {
+          "allow_email_link": {
+            "description": "Link to an existing verified account by assertion email.",
+            "type": "boolean"
+          },
+          "auto_provision": {
+            "description": "Create a player after the first valid assertion.",
+            "type": "boolean"
+          },
+          "display_name": {
+            "description": "Human-readable login button label.",
+            "type": "string"
+          },
+          "display_name_attribute": {
+            "description": "Exact signed assertion attribute containing display name.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email_attribute": {
+            "description": "Exact signed assertion attribute containing email.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "enabled": {
+            "description": "Expose the provider on the login page.",
+            "type": "boolean"
+          },
+          "metadata_signing_certificate": {
+            "description": "Optional pinned PEM certificate that must sign the metadata document.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata_url": {
+            "description": "Replacement HTTPS metadata URL. Omit both sources to retain current metadata.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "metadata_xml": {
+            "description": "Replacement IdP metadata XML. Omit both sources to retain current metadata.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "display_name",
           "enabled",
           "auto_provision",
           "allow_email_link"
@@ -3846,6 +4109,404 @@
             "description": ""
           },
           "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/saml/providers": {
+      "get": {
+        "operationId": "list_saml_providers",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SamlProviderResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      },
+      "post": {
+        "operationId": "create_saml_provider",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateSamlProviderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SamlProviderResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/saml/providers/public": {
+      "get": {
+        "operationId": "public_saml_providers",
+        "parameters": [
+          {
+            "description": "Organization slug entered on the login page.",
+            "in": "query",
+            "name": "organization",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PublicSamlProviderResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/saml/providers/{provider_id}": {
+      "put": {
+        "operationId": "update_saml_provider",
+        "parameters": [
+          {
+            "description": "SAML provider ID",
+            "in": "path",
+            "name": "provider_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateSamlProviderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SamlProviderResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/saml/{organization}/{provider_key}/acs": {
+      "post": {
+        "operationId": "saml_acs",
+        "parameters": [
+          {
+            "description": "Organization slug",
+            "in": "path",
+            "name": "organization",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "SAML provider key",
+            "in": "path",
+            "name": "provider_key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "properties": {
+                  "RelayState": {
+                    "description": "Exact one-time correlation state.",
+                    "type": "string"
+                  },
+                  "SAMLResponse": {
+                    "description": "Base64-encoded SAML response.",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "SAMLResponse",
+                  "RelayState"
+                ],
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "303": {
+            "description": "Return to the Kitsune application"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/saml/{organization}/{provider_key}/metadata": {
+      "get": {
+        "operationId": "saml_metadata",
+        "parameters": [
+          {
+            "description": "Organization slug",
+            "in": "path",
+            "name": "organization",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "SAML provider key",
+            "in": "path",
+            "name": "provider_key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/samlmetadata+xml": {}
+            },
+            "description": "Signed-capable SAML SP metadata"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/saml/{organization}/{provider_key}/start": {
+      "get": {
+        "operationId": "start_saml",
+        "parameters": [
+          {
+            "description": "Organization slug",
+            "in": "path",
+            "name": "organization",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "SAML provider key",
+            "in": "path",
+            "name": "provider_key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Application-local page to open after authentication.",
+            "in": "query",
+            "name": "return_to",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Auto-submitting signed SAML request form"
+          },
+          "303": {
+            "description": "Redirect carrying a signed SAML request"
+          },
+          "404": {
             "content": {
               "application/json": {
                 "schema": {

@@ -346,6 +346,102 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/saml/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_saml_providers"];
+        put?: never;
+        post: operations["create_saml_provider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/saml/providers/public": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["public_saml_providers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/saml/providers/{provider_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_saml_provider"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/saml/{organization}/{provider_key}/acs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["saml_acs"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/saml/{organization}/{provider_key}/metadata": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["saml_metadata"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/saml/{organization}/{provider_key}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["start_saml"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/session": {
         parameters: {
             query?: never;
@@ -1047,6 +1143,32 @@ export interface components {
             /** @description Organization-local URL key. */
             key: string;
         };
+        /**
+         * @description Provider creation input. Service-provider URLs are always derived from the
+         *     canonical browser origin rather than accepted from the browser.
+         */
+        CreateSamlProviderRequest: {
+            /** @description Link to an existing verified account by assertion email. */
+            allow_email_link: boolean;
+            /** @description Create a player after the first valid assertion. */
+            auto_provision: boolean;
+            /** @description Human-readable login button label. */
+            display_name: string;
+            /** @description Exact signed assertion attribute containing display name. */
+            display_name_attribute?: string | null;
+            /** @description Exact signed assertion attribute containing email. */
+            email_attribute?: string | null;
+            /** @description Expose the provider on the login page. */
+            enabled: boolean;
+            /** @description Organization-local URL key. */
+            key: string;
+            /** @description Optional pinned PEM certificate that must sign the metadata document. */
+            metadata_signing_certificate?: string | null;
+            /** @description HTTPS metadata URL fetched through Kitsune's SSRF policy. */
+            metadata_url?: string | null;
+            /** @description Pasted IdP metadata XML. Exactly one metadata source is required. */
+            metadata_xml?: string | null;
+        };
         /** @description New team input. */
         CreateTeamRequest: {
             /** @description Display name. */
@@ -1413,6 +1535,15 @@ export interface components {
             /** @description Same-origin route that begins the authorization flow. */
             start_path: string;
         };
+        /** @description Public login-page provider projection. */
+        PublicSamlProviderResponse: {
+            /** @description Human-readable login button label. */
+            display_name: string;
+            /** @description Organization-local URL key. */
+            key: string;
+            /** @description Same-origin route beginning SP-initiated SSO. */
+            start_path: string;
+        };
         /** @description Readiness document. */
         ReadinessResponse: {
             /** @description PostgreSQL dependency state. */
@@ -1469,6 +1600,54 @@ export interface components {
             feedback?: string | null;
             /** @description Requested review state. */
             state: components["schemas"]["WriteupReviewStateInput"];
+        };
+        SamlAcsForm: {
+            /** @description Exact one-time correlation state. */
+            RelayState: string;
+            /** @description Base64-encoded SAML response. */
+            SAMLResponse: string;
+        };
+        /** @description Safe organizer provider projection. */
+        SamlProviderResponse: {
+            /** @description Canonical HTTP-POST assertion consumer service URL. */
+            acs_uri: string;
+            /** @description Explicit assertion-email linking policy. */
+            allow_email_link: boolean;
+            /** @description First-login provisioning policy. */
+            auto_provision: boolean;
+            /**
+             * Format: date-time
+             * @description Creation time.
+             */
+            created_at: string;
+            /** @description Human-readable login button label. */
+            display_name: string;
+            /** @description Optional exact display-name attribute mapping. */
+            display_name_attribute?: string | null;
+            /** @description Optional exact email attribute mapping. */
+            email_attribute?: string | null;
+            /** @description Provider availability. */
+            enabled: boolean;
+            /**
+             * Format: uuid
+             * @description Provider identifier.
+             */
+            id: string;
+            /** @description IdP entity ID parsed from metadata. */
+            idp_entity_id: string;
+            /** @description Organization-local URL key. */
+            key: string;
+            /** @description Optional source URL used to ingest metadata. */
+            metadata_url?: string | null;
+            /** @description Whether a pinned certificate verified the metadata signature. */
+            metadata_verified: boolean;
+            /** @description Canonical Kitsune SP entity ID and metadata URL. */
+            sp_entity_id: string;
+            /**
+             * Format: date-time
+             * @description Last update time.
+             */
+            updated_at: string;
         };
         /** @description Player writeup draft or submission input. */
         SaveWriteupRequest: {
@@ -1852,6 +2031,27 @@ export interface components {
             enabled: boolean;
             /** @description Exact OpenID issuer identifier. */
             issuer_url: string;
+        };
+        /** @description Complete provider replacement input. */
+        UpdateSamlProviderRequest: {
+            /** @description Link to an existing verified account by assertion email. */
+            allow_email_link: boolean;
+            /** @description Create a player after the first valid assertion. */
+            auto_provision: boolean;
+            /** @description Human-readable login button label. */
+            display_name: string;
+            /** @description Exact signed assertion attribute containing display name. */
+            display_name_attribute?: string | null;
+            /** @description Exact signed assertion attribute containing email. */
+            email_attribute?: string | null;
+            /** @description Expose the provider on the login page. */
+            enabled: boolean;
+            /** @description Optional pinned PEM certificate that must sign the metadata document. */
+            metadata_signing_certificate?: string | null;
+            /** @description Replacement HTTPS metadata URL. Omit both sources to retain current metadata. */
+            metadata_url?: string | null;
+            /** @description Replacement IdP metadata XML. Omit both sources to retain current metadata. */
+            metadata_xml?: string | null;
         };
         /** @description Organizer scoreboard control mutation. */
         UpdateScoreboardControlsRequest: {
@@ -2893,6 +3093,290 @@ export interface operations {
                 };
             };
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_saml_providers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SamlProviderResponse"][];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    create_saml_provider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSamlProviderRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SamlProviderResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    public_saml_providers: {
+        parameters: {
+            query: {
+                /** @description Organization slug entered on the login page. */
+                organization: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicSamlProviderResponse"][];
+                };
+            };
+        };
+    };
+    update_saml_provider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description SAML provider ID */
+                provider_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateSamlProviderRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SamlProviderResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    saml_acs: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization slug */
+                organization: string;
+                /** @description SAML provider key */
+                provider_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/x-www-form-urlencoded": {
+                    /** @description Exact one-time correlation state. */
+                    RelayState: string;
+                    /** @description Base64-encoded SAML response. */
+                    SAMLResponse: string;
+                };
+            };
+        };
+        responses: {
+            /** @description Return to the Kitsune application */
+            303: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    saml_metadata: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Organization slug */
+                organization: string;
+                /** @description SAML provider key */
+                provider_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Signed-capable SAML SP metadata */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/samlmetadata+xml": unknown;
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    start_saml: {
+        parameters: {
+            query?: {
+                /** @description Application-local page to open after authentication. */
+                return_to?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description Organization slug */
+                organization: string;
+                /** @description SAML provider key */
+                provider_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Auto-submitting signed SAML request form */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Redirect carrying a signed SAML request */
+            303: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

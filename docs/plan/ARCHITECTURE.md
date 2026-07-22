@@ -81,6 +81,18 @@ random binding. The repository validates the digest in constant time, consumes
 successful ceremonies transactionally, advances stored credential state and
 signature counters, and records audit/outbox events. A credential cannot be
 removed if it is the account's last usable login method.
+SAML is SP-initiated and provider-scoped. Kitsune signs AuthnRequests with a
+persistent first-boot RSA identity, requires signed assertions, and validates
+issuer, audience, destination, recipient, time windows, RelayState, and
+`InResponseTo`. A private HttpOnly flow cookie is digested separately from the
+public RelayState; PostgreSQL consumes both the flow and response/assertion IDs
+transactionally so replay protection remains cross-node. Metadata is bounded,
+rejects DTD/entity declarations, and is either explicitly operator-trusted or
+verified by a pinned metadata-signing certificate. URL ingestion uses the same
+DNS-pinned egress policy as other outbound calls. Encrypted assertions stay
+disabled because the selected RustCrypto RSA backend's decryption path carries
+RUSTSEC-2023-0071; key generation, signing, and signature verification are not
+affected.
 Private identity providers require an exact trusted origin in server
 configuration. All egress resolves and validates every address, then pins those
 validated addresses into the request client for every redirect hop so DNS

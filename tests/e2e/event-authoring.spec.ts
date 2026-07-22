@@ -95,7 +95,10 @@ test('organizer authors a published challenge visible on the player board', asyn
 
   await page.goto('/admin/settings');
   await expect(page.getByRole('heading', { name: 'OpenID Connect' })).toBeVisible();
-  await page.getByRole('button', { name: 'Add provider' }).click();
+  const oidcManager = page.locator('.card').filter({
+    has: page.getByRole('heading', { name: 'OpenID Connect' })
+  });
+  await oidcManager.getByRole('button', { name: 'Add provider' }).click();
   const providerForm = page.locator('form').filter({ hasText: 'Connect an identity provider' });
   const providerName = `E2E SSO ${testInfo.project.name} ${run}`;
   await providerForm.getByLabel('Login label').fill(providerName);
@@ -110,17 +113,56 @@ test('organizer authors a published challenge visible on the player board', asyn
   await providerForm.getByRole('button', { name: 'Add provider' }).click();
   expect((await providerCreated).ok()).toBe(true);
   await expect(page.getByText(providerName, { exact: true })).toBeVisible();
+
+  const samlManager = page.locator('.card').filter({
+    has: page.getByRole('heading', { name: 'SAML 2.0' })
+  });
+  await expect(samlManager).toBeVisible();
+  await samlManager.getByRole('button', { name: 'Add provider' }).click();
+  const samlForm = page.locator('form').filter({ hasText: 'Connect a SAML provider' });
+  const samlProviderName = `E2E SAML ${testInfo.project.name} ${run}`;
+  const samlProviderKey = `e2e-saml-${key}-${run}`;
+  const samlEntityId = `https://identity.example.test/saml/${key}/${run}/metadata`;
+  const samlMetadata = [
+    '<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"',
+    ` entityID="${samlEntityId}">`,
+    '<md:IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">',
+    '<md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"',
+    ' Location="https://identity.example.test/saml/sso"/>',
+    '</md:IDPSSODescriptor></md:EntityDescriptor>'
+  ].join('');
+  await samlForm.getByLabel('Login label').fill(samlProviderName);
+  await samlForm.getByLabel('Provider key').fill(samlProviderKey);
+  await samlForm.getByLabel('Metadata XML').fill(samlMetadata);
+  const samlProviderCreated = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && response.url().endsWith('/auth/saml/providers')
+  );
+  await samlForm.getByRole('button', { name: 'Add provider' }).click();
+  expect((await samlProviderCreated).status()).toBe(201);
+  const samlProviderCard = samlManager.locator('article').filter({ hasText: samlProviderName });
+  await expect(samlProviderCard.getByText(samlProviderName, { exact: true })).toBeVisible();
+  await expect(
+    samlProviderCard.getByText('Signed assertions required', { exact: true })
+  ).toBeVisible();
+  await expect(samlProviderCard.getByText('Operator trusted', { exact: true })).toBeVisible();
   const settingsAccessibility = await new AxeBuilder({ page }).analyze();
   expect(settingsAccessibility.violations).toEqual([]);
 
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/\/login$/);
-  const providersLoaded = page.waitForResponse((response) =>
-    response.url().includes('/api/v1/auth/oidc/providers/public')
-  );
+  const providersLoaded = Promise.all([
+    page.waitForResponse((response) =>
+      response.url().includes('/api/v1/auth/oidc/providers/public')
+    ),
+    page.waitForResponse((response) =>
+      response.url().includes('/api/v1/auth/saml/providers/public')
+    )
+  ]);
   await page.getByLabel('Organization').fill(OWNER.organization);
   await providersLoaded;
   await expect(page.getByRole('link', { name: providerName })).toBeVisible();
+  await expect(page.getByRole('link', { name: samlProviderName })).toBeVisible();
   await page.getByLabel('Email').fill(OWNER.email);
   await page.getByLabel('Password').fill(OWNER.password);
   const signedInAgain = page.waitForResponse(

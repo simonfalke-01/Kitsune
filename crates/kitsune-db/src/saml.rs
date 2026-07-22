@@ -89,6 +89,35 @@ pub struct ActiveSamlProvider {
     pub allow_email_link: bool,
 }
 
+/// Secret-bearing metadata used only to preserve or replace provider
+/// configuration through an authenticated organizer mutation.
+#[derive(Clone)]
+pub struct StoredSamlMetadata {
+    /// Parsed identity-provider entity ID.
+    pub idp_entity_id: String,
+    /// Trusted metadata XML.
+    pub idp_metadata: String,
+    /// Optional metadata source URL.
+    pub metadata_url: Option<String>,
+    /// Optional certificate pinned for metadata signature verification.
+    pub metadata_signing_certificate: Option<String>,
+    /// Whether the current document verified against the pinned certificate.
+    pub metadata_verified: bool,
+}
+
+impl std::fmt::Debug for StoredSamlMetadata {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("StoredSamlMetadata")
+            .field("idp_entity_id", &self.idp_entity_id)
+            .field("idp_metadata", &"[REDACTED]")
+            .field("metadata_url", &self.metadata_url)
+            .field("metadata_signing_certificate", &"[REDACTED]")
+            .field("metadata_verified", &self.metadata_verified)
+            .finish()
+    }
+}
+
 impl std::fmt::Debug for ActiveSamlProvider {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter
@@ -460,6 +489,30 @@ impl SamlRepository {
         .fetch_all(&self.pool)
         .await
         .map_err(unavailable)
+    }
+
+    /// Loads secret metadata for a tenant-scoped organizer update without
+    /// returning it through the public HTTP projection.
+    pub async fn stored_metadata(
+        &self,
+        organization_id: OrganizationId,
+        provider_id: Uuid,
+    ) -> DomainResult<StoredSamlMetadata> {
+        sqlx::query_as!(
+            StoredSamlMetadata,
+            r#"
+            SELECT idp_entity_id,idp_metadata,metadata_url,
+                   metadata_signing_certificate,metadata_verified
+            FROM saml_providers
+            WHERE organization_id = $1 AND id = $2
+            "#,
+            organization_id.0,
+            provider_id,
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(unavailable)?
+        .ok_or(DomainError::NotFound)
     }
 
     /// Lists enabled provider buttons without exposing metadata.

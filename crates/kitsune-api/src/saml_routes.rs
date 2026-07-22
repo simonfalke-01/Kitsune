@@ -64,9 +64,9 @@ pub struct CreateSamlProviderRequest {
 pub struct UpdateSamlProviderRequest {
     /// Human-readable login button label.
     pub display_name: String,
-    /// Pasted IdP metadata XML. Exactly one metadata source is required.
+    /// Replacement IdP metadata XML. Omit both sources to retain current metadata.
     pub metadata_xml: Option<String>,
-    /// HTTPS metadata URL fetched through Kitsune's SSRF policy.
+    /// Replacement HTTPS metadata URL. Omit both sources to retain current metadata.
     pub metadata_url: Option<String>,
     /// Optional pinned PEM certificate that must sign the metadata document.
     pub metadata_signing_certificate: Option<String>,
@@ -277,27 +277,54 @@ pub(crate) async fn update_saml_provider(
         request.email_attribute.as_deref(),
         request.display_name_attribute.as_deref(),
     )?;
-    let metadata = ingest_metadata(
-        saml_service(&state)?,
-        request.metadata_xml,
-        request.metadata_url.as_deref(),
-        request.metadata_signing_certificate.as_deref(),
-    )
-    .await?;
-    let mutation = SamlRepository::new(state.db.pool().clone())
+    let repository = SamlRepository::new(state.db.pool().clone());
+    let organization_id = actor.session.account.organization_id;
+    let prepared = if request
+        .metadata_xml
+        .as_deref()
+        .is_some_and(|xml| !xml.trim().is_empty())
+        || normalized_optional(request.metadata_url.as_deref()).is_some()
+    {
+        PreparedMetadata {
+            validated: ingest_metadata(
+                saml_service(&state)?,
+                request.metadata_xml,
+                request.metadata_url.as_deref(),
+                request.metadata_signing_certificate.as_deref(),
+            )
+            .await?,
+            source_url: normalized_optional(request.metadata_url.as_deref()).map(str::to_owned),
+            signing_certificate: normalized_optional(
+                request.metadata_signing_certificate.as_deref(),
+            )
+            .map(str::to_owned),
+        }
+    } else {
+        let stored = repository
+            .stored_metadata(organization_id, provider_id)
+            .await
+            .map_err(ApiError::from)?;
+        PreparedMetadata {
+            validated: ValidatedSamlMetadata {
+                idp_entity_id: stored.idp_entity_id,
+                xml: stored.idp_metadata,
+                verified: stored.metadata_verified,
+            },
+            source_url: stored.metadata_url,
+            signing_certificate: stored.metadata_signing_certificate,
+        }
+    };
+    let mutation = repository
         .update_provider(UpdateSamlProvider {
             id: provider_id,
-            organization_id: actor.session.account.organization_id,
+            organization_id,
             actor_id: actor.session.account.user_id,
             display_name: request.display_name.trim(),
-            idp_entity_id: &metadata.idp_entity_id,
-            idp_metadata: &metadata.xml,
-            metadata_url: request.metadata_url.as_deref().map(str::trim),
-            metadata_signing_certificate: request
-                .metadata_signing_certificate
-                .as_deref()
-                .map(str::trim),
-            metadata_verified: metadata.verified,
+            idp_entity_id: &prepared.validated.idp_entity_id,
+            idp_metadata: &prepared.validated.xml,
+            metadata_url: prepared.source_url.as_deref(),
+            metadata_signing_certificate: prepared.signing_certificate.as_deref(),
+            metadata_verified: prepared.validated.verified,
             email_attribute: normalized_optional(request.email_attribute.as_deref()),
             display_name_attribute: normalized_optional(request.display_name_attribute.as_deref()),
             enabled: request.enabled,
@@ -603,6 +630,12 @@ async fn ingest_metadata(
     service
         .validate_metadata(xml, normalized_optional(signing_certificate))
         .map_err(ApiError::from)
+}
+
+struct PreparedMetadata {
+    validated: ValidatedSamlMetadata,
+    source_url: Option<String>,
+    signing_certificate: Option<String>,
 }
 
 fn dispatch_authorization(
