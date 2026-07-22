@@ -6,6 +6,10 @@ export type LoginInput = components['schemas']['LoginRequest'];
 export type RegisterInput = components['schemas']['RegisterRequest'];
 export type SetupInput = components['schemas']['SetupRequest'];
 export type ApiErrorBody = components['schemas']['ErrorBody'];
+export type EventSummary = components['schemas']['EventResponse'];
+export type CreateEventInput = components['schemas']['CreateEventRequest'];
+export type ChallengeSummary = components['schemas']['ChallengeResponse'];
+export type CreateChallengeInput = components['schemas']['CreateChallengeRequest'];
 
 export const api = createClient<paths>({
   baseUrl: '',

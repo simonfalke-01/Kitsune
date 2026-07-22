@@ -281,15 +281,15 @@ pub struct ChallengeResponse {
     /// Markdown description.
     pub description: String,
     /// Behavior schema.
-    #[schema(value_type = Object)]
+    #[schema(value_type = ChallengeKindInput)]
     pub kind: Value,
     /// Lifecycle.
     pub state: String,
     /// Scoring schema.
-    #[schema(value_type = Object)]
+    #[schema(value_type = ScoringInput)]
     pub scoring: Value,
     /// Visibility schema.
-    #[schema(value_type = Object)]
+    #[schema(value_type = VisibilityInput)]
     pub visibility: Value,
     /// Tags.
     pub tags: Vec<String>,
@@ -300,7 +300,7 @@ pub struct ChallengeResponse {
     /// Board position.
     pub position: i32,
     /// Survey schema.
-    #[schema(value_type = Object)]
+    #[schema(value_type = Vec<SurveyInput>)]
     pub survey: Value,
 }
 

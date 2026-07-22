@@ -331,7 +331,7 @@ export interface components {
              */
             id: string;
             /** @description Behavior schema. */
-            kind: Record<string, never>;
+            kind: components["schemas"]["ChallengeKindInput"];
             /**
              * Format: int32
              * @description Attempt limit.
@@ -345,15 +345,15 @@ export interface components {
              */
             position: number;
             /** @description Scoring schema. */
-            scoring: Record<string, never>;
+            scoring: components["schemas"]["ScoringInput"];
             /** @description Lifecycle. */
             state: string;
             /** @description Survey schema. */
-            survey: Record<string, never>;
+            survey: components["schemas"]["SurveyInput"][];
             /** @description Tags. */
             tags: string[];
             /** @description Visibility schema. */
-            visibility: Record<string, never>;
+            visibility: components["schemas"]["VisibilityInput"];
             /** @description Writeups enabled. */
             writeups_enabled: boolean;
         };

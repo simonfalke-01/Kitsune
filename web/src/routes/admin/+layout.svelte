@@ -2,13 +2,14 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { onMount, type Snippet } from 'svelte';
-  import { Activity, Blocks, Settings2, Sparkles } from '@lucide/svelte';
+  import { Activity, Blocks, CalendarDays, Settings2, Sparkles } from '@lucide/svelte';
   import { session } from '$lib/stores/session.svelte';
 
   let { children }: { children: Snippet } = $props();
 
   const links = [
     { href: '/admin', label: 'Live operations', icon: Activity },
+    { href: '/admin/events', label: 'Events', icon: CalendarDays },
     { href: '/admin/challenges', label: 'Challenges', icon: Blocks },
     { href: '/admin/automation', label: 'Automation', icon: Sparkles },
     { href: '/admin/settings', label: 'Settings', icon: Settings2 }
@@ -99,7 +100,7 @@
 
     aside {
       position: static;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       overflow-x: auto;
       padding-top: 0.8rem;
     }

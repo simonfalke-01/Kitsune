@@ -47,7 +47,9 @@
 
 <div class="page page-narrow setup">
   <BrandMark />
-  {#if required === false}
+  {#if required === null}
+    <p class="setup-loading" role="status">Checking the shrine…</p>
+  {:else if required === false}
     <Card elevated>
       <div class="complete">
         <CheckCircle2 size={24} />
@@ -118,6 +120,9 @@
   .setup {
     display: grid;
     gap: 2rem;
+  }
+  .setup-loading {
+    color: var(--ink-secondary);
   }
   header {
     margin-top: 2rem;

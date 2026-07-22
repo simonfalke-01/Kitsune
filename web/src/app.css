@@ -9,7 +9,7 @@
   --surface-muted: #ecece7;
   --ink: #171713;
   --ink-secondary: #64645c;
-  --ink-faint: #8a8a80;
+  --ink-faint: #6f6f67;
   --line: rgba(23, 23, 19, 0.11);
   --line-strong: rgba(23, 23, 19, 0.2);
   --accent: #e6532f;
@@ -38,7 +38,7 @@
   --surface-muted: #1d2028;
   --ink: #f5f3ed;
   --ink-secondary: #a9a89f;
-  --ink-faint: #7b7b74;
+  --ink-faint: #93938a;
   --line: rgba(255, 255, 255, 0.09);
   --line-strong: rgba(255, 255, 255, 0.17);
   --accent: #f06a46;

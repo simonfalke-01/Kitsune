@@ -256,8 +256,8 @@
             "type": "string"
           },
           "kind": {
-            "description": "Behavior schema.",
-            "type": "object"
+            "$ref": "#/components/schemas/ChallengeKindInput",
+            "description": "Behavior schema."
           },
           "max_attempts": {
             "description": "Attempt limit.",
@@ -277,8 +277,8 @@
             "type": "integer"
           },
           "scoring": {
-            "description": "Scoring schema.",
-            "type": "object"
+            "$ref": "#/components/schemas/ScoringInput",
+            "description": "Scoring schema."
           },
           "state": {
             "description": "Lifecycle.",
@@ -286,7 +286,10 @@
           },
           "survey": {
             "description": "Survey schema.",
-            "type": "object"
+            "items": {
+              "$ref": "#/components/schemas/SurveyInput"
+            },
+            "type": "array"
           },
           "tags": {
             "description": "Tags.",
@@ -296,8 +299,8 @@
             "type": "array"
           },
           "visibility": {
-            "description": "Visibility schema.",
-            "type": "object"
+            "$ref": "#/components/schemas/VisibilityInput",
+            "description": "Visibility schema."
           },
           "writeups_enabled": {
             "description": "Writeups enabled.",

@@ -5,6 +5,7 @@
   import BrandMark from './BrandMark.svelte';
   import Button from './Button.svelte';
   import { preferences } from '$lib/i18n/index.svelte';
+  import { events } from '$lib/stores/events.svelte';
   import { session } from '$lib/stores/session.svelte';
   import { realtime } from '$lib/stores/realtime.svelte';
 
@@ -17,6 +18,7 @@
   async function signOut() {
     realtime.stop();
     await session.logout();
+    events.clear();
     await goto('/login');
   }
 </script>
