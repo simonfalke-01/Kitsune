@@ -49,7 +49,7 @@
       {#if preferences.theme === 'dark'}<Sun size={17} />{:else}<Moon size={17} />{/if}
     </button>
     {#if session.authenticated}
-      <span class="identity">{session.current?.user.display_name}</span>
+      <a class="identity" href="/account/security">{session.current?.user.display_name}</a>
       <Button variant="quiet" ariaLabel="Sign out" onclick={signOut}><LogOut size={16} /></Button>
     {:else}
       <a class="sign-in" href="/login">Sign in</a>

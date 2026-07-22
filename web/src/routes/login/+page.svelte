@@ -11,12 +11,24 @@
   let organization = $state('');
   let email = $state('');
   let password = $state('');
+  let mfaCode = $state('');
+  let mfaRequired = $state(false);
 
   async function submit(event: SubmitEvent) {
     event.preventDefault();
-    if (await session.login({ organization, email, password })) {
+    if (
+      await session.login({
+        organization,
+        email,
+        password,
+        mfa_code: mfaRequired ? mfaCode : undefined
+      })
+    ) {
       realtime.start();
       await goto('/');
+    } else if (session.errorCode === 'mfa_required') {
+      mfaRequired = true;
+      session.error = null;
     }
   }
 </script>
@@ -62,6 +74,16 @@
         <span>Password</span>
         <input bind:value={password} type="password" autocomplete="current-password" required />
       </label>
+      {#if mfaRequired}
+        <div class="mfa-callout">
+          <strong>One more proof.</strong>
+          <span>Enter your six-digit authenticator code or a recovery code.</span>
+        </div>
+        <label class="field">
+          <span>MFA code</span>
+          <input bind:value={mfaCode} autocomplete="one-time-code" inputmode="numeric" required />
+        </label>
+      {/if}
       {#if session.error}<p class="error-text" role="alert">{session.error}</p>{/if}
       <Button type="submit" loading={session.loading}><KeyRound size={16} /> Sign in</Button>
       <div class="alternatives" aria-label="Other sign-in methods">
@@ -73,6 +95,7 @@
         >
       </div>
       <a class="recovery" href="/recover">Recover your account</a>
+      <a class="recovery" href="/register">Create a local account</a>
     </form>
   </Card>
 </div>
@@ -138,6 +161,21 @@
     gap: 0.6rem;
     padding-top: 0.25rem;
     border-top: 1px solid var(--line);
+  }
+  .mfa-callout {
+    display: grid;
+    gap: 0.25rem;
+    padding: 0.8rem;
+    border: 1px solid color-mix(in srgb, var(--foxfire) 28%, transparent);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--foxfire) 8%, transparent);
+  }
+  .mfa-callout strong {
+    font-size: 0.84rem;
+  }
+  .mfa-callout span {
+    color: var(--ink-secondary);
+    font-size: 0.75rem;
   }
   .alternatives button {
     display: inline-flex;
