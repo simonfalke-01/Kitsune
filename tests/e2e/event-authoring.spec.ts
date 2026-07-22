@@ -1,0 +1,74 @@
+import AxeBuilder from '@axe-core/playwright';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
+
+const OWNER = {
+  organization: 'e2e-shrine',
+  email: 'owner@e2e.kitsune.test',
+  password: 'correct e2e foxfire battery'
+};
+
+async function authenticate(page: Page): Promise<void> {
+  await page.goto('/setup');
+  const completed = page.getByRole('heading', { name: 'Setup is complete.' });
+  await expect(
+    page.getByRole('heading', { name: /Setup is complete\.|Raise your first torii\./ })
+  ).toBeVisible();
+  if (await completed.isVisible()) {
+    await page.getByRole('link', { name: 'Go to sign in' }).click();
+    await page.getByLabel('Organization').fill(OWNER.organization);
+    await page.getByLabel('Email').fill(OWNER.email);
+    await page.getByLabel('Password').fill(OWNER.password);
+    await page.getByRole('button', { name: 'Sign in' }).click();
+  } else {
+    await page.getByLabel('Organization name').fill('E2E Shrine');
+    await page.getByLabel('Organization key').fill(OWNER.organization);
+    await page.getByLabel('Your name').fill('E2E Owner');
+    await page.getByLabel('Email').fill(OWNER.email);
+    await page.getByLabel('Password').fill(OWNER.password);
+    await page.getByRole('button', { name: 'Create Kitsune' }).click();
+  }
+  await expect(page).not.toHaveURL(/\/login$/);
+  await page.goto('/admin');
+  await expect(page).toHaveURL(/\/admin$/);
+}
+
+function projectKey(testInfo: TestInfo): string {
+  return testInfo.project.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
+}
+
+test('organizer authors a published challenge visible on the player board', async ({ page }, testInfo) => {
+  await authenticate(page);
+  const key = projectKey(testInfo);
+  const run = Date.now().toString(36);
+  const eventName = `Foxfire E2E ${testInfo.project.name} ${run}`;
+  const challengeName = `Trailhead ${testInfo.project.name} ${run}`;
+
+  await page.goto('/admin/events');
+  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+  await page.getByRole('button', { name: 'New event' }).click();
+  await expect(page.getByLabel('Event name')).toBeVisible();
+  await page.getByLabel('Event name').fill(eventName);
+  await page.getByLabel('Event key').fill(`foxfire-e2e-${key}-${run}`);
+  await page.getByLabel('Description').fill('A browser-tested Kitsune event.');
+  await page.getByRole('button', { name: 'Create draft' }).click();
+  await expect(page.getByText(eventName, { exact: true })).toBeVisible();
+
+  await page.goto('/admin/challenges');
+  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+  await expect(page.getByLabel('Authoring event')).toHaveValue(/.+/);
+  await page.getByRole('button', { name: 'New challenge' }).click();
+  await page.getByLabel('Title').fill(challengeName);
+  await page.getByLabel('Description').fill('Follow the typed API trail to the accepted flag.');
+  await page.getByLabel('Lifecycle').selectOption('published');
+  await page.getByLabel('Accepted answer').fill(`kit{${key}-accepted}`);
+  await page.getByRole('button', { name: 'Save challenge' }).click();
+  await expect(page.getByRole('button', { name: 'Save challenge' })).toBeHidden();
+  await expect(page.getByText(challengeName, { exact: true })).toBeVisible();
+
+  await page.goto('/challenges');
+  await expect(page.getByRole('heading', { name: challengeName })).toBeVisible();
+  await expect(page.getByText('500 pts')).toBeVisible();
+
+  const accessibility = await new AxeBuilder({ page }).analyze();
+  expect(accessibility.violations).toEqual([]);
+});

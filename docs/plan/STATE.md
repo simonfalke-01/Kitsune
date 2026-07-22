@@ -47,6 +47,12 @@ Updated: 2026-07-22 (Asia/Singapore)
   support nudge, disabled-by-default white-label entitlement UX, dark/light
   tokens, responsive player shell, organizer shell, automation canvas, and
   component catalog are wired without introducing final mascot artwork early.
+- Event setup, active-event selection, challenge authoring, and the categorized
+  player board now call the generated API client and react to domain-event
+  fanout. Active selection survives hard navigation and is cleared on logout.
+- A real Playwright journey starts PostgreSQL-backed Kitsune plus the Svelte dev
+  proxy, creates an event and published challenge, verifies the player board on
+  desktop and mobile Chromium, and passes axe with no violations.
 
 ## Risks being actively retired
 

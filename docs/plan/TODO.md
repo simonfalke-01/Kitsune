@@ -76,6 +76,10 @@ or scaffolding alone.
   de-brand support nudge, and white-label entitlement state.
 - [x] Strict Svelte check, ESLint/Prettier, component tests, and production build.
 - [ ] Wire player and organizer resources to the complete domain REST API.
+- [x] Wire event setup, selection, challenge authoring, and player challenge
+  board to the generated REST client and realtime invalidation.
+- [x] Exercise the event-to-published-challenge journey with PostgreSQL-backed
+  Playwright on desktop/mobile and axe.
 - [ ] Complete all mode-specific, auth-provider, plugin, integration, and
   administrative surfaces.
 

@@ -8,9 +8,10 @@
 /.env.*
 !/.env.example
 /data/
+/web/data/
 /dist/
-/playwright-report/
-/test-results/
+**/playwright-report/
+**/test-results/
 /.astro/
 *.profraw
 *.log

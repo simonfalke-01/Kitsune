@@ -73,3 +73,9 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Commit resource mutations, immutable audit records, and outbox
   envelopes in one PostgreSQL transaction before in-process publication — the
   durable record stays authoritative if immediate fanout is interrupted.
+- 2026-07-22 — Persist only the selected event ID in browser local storage — a
+  refresh keeps organizer/player context without caching tenant data or making
+  node-local state authoritative, and logout removes it.
+- 2026-07-22 — Run browser E2E against the real Rust server through Vite’s same-
+  origin proxy — this covers encrypted cookies, CSRF, PostgreSQL, generated API
+  types, UI state, responsive layout, and accessibility in one honest journey.

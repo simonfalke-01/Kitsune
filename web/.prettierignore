@@ -1,6 +1,8 @@
 .svelte-kit
 build
 coverage
+data
 openapi.json
+playwright-report
 src/lib/api/schema.d.ts
-
+test-results
