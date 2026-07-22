@@ -1,7 +1,7 @@
 <script lang="ts">
   import { BarChart3, CheckCheck, FileCheck2, Send, Undo2 } from '@lucide/svelte';
   import { api, errorMessage } from '$lib/api/client';
-  import type { SurveySummary, Writeup } from '$lib/api/client';
+  import type { ManualReview, SurveySummary, Writeup } from '$lib/api/client';
   import Badge from '$lib/components/Badge.svelte';
   import Button from '$lib/components/Button.svelte';
   import Card from '$lib/components/Card.svelte';
@@ -14,6 +14,8 @@
   let loading = $state(false);
   let reviewingId = $state<string | null>(null);
   let writeups = $state<Writeup[]>([]);
+  let manualReviews = $state<ManualReview[]>([]);
+  let manualNotes = $state<Record<string, string>>({});
   let feedback = $state<Record<string, string>>({});
   let selectedSurveyChallengeId = $state<string | null>(null);
   let surveySummary = $state<SurveySummary | null>(null);
@@ -33,18 +35,21 @@
     if (!envelope || envelope.id === appliedRealtimeEvent) return;
     if (
       envelope.event.type !== 'challenge.writeup.changed' &&
-      envelope.event.type !== 'challenge.survey.submitted'
+      envelope.event.type !== 'challenge.survey.submitted' &&
+      envelope.event.type !== 'submission.received' &&
+      envelope.event.type !== 'submission.reviewed'
     ) {
       return;
     }
     appliedRealtimeEvent = envelope.id;
     void loadWriteups();
+    void loadManualReviews();
     if (selectedSurveyChallengeId) void loadSurveySummary(selectedSurveyChallengeId);
   });
 
   async function initialize(): Promise<void> {
     await events.load();
-    await loadWriteups();
+    await Promise.all([loadWriteups(), loadManualReviews()]);
     const firstSurvey = surveyChallenges[0];
     if (firstSurvey) {
       selectedSurveyChallengeId = firstSurvey.id;
@@ -65,6 +70,44 @@
       return;
     }
     writeups = data;
+  }
+
+  async function loadManualReviews(): Promise<void> {
+    const eventId = events.selectedEventId;
+    if (!eventId) return;
+    const { data, error: responseError } = await api.GET(
+      '/api/v1/events/{event_id}/manual-reviews',
+      {
+        params: { path: { event_id: eventId } }
+      }
+    );
+    if (!data) {
+      error = errorMessage(responseError, 'The manual review queue could not be loaded.');
+      return;
+    }
+    manualReviews = data;
+  }
+
+  async function reviewManual(review: ManualReview, accepted: boolean): Promise<void> {
+    const eventId = events.selectedEventId;
+    const csrf = session.current?.csrf_token;
+    if (!eventId || !csrf) return;
+    reviewingId = review.id;
+    error = null;
+    const { data, error: responseError } = await api.PATCH(
+      '/api/v1/events/{event_id}/manual-reviews/{submission_id}',
+      {
+        params: { path: { event_id: eventId, submission_id: review.id } },
+        headers: { 'x-csrf-token': csrf },
+        body: { accepted, note: manualNotes[review.id] || null }
+      }
+    );
+    reviewingId = null;
+    if (!data) {
+      error = errorMessage(responseError, 'The manual review decision could not be saved.');
+      return;
+    }
+    manualReviews = manualReviews.filter((pending) => pending.id !== review.id);
   }
 
   async function review(
@@ -138,7 +181,7 @@
           value={events.selectedEventId ?? ''}
           onchange={async (event) => {
             events.select(event.currentTarget.value);
-            await loadWriteups();
+            await Promise.all([loadWriteups(), loadManualReviews()]);
           }}
         >
           {#each events.events as event (event.id)}
@@ -152,6 +195,70 @@
   {#if error}
     <p class="error-text" role="alert">{error}</p>
   {/if}
+
+  <section class="review-section" aria-labelledby="manual-review-title">
+    <div class="section-heading">
+      <div>
+        <CheckCheck size={18} />
+        <h2 id="manual-review-title">Manual verification</h2>
+      </div>
+      <Badge tone={manualReviews.length ? 'warning' : 'neutral'}>
+        {manualReviews.length} pending
+      </Badge>
+    </div>
+    {#if manualReviews.length}
+      <div class="writeup-grid">
+        {#each manualReviews as review (review.id)}
+          <Card>
+            <article class="writeup-card manual-card">
+              <header>
+                <div>
+                  <small>{review.challenge_name}</small>
+                  <h3>{review.competitor_name}</h3>
+                </div>
+                <Badge tone="warning">Pending</Badge>
+              </header>
+              <div class="evidence">
+                <small>Encrypted evidence</small>
+                <p>{review.answer}</p>
+              </div>
+              <label class="field">
+                <span>Reviewer note</span>
+                <textarea
+                  rows="3"
+                  maxlength="10000"
+                  value={manualNotes[review.id] ?? ''}
+                  oninput={(event) => (manualNotes[review.id] = event.currentTarget.value)}
+                  placeholder="Record the verification result without copying secrets."></textarea>
+              </label>
+              <div class="review-actions">
+                <Button
+                  variant="secondary"
+                  loading={reviewingId === review.id}
+                  onclick={() => reviewManual(review, false)}
+                >
+                  <Undo2 size={14} />
+                  Discard
+                </Button>
+                <Button
+                  loading={reviewingId === review.id}
+                  onclick={() => reviewManual(review, true)}
+                >
+                  <CheckCheck size={14} />
+                  Accept and score
+                </Button>
+              </div>
+            </article>
+          </Card>
+        {/each}
+      </div>
+    {:else}
+      <EmptyState
+        title="No manual evidence waiting"
+        detail="Pending manual-verification submissions appear here decrypted only for reviewers."
+      />
+    {/if}
+  </section>
 
   <section class="review-section" aria-labelledby="writeup-queue-title">
     <div class="section-heading">
@@ -353,6 +460,30 @@
     background: color-mix(in srgb, var(--warning) 10%, var(--surface));
     color: var(--ink-secondary);
     font-size: 0.78rem;
+  }
+
+  .evidence {
+    display: grid;
+    gap: 0.4rem;
+    padding: 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-muted);
+  }
+
+  .evidence small {
+    color: var(--ink-faint);
+    font-size: 0.67rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .evidence p {
+    white-space: pre-wrap;
+    color: var(--ink-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
   }
 
   textarea {

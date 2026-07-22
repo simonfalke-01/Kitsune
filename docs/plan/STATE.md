@@ -90,7 +90,8 @@ Updated: 2026-07-22 (Asia/Singapore)
   isolated behind submission-management RBAC, and accepted or discarded in a
   challenge-locked review transaction. Acceptance reuses automatic solve,
   first-blood, frozen-ledger, audit, outbox, and realtime semantics; the API
-  journey verifies decryption, player denial, and scoring. Organizer UI is next.
+  journey verifies decryption, player denial, and scoring. The realtime
+  organizer queue and player pending state are exercised on desktop/mobile.
 
 ## Risks being actively retired
 

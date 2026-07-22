@@ -144,6 +144,36 @@ test('organizer authors a published challenge visible on the player board', asyn
   const reviewAccessibility = await new AxeBuilder({ page }).analyze();
   expect(reviewAccessibility.violations).toEqual([]);
 
+  const manualChallengeName = `Proof review ${testInfo.project.name} ${run}`;
+  await page.goto('/admin/challenges');
+  await page.getByRole('button', { name: 'New challenge' }).click();
+  await page.getByLabel('Title').fill(manualChallengeName);
+  await page.getByLabel('Description').fill('Explain a bounded reproduction path for review.');
+  await page.getByLabel('Type').selectOption('manual_verification');
+  await page.getByLabel('Lifecycle').selectOption('published');
+  await page.getByRole('button', { name: 'Save challenge' }).click();
+  await expect(page.getByText(manualChallengeName, { exact: true })).toBeVisible();
+
+  await page.goto('/challenges');
+  const manualCard = page
+    .locator('article.challenge-card')
+    .filter({ has: page.getByRole('heading', { name: manualChallengeName }) });
+  await manualCard.getByRole('button', { name: 'Submit flag' }).click();
+  const manualEvidence = 'A browser-verified reproduction with bounded impact and clear evidence.';
+  await manualCard.getByLabel('Evidence').fill(manualEvidence);
+  await manualCard.getByRole('button', { name: 'Inspect submission' }).click();
+  await expect(manualCard.getByText('Queued for an organizer’s review.')).toBeVisible();
+  await expect(manualCard.getByRole('button', { name: 'Awaiting review' })).toBeDisabled();
+
+  await page.goto('/admin/reviews');
+  const manualReviewCard = page
+    .locator('article.manual-card')
+    .filter({ hasText: manualChallengeName });
+  await expect(manualReviewCard.getByText(manualEvidence, { exact: true })).toBeVisible();
+  await manualReviewCard.getByLabel('Reviewer note').fill('Reproduction verified in isolation.');
+  await manualReviewCard.getByRole('button', { name: 'Accept and score' }).click();
+  await expect(manualReviewCard).toBeHidden();
+
   await page.goto('/admin/events');
   const freezeUpdated = page.waitForResponse((response) =>
     response.url().includes('/scoreboard-controls')

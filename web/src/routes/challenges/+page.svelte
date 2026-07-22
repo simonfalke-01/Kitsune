@@ -81,6 +81,16 @@
     return receipt ? submissionMessage(receipt) : null;
   }
 
+  function pendingReview(challengeId: string): boolean {
+    return game.receipts[challengeId]?.outcome === 'pending';
+  }
+
+  function answerLabel(challenge: ChallengeSummary): string {
+    if (challenge.kind.type === 'multiple_choice') return 'Answer';
+    if (challenge.kind.type === 'manual_verification') return 'Evidence';
+    return 'Flag';
+  }
+
   function updateWriteup(challengeId: string, value: string): void {
     writeupBodies[challengeId] = value;
   }
@@ -175,22 +185,26 @@
                   </footer>
                   <Button
                     variant={openChallengeId === challenge.id ? 'quiet' : 'secondary'}
+                    disabled={pendingReview(challenge.id)}
                     onclick={() => toggleChallenge(challenge)}
                   >
                     {#if challenge.solved}
                       <BookOpen size={15} />
                       After the solve
                       <ChevronDown size={14} />
+                    {:else if pendingReview(challenge.id)}
+                      <Check size={15} />
+                      Awaiting review
                     {:else}
                       <Flag size={15} />
                       Submit flag
                       <ChevronDown size={14} />
                     {/if}
                   </Button>
-                  {#if openChallengeId === challenge.id && !challenge.solved}
+                  {#if openChallengeId === challenge.id && !challenge.solved && !pendingReview(challenge.id)}
                     <form onsubmit={(event) => submit(event, challenge)}>
                       <label>
-                        <span>{challenge.kind.type === 'multiple_choice' ? 'Answer' : 'Flag'}</span>
+                        <span>{answerLabel(challenge)}</span>
                         {#if challenge.kind.type === 'multiple_choice'}
                           <select
                             required

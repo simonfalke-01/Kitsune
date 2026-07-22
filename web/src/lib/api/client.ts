@@ -28,6 +28,8 @@ export type ReviewWriteupInput = components['schemas']['ReviewWriteupRequest'];
 export type SurveyInput = components['schemas']['SubmitSurveyRequest'];
 export type SurveyReceipt = components['schemas']['SurveyResponse'];
 export type SurveySummary = components['schemas']['SurveySummaryResponse'];
+export type ManualReview = components['schemas']['ManualReviewResponse'];
+export type ReviewManualSubmissionInput = components['schemas']['ReviewManualSubmissionRequest'];
 
 export const api = createClient<paths>({
   baseUrl: '',
