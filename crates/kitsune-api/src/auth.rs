@@ -419,7 +419,7 @@ pub(crate) async fn setup(
 ) -> ApiResult<(StatusCode, PrivateCookieJar, Json<SessionResponse>)> {
     if state
         .cache
-        .increment("auth:setup", StdDuration::from_secs(60))
+        .increment("auth:setup", StdDuration::from_mins(1))
         .await
         .map_err(ApiError::from)?
         > 10
@@ -502,7 +502,7 @@ pub(crate) async fn login(
         .cache
         .increment(
             &format!("auth:login:{identity_hash}"),
-            StdDuration::from_secs(300),
+            StdDuration::from_mins(5),
         )
         .await
         .map_err(ApiError::from)?;
@@ -556,7 +556,7 @@ pub(crate) async fn register(
         .cache
         .increment(
             &format!("auth:register:{identity_hash}"),
-            StdDuration::from_secs(600),
+            StdDuration::from_mins(10),
         )
         .await
         .map_err(ApiError::from)?
@@ -648,7 +648,7 @@ pub(crate) async fn start_recovery(
         .cache
         .increment(
             &format!("auth:recovery:{identity_hash}"),
-            StdDuration::from_secs(900),
+            StdDuration::from_mins(15),
         )
         .await
         .map_err(ApiError::from)?
@@ -727,7 +727,7 @@ pub(crate) async fn start_totp(
         .put(
             &totp_pending_key(identity.account.session_id),
             secret.clone(),
-            StdDuration::from_secs(600),
+            StdDuration::from_mins(10),
         )
         .await
         .map_err(ApiError::from)?;

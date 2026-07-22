@@ -491,7 +491,7 @@ async fn enforce_rate_limit(
     let user_id = actor.session.account.user_id;
     let global_key = format!("submission:global:{organization_id}:{event_id}:{user_id}");
     let challenge_key = format!("submission:challenge:{organization_id}:{challenge_id}:{user_id}");
-    let ttl = Duration::from_secs(60);
+    let ttl = Duration::from_mins(1);
     let global = state
         .cache
         .increment(&global_key, ttl)
@@ -520,7 +520,7 @@ async fn enforce_hint_rate_limit(
     );
     let attempts = state
         .cache
-        .increment(&key, Duration::from_secs(60))
+        .increment(&key, Duration::from_mins(1))
         .await
         .map_err(ApiError::from)?;
     if attempts > 10 {

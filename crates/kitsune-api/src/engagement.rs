@@ -399,7 +399,7 @@ async fn enforce_engagement_rate_limit(
     );
     let attempts = state
         .cache
-        .increment(&key, Duration::from_secs(60))
+        .increment(&key, Duration::from_mins(1))
         .await
         .map_err(ApiError::from)?;
     if attempts > 20 {
