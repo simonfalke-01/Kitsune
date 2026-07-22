@@ -1,0 +1,6 @@
+.svelte-kit
+build
+coverage
+openapi.json
+src/lib/api/schema.d.ts
+
