@@ -32,6 +32,7 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgres://kitsune:kitsune@localhost:5432/kitsune
+      SQLX_OFFLINE: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -62,11 +63,53 @@ jobs:
       - run: pnpm test
       - run: pnpm build
 
+  e2e:
+    name: Browser E2E
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: kitsune
+          POSTGRES_PASSWORD: kitsune
+          POSTGRES_DB: kitsune
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kitsune"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://kitsune:kitsune@localhost:5432/kitsune
+      SQLX_OFFLINE: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --dir web exec playwright install --with-deps chromium
+      - run: pnpm --dir web test:e2e
+
   dependency-audit:
     name: Dependency audit
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
     steps:
       - uses: actions/checkout@v4
       - uses: rustsec/audit-check@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          # SQLx macros lock its optional MySQL driver even though Kitsune's
+          # dependency graph contains only PostgreSQL. The affected RSA crate
+          # is therefore neither built nor reachable in shipped binaries.
+          ignore: RUSTSEC-2023-0071

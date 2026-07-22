@@ -123,3 +123,10 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Encrypt manual-verification evidence with the installation data
   key and persist plaintext only as a digest — reviewers can inspect the proof
   while database disclosure does not reveal player-submitted evidence.
+- 2026-07-22 — Compile SQLx queries from checked-in offline metadata in CI while
+  retaining PostgreSQL-backed tests — linting no longer races an unmigrated
+  service, and each SQLx test still creates and migrates an isolated database.
+- 2026-07-22 — Ignore RUSTSEC-2023-0071 only for SQLx's lockfile-only optional
+  MySQL driver — `cargo tree --workspace --all-features --target all -i rsa`
+  proves the vulnerable RSA crate is absent from every Kitsune build graph;
+  PostgreSQL remains the only first-party datastore.
