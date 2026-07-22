@@ -55,3 +55,11 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Keep Kon artwork as a neutral CSS silhouette until milestone 16 —
   this delivers every branding, entitlement, and copy seam now while honoring
   the required human-made-art sequencing and provenance constraint.
+- 2026-07-22 — Derive the at-rest authentication data key from the installation
+  cookie master using SHA-256, then seal each TOTP secret with a fresh XChaCha20
+  nonce — lean mode gains restart-stable encrypted secrets without another
+  mandatory configuration value.
+- 2026-07-22 — Keep recovery initiation responses invariant even without SMTP —
+  this prevents account enumeration; the token is persisted for the optional
+  mailer to deliver, and the UI clearly says delivery requires a configured
+  channel rather than exposing secrets in responses or logs.

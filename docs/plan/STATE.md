@@ -27,6 +27,10 @@ Updated: 2026-07-22 (Asia/Singapore)
   `/health`, `/ready`, OpenAPI 3.1, first-run admin creation, encrypted cookies,
   session recovery, 15-permission super-admin grant, CSRF rejection, logout, and
   graceful shutdown.
+- Local self-registration, email-verification and recovery token persistence,
+  XChaCha20-Poly1305-sealed TOTP secrets, replay-resistant authenticator login,
+  single-use recovery codes, and account-owned session revocation pass a second
+  PostgreSQL-backed API journey. Recovery delivery awaits the SMTP adapter.
 - SvelteKit production build passes strict TypeScript/Svelte diagnostics,
   ESLint/Prettier, and 4 Vitest assertions. The generated TypeScript client is
   derived from the code-generated OpenAPI 3.1 document.
@@ -41,3 +45,6 @@ Updated: 2026-07-22 (Asia/Singapore)
   testable vertical slices so claims remain evidence-based.
 - Final mascot artwork must be human-authored: art is deliberately blocked until
   milestone 16 and will carry provenance documentation.
+- Recovery initiation is enumeration-safe and complete at the persistence/API
+  boundary; SMTP delivery remains explicitly open, so recovery is not yet marked
+  complete in the milestone ledger.

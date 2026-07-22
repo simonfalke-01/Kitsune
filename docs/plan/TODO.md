@@ -48,7 +48,12 @@ or scaffolding alone.
 - [x] Authenticated WebSocket with SSE fallback over EventBus.
 - [x] API+PostgreSQL setup/session/CSRF/logout integration test.
 - [ ] Local registration/recovery/email verification/session management UI/API.
-- [ ] OIDC/OAuth2, passkeys/WebAuthn, SAML, TOTP, recovery codes.
+- [x] Local registration and account-owned active-session UI/API.
+- [x] Email-verification and recovery one-time token persistence/API.
+- [ ] Deliver verification and recovery messages through configured SMTP.
+- [x] TOTP setup, encrypted secret storage, replay protection, recovery codes,
+  MFA login challenge, and account security UI.
+- [ ] OIDC/OAuth2, passkeys/WebAuthn, and SAML.
 - [ ] PASETO API tokens and OAuth2 client credentials.
 - [ ] Deny-by-default RBAC extractor on every protected endpoint.
 - [ ] Complete versioned REST resources and OpenAPI contracts.
