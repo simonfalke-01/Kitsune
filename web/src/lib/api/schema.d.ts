@@ -196,6 +196,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/passkeys": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lists account-owned passkeys without exposing credential material. */
+        get: operations["list_passkeys"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/passkeys/login/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Completes passwordless passkey login and issues the standard Kitsune session. */
+        post: operations["finish_passkey_login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/passkeys/login/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Begins an email-first passwordless passkey login. */
+        post: operations["start_passkey_login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/passkeys/register/finish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Completes an authenticated passkey enrollment. */
+        post: operations["finish_passkey_registration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/passkeys/register/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Begins an authenticated passkey enrollment. */
+        post: operations["start_passkey_registration"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/passkeys/{credential_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Revokes one account-owned passkey. */
+        delete: operations["revoke_passkey"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/recovery": {
         parameters: {
             query?: never;
@@ -1018,6 +1120,14 @@ export interface components {
          * @enum {string}
          */
         EventStateInput: "draft" | "scheduled" | "live" | "paused" | "ended" | "archived";
+        /**
+         * @description Browser credential returned from `navigator.credentials.create` or
+         *     `navigator.credentials.get`.
+         */
+        FinishPasskeyRequest: {
+            /** @description JSON-encoded WebAuthn PublicKeyCredential. */
+            credential: components["schemas"]["PasskeyBrowserCredential"];
+        };
         /** @description Health document. */
         HealthResponse: {
             /** @description Stable status. */
@@ -1227,6 +1337,73 @@ export interface components {
          * @enum {string}
          */
         ParticipationInput: "individual" | "team" | "hybrid";
+        /**
+         * @description Union of attestation and assertion response fields. Registration and login
+         *     handlers pass the appropriate subset to the protocol verifier.
+         */
+        PasskeyAuthenticatorResponse: {
+            /** @description Registration attestation object. */
+            attestationObject?: string | null;
+            /** @description Login authenticator data. */
+            authenticatorData?: string | null;
+            /** @description Signed client data. */
+            clientDataJSON: string;
+            /** @description Login assertion signature. */
+            signature?: string | null;
+            /** @description Authenticator transports reported at registration. */
+            transports?: string[];
+            /** @description Optional discoverable-credential user handle. */
+            userHandle?: string | null;
+        };
+        /** @description Browser-produced WebAuthn credential envelope. */
+        PasskeyBrowserCredential: {
+            /** @description Browser-processed extension outputs. */
+            clientExtensionResults?: Record<string, never>;
+            /** @description Base64url credential identifier. */
+            id: string;
+            /** @description Base64url raw credential identifier. */
+            rawId: string;
+            /** @description Authenticator registration or assertion response. */
+            response: components["schemas"]["PasskeyAuthenticatorResponse"];
+            /** @description WebAuthn credential kind, always `public-key`. */
+            type: string;
+        };
+        /** @description Browser-ready PublicKeyCredential options. */
+        PasskeyCeremonyResponse: {
+            /**
+             * Format: uuid
+             * @description One-time flow identifier. Verification also requires the private,
+             *     encrypted browser-binding cookie.
+             */
+            flow_id: string;
+            /** @description WebAuthn creation or request options. */
+            options: Record<string, never>;
+        };
+        /** @description Safe account-owned credential metadata. */
+        PasskeyResponse: {
+            /**
+             * Format: date-time
+             * @description Creation time.
+             */
+            created_at: string;
+            /**
+             * Format: uuid
+             * @description Credential database identifier.
+             */
+            id: string;
+            /**
+             * Format: date-time
+             * @description Last successful use.
+             */
+            last_used_at?: string | null;
+            /** @description Human-readable device label. */
+            name: string;
+            /**
+             * Format: date-time
+             * @description Revocation time.
+             */
+            revoked_at?: string | null;
+        };
         /** @description Public login-page provider projection. */
         PublicOidcProviderResponse: {
             /** @description Human-readable login button label. */
@@ -1459,6 +1636,20 @@ export interface components {
         SetupStatusResponse: {
             /** @description True when no user exists and setup can be completed. */
             required: boolean;
+        };
+        /** @description Email-first, passwordless login input. */
+        StartPasskeyLoginRequest: {
+            /** @description Account email. */
+            email: string;
+            /** @description Organization slug. */
+            organization: string;
+            /** @description Optional application-local destination after login. */
+            return_to?: string | null;
+        };
+        /** @description Authenticated passkey enrollment input. */
+        StartPasskeyRegistrationRequest: {
+            /** @description Human-readable device label shown in account security. */
+            name: string;
         };
         /** @description Safe immutable submission receipt. */
         SubmissionResponse: {
@@ -2298,6 +2489,289 @@ export interface operations {
                 };
             };
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_passkeys: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyResponse"][];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    finish_passkey_login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinishPasskeyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    start_passkey_login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartPasskeyLoginRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyCeremonyResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    finish_passkey_registration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinishPasskeyRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    start_passkey_registration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StartPasskeyRegistrationRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PasskeyCeremonyResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    revoke_passkey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Passkey credential ID */
+                credential_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

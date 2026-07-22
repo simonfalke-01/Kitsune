@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE webauthn_flows SET consumed_at = $5\n        WHERE id = $1 AND user_id = $2 AND organization_id = $3\n          AND kind = $4 AND consumed_at IS NULL AND expires_at > $5\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "fad10f2ce3b29d7abbb2fc02c2102bf6bbeb9d0b06082d8c7cabe495be6bd1b8"
+}

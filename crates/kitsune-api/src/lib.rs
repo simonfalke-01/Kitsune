@@ -6,6 +6,7 @@ mod error;
 mod oauth;
 mod oidc;
 mod oidc_routes;
+mod passkeys;
 mod realtime;
 mod resources;
 mod submissions;
@@ -38,6 +39,7 @@ use utoipa_swagger_ui::SwaggerUi;
 pub use auth::{Actor, AuthService, SessionIdentity};
 pub use error::{ApiError, ApiResult, ErrorBody};
 pub use oidc::OidcService;
+pub use passkeys::PasskeyService;
 pub use tokens::TokenService;
 
 /// Shared application dependencies. Trait objects keep scaled adapters
@@ -62,6 +64,8 @@ pub struct AppState {
     pub secure_cookies: bool,
     /// Secured OpenID Connect protocol client.
     pub oidc: OidcService,
+    /// Exact-origin WebAuthn verifier.
+    pub passkeys: PasskeyService,
     /// Whether external identity routes are exposed for this runtime profile.
     pub external_auth_enabled: bool,
     /// Canonical browser-facing origin used for authentication callbacks.
@@ -92,6 +96,7 @@ impl AppState {
             cookie_key,
             secure_cookies,
             oidc: OidcService::default(),
+            passkeys: PasskeyService::default(),
             external_auth_enabled: false,
             public_origin: url::Url::parse("http://localhost:3000")
                 .expect("static public origin is valid"),
@@ -105,6 +110,14 @@ impl AppState {
         self.oidc = oidc;
         self.external_auth_enabled = enabled;
         self.public_origin = public_origin;
+        self
+    }
+
+    /// Installs the passkey relying-party verifier derived from the canonical
+    /// browser origin.
+    #[must_use]
+    pub fn with_passkeys(mut self, passkeys: PasskeyService) -> Self {
+        self.passkeys = passkeys;
         self
     }
 }
@@ -172,6 +185,12 @@ pub struct ReadinessResponse {
         oidc_routes::public_oidc_providers,
         oidc_routes::start_oidc,
         oidc_routes::oidc_callback,
+        passkeys::start_passkey_registration,
+        passkeys::finish_passkey_registration,
+        passkeys::start_passkey_login,
+        passkeys::finish_passkey_login,
+        passkeys::list_passkeys,
+        passkeys::revoke_passkey,
         resources::list_events,
         resources::create_event,
         resources::update_event_state,
@@ -266,7 +285,14 @@ pub struct ReadinessResponse {
         oidc_routes::CreateOidcProviderRequest,
         oidc_routes::UpdateOidcProviderRequest,
         oidc_routes::OidcProviderResponse,
-        oidc_routes::PublicOidcProviderResponse
+        oidc_routes::PublicOidcProviderResponse,
+        passkeys::StartPasskeyRegistrationRequest,
+        passkeys::StartPasskeyLoginRequest,
+        passkeys::PasskeyCeremonyResponse,
+        passkeys::FinishPasskeyRequest,
+        passkeys::PasskeyBrowserCredential,
+        passkeys::PasskeyAuthenticatorResponse,
+        passkeys::PasskeyResponse
     )),
     tags(
         (name = "system", description = "Health and diagnostics"),
@@ -316,7 +342,9 @@ pub fn router(state: AppState) -> Router {
         ))
         .layer(SetResponseHeaderLayer::if_not_present(
             HeaderName::from_static("permissions-policy"),
-            HeaderValue::from_static("camera=(), microphone=(), geolocation=()"),
+            HeaderValue::from_static(
+                "camera=(), microphone=(), geolocation=(), publickey-credentials-create=(self), publickey-credentials-get=(self)",
+            ),
         ))
         .layer(TraceLayer::new_for_http())
         .layer(CompressionLayer::new())
@@ -379,6 +407,27 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/auth/oidc/{organization}/{provider_key}/callback",
             get(oidc_routes::oidc_callback),
+        )
+        .route("/api/v1/auth/passkeys", get(passkeys::list_passkeys))
+        .route(
+            "/api/v1/auth/passkeys/register/start",
+            post(passkeys::start_passkey_registration),
+        )
+        .route(
+            "/api/v1/auth/passkeys/register/finish",
+            post(passkeys::finish_passkey_registration),
+        )
+        .route(
+            "/api/v1/auth/passkeys/login/start",
+            post(passkeys::start_passkey_login),
+        )
+        .route(
+            "/api/v1/auth/passkeys/login/finish",
+            post(passkeys::finish_passkey_login),
+        )
+        .route(
+            "/api/v1/auth/passkeys/{credential_id}",
+            axum::routing::delete(passkeys::revoke_passkey),
         )
         .route(
             "/api/v1/events",

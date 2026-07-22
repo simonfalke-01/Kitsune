@@ -866,6 +866,19 @@
         ],
         "type": "string"
       },
+      "FinishPasskeyRequest": {
+        "description": "Browser credential returned from `navigator.credentials.create` or\n`navigator.credentials.get`.",
+        "properties": {
+          "credential": {
+            "$ref": "#/components/schemas/PasskeyBrowserCredential",
+            "description": "JSON-encoded WebAuthn PublicKeyCredential."
+          }
+        },
+        "required": [
+          "credential"
+        ],
+        "type": "object"
+      },
       "HealthResponse": {
         "description": "Health document.",
         "properties": {
@@ -1284,6 +1297,146 @@
           "hybrid"
         ],
         "type": "string"
+      },
+      "PasskeyAuthenticatorResponse": {
+        "description": "Union of attestation and assertion response fields. Registration and login\nhandlers pass the appropriate subset to the protocol verifier.",
+        "properties": {
+          "attestationObject": {
+            "description": "Registration attestation object.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "authenticatorData": {
+            "description": "Login authenticator data.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "clientDataJSON": {
+            "description": "Signed client data.",
+            "type": "string"
+          },
+          "signature": {
+            "description": "Login assertion signature.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "transports": {
+            "description": "Authenticator transports reported at registration.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "userHandle": {
+            "description": "Optional discoverable-credential user handle.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "clientDataJSON"
+        ],
+        "type": "object"
+      },
+      "PasskeyBrowserCredential": {
+        "description": "Browser-produced WebAuthn credential envelope.",
+        "properties": {
+          "clientExtensionResults": {
+            "description": "Browser-processed extension outputs.",
+            "type": "object"
+          },
+          "id": {
+            "description": "Base64url credential identifier.",
+            "type": "string"
+          },
+          "rawId": {
+            "description": "Base64url raw credential identifier.",
+            "type": "string"
+          },
+          "response": {
+            "$ref": "#/components/schemas/PasskeyAuthenticatorResponse",
+            "description": "Authenticator registration or assertion response."
+          },
+          "type": {
+            "description": "WebAuthn credential kind, always `public-key`.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "rawId",
+          "type",
+          "response"
+        ],
+        "type": "object"
+      },
+      "PasskeyCeremonyResponse": {
+        "description": "Browser-ready PublicKeyCredential options.",
+        "properties": {
+          "flow_id": {
+            "description": "One-time flow identifier. Verification also requires the private,\nencrypted browser-binding cookie.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "options": {
+            "description": "WebAuthn creation or request options.",
+            "type": "object"
+          }
+        },
+        "required": [
+          "flow_id",
+          "options"
+        ],
+        "type": "object"
+      },
+      "PasskeyResponse": {
+        "description": "Safe account-owned credential metadata.",
+        "properties": {
+          "created_at": {
+            "description": "Creation time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "description": "Credential database identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "last_used_at": {
+            "description": "Last successful use.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "description": "Human-readable device label.",
+            "type": "string"
+          },
+          "revoked_at": {
+            "description": "Revocation time.",
+            "format": "date-time",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "created_at"
+        ],
+        "type": "object"
       },
       "PublicOidcProviderResponse": {
         "description": "Public login-page provider projection.",
@@ -1816,6 +1969,44 @@
         },
         "required": [
           "required"
+        ],
+        "type": "object"
+      },
+      "StartPasskeyLoginRequest": {
+        "description": "Email-first, passwordless login input.",
+        "properties": {
+          "email": {
+            "description": "Account email.",
+            "type": "string"
+          },
+          "organization": {
+            "description": "Organization slug.",
+            "type": "string"
+          },
+          "return_to": {
+            "description": "Optional application-local destination after login.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "organization",
+          "email"
+        ],
+        "type": "object"
+      },
+      "StartPasskeyRegistrationRequest": {
+        "description": "Authenticated passkey enrollment input.",
+        "properties": {
+          "name": {
+            "description": "Human-readable device label shown in account security.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
         ],
         "type": "object"
       },
@@ -3155,6 +3346,370 @@
             "description": ""
           }
         },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/passkeys": {
+      "get": {
+        "operationId": "list_passkeys",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PasskeyResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Lists account-owned passkeys without exposing credential material.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/passkeys/login/finish": {
+      "post": {
+        "operationId": "finish_passkey_login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinishPasskeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SessionResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Completes passwordless passkey login and issues the standard Kitsune session.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/passkeys/login/start": {
+      "post": {
+        "operationId": "start_passkey_login",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartPasskeyLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyCeremonyResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Begins an email-first passwordless passkey login.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/passkeys/register/finish": {
+      "post": {
+        "operationId": "finish_passkey_registration",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinishPasskeyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Completes an authenticated passkey enrollment.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/passkeys/register/start": {
+      "post": {
+        "operationId": "start_passkey_registration",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StartPasskeyRegistrationRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PasskeyCeremonyResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Begins an authenticated passkey enrollment.",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/passkeys/{credential_id}": {
+      "delete": {
+        "operationId": "revoke_passkey",
+        "parameters": [
+          {
+            "description": "Passkey credential ID",
+            "in": "path",
+            "name": "credential_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "summary": "Revokes one account-owned passkey.",
         "tags": [
           "auth"
         ]

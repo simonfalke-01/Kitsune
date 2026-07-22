@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT (\n            u.password_hash IS NOT NULL\n            OR EXISTS (\n                SELECT 1\n                FROM auth_identities identity\n                WHERE identity.user_id = u.id\n                  AND identity.provider_kind IN ('oidc', 'saml')\n            )\n            OR EXISTS (\n                SELECT 1\n                FROM webauthn_credentials credential\n                WHERE credential.user_id = u.id\n                  AND credential.id <> $2\n                  AND credential.revoked_at IS NULL\n            )\n        ) AS \"available!\"\n        FROM users u\n        WHERE u.id = $1\n        FOR UPDATE\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "available!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "dd28e6a9016d03105b1aa823f572dfa98c911d653c18df489145c44e3b1939a9"
+}

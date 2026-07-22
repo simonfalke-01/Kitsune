@@ -1,0 +1,54 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id,user_id,organization_id,browser_binding_digest,\n                   encrypted_state,return_path\n            FROM webauthn_flows\n            WHERE id = $1 AND kind = $2 AND consumed_at IS NULL AND expires_at > $3\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "browser_binding_digest",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 4,
+        "name": "encrypted_state",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 5,
+        "name": "return_path",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "e4937e02f62a9438113dd6cd7e6c95e3ef1cf0cdb45a5de0c1e9f152c743fb3d"
+}

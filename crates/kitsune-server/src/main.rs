@@ -5,7 +5,7 @@ use std::{collections::BTreeSet, net::SocketAddr, path::PathBuf, sync::Arc};
 use anyhow::{Context, Result};
 use axum_extra::extract::cookie::Key;
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
-use kitsune_api::{AppState, AuthService, OidcService, TokenService};
+use kitsune_api::{AppState, AuthService, OidcService, PasskeyService, TokenService};
 use kitsune_automation::{InProcessCache, InProcessEventBus};
 use kitsune_core::config::{FeatureFlags, RuntimeProfile};
 use kitsune_db::{PostgresStore, auth::AuthRepository};
@@ -116,6 +116,8 @@ async fn main() -> Result<()> {
     let public_origin = parse_public_origin(&config.public_origin, config.secure_cookies)?;
     let oidc = OidcService::new(config.oidc_trusted_origins.clone())
         .context("OIDC egress configuration")?;
+    let passkeys =
+        PasskeyService::new(&public_origin).context("passkey relying-party configuration")?;
     let state = AppState::new(
         store,
         auth_repository,
@@ -126,7 +128,8 @@ async fn main() -> Result<()> {
         cookie_key,
         config.secure_cookies,
     )
-    .with_oidc(oidc, features.external_auth, public_origin);
+    .with_oidc(oidc, features.external_auth, public_origin)
+    .with_passkeys(passkeys);
     let app = kitsune_api::router(state);
     let listener = tokio::net::TcpListener::bind(config.listen)
         .await

@@ -1,0 +1,19 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE webauthn_credentials\n            SET credential = $4,sign_count = $5,last_used_at = $6\n            WHERE user_id = $1 AND organization_id = $2\n              AND credential_id = $3 AND revoked_at IS NULL\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Bytea",
+        "Bytea",
+        "Int8",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "7fdcac0df9c9cacbfb7d82eb71804f2b388ef9c0237b5cd01b57596b36707139"
+}

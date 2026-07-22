@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO auth_identities (\n                id,user_id,provider_kind,provider_key,subject,metadata,created_at\n            ) VALUES ($1,$2,'webauthn','webauthn',$3,$4,$5)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Jsonb",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "bb306e8b372b21daf2d7de9fe27056f76060b28235233793ce5aa390450ce1fa"
+}

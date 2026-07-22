@@ -64,6 +64,7 @@ url = { version = "2.5.7", features = ["serde"] }
 utoipa = { version = "5.4.0", features = ["axum_extras", "chrono", "uuid"] }
 utoipa-swagger-ui = { version = "9.0.2", features = ["axum"] }
 uuid = { version = "1.19.0", features = ["v4", "v7", "serde"] }
+webauthn-rs = { version = "0.5.5", default-features = false, features = ["danger-allow-state-serialisation"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"
