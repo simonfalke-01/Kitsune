@@ -10,9 +10,11 @@ Each exit criterion requires passing focused tests and ledger evidence.
   pass integration tests.
 - [ ] 04 — Jeopardy is end-to-end through player/admin web UX and live board.
 - [ ] 05 — Discord, import/export, S3, SMTP, Prometheus, and OTel adapters work
-  and default off.
+  and default off; Grafana can consume the shipped telemetry through documented,
+  provisionable data-source definitions and maintained dashboards.
 - [ ] 06 — Kubernetes, Docker/Podman, and Nomad orchestration plus dynamic
-  instances work with isolation, quota, rotation, health, and reaping.
+  instances work with isolation, quota, rotation, health, reaping, demand-aware
+  provisioning, configurable warm capacity, and safe autoscaling backpressure.
 - [ ] 07 — KotH ticks, claims, defense, scoring, and realtime UX work.
 - [ ] 08 — A&D rounds, vulnboxes, flags, submissions, checkers, SLA, anti-abuse,
   and score breakdown work.
@@ -21,8 +23,9 @@ Each exit criterion requires passing focused tests and ledger evidence.
 - [ ] 10 — Component Model plugin host, WIT SDK, capability sandbox, two plugins,
   alternate theme, installs, registry, and management UX work.
 - [ ] 11 — Lean/full profiles and zero-configuration bootstrap work.
-- [ ] 12 — All player/admin/auth surfaces, design library, theming, i18n,
-  responsive behavior, and WCAG AA pass with neutral mascot slots.
+- [ ] 12 — All player/admin/auth surfaces, including a polished live-ops and
+  system/instance-health workspace, design library, theming, i18n, responsive
+  behavior, and WCAG AA pass with neutral mascot slots.
 - [ ] 13 — Compose, OCI/Podman, Helm, Terraform, raw Kubernetes, and every CLI
   command work and are documented.
 - [ ] 14 — Unit, integration, contract, component, E2E, axe, and 10k load tests
@@ -33,4 +36,3 @@ Each exit criterion requires passing focused tests and ledger evidence.
   tone/de-brand/white-label behavior, and lore polish are complete.
 - [ ] 17 — Every §14 box is independently audited green; no forbidden placeholder
   logic or skipped tests exist; final smoke and full suites pass.
-

@@ -58,7 +58,10 @@ or scaffolding alone.
 - [x] PASETO v4.local API tokens with digest-only persistence, mandatory expiry,
   live-RBAC/event scoping, revocation, audit/outbox, OpenAPI, UI, and browser
   coverage.
-- [ ] OAuth2 client credentials.
+- [x] OAuth2 confidential-client management and client-credentials exchange with
+  digest-only secrets, short-lived PASETO access, live RBAC/event scoping,
+  immediate revocation, durable auth audit/outbox, OpenAPI, UI, and browser
+  coverage.
 - [ ] Deny-by-default RBAC extractor on every protected endpoint.
 - [x] Deny-by-default actor extraction plus permission/CSRF enforcement on the
   event and challenge resource endpoints.
@@ -119,6 +122,32 @@ or scaffolding alone.
   and exercise them on desktop/mobile with axe.
 - [ ] Complete all mode-specific, auth-provider, plugin, integration, and
   administrative surfaces.
+
+## Milestone 05 observability and integration detail
+
+- [ ] Expose bounded Prometheus metrics for API, realtime, game ticks,
+  submissions, automation, and orchestration without tenant-cardinality leaks.
+- [ ] Export traces and logs through configurable OpenTelemetry endpoints while
+  preserving a zero-configuration local default.
+- [ ] Ship Grafana provisioning definitions for Prometheus and an OTLP-capable
+  observability backend, maintained dashboards, and documented direct data-source
+  connection steps.
+- [ ] Surface event, submission, instance, automation, and system health in the
+  organizer live-ops interface with actionable degraded-state explanations.
+
+## Milestone 06 orchestration detail
+
+- [ ] Provision isolated per-team or per-player Jeopardy instances on demand and
+  per-team A&D vulnboxes before their required rounds.
+- [ ] Implement idempotent provisioning, health-aware readiness, configurable
+  warm capacity, event/team concurrency quotas, resource caps, and admission
+  backpressure across Kubernetes, Docker/Podman, and Nomad adapters.
+- [ ] Implement Kubernetes-native demand and capacity signals suitable for HPA/
+  KEDA deployment, while keeping instance ownership and lifecycle decisions in
+  Kitsune's orchestrator service.
+- [ ] Reap expired or abandoned instances, rotate flags without cross-team
+  exposure, and report lifecycle/capacity state in realtime to players and
+  organizers.
 
 ## Repository quality
 

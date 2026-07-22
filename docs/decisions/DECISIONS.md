@@ -157,3 +157,37 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Use a dedicated dark foreground token on bright fox-orange
   controls — Kitsune keeps its accent identity while meeting AA contrast in
   both themes and all interaction states.
+- 2026-07-22 — Make Prometheus and OpenTelemetry the stable, vendor-neutral
+  Grafana connector boundary and ship provisioning examples — operators get an
+  immediately usable monitoring path without coupling Kitsune core to Grafana.
+- 2026-07-22 — Autoscale dynamic challenge capacity from bounded queued demand,
+  health, quota, and configurable warm-pool signals — this avoids cold-start
+  storms and preserves fair resource admission while Kubernetes remains the
+  blessed capacity scaler.
+- 2026-07-22 — Model OAuth2 confidential clients as account-owned delegated
+  principals whose registered scopes are intersected with the owner’s live RBAC
+  on exchange and use — disabling an account or removing a role immediately
+  narrows every service credential without creating a second authorization
+  system.
+- 2026-07-22 — Follow RFC 6749 client credentials with HTTP Basic authentication,
+  form-encoded exchange, no refresh token, no-store responses, and 15-minute
+  PASETO access — service integrations get a standard exchange while short
+  lifetime and live client lookup make revocation promptly effective.
+- 2026-07-22 — Persist client secrets only as SHA-256 digests and reveal each
+  high-entropy value once — confidential-client authentication does not require
+  recoverable secret material in PostgreSQL; digest verification happens in
+  constant time against a same-length dummy for unknown client IDs.
+- 2026-07-22 — Durably audit and outbox every successful client exchange before
+  returning its access token — authentication history survives process failure
+  and remains available to live ops, automation, and security review.
+- 2026-07-22 — Require braces on all frontend control flow and let Prettier
+  expand the bodies — readable source is now a failing lint contract rather than
+  a convention that compressed one-line branches can silently violate.
+- 2026-07-22 — Restrict API-token and OAuth-client lifecycle management to an
+  interactive cookie session — bearer credentials remain fully capable on their
+  granted domain APIs but cannot enumerate or mint replacement credentials
+  through an unrelated or compromised token.
+- 2026-07-22 — Enforce OAuth client ownership with a composite user/organization
+  foreign key and rely on primary/unique lookup indexes — cross-tenant ownership
+  becomes impossible at the database boundary without maintaining a redundant
+  active-client index on the same primary-key prefix.

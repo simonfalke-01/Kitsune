@@ -13,7 +13,8 @@ operational wiring are all present.
 4. Complete local/OIDC/passkey/SAML/TOTP authentication, RBAC, sessions, tokens,
    audit, Jeopardy, and the player/admin web experience.
 5. Complete optional integrations, object storage, notifications, imports,
-   observability, orchestration, KotH, and Attack/Defense.
+   Grafana-ready observability, demand-aware orchestration, KotH, and
+   Attack/Defense.
 6. Complete automation, signed webhooks, plugin Component Model host, WIT SDK,
    marketplace seam, themes, and example extensions.
 7. Complete lean/full bootstrap, CLI, four deployment targets, complete web UX,
@@ -26,3 +27,10 @@ operational wiring are all present.
 Every cycle follows: read state → select one checkable slice → implement → run
 focused verification → fix red results → update this ledger → continue.
 
+The organizer experience is a product surface, not a maintenance afterthought.
+Its live-ops workspace must remain calm and responsive while exposing event,
+submission, competitor, automation, instance-capacity, and platform health in
+one coherent information hierarchy. Operational telemetry must also remain
+open: Prometheus scrape endpoints and OpenTelemetry exporters are documented as
+direct Grafana data sources, with provisioned examples and maintained
+dashboards.

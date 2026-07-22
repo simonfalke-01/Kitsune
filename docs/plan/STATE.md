@@ -5,12 +5,12 @@ Updated: 2026-07-22 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: finish the provider and programmatic-token authentication suite,
-  then complete the remaining dynamic/plugin Jeopardy verifier seams.
+- In progress: finish the federated/provider authentication suite, then complete
+  the remaining dynamic/plugin Jeopardy verifier seams.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
-- Next: implement OAuth2 client credentials, OIDC, passkeys, and SAML, then
-  complete the remaining dynamic/plugin Jeopardy verifier seams.
+- Next: implement OIDC, passkeys, and SAML, then complete the remaining dynamic/
+  plugin Jeopardy verifier seams.
 
 ## Verified
 
@@ -112,6 +112,15 @@ Updated: 2026-07-22 (Asia/Singapore)
   credential boundary end to end.
 - Main CI run 29918383516 is green across Rust, Web, dependency audit, and real
   Browser E2E after reproducing and removing the setup-navigation race locally.
+- OAuth2 client credentials now provide account-owned confidential clients with
+  digest-only one-time secrets, live-RBAC permission ceilings, event allow-lists,
+  RFC-style Basic/form token exchange, 15-minute PASETO access tokens, durable
+  exchange audit/outbox events, coarse use telemetry, and immediate client
+  revocation. OpenAPI, the generated client, a dedicated account manager, real
+  API integration coverage, desktop/mobile Playwright, and axe are green.
+- Frontend control flow now requires explicit braces through ESLint, and the
+  formatter expands every such body into readable multiline code. The policy
+  was applied across the Svelte and TypeScript application before verification.
 
 ## Risks being actively retired
 
