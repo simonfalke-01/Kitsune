@@ -1,5 +1,7 @@
 /target/
 /web/node_modules/
+/web/.svelte-kit/
+/web/build/
 /docs/node_modules/
 /node_modules/
 /.env

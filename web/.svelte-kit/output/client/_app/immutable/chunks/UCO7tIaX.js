@@ -1,1 +1,0 @@
-import{E as e,G as t,V as n,ct as r,i,m as a,w as o,y as s}from"./BHrCjTxw.js";import"./xihTtKlq.js";var c=e(`<div><!></div>`);function l(e,l){let u=i(l,`padded`,3,!0),d=i(l,`elevated`,3,!1);var f=c();let p;s(t(f),()=>l.children),r(f),n(()=>p=a(f,1,`card svelte-1udyrqm`,null,p,{padded:u(),elevated:d()})),o(e,f)}export{l as t};
