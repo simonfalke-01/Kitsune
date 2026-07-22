@@ -69,10 +69,17 @@ solve, first-blood, score-ledger, audit, and outbox path.
 
 HTTP authorization is deny-by-default and evaluated using org/event-scoped RBAC.
 Passwords use Argon2id; browser mutations require CSRF proof; API tokens are
-scoped and revocable. All egress passes a DNS/IP-rebinding-resistant SSRF guard.
-WASM plugins have explicit capabilities, allow-listed egress, namespaced state,
-fuel, epoch, memory, and concurrency limits. Instance networks deny cross-team
-traffic by default. Sensitive config uses redacted secret wrappers.
+scoped and revocable. OIDC uses Authorization Code with PKCE S256, one-time
+state, nonce, and a separately encrypted browser binding. Callback URLs come
+only from the server's canonical public origin. Provider secrets and transient
+verifiers are authenticated-encrypted; only state and binding digests persist.
+Private identity providers require an exact trusted origin in server
+configuration. All egress resolves and validates every address, then pins those
+validated addresses into the request client for every redirect hop so DNS
+rebinding cannot change the connection target after policy evaluation. WASM
+plugins have explicit capabilities, allow-listed egress, namespaced state, fuel,
+epoch, memory, and concurrency limits. Instance networks deny cross-team traffic
+by default. Sensitive config uses redacted secret wrappers.
 
 ## Web
 

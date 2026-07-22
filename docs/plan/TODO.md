@@ -58,7 +58,7 @@ or scaffolding alone.
 - [x] OIDC provider/flow/identity PostgreSQL boundary with encrypted secrets,
   PKCE/nonce material, digest-only state/browser binding, tenant constraints,
   auto-provisioning policy, explicit email-link policy, and durable audit/outbox.
-- [ ] OIDC discovery, authorization-code exchange, ID-token validation, public
+- [x] OIDC discovery, authorization-code exchange, ID-token validation, public
   start/callback routes, organizer management API/UI, and browser coverage.
 - [x] PASETO v4.local API tokens with digest-only persistence, mandatory expiry,
   live-RBAC/event scoping, revocation, audit/outbox, OpenAPI, UI, and browser

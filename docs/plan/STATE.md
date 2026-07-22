@@ -9,8 +9,8 @@ Updated: 2026-07-22 (Asia/Singapore)
   the remaining dynamic/plugin Jeopardy verifier seams.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
-- Next: implement OIDC, passkeys, and SAML, then complete the remaining dynamic/
-  plugin Jeopardy verifier seams.
+- Next: implement passkeys and SAML, then complete the remaining dynamic/plugin
+  Jeopardy verifier seams.
 
 ## Verified
 
@@ -126,6 +126,19 @@ Updated: 2026-07-22 (Asia/Singapore)
   enforces one-time expiry and provider-disable races, provisions canonical
   player grants, applies explicit-only verified-email linking, and commits login
   audit/outbox events atomically. Its PostgreSQL journey and strict Clippy pass.
+- OIDC Authorization Code + PKCE is now complete through the protocol and
+  product boundaries: trusted discovery, signed ID-token/issuer/audience/expiry/
+  nonce/access-token-hash verification, exact-origin and DNS-pinned egress,
+  canonical callbacks, encrypted path-scoped flow cookies, organizer management,
+  public provider discovery, generated API client, and responsive admin/login
+  surfaces. A real locally signed identity-provider integration covers success,
+  replay, nonce substitution, secret rotation, CSRF, session issuance, and
+  durable audit/outbox behavior. The desktop/mobile Playwright journey also
+  verifies provider authoring, login discovery, and axe-clean settings.
+- Mobile navigation now positions independently from the blurred sticky header,
+  reserves scroll space for its fixed control bar, and completes the full
+  browser journey without pointer interception. Disabled setting descriptions
+  retain AA contrast while only their unavailable switch is visually muted.
 
 ## Risks being actively retired
 
@@ -136,6 +149,5 @@ Updated: 2026-07-22 (Asia/Singapore)
 - Recovery initiation is enumeration-safe and complete at the persistence/API
   boundary; SMTP delivery remains explicitly open, so recovery is not yet marked
   complete in the milestone ledger.
-- OIDC protocol discovery/exchange, callback cookies, REST/OpenAPI management,
-  provider UI, and browser coverage are the active continuation of the now-green
-  persistence boundary.
+- Passkey/WebAuthn and SAML protocol boundaries are the next authentication
+  slices; neither will require external configuration for lean-mode boot.

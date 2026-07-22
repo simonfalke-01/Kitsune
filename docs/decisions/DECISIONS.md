@@ -209,3 +209,26 @@ Format: `YYYY-MM-DD — decision — rationale`.
   the identity transaction — a provider disabled during token exchange cannot
   complete an in-flight login, and policy changes do not use stale callback
   state.
+- 2026-07-22 — Derive every OIDC callback from one canonical server public
+  origin instead of browser input or provider-authored text — redirect targets
+  remain stable, auditable, and immune to forwarded-host manipulation.
+- 2026-07-22 — Permit private OIDC discovery only through exact trusted origins
+  in server configuration — a browser or organizer cannot grant arbitrary
+  private-network reachability, while self-hosted identity providers remain a
+  deliberate operator escape hatch.
+- 2026-07-22 — Pin every DNS answer accepted by the egress policy into the
+  actual HTTP client, including each webhook redirect hop — validation and
+  connection cannot resolve different addresses during a rebinding attack.
+- 2026-07-22 — Keep an OIDC provider key immutable and use explicit disablement
+  rather than deletion — callback URLs, identity history, and audit references
+  remain stable while organizers can immediately stop new authentication.
+- 2026-07-22 — Return a generic login error after OIDC callback failures while
+  retaining structured server diagnostics — attackers learn nothing about
+  provider identities, linking policy, or token-validation branches.
+- 2026-07-22 — Apply disabled styling only to an unavailable control, never its
+  explanatory copy — operators still need an AA-readable reason and remediation
+  path for capabilities they cannot activate.
+- 2026-07-22 — Give the full browser integration journey a two-minute ceiling
+  while retaining focused action assertions — desktop and emulated-mobile paths
+  exercise real cryptography, PostgreSQL, API, UI, and axe without inheriting a
+  unit-test-oriented thirty-second deadline.
