@@ -257,6 +257,18 @@ impl OidcRepository {
         Self { pool }
     }
 
+    /// Resolves the stable slug for a tenant-scoped provider callback.
+    pub async fn organization_slug(&self, organization_id: OrganizationId) -> DomainResult<String> {
+        sqlx::query_scalar!(
+            "SELECT slug FROM organizations WHERE id = $1",
+            organization_id.0,
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(unavailable)?
+        .ok_or(DomainError::NotFound)
+    }
+
     /// Creates a provider with audit and outbox records.
     pub async fn create_provider(
         &self,

@@ -633,6 +633,55 @@
         ],
         "type": "object"
       },
+      "CreateOidcProviderRequest": {
+        "description": "Provider creation input. Callback URLs are derived from the server's\ncanonical public origin rather than accepted from browser input.",
+        "properties": {
+          "allow_email_link": {
+            "description": "Link to an existing verified local account by matching email.",
+            "type": "boolean"
+          },
+          "auto_provision": {
+            "description": "Create a canonical player on first login.",
+            "type": "boolean"
+          },
+          "client_id": {
+            "description": "OAuth client identifier.",
+            "type": "string"
+          },
+          "client_secret": {
+            "description": "OAuth client secret, encrypted before persistence.",
+            "format": "password",
+            "type": "string"
+          },
+          "display_name": {
+            "description": "Human-readable login button label.",
+            "type": "string"
+          },
+          "enabled": {
+            "description": "Expose the provider on the login page.",
+            "type": "boolean"
+          },
+          "issuer_url": {
+            "description": "Exact OpenID issuer identifier.",
+            "type": "string"
+          },
+          "key": {
+            "description": "Organization-local URL key.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "display_name",
+          "issuer_url",
+          "client_id",
+          "client_secret",
+          "enabled",
+          "auto_provision",
+          "allow_email_link"
+        ],
+        "type": "object"
+      },
       "CreateTeamRequest": {
         "description": "New team input.",
         "properties": {
@@ -1161,6 +1210,72 @@
         ],
         "type": "object"
       },
+      "OidcProviderResponse": {
+        "description": "Safe organizer provider projection.",
+        "properties": {
+          "allow_email_link": {
+            "description": "Explicit verified-email linking policy.",
+            "type": "boolean"
+          },
+          "auto_provision": {
+            "description": "First-login provisioning policy.",
+            "type": "boolean"
+          },
+          "client_id": {
+            "description": "OAuth client identifier.",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "Creation time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "display_name": {
+            "description": "Human-readable login button label.",
+            "type": "string"
+          },
+          "enabled": {
+            "description": "Provider availability.",
+            "type": "boolean"
+          },
+          "id": {
+            "description": "Provider identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "issuer_url": {
+            "description": "Exact OpenID issuer identifier.",
+            "type": "string"
+          },
+          "key": {
+            "description": "Organization-local URL key.",
+            "type": "string"
+          },
+          "redirect_uri": {
+            "description": "Server-derived authorization-code callback.",
+            "type": "string"
+          },
+          "updated_at": {
+            "description": "Last update time.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "key",
+          "display_name",
+          "issuer_url",
+          "client_id",
+          "redirect_uri",
+          "enabled",
+          "auto_provision",
+          "allow_email_link",
+          "created_at",
+          "updated_at"
+        ],
+        "type": "object"
+      },
       "ParticipationInput": {
         "description": "Event scoring identity policy.",
         "enum": [
@@ -1169,6 +1284,29 @@
           "hybrid"
         ],
         "type": "string"
+      },
+      "PublicOidcProviderResponse": {
+        "description": "Public login-page provider projection.",
+        "properties": {
+          "display_name": {
+            "description": "Human-readable login button label.",
+            "type": "string"
+          },
+          "key": {
+            "description": "Organization-local URL key.",
+            "type": "string"
+          },
+          "start_path": {
+            "description": "Same-origin route that begins the authorization flow.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "display_name",
+          "start_path"
+        ],
+        "type": "object"
       },
       "ReadinessResponse": {
         "description": "Readiness document.",
@@ -2058,6 +2196,52 @@
         ],
         "type": "object"
       },
+      "UpdateOidcProviderRequest": {
+        "description": "Complete provider replacement input.",
+        "properties": {
+          "allow_email_link": {
+            "description": "Link to an existing verified local account by matching email.",
+            "type": "boolean"
+          },
+          "auto_provision": {
+            "description": "Create a canonical player on first login.",
+            "type": "boolean"
+          },
+          "client_id": {
+            "description": "OAuth client identifier.",
+            "type": "string"
+          },
+          "client_secret": {
+            "description": "Replacement secret. Omit to retain the current encrypted value.",
+            "format": "password",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "display_name": {
+            "description": "Human-readable login button label.",
+            "type": "string"
+          },
+          "enabled": {
+            "description": "Expose the provider on the login page.",
+            "type": "boolean"
+          },
+          "issuer_url": {
+            "description": "Exact OpenID issuer identifier.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "display_name",
+          "issuer_url",
+          "client_id",
+          "enabled",
+          "auto_provision",
+          "allow_email_link"
+        ],
+        "type": "object"
+      },
       "UpdateScoreboardControlsRequest": {
         "description": "Organizer scoreboard control mutation.",
         "properties": {
@@ -2600,6 +2784,367 @@
             "description": ""
           },
           "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/oidc/providers": {
+      "get": {
+        "operationId": "list_oidc_providers",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OidcProviderResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      },
+      "post": {
+        "operationId": "create_oidc_provider",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOidcProviderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcProviderResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/oidc/providers/public": {
+      "get": {
+        "operationId": "public_oidc_providers",
+        "parameters": [
+          {
+            "description": "Organization slug entered on the login page.",
+            "in": "query",
+            "name": "organization",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PublicOidcProviderResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/oidc/providers/{provider_id}": {
+      "put": {
+        "operationId": "update_oidc_provider",
+        "parameters": [
+          {
+            "description": "OIDC provider ID",
+            "in": "path",
+            "name": "provider_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOidcProviderRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OidcProviderResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/oidc/{organization}/{provider_key}/callback": {
+      "get": {
+        "operationId": "oidc_callback",
+        "parameters": [
+          {
+            "description": "Organization slug",
+            "in": "path",
+            "name": "organization",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "OIDC provider key",
+            "in": "path",
+            "name": "provider_key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "One-time authorization code.",
+            "in": "query",
+            "name": "code",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "One-time callback state.",
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          {
+            "description": "Provider cancellation or protocol error key.",
+            "in": "query",
+            "name": "error",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "303": {
+            "description": "Return to the Kitsune application"
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/api/v1/auth/oidc/{organization}/{provider_key}/start": {
+      "get": {
+        "operationId": "start_oidc",
+        "parameters": [
+          {
+            "description": "Organization slug",
+            "in": "path",
+            "name": "organization",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "OIDC provider key",
+            "in": "path",
+            "name": "provider_key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Application-local page to open after authentication.",
+            "in": "query",
+            "name": "return_to",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "303": {
+            "description": "Redirect to the provider"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
             "content": {
               "application/json": {
                 "schema": {

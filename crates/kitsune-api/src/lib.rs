@@ -4,6 +4,8 @@ mod auth;
 mod engagement;
 mod error;
 mod oauth;
+mod oidc;
+mod oidc_routes;
 mod realtime;
 mod resources;
 mod submissions;
@@ -35,6 +37,7 @@ use utoipa_swagger_ui::SwaggerUi;
 
 pub use auth::{Actor, AuthService, SessionIdentity};
 pub use error::{ApiError, ApiResult, ErrorBody};
+pub use oidc::OidcService;
 pub use tokens::TokenService;
 
 /// Shared application dependencies. Trait objects keep scaled adapters
@@ -57,6 +60,12 @@ pub struct AppState {
     pub cookie_key: Key,
     /// Emit Secure cookie attribute.
     pub secure_cookies: bool,
+    /// Secured OpenID Connect protocol client.
+    pub oidc: OidcService,
+    /// Whether external identity routes are exposed for this runtime profile.
+    pub external_auth_enabled: bool,
+    /// Canonical browser-facing origin used for authentication callbacks.
+    pub public_origin: url::Url,
     started_at: Instant,
 }
 
@@ -82,8 +91,21 @@ impl AppState {
             event_bus,
             cookie_key,
             secure_cookies,
+            oidc: OidcService::default(),
+            external_auth_enabled: false,
+            public_origin: url::Url::parse("http://localhost:3000")
+                .expect("static public origin is valid"),
             started_at: Instant::now(),
         }
+    }
+
+    /// Enables or disables external auth and installs its egress-aware client.
+    #[must_use]
+    pub fn with_oidc(mut self, oidc: OidcService, enabled: bool, public_origin: url::Url) -> Self {
+        self.oidc = oidc;
+        self.external_auth_enabled = enabled;
+        self.public_origin = public_origin;
+        self
     }
 }
 
@@ -144,6 +166,12 @@ pub struct ReadinessResponse {
         oauth::create_oauth_client,
         oauth::revoke_oauth_client,
         oauth::exchange_client_credentials,
+        oidc_routes::list_oidc_providers,
+        oidc_routes::create_oidc_provider,
+        oidc_routes::update_oidc_provider,
+        oidc_routes::public_oidc_providers,
+        oidc_routes::start_oidc,
+        oidc_routes::oidc_callback,
         resources::list_events,
         resources::create_event,
         resources::update_event_state,
@@ -234,7 +262,11 @@ pub struct ReadinessResponse {
         oauth::CreatedOAuthClientResponse,
         oauth::OAuthTokenRequest,
         oauth::OAuthTokenResponse,
-        oauth::OAuthErrorResponse
+        oauth::OAuthErrorResponse,
+        oidc_routes::CreateOidcProviderRequest,
+        oidc_routes::UpdateOidcProviderRequest,
+        oidc_routes::OidcProviderResponse,
+        oidc_routes::PublicOidcProviderResponse
     )),
     tags(
         (name = "system", description = "Health and diagnostics"),
@@ -328,6 +360,26 @@ pub fn router(state: AppState) -> Router {
             axum::routing::delete(oauth::revoke_oauth_client),
         )
         .route("/oauth/token", post(oauth::exchange_client_credentials))
+        .route(
+            "/api/v1/auth/oidc/providers/public",
+            get(oidc_routes::public_oidc_providers),
+        )
+        .route(
+            "/api/v1/auth/oidc/providers",
+            get(oidc_routes::list_oidc_providers).post(oidc_routes::create_oidc_provider),
+        )
+        .route(
+            "/api/v1/auth/oidc/providers/{provider_id}",
+            axum::routing::put(oidc_routes::update_oidc_provider),
+        )
+        .route(
+            "/api/v1/auth/oidc/{organization}/{provider_key}/start",
+            get(oidc_routes::start_oidc),
+        )
+        .route(
+            "/api/v1/auth/oidc/{organization}/{provider_key}/callback",
+            get(oidc_routes::oidc_callback),
+        )
         .route(
             "/api/v1/events",
             get(resources::list_events).post(resources::create_event),
@@ -485,6 +537,10 @@ mod tests {
     fn generated_document_is_openapi_31() {
         assert_eq!(openapi_json()["openapi"], "3.1.0");
         assert!(openapi_json()["paths"]["/api/v1/auth/login"].is_object());
+        assert!(
+            openapi_json()["paths"]["/api/v1/auth/oidc/{organization}/{provider_key}/callback"]
+                .is_object()
+        );
     }
 
     #[sqlx::test(migrator = "MIGRATOR")]

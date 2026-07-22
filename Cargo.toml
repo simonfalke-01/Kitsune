@@ -37,9 +37,10 @@ futures = "0.3.31"
 hmac = "0.12.1"
 hex = "0.4.3"
 http = "1.4.0"
-jsonwebtoken = "10.2.0"
+jsonwebtoken = { version = "10.2.0", features = ["rust_crypto"] }
 metrics = "0.24.3"
 metrics-exporter-prometheus = "0.18.1"
+openidconnect = { version = "4.0.1", default-features = false, features = ["reqwest", "rustls-tls"] }
 pasetors = "0.7.8"
 rand = "0.10.2"
 regex = "1.12.2"

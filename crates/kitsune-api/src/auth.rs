@@ -48,6 +48,27 @@ const SESSION_COOKIE: &str = "kit_session";
 const CSRF_COOKIE: &str = "kit_csrf";
 const SESSION_HOURS: i64 = 12;
 
+/// Session-ready identity independent of its authentication method.
+pub(crate) struct SessionPrincipal {
+    pub(crate) user_id: UserId,
+    pub(crate) organization_id: OrganizationId,
+    pub(crate) display_name: String,
+    pub(crate) email: String,
+    pub(crate) email_verified: bool,
+}
+
+impl From<&LocalAccount> for SessionPrincipal {
+    fn from(account: &LocalAccount) -> Self {
+        Self {
+            user_id: account.user_id,
+            organization_id: account.organization_id,
+            display_name: account.display_name.clone(),
+            email: account.email.clone(),
+            email_verified: account.email_verified,
+        }
+    }
+}
+
 /// Argon2id and token service with production parameter floors.
 #[derive(Clone)]
 pub struct AuthService {
@@ -656,7 +677,8 @@ pub(crate) async fn setup(
         disabled: false,
         email_verified: true,
     };
-    let (jar, response) = issue_session(&state, jar, &account).await?;
+    let principal = SessionPrincipal::from(&account);
+    let (jar, response) = issue_session(&state, jar, &principal).await?;
     Ok((StatusCode::CREATED, jar, Json(response)))
 }
 
@@ -706,7 +728,8 @@ pub(crate) async fn login(
     let account = account.expect("successful verification requires an account");
     verify_second_factor(&state, &account, request.mfa_code.as_deref()).await?;
     publish_auth_event(&state.event_bus, Some(&account), &identity_hash, true).await?;
-    let (jar, response) = issue_session(&state, jar, &account).await?;
+    let principal = SessionPrincipal::from(&account);
+    let (jar, response) = issue_session(&state, jar, &principal).await?;
     Ok((jar, Json(response)))
 }
 
@@ -782,7 +805,8 @@ pub(crate) async fn register(
         .publish(event)
         .await
         .map_err(ApiError::from)?;
-    let (jar, response) = issue_session(&state, jar, &account).await?;
+    let principal = SessionPrincipal::from(&account);
+    let (jar, response) = issue_session(&state, jar, &principal).await?;
     Ok((StatusCode::CREATED, jar, Json(response)))
 }
 
@@ -1092,10 +1116,10 @@ pub(crate) async fn logout(
     Ok((jar, StatusCode::NO_CONTENT))
 }
 
-async fn issue_session(
+pub(crate) async fn issue_session(
     state: &AppState,
     jar: PrivateCookieJar,
-    account: &LocalAccount,
+    account: &SessionPrincipal,
 ) -> ApiResult<(PrivateCookieJar, SessionResponse)> {
     let session_token = random_token(32);
     let csrf_token = random_token(32);
@@ -1288,7 +1312,7 @@ fn hash_with(argon2: &Argon2<'_>, password: &str) -> Result<String, DomainError>
         .map_err(|error| DomainError::Validation(error.to_string()))
 }
 
-fn random_token(length: usize) -> String {
+pub(crate) fn random_token(length: usize) -> String {
     let mut bytes = vec![0_u8; length];
     rand::fill(bytes.as_mut_slice());
     URL_SAFE_NO_PAD.encode(bytes)

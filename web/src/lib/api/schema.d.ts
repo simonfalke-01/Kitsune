@@ -116,6 +116,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/oidc/providers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_oidc_providers"];
+        put?: never;
+        post: operations["create_oidc_provider"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/oidc/providers/public": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["public_oidc_providers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/oidc/providers/{provider_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_oidc_provider"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/oidc/{organization}/{provider_key}/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["oidc_callback"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/oidc/{organization}/{provider_key}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["start_oidc"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/recovery": {
         parameters: {
             query?: never;
@@ -840,6 +920,31 @@ export interface components {
             /** @description Maximum fine-grained permission scopes. */
             scopes: string[];
         };
+        /**
+         * @description Provider creation input. Callback URLs are derived from the server's
+         *     canonical public origin rather than accepted from browser input.
+         */
+        CreateOidcProviderRequest: {
+            /** @description Link to an existing verified local account by matching email. */
+            allow_email_link: boolean;
+            /** @description Create a canonical player on first login. */
+            auto_provision: boolean;
+            /** @description OAuth client identifier. */
+            client_id: string;
+            /**
+             * Format: password
+             * @description OAuth client secret, encrypted before persistence.
+             */
+            client_secret: string;
+            /** @description Human-readable login button label. */
+            display_name: string;
+            /** @description Expose the provider on the login page. */
+            enabled: boolean;
+            /** @description Exact OpenID issuer identifier. */
+            issuer_url: string;
+            /** @description Organization-local URL key. */
+            key: string;
+        };
         /** @description New team input. */
         CreateTeamRequest: {
             /** @description Display name. */
@@ -1083,11 +1188,54 @@ export interface components {
             /** @description Always `Bearer`. */
             token_type: string;
         };
+        /** @description Safe organizer provider projection. */
+        OidcProviderResponse: {
+            /** @description Explicit verified-email linking policy. */
+            allow_email_link: boolean;
+            /** @description First-login provisioning policy. */
+            auto_provision: boolean;
+            /** @description OAuth client identifier. */
+            client_id: string;
+            /**
+             * Format: date-time
+             * @description Creation time.
+             */
+            created_at: string;
+            /** @description Human-readable login button label. */
+            display_name: string;
+            /** @description Provider availability. */
+            enabled: boolean;
+            /**
+             * Format: uuid
+             * @description Provider identifier.
+             */
+            id: string;
+            /** @description Exact OpenID issuer identifier. */
+            issuer_url: string;
+            /** @description Organization-local URL key. */
+            key: string;
+            /** @description Server-derived authorization-code callback. */
+            redirect_uri: string;
+            /**
+             * Format: date-time
+             * @description Last update time.
+             */
+            updated_at: string;
+        };
         /**
          * @description Event scoring identity policy.
          * @enum {string}
          */
         ParticipationInput: "individual" | "team" | "hybrid";
+        /** @description Public login-page provider projection. */
+        PublicOidcProviderResponse: {
+            /** @description Human-readable login button label. */
+            display_name: string;
+            /** @description Organization-local URL key. */
+            key: string;
+            /** @description Same-origin route that begins the authorization flow. */
+            start_path: string;
+        };
         /** @description Readiness document. */
         ReadinessResponse: {
             /** @description PostgreSQL dependency state. */
@@ -1494,6 +1642,26 @@ export interface components {
             /** @description Requested lifecycle state. */
             state: components["schemas"]["EventStateInput"];
         };
+        /** @description Complete provider replacement input. */
+        UpdateOidcProviderRequest: {
+            /** @description Link to an existing verified local account by matching email. */
+            allow_email_link: boolean;
+            /** @description Create a canonical player on first login. */
+            auto_provision: boolean;
+            /** @description OAuth client identifier. */
+            client_id: string;
+            /**
+             * Format: password
+             * @description Replacement secret. Omit to retain the current encrypted value.
+             */
+            client_secret?: string | null;
+            /** @description Human-readable login button label. */
+            display_name: string;
+            /** @description Expose the provider on the login page. */
+            enabled: boolean;
+            /** @description Exact OpenID issuer identifier. */
+            issuer_url: string;
+        };
         /** @description Organizer scoreboard control mutation. */
         UpdateScoreboardControlsRequest: {
             /** @description Conceal new score entries while preserving the last public snapshot. */
@@ -1888,6 +2056,248 @@ export interface operations {
                 };
             };
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_oidc_providers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OidcProviderResponse"][];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    create_oidc_provider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOidcProviderRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OidcProviderResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    public_oidc_providers: {
+        parameters: {
+            query: {
+                /** @description Organization slug entered on the login page. */
+                organization: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicOidcProviderResponse"][];
+                };
+            };
+        };
+    };
+    update_oidc_provider: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description OIDC provider ID */
+                provider_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOidcProviderRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OidcProviderResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    oidc_callback: {
+        parameters: {
+            query?: {
+                /** @description One-time authorization code. */
+                code?: string | null;
+                /** @description One-time callback state. */
+                state?: string | null;
+                /** @description Provider cancellation or protocol error key. */
+                error?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description Organization slug */
+                organization: string;
+                /** @description OIDC provider key */
+                provider_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Return to the Kitsune application */
+            303: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    start_oidc: {
+        parameters: {
+            query?: {
+                /** @description Application-local page to open after authentication. */
+                return_to?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description Organization slug */
+                organization: string;
+                /** @description OIDC provider key */
+                provider_key: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Redirect to the provider */
+            303: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            429: {
                 headers: {
                     [name: string]: unknown;
                 };

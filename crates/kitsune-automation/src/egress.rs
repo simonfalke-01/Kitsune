@@ -1,6 +1,9 @@
 //! Central outbound network policy with DNS rebinding and redirect defenses.
 
-use std::{collections::BTreeSet, net::IpAddr};
+use std::{
+    collections::BTreeSet,
+    net::{IpAddr, SocketAddr},
+};
 
 use kitsune_core::{DomainError, DomainResult};
 use url::{Host, Url};
@@ -11,7 +14,29 @@ use url::{Host, Url};
 pub struct EgressPolicy {
     allowed_hosts: BTreeSet<String>,
     allowed_ports: BTreeSet<u16>,
+    trusted_origins: BTreeSet<String>,
     permit_http: bool,
+}
+
+/// One policy-validated destination with its DNS answers pinned for the
+/// subsequent HTTP connection.
+#[derive(Debug, Clone)]
+pub struct ValidatedEgress {
+    host: Option<String>,
+    addresses: Vec<SocketAddr>,
+}
+
+impl ValidatedEgress {
+    /// Pins the already-validated DNS answers into a redirect-disabled reqwest
+    /// client builder, closing the validation-to-connect rebinding window.
+    pub fn configure_client(&self, mut builder: reqwest::ClientBuilder) -> reqwest::ClientBuilder {
+        if let Some(host) = &self.host
+            && !self.addresses.is_empty()
+        {
+            builder = builder.resolve_to_addrs(host, &self.addresses);
+        }
+        builder
+    }
 }
 
 impl EgressPolicy {
@@ -21,6 +46,7 @@ impl EgressPolicy {
         Self {
             allowed_hosts,
             allowed_ports: BTreeSet::from([443]),
+            trusted_origins: BTreeSet::new(),
             permit_http: false,
         }
     }
@@ -31,31 +57,85 @@ impl EgressPolicy {
         Self {
             allowed_hosts,
             allowed_ports: BTreeSet::from([80, 443]),
+            trusted_origins: BTreeSet::new(),
             permit_http: true,
         }
+    }
+
+    /// Adds exact operator-controlled origins that may resolve to private
+    /// addresses or use non-default ports. This is intended for internal OIDC
+    /// issuers and must only be sourced from trusted server configuration, never
+    /// from request data or live tenant settings.
+    pub fn with_trusted_origins(mut self, origins: BTreeSet<String>) -> DomainResult<Self> {
+        for origin in origins {
+            let url = Url::parse(&origin)
+                .map_err(|_| DomainError::Validation("trusted origin is not a URL".into()))?;
+            if !url.username().is_empty()
+                || url.password().is_some()
+                || url.query().is_some()
+                || url.fragment().is_some()
+                || !matches!(url.scheme(), "http" | "https")
+                || url.host().is_none()
+                || url.path() != "/"
+            {
+                return Err(DomainError::Validation(
+                    "trusted origin must contain only an HTTP(S) scheme, host, and optional port"
+                        .into(),
+                ));
+            }
+            self.trusted_origins
+                .insert(url.origin().ascii_serialization());
+        }
+        Ok(self)
     }
 
     /// Validates syntax, credentials, scheme, port, allow-list, and every DNS
     /// answer before a connection is opened.
     pub async fn validate(&self, url: &Url) -> DomainResult<()> {
+        self.resolve(url).await.map(|_| ())
+    }
+
+    /// Validates a URL and returns the exact DNS answers that the HTTP client
+    /// must use for the connection.
+    pub async fn resolve(&self, url: &Url) -> DomainResult<ValidatedEgress> {
         if !url.username().is_empty() || url.password().is_some() {
             return Err(DomainError::Forbidden);
         }
+        let trusted = self
+            .trusted_origins
+            .contains(&url.origin().ascii_serialization());
         let default_port = match url.scheme() {
             "https" => 443,
-            "http" if self.permit_http => 80,
+            "http" if self.permit_http || trusted => 80,
             _ => return Err(DomainError::Forbidden),
         };
         let port = url.port().unwrap_or(default_port);
-        if !self.allowed_ports.contains(&port) {
+        if !trusted && !self.allowed_ports.contains(&port) {
             return Err(DomainError::Forbidden);
         }
-        match url.host().ok_or(DomainError::Forbidden)? {
-            Host::Ipv4(address) => validate_ip(IpAddr::V4(address))?,
-            Host::Ipv6(address) => validate_ip(IpAddr::V6(address))?,
+        let target = match url.host().ok_or(DomainError::Forbidden)? {
+            Host::Ipv4(address) => {
+                if !trusted {
+                    validate_ip(IpAddr::V4(address))?;
+                }
+                ValidatedEgress {
+                    host: None,
+                    addresses: Vec::new(),
+                }
+            }
+            Host::Ipv6(address) => {
+                if !trusted {
+                    validate_ip(IpAddr::V6(address))?;
+                }
+                ValidatedEgress {
+                    host: None,
+                    addresses: Vec::new(),
+                }
+            }
             Host::Domain(host) => {
                 let host = host.to_ascii_lowercase();
-                if !self.allowed_hosts.is_empty() && !self.allowed_hosts.contains(&host) {
+                if !trusted && !self.allowed_hosts.is_empty() && !self.allowed_hosts.contains(&host)
+                {
                     return Err(DomainError::Forbidden);
                 }
                 let addresses: Vec<_> = tokio::net::lookup_host((host.as_str(), port))
@@ -67,12 +147,18 @@ impl EgressPolicy {
                         "egress DNS lookup returned no addresses".into(),
                     ));
                 }
-                for address in addresses {
-                    validate_ip(address.ip())?;
+                if !trusted {
+                    for address in &addresses {
+                        validate_ip(address.ip())?;
+                    }
+                }
+                ValidatedEgress {
+                    host: Some(host),
+                    addresses,
                 }
             }
-        }
-        Ok(())
+        };
+        Ok(target)
     }
 }
 
@@ -146,6 +232,32 @@ mod tests {
             policy
                 .validate(&Url::parse("file:///etc/passwd").expect("URL"))
                 .await
+                .is_err()
+        );
+    }
+
+    #[tokio::test]
+    async fn trusted_origins_are_exact_and_configuration_only() {
+        let policy = EgressPolicy::public_https(BTreeSet::new())
+            .with_trusted_origins(BTreeSet::from(["http://127.0.0.1:43123".into()]))
+            .expect("trusted policy");
+        assert!(
+            policy
+                .validate(&Url::parse("http://127.0.0.1:43123/issuer/jwks").expect("URL"))
+                .await
+                .is_ok()
+        );
+        assert!(
+            policy
+                .validate(&Url::parse("http://127.0.0.1:43124/issuer/jwks").expect("URL"))
+                .await
+                .is_err()
+        );
+        assert!(
+            EgressPolicy::public_https(BTreeSet::new())
+                .with_trusted_origins(BTreeSet::from([
+                    "http://127.0.0.1:43123/not-an-origin".into()
+                ]))
                 .is_err()
         );
     }

@@ -1,11 +1,11 @@
 //! Kitsune dependency composition and server process.
 
-use std::{net::SocketAddr, path::PathBuf, sync::Arc};
+use std::{collections::BTreeSet, net::SocketAddr, path::PathBuf, sync::Arc};
 
 use anyhow::{Context, Result};
 use axum_extra::extract::cookie::Key;
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
-use kitsune_api::{AppState, AuthService, TokenService};
+use kitsune_api::{AppState, AuthService, OidcService, TokenService};
 use kitsune_automation::{InProcessCache, InProcessEventBus};
 use kitsune_core::config::{FeatureFlags, RuntimeProfile};
 use kitsune_db::{PostgresStore, auth::AuthRepository};
@@ -27,6 +27,8 @@ struct ServerConfig {
     data_dir: PathBuf,
     secure_cookies: bool,
     auto_migrate: bool,
+    public_origin: String,
+    oidc_trusted_origins: BTreeSet<String>,
 }
 
 impl Default for ServerConfig {
@@ -40,6 +42,8 @@ impl Default for ServerConfig {
             data_dir: PathBuf::from("data"),
             secure_cookies: false,
             auto_migrate: true,
+            public_origin: "http://localhost:3000".into(),
+            oidc_trusted_origins: BTreeSet::new(),
         }
     }
 }
@@ -58,6 +62,7 @@ impl ServerConfig {
             .set_default("data_dir", defaults.data_dir.to_string_lossy().to_string())?
             .set_default("secure_cookies", defaults.secure_cookies)?
             .set_default("auto_migrate", defaults.auto_migrate)?
+            .set_default("public_origin", defaults.public_origin)?
             .add_source(config::File::with_name("kit.toml").required(false))
             .add_source(config::File::with_name("config").required(false))
             .add_source(
@@ -108,6 +113,9 @@ async fn main() -> Result<()> {
         AuthService::from_master_key(cookie_key.master()).context("authentication service")?;
     let tokens =
         TokenService::from_master_key(cookie_key.master()).context("programmatic token service")?;
+    let public_origin = parse_public_origin(&config.public_origin, config.secure_cookies)?;
+    let oidc = OidcService::new(config.oidc_trusted_origins.clone())
+        .context("OIDC egress configuration")?;
     let state = AppState::new(
         store,
         auth_repository,
@@ -117,7 +125,8 @@ async fn main() -> Result<()> {
         event_bus,
         cookie_key,
         config.secure_cookies,
-    );
+    )
+    .with_oidc(oidc, features.external_auth, public_origin);
     let app = kitsune_api::router(state);
     let listener = tokio::net::TcpListener::bind(config.listen)
         .await
@@ -132,6 +141,24 @@ async fn main() -> Result<()> {
         .with_graceful_shutdown(shutdown_signal())
         .await
         .context("serve HTTP")
+}
+
+fn parse_public_origin(value: &str, secure_cookies: bool) -> Result<url::Url> {
+    let origin = url::Url::parse(value).context("public_origin must be an absolute URL")?;
+    if !matches!(origin.scheme(), "http" | "https")
+        || origin.host().is_none()
+        || !origin.username().is_empty()
+        || origin.password().is_some()
+        || origin.path() != "/"
+        || origin.query().is_some()
+        || origin.fragment().is_some()
+        || (secure_cookies && origin.scheme() != "https")
+    {
+        anyhow::bail!(
+            "public_origin must contain only an HTTP(S) scheme, host, and optional port; HTTPS is required with secure cookies"
+        );
+    }
+    Ok(origin)
 }
 
 async fn load_or_generate_cookie_key(data_dir: &std::path::Path) -> Result<Key> {
@@ -213,6 +240,15 @@ mod tests {
         assert!(!features.attack_defense);
         assert!(!features.orchestration);
         assert!(!features.smtp);
+        assert!(config.oidc_trusted_origins.is_empty());
+    }
+
+    #[test]
+    fn public_origin_is_canonical_and_secure_when_cookies_are_secure() {
+        assert!(parse_public_origin("http://localhost:3000", false).is_ok());
+        assert!(parse_public_origin("https://ctf.example.test", true).is_ok());
+        assert!(parse_public_origin("http://ctf.example.test", true).is_err());
+        assert!(parse_public_origin("https://ctf.example.test/path", true).is_err());
     }
 
     #[tokio::test]

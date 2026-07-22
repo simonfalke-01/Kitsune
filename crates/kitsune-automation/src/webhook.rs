@@ -73,7 +73,6 @@ pub struct WebhookDelivery {
 /// HTTP webhook adapter.
 #[derive(Clone)]
 pub struct WebhookDispatcher {
-    client: reqwest::Client,
     policy: Arc<EgressPolicy>,
     maximum_attempts: u8,
     request_timeout: Duration,
@@ -84,7 +83,7 @@ impl WebhookDispatcher {
     /// manually so every hop is checked by the egress policy.
     pub fn new(policy: Arc<EgressPolicy>) -> DomainResult<Self> {
         let request_timeout = Duration::from_secs(8);
-        let client = reqwest::Client::builder()
+        reqwest::Client::builder()
             .redirect(reqwest::redirect::Policy::none())
             .connect_timeout(Duration::from_secs(3))
             .timeout(request_timeout)
@@ -92,7 +91,6 @@ impl WebhookDispatcher {
             .build()
             .map_err(|error| DomainError::Unavailable(format!("HTTP client: {error}")))?;
         Ok(Self {
-            client,
             policy,
             maximum_attempts: 5,
             request_timeout,
@@ -111,7 +109,6 @@ impl WebhookDispatcher {
                 "webhook is disabled or not subscribed".into(),
             ));
         }
-        self.policy.validate(&endpoint.url).await?;
         let body = serde_json::to_vec(event)
             .map_err(|error| DomainError::Validation(error.to_string()))?;
         let timestamp = event.occurred_at.timestamp().to_string();
@@ -181,9 +178,18 @@ impl WebhookDispatcher {
         mut redirects: u8,
     ) -> DomainResult<(u16, String)> {
         loop {
-            self.policy.validate(&url).await?;
-            let response = self
-                .client
+            let target = self.policy.resolve(&url).await?;
+            let client = target
+                .configure_client(
+                    reqwest::Client::builder()
+                        .redirect(reqwest::redirect::Policy::none())
+                        .connect_timeout(Duration::from_secs(3))
+                        .timeout(self.request_timeout)
+                        .user_agent(concat!("Kitsune/", env!("CARGO_PKG_VERSION"))),
+                )
+                .build()
+                .map_err(|error| DomainError::Unavailable(format!("HTTP client: {error}")))?;
+            let response = client
                 .post(url.clone())
                 .header("content-type", "application/json")
                 .header("x-kitsune-event", event.kind())

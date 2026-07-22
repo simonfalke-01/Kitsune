@@ -19,8 +19,10 @@ hex.workspace = true
 kitsune-automation = { path = "../kitsune-automation" }
 kitsune-core = { path = "../kitsune-core" }
 kitsune-db = { path = "../kitsune-db" }
+openidconnect.workspace = true
 pasetors.workspace = true
 rand.workspace = true
+reqwest.workspace = true
 secrecy.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -35,10 +37,12 @@ tracing.workspace = true
 utoipa.workspace = true
 utoipa-swagger-ui.workspace = true
 uuid.workspace = true
+url.workspace = true
 
 [lints]
 workspace = true
 
 [dev-dependencies]
 http-body-util = "0.1.3"
+jsonwebtoken.workspace = true
 sqlx.workspace = true
