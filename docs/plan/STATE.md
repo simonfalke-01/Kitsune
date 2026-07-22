@@ -83,8 +83,9 @@ Updated: 2026-07-22 (Asia/Singapore)
   changes-requested feedback, explicit approval, and publication. Survey
   responses are schema/range validated and organizer analytics expose aggregate
   counts and statistics only. The PostgreSQL-backed API journey exercises every
-  transition with matching audit/outbox events; player and review-queue UI is
-  the active frontend slice.
+  transition with matching audit/outbox events. Player writeup/survey forms and
+  the organizer review/analytics surface update from realtime events and pass
+  the full desktop/mobile browser journey with axe.
 
 ## Risks being actively retired
 

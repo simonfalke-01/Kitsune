@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Check, ChevronDown, Flag, Filter, Search, Sparkles } from '@lucide/svelte';
+  import { BookOpen, Check, ChevronDown, Flag, Filter, Search, Sparkles } from '@lucide/svelte';
   import Badge from '$lib/components/Badge.svelte';
   import Button from '$lib/components/Button.svelte';
   import Card from '$lib/components/Card.svelte';
@@ -15,6 +15,8 @@
   let selectedCategory = $state<string | null>(null);
   let openChallengeId = $state<string | null>(null);
   let answers = $state<Record<string, string>>({});
+  let writeupBodies = $state<Record<string, string>>({});
+  let surveyAnswers = $state<Record<string, number>>({});
   let filtered = $derived(
     events.challenges.filter((challenge) => {
       const text =
@@ -59,18 +61,56 @@
     if (receipt?.outcome === 'correct') answers[challenge.id] = '';
   }
 
-  async function toggleChallenge(challengeId: string): Promise<void> {
+  async function toggleChallenge(challenge: ChallengeSummary): Promise<void> {
+    const challengeId = challenge.id;
     if (openChallengeId === challengeId) {
       openChallengeId = null;
       return;
     }
     openChallengeId = challengeId;
-    await game.loadHints(challengeId);
+    if (challenge.solved) {
+      const writeup = challenge.writeups_enabled ? await game.loadWriteup(challengeId) : null;
+      writeupBodies[challengeId] = writeup?.body ?? '';
+    } else {
+      await game.loadHints(challengeId);
+    }
   }
 
   function resultText(challengeId: string): string | null {
     const receipt = game.receipts[challengeId];
     return receipt ? submissionMessage(receipt) : null;
+  }
+
+  function updateWriteup(challengeId: string, value: string): void {
+    writeupBodies[challengeId] = value;
+  }
+
+  function updateSurveyAnswer(challengeId: string, key: string, value: string): void {
+    surveyAnswers[`${challengeId}:${key}`] = Number(value);
+  }
+
+  async function saveWriteup(
+    event: SubmitEvent,
+    challengeId: string,
+    submit: boolean
+  ): Promise<void> {
+    event.preventDefault();
+    await game.saveWriteup(challengeId, writeupBodies[challengeId] ?? '', submit);
+  }
+
+  async function submitSurvey(event: SubmitEvent, challenge: ChallengeSummary): Promise<void> {
+    event.preventDefault();
+    const answers: Record<string, number> = {};
+    for (const question of challenge.survey) {
+      const value = surveyAnswers[`${challenge.id}:${question.key}`];
+      if (value !== undefined) answers[question.key] = value;
+    }
+    await game.submitSurvey(challenge.id, answers);
+  }
+
+  function writeupEditable(challengeId: string): boolean {
+    const state = game.writeups[challengeId]?.state;
+    return state == null || state === 'draft' || state === 'changes_requested';
   }
 </script>
 
@@ -135,12 +175,12 @@
                   </footer>
                   <Button
                     variant={openChallengeId === challenge.id ? 'quiet' : 'secondary'}
-                    disabled={challenge.solved}
-                    onclick={() => toggleChallenge(challenge.id)}
+                    onclick={() => toggleChallenge(challenge)}
                   >
                     {#if challenge.solved}
-                      <Check size={15} />
-                      Solved
+                      <BookOpen size={15} />
+                      After the solve
+                      <ChevronDown size={14} />
                     {:else}
                       <Flag size={15} />
                       Submit flag
@@ -180,7 +220,7 @@
                       </Button>
                     </form>
                   {/if}
-                  {#if openChallengeId === challenge.id && game.hints[challenge.id]?.length}
+                  {#if openChallengeId === challenge.id && !challenge.solved && game.hints[challenge.id]?.length}
                     <section class="hints" aria-label={`Hints for ${challenge.name}`}>
                       <h4>Hints</h4>
                       {#each game.hints[challenge.id] as hint (hint.id)}
@@ -202,6 +242,98 @@
                           {/if}
                         </article>
                       {/each}
+                    </section>
+                  {/if}
+                  {#if openChallengeId === challenge.id && challenge.solved}
+                    <section class="post-solve" aria-label={`After solving ${challenge.name}`}>
+                      {#if challenge.writeups_enabled}
+                        <form onsubmit={(event) => saveWriteup(event, challenge.id, true)}>
+                          <div class="post-solve-heading">
+                            <div>
+                              <h4>Writeup</h4>
+                              <small>
+                                {game.writeups[challenge.id]?.state?.replaceAll('_', ' ') ??
+                                  'New draft'}
+                              </small>
+                            </div>
+                            {#if game.writeups[challenge.id]?.feedback}
+                              <Badge tone="warning">Changes requested</Badge>
+                            {/if}
+                          </div>
+                          {#if game.writeups[challenge.id]?.feedback}
+                            <p class="review-feedback">{game.writeups[challenge.id]?.feedback}</p>
+                          {/if}
+                          <label>
+                            <span>Your solution</span>
+                            <textarea
+                              rows="6"
+                              required
+                              minlength="20"
+                              maxlength="100000"
+                              disabled={!writeupEditable(challenge.id)}
+                              value={writeupBodies[challenge.id] ?? ''}
+                              oninput={(event) =>
+                                updateWriteup(challenge.id, event.currentTarget.value)}
+                              placeholder="Explain the path, the false turns, and what finally worked."
+                            ></textarea>
+                          </label>
+                          {#if writeupEditable(challenge.id)}
+                            <div class="post-solve-actions">
+                              <Button
+                                variant="secondary"
+                                loading={game.savingWriteupId === challenge.id}
+                                onclick={(event) => {
+                                  event.preventDefault();
+                                  void game.saveWriteup(
+                                    challenge.id,
+                                    writeupBodies[challenge.id] ?? '',
+                                    false
+                                  );
+                                }}
+                              >
+                                Save draft
+                              </Button>
+                              <Button type="submit" loading={game.savingWriteupId === challenge.id}>
+                                Submit for review
+                              </Button>
+                            </div>
+                          {/if}
+                        </form>
+                      {/if}
+                      {#if challenge.survey.length}
+                        <form onsubmit={(event) => submitSurvey(event, challenge)}>
+                          <div class="post-solve-heading">
+                            <div>
+                              <h4>Quick survey</h4>
+                              <small>Your response is reported only in aggregate.</small>
+                            </div>
+                            {#if game.surveyReceipts[challenge.id]}
+                              <Badge tone="success">Saved</Badge>
+                            {/if}
+                          </div>
+                          {#each challenge.survey as question (question.key)}
+                            <label>
+                              <span>{question.prompt}</span>
+                              <input
+                                type="number"
+                                required={question.required}
+                                min={question.range?.[0]}
+                                max={question.range?.[1]}
+                                value={surveyAnswers[`${challenge.id}:${question.key}`] ?? ''}
+                                oninput={(event) =>
+                                  updateSurveyAnswer(
+                                    challenge.id,
+                                    question.key,
+                                    event.currentTarget.value
+                                  )}
+                              />
+                            </label>
+                          {/each}
+                          <Button type="submit" loading={game.savingSurveyId === challenge.id}>
+                            Save survey
+                          </Button>
+                        </form>
+                      {/if}
                     </section>
                   {/if}
                   {#if resultText(challenge.id)}
@@ -278,7 +410,8 @@
   }
 
   .challenge-card form input,
-  .challenge-card form select {
+  .challenge-card form select,
+  .challenge-card form textarea {
     width: 100%;
     min-height: 2.65rem;
     padding: 0 0.72rem;
@@ -291,7 +424,8 @@
   }
 
   .challenge-card form input:focus,
-  .challenge-card form select:focus {
+  .challenge-card form select:focus,
+  .challenge-card form textarea:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
   }
@@ -315,6 +449,54 @@
     gap: 0.65rem;
     padding-top: 0.85rem;
     border-top: 1px solid var(--line);
+  }
+
+  .post-solve {
+    display: grid;
+    gap: 0.85rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .post-solve > form {
+    padding: 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface-raised);
+  }
+
+  .post-solve textarea {
+    resize: vertical;
+  }
+
+  .post-solve-heading,
+  .post-solve-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+  }
+
+  .post-solve-heading h4,
+  .post-solve-heading small {
+    margin: 0;
+  }
+
+  .post-solve-heading small {
+    color: var(--ink-faint);
+    font-size: 0.68rem;
+    text-transform: capitalize;
+  }
+
+  .post-solve-actions {
+    justify-content: flex-end;
+  }
+
+  .review-feedback {
+    padding: 0.65rem;
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+    color: var(--ink-secondary);
   }
 
   .hints h4,

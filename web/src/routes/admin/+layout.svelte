@@ -2,7 +2,7 @@
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import { onMount, type Snippet } from 'svelte';
-  import { Activity, Blocks, CalendarDays, Settings2, Sparkles } from '@lucide/svelte';
+  import { Activity, Blocks, CalendarDays, FileCheck2, Settings2, Sparkles } from '@lucide/svelte';
   import { session } from '$lib/stores/session.svelte';
 
   let { children }: { children: Snippet } = $props();
@@ -11,6 +11,7 @@
     { href: '/admin', label: 'Live operations', icon: Activity },
     { href: '/admin/events', label: 'Events', icon: CalendarDays },
     { href: '/admin/challenges', label: 'Challenges', icon: Blocks },
+    { href: '/admin/reviews', label: 'Reviews', icon: FileCheck2 },
     { href: '/admin/automation', label: 'Automation', icon: Sparkles },
     { href: '/admin/settings', label: 'Settings', icon: Settings2 }
   ];
@@ -100,7 +101,7 @@
 
     aside {
       position: static;
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       overflow-x: auto;
       padding-top: 0.8rem;
     }

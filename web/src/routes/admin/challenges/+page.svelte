@@ -22,6 +22,15 @@
     cost: number;
   }
 
+  interface SurveyDraft {
+    id: number;
+    fieldKey: string;
+    prompt: string;
+    minimum: number;
+    maximum: number;
+    required: boolean;
+  }
+
   let loaded = $state(false);
   let showComposer = $state(false);
   let title = $state('');
@@ -34,7 +43,10 @@
   let points = $state(500);
   let lifecycle = $state<'draft' | 'testing' | 'published'>('draft');
   let hints = $state<HintDraft[]>([]);
+  let surveys = $state<SurveyDraft[]>([]);
+  let writeupsEnabled = $state(true);
   let nextHintKey = 1;
+  let nextSurveyId = 1;
 
   $effect(() => {
     if (session.authenticated && !loaded) {
@@ -88,7 +100,7 @@
       visibility: { division_ids: [], prerequisites: [] },
       tags: [],
       max_attempts: null,
-      writeups_enabled: true,
+      writeups_enabled: writeupsEnabled,
       position: events.challenges.length,
       answers: answerRules(),
       hints: hints.map((hint, index) => ({
@@ -96,7 +108,12 @@
         content: hint.content,
         cost: hint.cost
       })),
-      survey: []
+      survey: surveys.map((question) => ({
+        key: question.fieldKey,
+        prompt: question.prompt,
+        range: [question.minimum, question.maximum],
+        required: question.required
+      }))
     });
     if (!created) return;
     showComposer = false;
@@ -105,6 +122,8 @@
     answer = '';
     details = '';
     hints = [];
+    surveys = [];
+    writeupsEnabled = true;
     lifecycle = 'draft';
   }
 
@@ -115,6 +134,25 @@
 
   function removeHint(key: number): void {
     hints = hints.filter((hint) => hint.key !== key);
+  }
+
+  function addSurveyQuestion(): void {
+    surveys = [
+      ...surveys,
+      {
+        id: nextSurveyId,
+        fieldKey: '',
+        prompt: '',
+        minimum: 1,
+        maximum: 5,
+        required: true
+      }
+    ];
+    nextSurveyId += 1;
+  }
+
+  function removeSurveyQuestion(id: number): void {
+    surveys = surveys.filter((question) => question.id !== id);
   }
 
   function detailsLabel(): string {
@@ -272,6 +310,65 @@
               </div>
             {/each}
           </section>
+          <section class="hint-editor wide" aria-labelledby="engagement-editor-title">
+            <div class="hint-heading">
+              <div>
+                <h3 id="engagement-editor-title">After the solve</h3>
+                <small
+                  >Collect thoughtful writeups and bounded feedback without extra services.</small
+                >
+              </div>
+              <Button variant="secondary" onclick={addSurveyQuestion}>
+                <Plus size={14} />
+                Add survey question
+              </Button>
+            </div>
+            <label class="check-field">
+              <input type="checkbox" bind:checked={writeupsEnabled} />
+              <span>Accept player writeups for organizer review</span>
+            </label>
+            {#each surveys as question, index (question.id)}
+              <div class="survey-row">
+                <label class="field">
+                  <span>Question key</span>
+                  <input
+                    bind:value={question.fieldKey}
+                    required
+                    pattern="[a-z][a-z0-9_]*"
+                    placeholder="difficulty"
+                  />
+                </label>
+                <label class="field survey-prompt">
+                  <span>Prompt</span>
+                  <input
+                    bind:value={question.prompt}
+                    required
+                    placeholder="How difficult was this challenge?"
+                  />
+                </label>
+                <label class="field range-field">
+                  <span>Minimum</span>
+                  <input bind:value={question.minimum} type="number" required />
+                </label>
+                <label class="field range-field">
+                  <span>Maximum</span>
+                  <input bind:value={question.maximum} type="number" required />
+                </label>
+                <label class="check-field">
+                  <input type="checkbox" bind:checked={question.required} />
+                  <span>Required</span>
+                </label>
+                <Button
+                  variant="quiet"
+                  ariaLabel={`Remove survey question ${index + 1}`}
+                  onclick={() => removeSurveyQuestion(question.id)}
+                >
+                  <X size={15} />
+                  Remove
+                </Button>
+              </div>
+            {/each}
+          </section>
         </div>
         {#if events.error}
           <p class="error-text" role="alert">{events.error}</p>
@@ -383,7 +480,9 @@
   }
 
   .hint-heading,
-  .hint-row {
+  .hint-row,
+  .survey-row,
+  .check-field {
     display: flex;
     align-items: end;
     gap: 0.75rem;
@@ -411,6 +510,30 @@
 
   .hint-row > :nth-child(2) {
     width: 8rem;
+  }
+
+  .survey-row {
+    align-items: end;
+  }
+
+  .survey-prompt {
+    flex: 1;
+  }
+
+  .range-field {
+    width: 6.5rem;
+  }
+
+  .check-field {
+    align-items: center;
+    color: var(--ink-secondary);
+    font-size: 0.76rem;
+  }
+
+  .check-field input {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--accent);
   }
 
   .form-actions {
@@ -454,12 +577,17 @@
     }
 
     .hint-heading,
-    .hint-row {
+    .hint-row,
+    .survey-row {
       align-items: stretch;
       flex-direction: column;
     }
 
     .hint-row > :nth-child(2) {
+      width: 100%;
+    }
+
+    .range-field {
       width: 100%;
     }
   }

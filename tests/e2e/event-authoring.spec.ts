@@ -73,6 +73,9 @@ test('organizer authors a published challenge visible on the player board', asyn
     .getByRole('textbox', { name: 'Hint 1', exact: true })
     .fill('The answer follows the project-specific key.');
   await page.getByLabel('Point cost').fill('10');
+  await page.getByRole('button', { name: 'Add survey question' }).click();
+  await page.getByLabel('Question key').fill('difficulty');
+  await page.getByLabel('Prompt').fill('How difficult was this challenge?');
   await page.getByRole('button', { name: 'Save challenge' }).click();
   await expect(page.getByRole('button', { name: 'Save challenge' })).toBeHidden();
   await expect(page.getByText(challengeName, { exact: true })).toBeVisible();
@@ -100,7 +103,21 @@ test('organizer authors a published challenge visible on the player board', asyn
   await challengeCard.getByRole('button', { name: 'Inspect submission' }).click();
   await submissionRecorded;
   await expect(challengeCard.getByText(/First blood\./)).toBeVisible();
-  await expect(challengeCard.getByRole('button', { name: 'Solved' })).toBeVisible();
+  await expect(challengeCard.getByRole('button', { name: 'After the solve' })).toBeVisible();
+
+  await challengeCard
+    .getByLabel('Your solution')
+    .fill('Trace the endpoint, normalize the path, and inspect the typed response.');
+  const writeupSubmitted = page.waitForResponse((response) => response.url().endsWith('/writeup'));
+  await challengeCard.getByRole('button', { name: 'Submit for review' }).click();
+  await writeupSubmitted;
+  await expect(challengeCard.getByText('submitted', { exact: true })).toBeVisible();
+
+  await challengeCard.getByLabel('How difficult was this challenge?').fill('4');
+  const surveySubmitted = page.waitForResponse((response) => response.url().endsWith('/survey'));
+  await challengeCard.getByRole('button', { name: 'Save survey' }).click();
+  await surveySubmitted;
+  await expect(challengeCard.getByText('Saved', { exact: true })).toBeVisible();
 
   const scoreboardLoaded = page.waitForResponse((response) =>
     response.url().endsWith('/scoreboard')
@@ -113,6 +130,19 @@ test('organizer authors a published challenge visible on the player board', asyn
 
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations).toEqual([]);
+
+  await page.goto('/admin/reviews');
+  const writeupCard = page.locator('article.writeup-card').filter({ hasText: challengeName });
+  await expect(writeupCard).toBeVisible();
+  await expect(writeupCard.getByText('E2E Owner', { exact: true })).toBeVisible();
+  await writeupCard.getByRole('button', { name: 'Approve' }).click();
+  await expect(writeupCard.getByText('approved', { exact: true })).toBeVisible();
+  await writeupCard.getByRole('button', { name: 'Publish' }).click();
+  await expect(writeupCard.getByText('published', { exact: true })).toBeVisible();
+  await expect(page.getByText('4.0', { exact: true })).toBeVisible();
+
+  const reviewAccessibility = await new AxeBuilder({ page }).analyze();
+  expect(reviewAccessibility.violations).toEqual([]);
 
   await page.goto('/admin/events');
   const freezeUpdated = page.waitForResponse((response) =>

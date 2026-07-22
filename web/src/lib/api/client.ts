@@ -22,6 +22,12 @@ export type Scoreboard = components['schemas']['ScoreboardResponse'];
 export type ScoreboardRow = components['schemas']['ScoreboardRowResponse'];
 export type ChallengeHint = components['schemas']['HintResponse'];
 export type HintUnlockReceipt = components['schemas']['HintUnlockResponse'];
+export type Writeup = components['schemas']['WriteupResponse'];
+export type SaveWriteupInput = components['schemas']['SaveWriteupRequest'];
+export type ReviewWriteupInput = components['schemas']['ReviewWriteupRequest'];
+export type SurveyInput = components['schemas']['SubmitSurveyRequest'];
+export type SurveyReceipt = components['schemas']['SurveyResponse'];
+export type SurveySummary = components['schemas']['SurveySummaryResponse'];
 
 export const api = createClient<paths>({
   baseUrl: '',

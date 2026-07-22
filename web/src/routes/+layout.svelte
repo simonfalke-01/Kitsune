@@ -37,6 +37,8 @@
       void Promise.all([events.load(), game.loadScoreboard()]);
     } else if (envelope.event.type === 'challenge.hint.unlocked') {
       void game.refreshLoadedHints();
+    } else if (envelope.event.type === 'challenge.writeup.changed') {
+      void game.refreshLoadedWriteups();
     }
   });
 </script>

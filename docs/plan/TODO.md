@@ -79,7 +79,7 @@ or scaffolding alone.
   audit/outbox/realtime events, and browser coverage.
 - [x] Competitor-owned writeup persistence/review state machine and validated,
   aggregate-only post-solve survey API.
-- [ ] Player writeup/survey forms and organizer review/analytics surface with
+- [x] Player writeup/survey forms and organizer review/analytics surface with
   browser coverage.
 - [ ] Dynamic-instance and plugin answer verifiers, manual-review organizer
   queue, scoreboard graphs, cache batching, and competitor profile links.

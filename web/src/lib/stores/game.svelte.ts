@@ -1,5 +1,11 @@
 import { api, errorMessage } from '$lib/api/client';
-import type { ChallengeHint, Scoreboard, SubmissionReceipt } from '$lib/api/client';
+import type {
+  ChallengeHint,
+  Scoreboard,
+  SubmissionReceipt,
+  SurveyReceipt,
+  Writeup
+} from '$lib/api/client';
 import { events } from '$lib/stores/events.svelte';
 import { session } from '$lib/stores/session.svelte';
 
@@ -19,9 +25,13 @@ class GameStore {
   scoreboard = $state<Scoreboard | null>(null);
   receipts = $state<Record<string, SubmissionReceipt>>({});
   hints = $state<Record<string, ChallengeHint[]>>({});
+  writeups = $state<Record<string, Writeup | null>>({});
+  surveyReceipts = $state<Record<string, SurveyReceipt>>({});
   loadingScoreboard = $state(false);
   savingChallengeId = $state<string | null>(null);
   unlockingHint = $state<string | null>(null);
+  savingWriteupId = $state<string | null>(null);
+  savingSurveyId = $state<string | null>(null);
   error = $state<string | null>(null);
 
   async submit(challengeId: string, answer: string): Promise<SubmissionReceipt | null> {
@@ -120,13 +130,96 @@ class GameStore {
     await Promise.all(Object.keys(this.hints).map((challengeId) => this.loadHints(challengeId)));
   }
 
+  async loadWriteup(challengeId: string): Promise<Writeup | null> {
+    const eventId = events.selectedEventId;
+    if (!eventId || !session.authenticated) return null;
+    const { data, error, response } = await api.GET(
+      '/api/v1/events/{event_id}/challenges/{challenge_id}/writeup',
+      {
+        params: { path: { event_id: eventId, challenge_id: challengeId } }
+      }
+    );
+    if (!data) {
+      if (response.status === 404) {
+        this.writeups = { ...this.writeups, [challengeId]: null };
+        return null;
+      }
+      this.error = errorMessage(error, 'The writeup could not be loaded.');
+      return null;
+    }
+    this.writeups = { ...this.writeups, [challengeId]: data };
+    return data;
+  }
+
+  async saveWriteup(challengeId: string, body: string, submit: boolean): Promise<boolean> {
+    const csrf = session.current?.csrf_token;
+    const eventId = events.selectedEventId;
+    if (!csrf || !eventId) {
+      this.authenticationFailure();
+      return false;
+    }
+    this.savingWriteupId = challengeId;
+    this.error = null;
+    const { data, error } = await api.PUT(
+      '/api/v1/events/{event_id}/challenges/{challenge_id}/writeup',
+      {
+        params: { path: { event_id: eventId, challenge_id: challengeId } },
+        headers: { 'x-csrf-token': csrf },
+        body: { body, submit }
+      }
+    );
+    this.savingWriteupId = null;
+    if (!data) {
+      this.error = errorMessage(error, 'The writeup could not be saved.');
+      return false;
+    }
+    this.writeups = { ...this.writeups, [challengeId]: data };
+    return true;
+  }
+
+  async refreshLoadedWriteups(): Promise<void> {
+    await Promise.all(
+      Object.keys(this.writeups).map((challengeId) => this.loadWriteup(challengeId))
+    );
+  }
+
+  async submitSurvey(challengeId: string, answers: Record<string, number>): Promise<boolean> {
+    const csrf = session.current?.csrf_token;
+    const eventId = events.selectedEventId;
+    if (!csrf || !eventId) {
+      this.authenticationFailure();
+      return false;
+    }
+    this.savingSurveyId = challengeId;
+    this.error = null;
+    const { data, error } = await api.POST(
+      '/api/v1/events/{event_id}/challenges/{challenge_id}/survey',
+      {
+        params: { path: { event_id: eventId, challenge_id: challengeId } },
+        headers: { 'x-csrf-token': csrf },
+        body: { answers }
+      }
+    );
+    this.savingSurveyId = null;
+    if (!data) {
+      this.error = errorMessage(error, 'The survey response could not be saved.');
+      return false;
+    }
+    this.surveyReceipts = { ...this.surveyReceipts, [challengeId]: data };
+    return true;
+  }
+
   clear(): void {
     this.scoreboard = null;
     this.receipts = {};
     this.hints = {};
+    this.writeups = {};
+    this.surveyReceipts = {};
     this.error = null;
     this.savingChallengeId = null;
     this.unlockingHint = null;
+    this.savingWriteupId = null;
+    this.savingSurveyId = null;
   }
 
   private authenticationFailure(): null {
