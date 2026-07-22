@@ -50,6 +50,12 @@ until a competitor-scoped unlock exists. The unique unlock key makes repeated
 requests free, while the first unlock and its optional negative score entry
 share the challenge transaction and outbox boundary.
 
+Post-solve engagement is isolated in a transactional repository. Writeups and
+survey responses are uniquely keyed by challenge plus null-safe user/team
+competitor and require an accepted solve. Author and reviewer transitions are
+separate domain policies. Survey analytics aggregate validated integer answers
+without returning raw competitor responses.
+
 ## Security boundaries
 
 HTTP authorization is deny-by-default and evaluated using org/event-scoped RBAC.

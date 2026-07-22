@@ -79,6 +79,12 @@ Updated: 2026-07-22 (Asia/Singapore)
   entries, repeated unlocks are free idempotent reads, and teammates receive the
   reveal through realtime refresh. API integration and both browser profiles
   exercise the sealed-content and 10-point deduction path.
+- Post-solve writeups now support competitor-owned drafts, review submission,
+  changes-requested feedback, explicit approval, and publication. Survey
+  responses are schema/range validated and organizer analytics expose aggregate
+  counts and statistics only. The PostgreSQL-backed API journey exercises every
+  transition with matching audit/outbox events; player and review-queue UI is
+  the active frontend slice.
 
 ## Risks being actively retired
 

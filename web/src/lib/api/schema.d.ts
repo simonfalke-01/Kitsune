@@ -260,6 +260,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/{event_id}/challenges/{challenge_id}/survey": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["submit_survey"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/challenges/{challenge_id}/survey-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["survey_summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/challenges/{challenge_id}/writeup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_writeup"];
+        put: operations["save_writeup"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{event_id}/scoreboard": {
         parameters: {
             query?: never;
@@ -306,6 +354,38 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["update_event_state"];
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/writeups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_writeups"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/{event_id}/writeups/{writeup_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["review_writeup"];
         trace?: never;
     };
     "/api/v1/setup": {
@@ -766,6 +846,20 @@ export interface components {
              */
             password: string;
         };
+        /** @description Organizer writeup review input. */
+        ReviewWriteupRequest: {
+            /** @description Review feedback, required when requesting changes. */
+            feedback?: string | null;
+            /** @description Requested review state. */
+            state: components["schemas"]["WriteupReviewStateInput"];
+        };
+        /** @description Player writeup draft or submission input. */
+        SaveWriteupRequest: {
+            /** @description Markdown body, up to 100,000 bytes. */
+            body: string;
+            /** @description Enter the organizer review queue after saving. */
+            submit: boolean;
+        };
         /** @description Scoreboard controls and ordered standings. */
         ScoreboardResponse: {
             /** @description Post-freeze entries are concealed from players. */
@@ -929,6 +1023,13 @@ export interface components {
              */
             idempotency_key: string;
         };
+        /** @description Validated post-solve survey submission. */
+        SubmitSurveyRequest: {
+            /** @description Integer answers keyed by authored question key. */
+            answers: {
+                [key: string]: number;
+            };
+        };
         /** @description Post-solve survey item. */
         SurveyInput: {
             /** @description Stable key. */
@@ -942,6 +1043,59 @@ export interface components {
             ] | null;
             /** @description Required answer. */
             required: boolean;
+        };
+        /** @description Aggregate statistics for one survey question. */
+        SurveyQuestionSummaryResponse: {
+            /**
+             * Format: double
+             * @description Arithmetic mean.
+             */
+            average?: number | null;
+            /** @description Authored key. */
+            key: string;
+            /**
+             * Format: int32
+             * @description Highest response.
+             */
+            maximum?: number | null;
+            /**
+             * Format: int32
+             * @description Lowest response.
+             */
+            minimum?: number | null;
+            /** @description Authored prompt. */
+            prompt: string;
+            /** @description Responses containing this key. */
+            responses: number;
+        };
+        /** @description Stable survey receipt. */
+        SurveyResponse: {
+            /** @description Validated answers. */
+            answers: {
+                [key: string]: number;
+            };
+            /**
+             * Format: uuid
+             * @description Challenge identifier.
+             */
+            challenge_id: string;
+            /**
+             * Format: uuid
+             * @description Response identifier.
+             */
+            id: string;
+            /**
+             * Format: date-time
+             * @description Last submission timestamp.
+             */
+            submitted_at: string;
+        };
+        /** @description Organizer-safe aggregate survey analytics. */
+        SurveySummaryResponse: {
+            /** @description Per-question statistics. */
+            questions: components["schemas"]["SurveyQuestionSummaryResponse"][];
+            /** @description Total competitor responses. */
+            response_count: number;
         };
         /** @description Team member projection. */
         TeamMemberResponse: {
@@ -1050,6 +1204,56 @@ export interface components {
              */
             visible_until?: string | null;
         };
+        /** @description Player and organizer writeup projection. */
+        WriteupResponse: {
+            /** @description Markdown body. */
+            body: string;
+            /**
+             * Format: uuid
+             * @description Challenge identifier.
+             */
+            challenge_id: string;
+            /** @description Challenge display name. */
+            challenge_name: string;
+            /**
+             * Format: uuid
+             * @description Competitor identifier.
+             */
+            competitor_id: string;
+            /** @description `user` or `team`. */
+            competitor_kind: string;
+            /** @description Competitor display name. */
+            competitor_name: string;
+            /**
+             * Format: date-time
+             * @description Creation timestamp.
+             */
+            created_at: string;
+            /** @description Organizer feedback. */
+            feedback?: string | null;
+            /**
+             * Format: uuid
+             * @description Writeup identifier.
+             */
+            id: string;
+            /**
+             * Format: uuid
+             * @description Last reviewer.
+             */
+            reviewer_id?: string | null;
+            /** @description Stable lifecycle state. */
+            state: string;
+            /**
+             * Format: date-time
+             * @description Last update timestamp.
+             */
+            updated_at: string;
+        };
+        /**
+         * @description Organizer-selectable review outcome.
+         * @enum {string}
+         */
+        WriteupReviewStateInput: "changes_requested" | "approved" | "published";
     };
     responses: never;
     parameters: never;
@@ -1845,6 +2049,246 @@ export interface operations {
             };
         };
     };
+    submit_survey: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+                /** @description Challenge ID */
+                challenge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SubmitSurveyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurveyResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    survey_summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+                /** @description Challenge ID */
+                challenge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SurveySummaryResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    get_writeup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+                /** @description Challenge ID */
+                challenge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WriteupResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    save_writeup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+                /** @description Challenge ID */
+                challenge_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SaveWriteupRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WriteupResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     scoreboard: {
         parameters: {
             query?: {
@@ -1993,6 +2437,123 @@ export interface operations {
                 };
             };
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_writeups: {
+        parameters: {
+            query?: {
+                /** @description Stable writeup lifecycle key. */
+                state?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WriteupResponse"][];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    review_writeup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+                /** @description Writeup ID */
+                writeup_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewWriteupRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WriteupResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -7,7 +7,7 @@ use uuid::Uuid;
 use crate::{
     identity::{
         ChallengeId, EventId, FlowId, InstanceId, NotificationId, OrganizationId, SubmissionId,
-        TeamId, UserId,
+        SurveyResponseId, TeamId, UserId, WriteupId,
     },
     scoring::CompetitorId,
 };
@@ -107,6 +107,18 @@ pub enum DomainEvent {
         hint_id: u32,
         competitor: CompetitorId,
     },
+    /// Player writeup draft or organizer review state changed.
+    WriteupChanged {
+        writeup_id: WriteupId,
+        challenge_id: ChallengeId,
+        state: String,
+    },
+    /// A competitor submitted or updated a post-solve survey.
+    SurveySubmitted {
+        response_id: SurveyResponseId,
+        challenge_id: ChallengeId,
+        competitor: CompetitorId,
+    },
     /// Submission recorded.
     SubmissionReceived {
         submission_id: SubmissionId,
@@ -167,6 +179,8 @@ impl DomainEvent {
             Self::TeamMembershipChanged { .. } => "identity.team.membership_changed",
             Self::ChallengeChanged { .. } => "challenge.changed",
             Self::HintUnlocked { .. } => "challenge.hint.unlocked",
+            Self::WriteupChanged { .. } => "challenge.writeup.changed",
+            Self::SurveySubmitted { .. } => "challenge.survey.submitted",
             Self::SubmissionReceived { .. } => "submission.received",
             Self::FirstBlood { .. } => "submission.first_blood",
             Self::ScoreChanged { .. } => "score.changed",

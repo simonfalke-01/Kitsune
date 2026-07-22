@@ -47,6 +47,8 @@ id_type!(BracketId);
 id_type!(ChallengeId);
 id_type!(ObjectiveId);
 id_type!(SubmissionId);
+id_type!(WriteupId);
+id_type!(SurveyResponseId);
 id_type!(InstanceId);
 id_type!(FlowId);
 id_type!(PluginId);

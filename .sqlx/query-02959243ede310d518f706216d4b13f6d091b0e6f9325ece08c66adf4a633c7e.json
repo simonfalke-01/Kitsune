@@ -1,0 +1,88 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT w.id,w.challenge_id,c.name AS challenge_name,w.user_id,w.team_id,\n               COALESCE(t.name,u.display_name) AS \"competitor_name!\",w.body,w.state,\n               w.reviewer_id,w.feedback,w.created_at,w.updated_at\n        FROM writeups w\n        JOIN challenges c ON c.id = w.challenge_id\n        LEFT JOIN users u ON u.id = w.user_id\n        LEFT JOIN teams t ON t.id = w.team_id\n        WHERE w.id = $1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "challenge_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "challenge_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 5,
+        "name": "competitor_name!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "body",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "state",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "reviewer_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "feedback",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      true,
+      true,
+      null,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "02959243ede310d518f706216d4b13f6d091b0e6f9325ece08c66adf4a633c7e"
+}

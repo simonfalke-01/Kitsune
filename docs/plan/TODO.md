@@ -77,6 +77,10 @@ or scaffolding alone.
 - [x] Multi-hint organizer authoring, sealed player projections, idempotent
   user/team unlocks, one-time score deductions, freeze-aware ledger entries,
   audit/outbox/realtime events, and browser coverage.
+- [x] Competitor-owned writeup persistence/review state machine and validated,
+  aggregate-only post-solve survey API.
+- [ ] Player writeup/survey forms and organizer review/analytics surface with
+  browser coverage.
 - [ ] Dynamic-instance and plugin answer verifiers, manual-review organizer
   queue, scoreboard graphs, cache batching, and competitor profile links.
 - [ ] Complete versioned REST resources and OpenAPI contracts.

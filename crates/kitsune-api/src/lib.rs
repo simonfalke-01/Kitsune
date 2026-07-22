@@ -1,6 +1,7 @@
 //! Secured Kitsune HTTP, OpenAPI, WebSocket, and SSE transports.
 
 mod auth;
+mod engagement;
 mod error;
 mod realtime;
 mod resources;
@@ -135,6 +136,12 @@ pub struct ReadinessResponse {
         resources::update_scoreboard_controls,
         resources::list_challenges,
         resources::create_challenge,
+        engagement::get_writeup,
+        engagement::save_writeup,
+        engagement::list_writeups,
+        engagement::review_writeup,
+        engagement::submit_survey,
+        engagement::survey_summary,
         submissions::submit_answer,
         submissions::scoreboard,
         submissions::list_hints,
@@ -175,6 +182,14 @@ pub struct ReadinessResponse {
         resources::SurveyInput,
         resources::CreateChallengeRequest,
         resources::ChallengeResponse,
+        engagement::SaveWriteupRequest,
+        engagement::WriteupReviewStateInput,
+        engagement::ReviewWriteupRequest,
+        engagement::WriteupResponse,
+        engagement::SubmitSurveyRequest,
+        engagement::SurveyResponse,
+        engagement::SurveyQuestionSummaryResponse,
+        engagement::SurveySummaryResponse,
         submissions::SubmitAnswerRequest,
         submissions::SubmissionResponse,
         submissions::ScoreboardRowResponse,
@@ -195,6 +210,8 @@ pub struct ReadinessResponse {
         (name = "auth", description = "Setup, sessions, and authentication"),
         (name = "events", description = "Competition and workshop events"),
         (name = "challenges", description = "Challenge board and authoring"),
+        (name = "writeups", description = "Player writeups and organizer review"),
+        (name = "surveys", description = "Post-solve feedback and analytics"),
         (name = "submissions", description = "Challenge attempts and solves"),
         (name = "scoreboard", description = "Ranked event standings"),
         (name = "teams", description = "Player teams and captain controls")
@@ -303,6 +320,26 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/events/{event_id}/challenges/{challenge_id}/hints/{hint_id}/unlock",
             post(submissions::unlock_hint),
+        )
+        .route(
+            "/api/v1/events/{event_id}/challenges/{challenge_id}/writeup",
+            get(engagement::get_writeup).put(engagement::save_writeup),
+        )
+        .route(
+            "/api/v1/events/{event_id}/writeups",
+            get(engagement::list_writeups),
+        )
+        .route(
+            "/api/v1/events/{event_id}/writeups/{writeup_id}",
+            axum::routing::patch(engagement::review_writeup),
+        )
+        .route(
+            "/api/v1/events/{event_id}/challenges/{challenge_id}/survey",
+            post(engagement::submit_survey),
+        )
+        .route(
+            "/api/v1/events/{event_id}/challenges/{challenge_id}/survey-summary",
+            get(engagement::survey_summary),
         )
         .route("/api/v1/realtime/ws", get(realtime::websocket))
         .route("/api/v1/realtime/sse", get(realtime::sse))
@@ -1063,6 +1100,217 @@ mod tests {
             StatusCode::CONFLICT
         );
 
+        let survey_path =
+            format!("/api/v1/events/{event_id}/challenges/{published_challenge_id}/survey");
+        let invalid_survey = Request::builder()
+            .method("POST")
+            .uri(&survey_path)
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::from(r#"{"answers":{"difficulty":6}}"#))
+            .expect("request");
+        assert_eq!(
+            app.clone()
+                .oneshot(invalid_survey)
+                .await
+                .expect("invalid survey")
+                .status(),
+            StatusCode::UNPROCESSABLE_ENTITY
+        );
+
+        let survey = Request::builder()
+            .method("POST")
+            .uri(&survey_path)
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::from(r#"{"answers":{"difficulty":4}}"#))
+            .expect("request");
+        let response = app.clone().oneshot(survey).await.expect("submit survey");
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let writeup_path =
+            format!("/api/v1/events/{event_id}/challenges/{published_challenge_id}/writeup");
+        let save_draft = Request::builder()
+            .method("PUT")
+            .uri(&writeup_path)
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "body": "A careful draft about tracing the disappearing endpoint.",
+                    "submit": false
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(save_draft)
+            .await
+            .expect("save writeup draft");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let draft: serde_json::Value = serde_json::from_slice(&body).expect("writeup draft");
+        assert_eq!(draft["state"], "draft");
+
+        let submit_writeup = Request::builder()
+            .method("PUT")
+            .uri(&writeup_path)
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "body": "A careful draft about tracing the disappearing endpoint.",
+                    "submit": true
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(submit_writeup)
+            .await
+            .expect("submit writeup");
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let submitted: serde_json::Value =
+            serde_json::from_slice(&body).expect("submitted writeup");
+        assert_eq!(submitted["state"], "submitted");
+        let writeup_id = submitted["id"].as_str().expect("writeup id");
+
+        let review_queue = Request::builder()
+            .uri(format!(
+                "/api/v1/events/{event_id}/writeups?state=submitted"
+            ))
+            .header(header::COOKIE, &admin_cookies)
+            .body(Body::empty())
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(review_queue)
+            .await
+            .expect("writeup queue");
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let queue: serde_json::Value = serde_json::from_slice(&body).expect("writeup queue");
+        assert_eq!(queue.as_array().expect("queue").len(), 1);
+        assert_eq!(queue[0]["competitor_name"], "Player");
+
+        let review_path = format!("/api/v1/events/{event_id}/writeups/{writeup_id}");
+        let request_changes = Request::builder()
+            .method("PATCH")
+            .uri(&review_path)
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(
+                r#"{"state":"changes_requested","feedback":"Explain the final request path."}"#,
+            ))
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(request_changes)
+            .await
+            .expect("request writeup changes");
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let player_writeup = Request::builder()
+            .uri(&writeup_path)
+            .header(header::COOKIE, &player_cookies)
+            .body(Body::empty())
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(player_writeup)
+            .await
+            .expect("player writeup");
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let changes: serde_json::Value = serde_json::from_slice(&body).expect("writeup changes");
+        assert_eq!(changes["state"], "changes_requested");
+        assert_eq!(changes["feedback"], "Explain the final request path.");
+
+        let resubmit = Request::builder()
+            .method("PUT")
+            .uri(&writeup_path)
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "body": "The final request path appears after tracing and normalizing the endpoint.",
+                    "submit": true
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        assert_eq!(
+            app.clone()
+                .oneshot(resubmit)
+                .await
+                .expect("resubmit writeup")
+                .status(),
+            StatusCode::OK
+        );
+
+        for state in ["approved", "published"] {
+            let review = Request::builder()
+                .method("PATCH")
+                .uri(&review_path)
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::COOKIE, &admin_cookies)
+                .header("x-csrf-token", admin_csrf)
+                .body(Body::from(
+                    serde_json::json!({ "state": state, "feedback": null }).to_string(),
+                ))
+                .expect("request");
+            let response = app.clone().oneshot(review).await.expect("review writeup");
+            assert_eq!(response.status(), StatusCode::OK);
+        }
+
+        let survey_summary = Request::builder()
+            .uri(format!(
+                "/api/v1/events/{event_id}/challenges/{published_challenge_id}/survey-summary"
+            ))
+            .header(header::COOKIE, &admin_cookies)
+            .body(Body::empty())
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(survey_summary)
+            .await
+            .expect("survey summary");
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let summary: serde_json::Value = serde_json::from_slice(&body).expect("survey summary");
+        assert_eq!(summary["response_count"], 1);
+        assert_eq!(summary["questions"][0]["average"], 4.0);
+
         let scoreboard = Request::builder()
             .uri(format!("/api/v1/events/{event_id}/scoreboard"))
             .header(header::COOKIE, &player_cookies)
@@ -1237,8 +1485,8 @@ mod tests {
             .fetch_one(&pool)
             .await
             .expect("outbox count");
-        assert_eq!(audit_count, 16);
-        assert_eq!(outbox_count, 16);
+        assert_eq!(audit_count, 23);
+        assert_eq!(outbox_count, 23);
     }
 
     fn response_cookies(headers: &axum::http::HeaderMap) -> String {

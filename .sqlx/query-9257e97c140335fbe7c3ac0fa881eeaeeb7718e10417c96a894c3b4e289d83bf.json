@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE writeups\n            SET state = $2,reviewer_id = $3,feedback = $4,updated_at = $5\n            WHERE id = $1\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Uuid",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "9257e97c140335fbe7c3ac0fa881eeaeeb7718e10417c96a894c3b4e289d83bf"
+}

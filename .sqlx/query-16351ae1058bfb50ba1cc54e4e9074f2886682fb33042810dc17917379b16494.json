@@ -1,0 +1,78 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT w.id,w.user_id,w.team_id,COALESCE(t.name,u.display_name) AS \"competitor_name!\",\n               w.body,w.state,w.reviewer_id,w.feedback,w.created_at,w.updated_at\n        FROM writeups w\n        LEFT JOIN users u ON u.id = w.user_id\n        LEFT JOIN teams t ON t.id = w.team_id\n        WHERE w.challenge_id = $1\n          AND w.user_id IS NOT DISTINCT FROM $2\n          AND w.team_id IS NOT DISTINCT FROM $3\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "competitor_name!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "body",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "state",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "reviewer_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 7,
+        "name": "feedback",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 9,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      null,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "16351ae1058bfb50ba1cc54e4e9074f2886682fb33042810dc17917379b16494"
+}

@@ -112,3 +112,11 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Permit a hint charge to make a score negative — organizers can
   deliberately price information above a current balance, and silently refusing
   an authored cost would make the stated economy misleading.
+- 2026-07-22 — Own writeups by the solved competitor rather than only the
+  submitting user — a team shares one draft and review lifecycle without
+  exposing it to unrelated identities.
+- 2026-07-22 — Expose only aggregate survey analytics to organizers — validated
+  difficulty feedback remains useful without creating a competitor-level
+  response surveillance surface.
+- 2026-07-22 — Require an explicit approve-then-publish writeup sequence — one
+  accidental review action cannot immediately disclose player-authored content.

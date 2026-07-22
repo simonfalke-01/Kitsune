@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT cs.user_id,cs.team_id\n        FROM challenge_solves cs\n        WHERE cs.challenge_id = $1\n          AND (\n              cs.user_id = $2\n              OR EXISTS (\n                  SELECT 1 FROM team_members tm\n                  WHERE tm.team_id = cs.team_id AND tm.user_id = $2\n              )\n          )\n        ORDER BY cs.solved_at\n        LIMIT 1\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "team_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      true
+    ]
+  },
+  "hash": "3bb26b2efa377c715d169e11310210ce4ec9aa4fc7cf17da8f10061d582e4125"
+}

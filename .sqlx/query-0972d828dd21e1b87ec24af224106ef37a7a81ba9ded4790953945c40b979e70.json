@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id FROM survey_responses\n            WHERE challenge_id = $1\n              AND user_id IS NOT DISTINCT FROM $2\n              AND team_id IS NOT DISTINCT FROM $3\n            FOR UPDATE\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "0972d828dd21e1b87ec24af224106ef37a7a81ba9ded4790953945c40b979e70"
+}

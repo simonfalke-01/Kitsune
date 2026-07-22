@@ -1,6 +1,6 @@
 //! Challenge authoring and answer validation.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 use chrono::{DateTime, Utc};
 use regex::{Regex, RegexBuilder};
@@ -104,6 +104,85 @@ pub struct SurveyQuestion {
     pub range: Option<(i32, i32)>,
     /// Whether an answer is required.
     pub required: bool,
+}
+
+/// Player writeup lifecycle shared by the author and organizer review queue.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum WriteupState {
+    /// Editable player work that has not entered review.
+    Draft,
+    /// Waiting for an organizer decision.
+    Submitted,
+    /// Organizer feedback requires another player revision.
+    ChangesRequested,
+    /// Accepted by an organizer but not publicly visible.
+    Approved,
+    /// Accepted and visible under the challenge's publication policy.
+    Published,
+}
+
+impl WriteupState {
+    /// Validates an author-controlled transition.
+    pub fn author_transition(self, submit: bool) -> DomainResult<Self> {
+        match (self, submit) {
+            (Self::Draft | Self::ChangesRequested, false) => Ok(self),
+            (Self::Draft | Self::ChangesRequested, true) => Ok(Self::Submitted),
+            _ => Err(DomainError::Conflict(
+                "writeup is locked while it is under organizer control".into(),
+            )),
+        }
+    }
+
+    /// Validates an organizer-controlled review transition.
+    pub fn review_transition(self, next: Self) -> DomainResult<Self> {
+        let allowed = matches!(
+            (self, next),
+            (Self::Submitted, Self::ChangesRequested | Self::Approved)
+                | (Self::Approved, Self::ChangesRequested | Self::Published)
+        );
+        if allowed {
+            Ok(next)
+        } else {
+            Err(DomainError::Conflict(format!(
+                "writeup cannot transition from {self:?} to {next:?}"
+            )))
+        }
+    }
+}
+
+/// Validates a response against the authored integer survey schema.
+pub fn validate_survey_answers(
+    questions: &[SurveyQuestion],
+    answers: &BTreeMap<String, i32>,
+) -> DomainResult<()> {
+    let known_keys = questions
+        .iter()
+        .map(|question| question.key.as_str())
+        .collect::<BTreeSet<_>>();
+    if answers.keys().any(|key| !known_keys.contains(key.as_str())) {
+        return Err(DomainError::Validation(
+            "survey response contains an unknown question".into(),
+        ));
+    }
+    for question in questions {
+        let answer = answers.get(&question.key);
+        if question.required && answer.is_none() {
+            return Err(DomainError::Validation(format!(
+                "survey question '{}' is required",
+                question.key
+            )));
+        }
+        if let (Some(value), Some((minimum, maximum))) = (answer, question.range)
+            && !(minimum..=maximum).contains(value)
+        {
+            return Err(DomainError::Validation(format!(
+                "survey answer '{}' must be between {minimum} and {maximum}",
+                question.key
+            )));
+        }
+    }
+    Ok(())
 }
 
 /// Fully authored challenge aggregate.
@@ -376,6 +455,47 @@ mod tests {
         assert_eq!(
             rule.evaluate("xkit{123}").expect("evaluate"),
             AnswerOutcome::Incorrect
+        );
+    }
+
+    #[test]
+    fn writeup_lifecycle_separates_author_and_reviewer_control() {
+        assert_eq!(
+            WriteupState::Draft.author_transition(true),
+            Ok(WriteupState::Submitted)
+        );
+        assert_eq!(
+            WriteupState::Submitted.review_transition(WriteupState::Approved),
+            Ok(WriteupState::Approved)
+        );
+        assert_eq!(
+            WriteupState::Approved.review_transition(WriteupState::Published),
+            Ok(WriteupState::Published)
+        );
+        assert!(WriteupState::Submitted.author_transition(false).is_err());
+        assert!(
+            WriteupState::Submitted
+                .review_transition(WriteupState::Published)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn survey_validation_enforces_schema_and_ranges() {
+        let questions = vec![SurveyQuestion {
+            key: "difficulty".into(),
+            prompt: "How difficult?".into(),
+            range: Some((1, 5)),
+            required: true,
+        }];
+        assert!(validate_survey_answers(&questions, &BTreeMap::new()).is_err());
+        assert!(
+            validate_survey_answers(&questions, &BTreeMap::from([("difficulty".into(), 6)]))
+                .is_err()
+        );
+        assert!(
+            validate_survey_answers(&questions, &BTreeMap::from([("difficulty".into(), 4)]))
+                .is_ok()
         );
     }
 }

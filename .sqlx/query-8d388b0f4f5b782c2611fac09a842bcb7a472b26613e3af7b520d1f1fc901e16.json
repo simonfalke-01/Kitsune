@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT w.challenge_id,w.state\n            FROM writeups w\n            JOIN challenges c ON c.id = w.challenge_id\n            JOIN events e ON e.id = c.event_id\n            WHERE w.id = $1 AND e.id = $2 AND e.organization_id = $3\n            FOR UPDATE OF w\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "challenge_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "state",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "8d388b0f4f5b782c2611fac09a842bcb7a472b26613e3af7b520d1f1fc901e16"
+}

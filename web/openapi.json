@@ -915,6 +915,44 @@
         ],
         "type": "object"
       },
+      "ReviewWriteupRequest": {
+        "description": "Organizer writeup review input.",
+        "properties": {
+          "feedback": {
+            "description": "Review feedback, required when requesting changes.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state": {
+            "$ref": "#/components/schemas/WriteupReviewStateInput",
+            "description": "Requested review state."
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "type": "object"
+      },
+      "SaveWriteupRequest": {
+        "description": "Player writeup draft or submission input.",
+        "properties": {
+          "body": {
+            "description": "Markdown body, up to 100,000 bytes.",
+            "type": "string"
+          },
+          "submit": {
+            "description": "Enter the organizer review queue after saving.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "body",
+          "submit"
+        ],
+        "type": "object"
+      },
       "ScoreboardResponse": {
         "description": "Scoreboard controls and ordered standings.",
         "properties": {
@@ -1258,6 +1296,26 @@
         ],
         "type": "object"
       },
+      "SubmitSurveyRequest": {
+        "description": "Validated post-solve survey submission.",
+        "properties": {
+          "answers": {
+            "additionalProperties": {
+              "format": "int32",
+              "type": "integer"
+            },
+            "description": "Integer answers keyed by authored question key.",
+            "propertyNames": {
+              "type": "string"
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "answers"
+        ],
+        "type": "object"
+      },
       "SurveyInput": {
         "description": "Post-solve survey item.",
         "properties": {
@@ -1296,6 +1354,114 @@
           "key",
           "prompt",
           "required"
+        ],
+        "type": "object"
+      },
+      "SurveyQuestionSummaryResponse": {
+        "description": "Aggregate statistics for one survey question.",
+        "properties": {
+          "average": {
+            "description": "Arithmetic mean.",
+            "format": "double",
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "key": {
+            "description": "Authored key.",
+            "type": "string"
+          },
+          "maximum": {
+            "description": "Highest response.",
+            "format": "int32",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "minimum": {
+            "description": "Lowest response.",
+            "format": "int32",
+            "type": [
+              "integer",
+              "null"
+            ]
+          },
+          "prompt": {
+            "description": "Authored prompt.",
+            "type": "string"
+          },
+          "responses": {
+            "description": "Responses containing this key.",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "prompt",
+          "responses"
+        ],
+        "type": "object"
+      },
+      "SurveyResponse": {
+        "description": "Stable survey receipt.",
+        "properties": {
+          "answers": {
+            "additionalProperties": {
+              "format": "int32",
+              "type": "integer"
+            },
+            "description": "Validated answers.",
+            "propertyNames": {
+              "type": "string"
+            },
+            "type": "object"
+          },
+          "challenge_id": {
+            "description": "Challenge identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "id": {
+            "description": "Response identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "submitted_at": {
+            "description": "Last submission timestamp.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "challenge_id",
+          "answers",
+          "submitted_at"
+        ],
+        "type": "object"
+      },
+      "SurveySummaryResponse": {
+        "description": "Organizer-safe aggregate survey analytics.",
+        "properties": {
+          "questions": {
+            "description": "Per-question statistics.",
+            "items": {
+              "$ref": "#/components/schemas/SurveyQuestionSummaryResponse"
+            },
+            "type": "array"
+          },
+          "response_count": {
+            "description": "Total competitor responses.",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "response_count",
+          "questions"
         ],
         "type": "object"
       },
@@ -1527,6 +1693,93 @@
           "prerequisites"
         ],
         "type": "object"
+      },
+      "WriteupResponse": {
+        "description": "Player and organizer writeup projection.",
+        "properties": {
+          "body": {
+            "description": "Markdown body.",
+            "type": "string"
+          },
+          "challenge_id": {
+            "description": "Challenge identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "challenge_name": {
+            "description": "Challenge display name.",
+            "type": "string"
+          },
+          "competitor_id": {
+            "description": "Competitor identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "competitor_kind": {
+            "description": "`user` or `team`.",
+            "type": "string"
+          },
+          "competitor_name": {
+            "description": "Competitor display name.",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "Creation timestamp.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "feedback": {
+            "description": "Organizer feedback.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "description": "Writeup identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "reviewer_id": {
+            "description": "Last reviewer.",
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "state": {
+            "description": "Stable lifecycle state.",
+            "type": "string"
+          },
+          "updated_at": {
+            "description": "Last update timestamp.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "challenge_id",
+          "challenge_name",
+          "competitor_kind",
+          "competitor_id",
+          "competitor_name",
+          "body",
+          "state",
+          "created_at",
+          "updated_at"
+        ],
+        "type": "object"
+      },
+      "WriteupReviewStateInput": {
+        "description": "Organizer-selectable review outcome.",
+        "enum": [
+          "changes_requested",
+          "approved",
+          "published"
+        ],
+        "type": "string"
       }
     }
   },
@@ -2567,6 +2820,362 @@
         ]
       }
     },
+    "/api/v1/events/{event_id}/challenges/{challenge_id}/survey": {
+      "post": {
+        "operationId": "submit_survey",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Challenge ID",
+            "in": "path",
+            "name": "challenge_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitSurveyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveyResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "surveys"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/challenges/{challenge_id}/survey-summary": {
+      "get": {
+        "operationId": "survey_summary",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Challenge ID",
+            "in": "path",
+            "name": "challenge_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SurveySummaryResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "surveys"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/challenges/{challenge_id}/writeup": {
+      "get": {
+        "operationId": "get_writeup",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Challenge ID",
+            "in": "path",
+            "name": "challenge_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteupResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "writeups"
+        ]
+      },
+      "put": {
+        "operationId": "save_writeup",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Challenge ID",
+            "in": "path",
+            "name": "challenge_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveWriteupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteupResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "writeups"
+        ]
+      }
+    },
     "/api/v1/events/{event_id}/scoreboard": {
       "get": {
         "operationId": "scoreboard",
@@ -2793,6 +3402,185 @@
         },
         "tags": [
           "events"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/writeups": {
+      "get": {
+        "operationId": "list_writeups",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Stable writeup lifecycle key.",
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/WriteupResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "writeups"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/writeups/{writeup_id}": {
+      "patch": {
+        "operationId": "review_writeup",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Writeup ID",
+            "in": "path",
+            "name": "writeup_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewWriteupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WriteupResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "writeups"
         ]
       }
     },
@@ -3204,6 +3992,14 @@
     {
       "description": "Challenge board and authoring",
       "name": "challenges"
+    },
+    {
+      "description": "Player writeups and organizer review",
+      "name": "writeups"
+    },
+    {
+      "description": "Post-solve feedback and analytics",
+      "name": "surveys"
     },
     {
       "description": "Challenge attempts and solves",

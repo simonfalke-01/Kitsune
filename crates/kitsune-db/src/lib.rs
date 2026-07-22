@@ -6,6 +6,7 @@
 use std::time::Duration;
 
 pub mod auth;
+pub mod engagement;
 pub mod resources;
 pub mod submissions;
 pub mod teams;
