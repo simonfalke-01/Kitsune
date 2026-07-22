@@ -11,6 +11,9 @@ export type CreateEventInput = components['schemas']['CreateEventRequest'];
 export type UpdateEventStateInput = components['schemas']['UpdateEventStateRequest'];
 export type ChallengeSummary = components['schemas']['ChallengeResponse'];
 export type CreateChallengeInput = components['schemas']['CreateChallengeRequest'];
+export type TeamSummary = components['schemas']['TeamResponse'];
+export type CreateTeamInput = components['schemas']['CreateTeamRequest'];
+export type JoinTeamInput = components['schemas']['JoinTeamRequest'];
 
 export const api = createClient<paths>({
   baseUrl: '',

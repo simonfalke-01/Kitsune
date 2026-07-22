@@ -47,7 +47,8 @@ or scaffolding alone.
 - [x] Axum health/readiness, security headers, tracing, OpenAPI 3.1/Swagger.
 - [x] Authenticated WebSocket with SSE fallback over EventBus.
 - [x] API+PostgreSQL setup/session/CSRF/logout integration test.
-- [ ] Local registration/recovery/email verification/session management UI/API.
+- [x] Local registration/recovery/email verification/session management UI/API
+  persistence and security boundaries.
 - [x] Local registration and account-owned active-session UI/API.
 - [x] Email-verification and recovery one-time token persistence/API.
 - [ ] Deliver verification and recovery messages through configured SMTP.
@@ -62,6 +63,13 @@ or scaffolding alone.
   projections, visibility evaluation, hashed exact answers, audit, and outbox.
 - [x] Domain-validated event lifecycle transition API and organizer live/pause/
   resume/end controls with audit, outbox, realtime, and browser coverage.
+- [x] Team create/join/list and captain-transfer REST/UI slice with one-time
+  digest-only invite codes, upgrade-safe role grants, tenant isolation, audit,
+  outbox, PostgreSQL constraints, and desktop/mobile browser coverage.
+- [ ] Team invite rotation, leave/removal, merge/transfer administration,
+  event registration, and event-specific size-limit enforcement.
+- [ ] Challenge submission validation, score ledger, solves, first blood,
+  freeze-safe realtime scoreboard, attempts, and rate limiting.
 - [ ] Complete versioned REST resources and OpenAPI contracts.
 
 ## Frontend vertical slice
@@ -82,6 +90,8 @@ or scaffolding alone.
   board to the generated REST client and realtime invalidation.
 - [x] Exercise the event-to-published-challenge journey with PostgreSQL-backed
   Playwright on desktop/mobile and axe.
+- [x] Wire the player team page to create/join/list/captain APIs and cover team
+  creation through the real desktop/mobile browser journey.
 - [ ] Complete all mode-specific, auth-provider, plugin, integration, and
   administrative surfaces.
 

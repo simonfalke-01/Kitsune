@@ -6,7 +6,16 @@ import ts from 'typescript-eslint';
 import svelteConfig from './svelte.config.js';
 
 export default [
-  { ignores: ['.svelte-kit/**', 'build/**', 'coverage/**', 'openapi.json'] },
+  {
+    ignores: [
+      '.svelte-kit/**',
+      'build/**',
+      'coverage/**',
+      'openapi.json',
+      'playwright-report/**',
+      'test-results/**'
+    ]
+  },
   js.configs.recommended,
   ...ts.configs.recommended,
   ...svelte.configs['flat/recommended'],

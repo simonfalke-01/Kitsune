@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE team_members SET captain = false WHERE team_id = $1 AND captain",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "58b3caed9bc4b9de061a013803e81403e8764576a491e665617bcf4218b8261e"
+}

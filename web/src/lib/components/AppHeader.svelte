@@ -7,6 +7,7 @@
   import { preferences } from '$lib/i18n/index.svelte';
   import { events } from '$lib/stores/events.svelte';
   import { session } from '$lib/stores/session.svelte';
+  import { team } from '$lib/stores/team.svelte';
   import { realtime } from '$lib/stores/realtime.svelte';
 
   const links = [
@@ -19,6 +20,7 @@
     realtime.stop();
     await session.logout();
     events.clear();
+    team.clear();
     await goto('/login');
   }
 </script>

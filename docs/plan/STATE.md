@@ -6,11 +6,12 @@ Updated: 2026-07-22 (Asia/Singapore)
 
 - Current milestone: 02 — deterministic core and persistence.
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: complete provider/token suite and expand domain REST resources.
+- In progress: complete the Jeopardy submission/scoreboard slice, then finish
+  the remaining provider and programmatic-token suite.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
-- Next: wire event/challenge screens, then implement OIDC, passkeys, SAML, and
-  programmatic tokens.
+- Next: accept and score challenge submissions transactionally, expose the live
+  scoreboard, then implement OIDC, passkeys, SAML, and programmatic tokens.
 
 ## Verified
 
@@ -18,7 +19,7 @@ Updated: 2026-07-22 (Asia/Singapore)
 - CTFd reference inspected only for externally visible features and schema
   concepts; no source or assets copied.
 - Local toolchain: Rust 1.93.1, Node 24.13.0, Corepack 0.34.5, Docker 29.4.0.
-- Core workspace format, 12 domain tests, and strict workspace Clippy pass.
+- Core workspace format, 13 domain tests, and strict workspace Clippy pass.
 - PostgreSQL 17 migration applies from empty state; SQLx compile-time query
   metadata is checked in; transactional audit/outbox/idempotency test passes.
 - Lean cache/EventBus, typed automation DAG validation/execution, centralized
@@ -26,7 +27,7 @@ Updated: 2026-07-22 (Asia/Singapore)
   focused tests and strict Clippy.
 - Live Axum server smoke passes schema migration, auto-generated 0600 cookie key,
   `/health`, `/ready`, OpenAPI 3.1, first-run admin creation, encrypted cookies,
-  session recovery, 15-permission super-admin grant, CSRF rejection, logout, and
+  session recovery, 18-permission super-admin grant, CSRF rejection, logout, and
   graceful shutdown.
 - Local self-registration, email-verification and recovery token persistence,
   XChaCha20-Poly1305-sealed TOTP secrets, replay-resistant authenticator login,
@@ -57,6 +58,11 @@ Updated: 2026-07-22 (Asia/Singapore)
   draft/scheduled/live/paused/ended/archive transitions; invalid historical
   reopen attempts return conflicts, while successful changes are audited,
   outboxed, published in realtime, and exercised through the browser journey.
+- Tenant-scoped teams now support self-service creation, digest-only one-time
+  invite codes, player joining, and atomic captain transfer. PostgreSQL enforces
+  one team per user per organization and unique invite lookup under races;
+  managed role upgrades keep existing installations authorized. The real
+  desktop/mobile browser journey now verifies the team surface too.
 
 ## Risks being actively retired
 

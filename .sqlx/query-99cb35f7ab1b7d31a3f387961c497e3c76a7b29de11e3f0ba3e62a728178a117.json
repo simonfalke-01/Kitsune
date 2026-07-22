@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT EXISTS(\n            SELECT 1 FROM team_members tm\n            JOIN teams t ON t.id = tm.team_id\n            WHERE tm.team_id = $1 AND t.organization_id = $2\n              AND tm.user_id = $3 AND tm.captain\n        ) AS \"exists!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "99cb35f7ab1b7d31a3f387961c497e3c76a7b29de11e3f0ba3e62a728178a117"
+}

@@ -82,3 +82,12 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Make event lifecycle transitions explicit and forward-only after
   competition end — pause/resume remains operationally safe while historical
   results cannot silently become writable again.
+- 2026-07-22 — Enforce at most one team membership per user and organization in
+  PostgreSQL — event participation can project that stable identity while the
+  uniqueness constraint closes create/join races across stateless API nodes.
+- 2026-07-22 — Return team invite codes only at creation and persist SHA-256
+  digests behind a tenant-scoped unique index — captains get a convenient opaque
+  credential without turning database disclosure into immediate team access.
+- 2026-07-22 — Treat built-in role permissions as Kitsune-managed upgrade data —
+  forward migrations add new capabilities to existing installations and player
+  registration refreshes the canonical role rather than preserving stale grants.

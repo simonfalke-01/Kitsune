@@ -170,6 +170,9 @@ impl AuthRepository {
             "submission_manage",
             "scoreboard_read",
             "scoreboard_manage",
+            "team_create",
+            "team_join",
+            "team_captain",
             "team_manage",
             "identity_manage",
             "instance_manage",
@@ -258,6 +261,9 @@ impl AuthRepository {
             "challenge_read",
             "submission_create",
             "scoreboard_read",
+            "team_create",
+            "team_join",
+            "team_captain",
         ]
         .into_iter()
         .map(str::to_owned)
@@ -266,7 +272,9 @@ impl AuthRepository {
             r#"
             INSERT INTO roles (id,organization_id,key,name,permissions,built_in)
             VALUES ($1,$2,'player','Player',$3,true)
-            ON CONFLICT (organization_id,key) DO UPDATE SET name = EXCLUDED.name
+            ON CONFLICT (organization_id,key) DO UPDATE SET
+                name = EXCLUDED.name,
+                permissions = EXCLUDED.permissions
             RETURNING id
             "#,
             role_id,

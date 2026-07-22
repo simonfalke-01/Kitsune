@@ -497,6 +497,37 @@
         ],
         "type": "object"
       },
+      "CreateTeamRequest": {
+        "description": "New team input.",
+        "properties": {
+          "name": {
+            "description": "Display name.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "CreateTeamResponse": {
+        "description": "One-time team creation response. The invite code is never retrievable later.",
+        "properties": {
+          "invite_code": {
+            "description": "Opaque invite code shown once.",
+            "type": "string"
+          },
+          "team": {
+            "$ref": "#/components/schemas/TeamResponse",
+            "description": "Created team."
+          }
+        },
+        "required": [
+          "team",
+          "invite_code"
+        ],
+        "type": "object"
+      },
       "ErrorBody": {
         "description": "Machine-readable error response.",
         "properties": {
@@ -656,6 +687,19 @@
           "id",
           "content",
           "cost"
+        ],
+        "type": "object"
+      },
+      "JoinTeamRequest": {
+        "description": "Join-code input.",
+        "properties": {
+          "invite_code": {
+            "description": "Opaque code supplied by a captain.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "invite_code"
         ],
         "type": "object"
       },
@@ -1045,6 +1089,69 @@
         ],
         "type": "object"
       },
+      "TeamMemberResponse": {
+        "description": "Team member projection.",
+        "properties": {
+          "captain": {
+            "description": "Captain authority.",
+            "type": "boolean"
+          },
+          "display_name": {
+            "description": "Public display name.",
+            "type": "string"
+          },
+          "joined_at": {
+            "description": "Join instant.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "user_id": {
+            "description": "User ID.",
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name",
+          "captain",
+          "joined_at"
+        ],
+        "type": "object"
+      },
+      "TeamResponse": {
+        "description": "Team projection without invite secrets.",
+        "properties": {
+          "created_at": {
+            "description": "Creation instant.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "id": {
+            "description": "Team ID.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "members": {
+            "description": "Current members.",
+            "items": {
+              "$ref": "#/components/schemas/TeamMemberResponse"
+            },
+            "type": "array"
+          },
+          "name": {
+            "description": "Display name.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "created_at",
+          "members"
+        ],
+        "type": "object"
+      },
       "TokenRequest": {
         "description": "One opaque token input.",
         "properties": {
@@ -1086,6 +1193,20 @@
         "required": [
           "secret",
           "provisioning_uri"
+        ],
+        "type": "object"
+      },
+      "TransferCaptainRequest": {
+        "description": "Captain transfer input.",
+        "properties": {
+          "user_id": {
+            "description": "Existing member receiving captain authority.",
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id"
         ],
         "type": "object"
       },
@@ -2098,6 +2219,259 @@
         ]
       }
     },
+    "/api/v1/teams": {
+      "get": {
+        "operationId": "list_teams",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TeamResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "teams"
+        ]
+      },
+      "post": {
+        "operationId": "create_team",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTeamRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateTeamResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "teams"
+        ]
+      }
+    },
+    "/api/v1/teams/join": {
+      "post": {
+        "operationId": "join_team",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinTeamRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "teams"
+        ]
+      }
+    },
+    "/api/v1/teams/{team_id}/captain": {
+      "post": {
+        "operationId": "transfer_captain",
+        "parameters": [
+          {
+            "description": "Team ID",
+            "in": "path",
+            "name": "team_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransferCaptainRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "teams"
+        ]
+      }
+    },
     "/health": {
       "get": {
         "operationId": "health",
@@ -2165,6 +2539,10 @@
     {
       "description": "Challenge board and authoring",
       "name": "challenges"
+    },
+    {
+      "description": "Player teams and captain controls",
+      "name": "teams"
     }
   ]
 }

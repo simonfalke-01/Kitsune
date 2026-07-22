@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT t.id,t.name,t.created_at\n            FROM teams t\n            JOIN team_members mine ON mine.team_id = t.id\n            WHERE t.organization_id = $1 AND mine.user_id = $2\n            ORDER BY t.name,t.id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "09547552b72ece5d4ab8acb4dea9bfb115d97824f3d4e91c2ab533a0a13ebd6e"
+}

@@ -51,7 +51,7 @@ test('organizer authors a published challenge visible on the player board', asyn
   await page.getByLabel('Event key').fill(`foxfire-e2e-${key}-${run}`);
   await page.getByLabel('Description').fill('A browser-tested Kitsune event.');
   await page.getByRole('button', { name: 'Create draft' }).click();
-  await expect(page.getByText(eventName, { exact: true })).toBeVisible();
+  await expect(page.locator('.event-grid').getByText(eventName, { exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Go live' }).click();
   await expect(page.getByText('Current state: live')).toBeVisible();
 
@@ -73,4 +73,18 @@ test('organizer authors a published challenge visible on the player board', asyn
 
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations).toEqual([]);
+
+  const teamsLoaded = page.waitForResponse((response) => response.url().endsWith('/api/v1/teams'));
+  await page.goto('/team');
+  await teamsLoaded;
+  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+  const createTeam = page.getByRole('button', { name: 'Create team' });
+  if (await createTeam.isVisible()) {
+    await createTeam.click();
+    await page.getByLabel('Team name').fill(`Nine Tails E2E ${run}`);
+    await page.locator('form').getByRole('button', { name: 'Create team' }).click();
+    await expect(page.locator('form')).toBeHidden();
+  }
+  await expect(page.locator('.members').getByText('E2E Owner', { exact: true })).toBeVisible();
+  await expect(page.getByText('Captain', { exact: true })).toBeVisible();
 });

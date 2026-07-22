@@ -4,6 +4,7 @@ mod auth;
 mod error;
 mod realtime;
 mod resources;
+mod teams;
 
 use std::{sync::Arc, time::Instant};
 
@@ -131,7 +132,11 @@ pub struct ReadinessResponse {
         resources::create_event,
         resources::update_event_state,
         resources::list_challenges,
-        resources::create_challenge
+        resources::create_challenge,
+        teams::list_teams,
+        teams::create_team,
+        teams::join_team,
+        teams::transfer_captain
     ),
     components(schemas(
         HealthResponse,
@@ -163,6 +168,12 @@ pub struct ReadinessResponse {
         resources::SurveyInput,
         resources::CreateChallengeRequest,
         resources::ChallengeResponse,
+        teams::TeamMemberResponse,
+        teams::TeamResponse,
+        teams::CreateTeamRequest,
+        teams::CreateTeamResponse,
+        teams::JoinTeamRequest,
+        teams::TransferCaptainRequest,
         auth::SessionResponse,
         auth::UserResponse
     )),
@@ -170,7 +181,8 @@ pub struct ReadinessResponse {
         (name = "system", description = "Health and diagnostics"),
         (name = "auth", description = "Setup, sessions, and authentication"),
         (name = "events", description = "Competition and workshop events"),
-        (name = "challenges", description = "Challenge board and authoring")
+        (name = "challenges", description = "Challenge board and authoring"),
+        (name = "teams", description = "Player teams and captain controls")
     )
 )]
 pub struct ApiDoc;
@@ -248,6 +260,15 @@ pub fn router(state: AppState) -> Router {
             "/api/v1/events/{event_id}/challenges",
             get(resources::list_challenges).post(resources::create_challenge),
         )
+        .route(
+            "/api/v1/teams",
+            get(teams::list_teams).post(teams::create_team),
+        )
+        .route("/api/v1/teams/join", post(teams::join_team))
+        .route(
+            "/api/v1/teams/{team_id}/captain",
+            post(teams::transfer_captain),
+        )
         .route("/api/v1/realtime/ws", get(realtime::websocket))
         .route("/api/v1/realtime/sse", get(realtime::sse))
         .merge(SwaggerUi::new("/api/docs").url("/api/openapi.json", ApiDoc::openapi()))
@@ -305,9 +326,11 @@ mod tests {
     use http_body_util::BodyExt;
     use kitsune_automation::{InProcessCache, InProcessEventBus};
     use kitsune_db::{MIGRATOR, PostgresStore, auth::AuthRepository};
+    use sha2::{Digest, Sha256};
     use sqlx::PgPool;
     use totp_rs::{Algorithm as TotpAlgorithm, Secret, TOTP};
     use tower::ServiceExt;
+    use uuid::Uuid;
 
     use super::*;
 
@@ -734,6 +757,78 @@ mod tests {
             .to_bytes();
         let player_session: serde_json::Value = serde_json::from_slice(&body).expect("session");
         let player_csrf = player_session["csrf_token"].as_str().expect("csrf");
+        let player_id = player_session["user"]["id"].as_str().expect("player id");
+
+        let create_team = Request::builder()
+            .method("POST")
+            .uri("/api/v1/teams")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(r#"{"name":"Nine Tails"}"#))
+            .expect("request");
+        let response = app.clone().oneshot(create_team).await.expect("create team");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let created_team: serde_json::Value = serde_json::from_slice(&body).expect("team");
+        let team_id = created_team["team"]["id"].as_str().expect("team id");
+        let invite_code = created_team["invite_code"].as_str().expect("invite code");
+        let stored_invite_digest = sqlx::query_scalar!(
+            "SELECT invite_code_digest FROM teams WHERE id = $1",
+            Uuid::parse_str(team_id).expect("team UUID"),
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("stored invite digest");
+        assert_ne!(stored_invite_digest, invite_code.as_bytes());
+        assert_eq!(
+            stored_invite_digest.as_slice(),
+            Sha256::digest(invite_code.as_bytes()).as_slice()
+        );
+
+        let join_team = Request::builder()
+            .method("POST")
+            .uri("/api/v1/teams/join")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::from(
+                serde_json::json!({ "invite_code": invite_code }).to_string(),
+            ))
+            .expect("request");
+        let response = app.clone().oneshot(join_team).await.expect("join team");
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let transfer_captain = Request::builder()
+            .method("POST")
+            .uri(format!("/api/v1/teams/{team_id}/captain"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(
+                serde_json::json!({ "user_id": player_id }).to_string(),
+            ))
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(transfer_captain)
+            .await
+            .expect("transfer captain");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let team: serde_json::Value = serde_json::from_slice(&body).expect("team");
+        assert_eq!(team["members"][0]["user_id"], player_id);
+        assert_eq!(team["members"][0]["captain"], true);
 
         let player_list = Request::builder()
             .uri(format!("/api/v1/events/{event_id}/challenges"))
@@ -791,8 +886,8 @@ mod tests {
             .fetch_one(&pool)
             .await
             .expect("outbox count");
-        assert_eq!(audit_count, 4);
-        assert_eq!(outbox_count, 4);
+        assert_eq!(audit_count, 7);
+        assert_eq!(outbox_count, 7);
     }
 
     fn response_cookies(headers: &axum::http::HeaderMap) -> String {

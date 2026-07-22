@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT u.id AS user_id,u.display_name,tm.captain,tm.joined_at\n            FROM team_members tm\n            JOIN teams t ON t.id = tm.team_id\n            JOIN users u ON u.id = tm.user_id\n            WHERE tm.team_id = $1 AND t.organization_id = $2\n            ORDER BY tm.captain DESC,tm.joined_at,u.id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "captain",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 3,
+        "name": "joined_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "d9f6abca9df7a78ad58f2615669245f9a0032b09be48376a40c7c96851ee41e8"
+}

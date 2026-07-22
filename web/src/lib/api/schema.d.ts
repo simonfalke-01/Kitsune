@@ -244,6 +244,54 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/teams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_teams"];
+        put?: never;
+        post: operations["create_team"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/teams/join": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["join_team"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/teams/{team_id}/captain": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["transfer_captain"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -445,6 +493,18 @@ export interface components {
              */
             team_size_limit?: number | null;
         };
+        /** @description New team input. */
+        CreateTeamRequest: {
+            /** @description Display name. */
+            name: string;
+        };
+        /** @description One-time team creation response. The invite code is never retrievable later. */
+        CreateTeamResponse: {
+            /** @description Opaque invite code shown once. */
+            invite_code: string;
+            /** @description Created team. */
+            team: components["schemas"]["TeamResponse"];
+        };
         /** @description Machine-readable error response. */
         ErrorBody: {
             /** @description Stable error code. */
@@ -522,6 +582,11 @@ export interface components {
              * @description Stable positive key.
              */
             id: number;
+        };
+        /** @description Join-code input. */
+        JoinTeamRequest: {
+            /** @description Opaque code supplied by a captain. */
+            invite_code: string;
         };
         /** @description Local login input. */
         LoginRequest: {
@@ -685,6 +750,40 @@ export interface components {
             /** @description Required answer. */
             required: boolean;
         };
+        /** @description Team member projection. */
+        TeamMemberResponse: {
+            /** @description Captain authority. */
+            captain: boolean;
+            /** @description Public display name. */
+            display_name: string;
+            /**
+             * Format: date-time
+             * @description Join instant.
+             */
+            joined_at: string;
+            /**
+             * Format: uuid
+             * @description User ID.
+             */
+            user_id: string;
+        };
+        /** @description Team projection without invite secrets. */
+        TeamResponse: {
+            /**
+             * Format: date-time
+             * @description Creation instant.
+             */
+            created_at: string;
+            /**
+             * Format: uuid
+             * @description Team ID.
+             */
+            id: string;
+            /** @description Current members. */
+            members: components["schemas"]["TeamMemberResponse"][];
+            /** @description Display name. */
+            name: string;
+        };
         /** @description One opaque token input. */
         TokenRequest: {
             /** @description URL-safe one-time token. */
@@ -701,6 +800,14 @@ export interface components {
             provisioning_uri: string;
             /** @description Base32 secret for manual entry. */
             secret: string;
+        };
+        /** @description Captain transfer input. */
+        TransferCaptainRequest: {
+            /**
+             * Format: uuid
+             * @description Existing member receiving captain authority.
+             */
+            user_id: string;
         };
         /** @description Organizer event lifecycle mutation. */
         UpdateEventStateRequest: {
@@ -1471,6 +1578,201 @@ export interface operations {
                 };
             };
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_teams: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamResponse"][];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    create_team: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateTeamRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CreateTeamResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    join_team: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["JoinTeamRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    transfer_captain: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Team ID */
+                team_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransferCaptainRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TeamResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

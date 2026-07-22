@@ -489,7 +489,7 @@ impl ResourceRepository {
     }
 }
 
-async fn persist_audit_event(
+pub(crate) async fn persist_audit_event(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     envelope: &EventEnvelope,
     action: &str,
