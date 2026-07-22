@@ -99,6 +99,8 @@ pub enum DomainEvent {
     OAuthClientChanged { client_id: Uuid, state: String },
     /// OpenID Connect provider lifecycle changed.
     OidcProviderChanged { provider_id: Uuid, state: String },
+    /// SAML identity-provider lifecycle changed.
+    SamlProviderChanged { provider_id: Uuid, state: String },
     /// Account-owned passkey lifecycle changed.
     PasskeyChanged { credential_id: Uuid, state: String },
     /// Event lifecycle or configuration changed.
@@ -192,6 +194,7 @@ impl DomainEvent {
             Self::ApiTokenChanged { .. } => "auth.api_token.changed",
             Self::OAuthClientChanged { .. } => "auth.oauth_client.changed",
             Self::OidcProviderChanged { .. } => "auth.oidc_provider.changed",
+            Self::SamlProviderChanged { .. } => "auth.saml_provider.changed",
             Self::PasskeyChanged { .. } => "auth.passkey.changed",
             Self::EventChanged { .. } => "event.changed",
             Self::TeamCreated { .. } => "identity.team.created",

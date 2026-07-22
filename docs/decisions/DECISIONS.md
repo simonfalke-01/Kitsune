@@ -126,10 +126,26 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Compile SQLx queries from checked-in offline metadata in CI while
   retaining PostgreSQL-backed tests — linting no longer races an unmigrated
   service, and each SQLx test still creates and migrates an isolated database.
-- 2026-07-22 — Ignore RUSTSEC-2023-0071 only for SQLx's lockfile-only optional
-  MySQL driver — `cargo tree --workspace --all-features --target all -i rsa`
-  proves the vulnerable RSA crate is absent from every Kitsune build graph;
-  PostgreSQL remains the only first-party datastore.
+- 2026-07-22 — Keep the narrow RUSTSEC-2023-0071 audit exception after adding
+  SAML only because it concerns RSA PKCS#1 v1.5 decryption — Kitsune uses RSA
+  solely for key generation, AuthnRequest signing, and signature verification;
+  encrypted assertions and the library's software-decryption escape hatch stay
+  disabled, while PostgreSQL remains the only first-party datastore.
+- 2026-07-22 — Pin `saml-rs` 0.3.0 and require signed assertions, signed
+  AuthnRequests, audience/time/destination/recipient/InResponseTo validation,
+  bounded XML, and PostgreSQL replay reservation — assertion-only signing is a
+  common IdP profile, while cross-node replay must commit with flow consumption.
+- 2026-07-22 — Accept unsigned IdP metadata only when an organizer explicitly
+  pastes it or Kitsune retrieves it through the DNS-pinned egress policy; an
+  optional pinned metadata-signing certificate upgrades ingestion to verified
+  trust without making external federation configuration mandatory.
+- 2026-07-22 — Generate one persistent 3072-bit RSA SAML signing identity on
+  first boot with mode 0600 and expose canonical provider-specific SP metadata
+  and ACS URLs — lean mode remains zero-config and operators can register or
+  replace the stable certificate before enabling a provider.
+- 2026-07-22 — Use `SameSite=None; Secure` for production SAML flow cookies and
+  Lax only for insecure local origins — cross-site HTTP-POST ACS delivery must
+  retain browser binding without weakening local zero-configuration startup.
 - 2026-07-22 — Derive historical score series directly from the append-only
   ledger instead of maintaining a second mutable aggregate — freeze, division,
   reversal, and tie semantics remain explainable from one source of truth.

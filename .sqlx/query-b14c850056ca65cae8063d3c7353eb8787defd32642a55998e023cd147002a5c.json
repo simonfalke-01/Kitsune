@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO saml_replay_keys (key_digest,provider_id,expires_at,created_at)\n            VALUES ($1,$2,$3,$4)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Bytea",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "b14c850056ca65cae8063d3c7353eb8787defd32642a55998e023cd147002a5c"
+}

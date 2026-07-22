@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM saml_replay_keys WHERE expires_at <= $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "dbaf03bc6497b0fa29d38579f210d4da01b9b8cc1dab679b8bbcbeb0c5a91531"
+}

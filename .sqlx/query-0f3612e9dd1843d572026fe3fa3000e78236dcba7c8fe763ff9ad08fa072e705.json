@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO saml_flows (\n                id,provider_id,organization_id,request_id,relay_state_digest,\n                encrypted_relay_state,browser_binding_digest,return_path,\n                expires_at,created_at\n            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Bytea",
+        "Bytea",
+        "Bytea",
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "0f3612e9dd1843d572026fe3fa3000e78236dcba7c8fe763ff9ad08fa072e705"
+}

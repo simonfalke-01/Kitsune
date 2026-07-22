@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT action\n            FROM audit_log\n            WHERE resource_type IN ('saml_provider','user')\n              AND action LIKE 'auth.saml%'\n            ORDER BY occurred_at,id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "action",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "d1f2e419b1e8e29c9b85fad56c97b28d07fd6813964268b82eada576b2e2a0be"
+}

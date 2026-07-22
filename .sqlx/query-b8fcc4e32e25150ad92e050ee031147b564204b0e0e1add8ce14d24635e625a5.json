@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT p.key,p.display_name\n            FROM saml_providers p\n            JOIN organizations o ON o.id = p.organization_id\n            WHERE o.slug = $1 AND p.enabled = true\n            ORDER BY p.display_name,p.id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "key",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "display_name",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "b8fcc4e32e25150ad92e050ee031147b564204b0e0e1add8ce14d24635e625a5"
+}

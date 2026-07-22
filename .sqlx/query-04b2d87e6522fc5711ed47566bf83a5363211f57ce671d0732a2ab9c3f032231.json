@@ -1,0 +1,95 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT p.id,p.organization_id,o.slug AS organization_slug,p.key,\n                   p.display_name,p.idp_entity_id,p.idp_metadata,p.sp_entity_id,\n                   p.acs_uri,p.email_attribute,p.display_name_attribute,\n                   p.auto_provision,p.allow_email_link\n            FROM saml_providers p\n            JOIN organizations o ON o.id = p.organization_id\n            WHERE o.slug = $1 AND p.key = $2 AND p.enabled = true\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "organization_slug",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "key",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "idp_entity_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "idp_metadata",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "sp_entity_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "acs_uri",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "email_attribute",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "display_name_attribute",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "auto_provision",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 12,
+        "name": "allow_email_link",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "04b2d87e6522fc5711ed47566bf83a5363211f57ce671d0732a2ab9c3f032231"
+}

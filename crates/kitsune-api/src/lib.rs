@@ -9,6 +9,8 @@ mod oidc_routes;
 mod passkeys;
 mod realtime;
 mod resources;
+mod saml;
+mod saml_routes;
 mod submissions;
 mod teams;
 mod tokens;
@@ -40,6 +42,7 @@ pub use auth::{Actor, AuthService, SessionIdentity};
 pub use error::{ApiError, ApiResult, ErrorBody};
 pub use oidc::OidcService;
 pub use passkeys::PasskeyService;
+pub use saml::{SamlCredentials, SamlService};
 pub use tokens::TokenService;
 
 /// Shared application dependencies. Trait objects keep scaled adapters
@@ -66,6 +69,8 @@ pub struct AppState {
     pub oidc: OidcService,
     /// Exact-origin WebAuthn verifier.
     pub passkeys: PasskeyService,
+    /// Signed SAML service provider. Installed once external auth is composed.
+    pub saml: Option<SamlService>,
     /// Whether external identity routes are exposed for this runtime profile.
     pub external_auth_enabled: bool,
     /// Canonical browser-facing origin used for authentication callbacks.
@@ -97,6 +102,7 @@ impl AppState {
             secure_cookies,
             oidc: OidcService::default(),
             passkeys: PasskeyService::default(),
+            saml: None,
             external_auth_enabled: false,
             public_origin: url::Url::parse("http://localhost:3000")
                 .expect("static public origin is valid"),
@@ -118,6 +124,13 @@ impl AppState {
     #[must_use]
     pub fn with_passkeys(mut self, passkeys: PasskeyService) -> Self {
         self.passkeys = passkeys;
+        self
+    }
+
+    /// Installs the SAML service-provider protocol boundary.
+    #[must_use]
+    pub fn with_saml(mut self, saml: SamlService) -> Self {
+        self.saml = Some(saml);
         self
     }
 }
@@ -185,6 +198,13 @@ pub struct ReadinessResponse {
         oidc_routes::public_oidc_providers,
         oidc_routes::start_oidc,
         oidc_routes::oidc_callback,
+        saml_routes::list_saml_providers,
+        saml_routes::create_saml_provider,
+        saml_routes::update_saml_provider,
+        saml_routes::public_saml_providers,
+        saml_routes::saml_metadata,
+        saml_routes::start_saml,
+        saml_routes::saml_acs,
         passkeys::start_passkey_registration,
         passkeys::finish_passkey_registration,
         passkeys::start_passkey_login,
@@ -286,6 +306,11 @@ pub struct ReadinessResponse {
         oidc_routes::UpdateOidcProviderRequest,
         oidc_routes::OidcProviderResponse,
         oidc_routes::PublicOidcProviderResponse,
+        saml_routes::CreateSamlProviderRequest,
+        saml_routes::UpdateSamlProviderRequest,
+        saml_routes::SamlProviderResponse,
+        saml_routes::PublicSamlProviderResponse,
+        saml_routes::SamlAcsForm,
         passkeys::StartPasskeyRegistrationRequest,
         passkeys::StartPasskeyLoginRequest,
         passkeys::PasskeyCeremonyResponse,
@@ -407,6 +432,30 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/auth/oidc/{organization}/{provider_key}/callback",
             get(oidc_routes::oidc_callback),
+        )
+        .route(
+            "/api/v1/auth/saml/providers/public",
+            get(saml_routes::public_saml_providers),
+        )
+        .route(
+            "/api/v1/auth/saml/providers",
+            get(saml_routes::list_saml_providers).post(saml_routes::create_saml_provider),
+        )
+        .route(
+            "/api/v1/auth/saml/providers/{provider_id}",
+            axum::routing::put(saml_routes::update_saml_provider),
+        )
+        .route(
+            "/api/v1/auth/saml/{organization}/{provider_key}/metadata",
+            get(saml_routes::saml_metadata),
+        )
+        .route(
+            "/api/v1/auth/saml/{organization}/{provider_key}/start",
+            get(saml_routes::start_saml),
+        )
+        .route(
+            "/api/v1/auth/saml/{organization}/{provider_key}/acs",
+            post(saml_routes::saml_acs),
         )
         .route("/api/v1/auth/passkeys", get(passkeys::list_passkeys))
         .route(

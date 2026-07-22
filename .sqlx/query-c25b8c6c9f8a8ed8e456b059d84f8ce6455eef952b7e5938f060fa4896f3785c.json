@@ -1,0 +1,106 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id,key,display_name,idp_entity_id,metadata_url,\n                   metadata_verified,sp_entity_id,acs_uri,email_attribute,\n                   display_name_attribute,enabled,auto_provision,\n                   allow_email_link,created_at,updated_at\n            FROM saml_providers\n            WHERE organization_id = $1\n            ORDER BY display_name,id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "key",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "idp_entity_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "metadata_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "metadata_verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "sp_entity_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "acs_uri",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "email_attribute",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "display_name_attribute",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "enabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 11,
+        "name": "auto_provision",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 12,
+        "name": "allow_email_link",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 13,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 14,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "c25b8c6c9f8a8ed8e456b059d84f8ce6455eef952b7e5938f060fa4896f3785c"
+}

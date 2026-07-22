@@ -1,0 +1,47 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT id,organization_id,idp_entity_id,auto_provision,allow_email_link\n        FROM saml_providers\n        WHERE id = $1 AND organization_id = $2 AND enabled = true\n        FOR SHARE\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "idp_entity_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "auto_provision",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "allow_email_link",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "1971d5b4e2f104c9d8d4a53f6449ea860bb42e9b228132e18477dfcbbb231637"
+}

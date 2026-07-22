@@ -22,7 +22,10 @@ kitsune-db = { path = "../kitsune-db" }
 openidconnect.workspace = true
 pasetors.workspace = true
 rand.workspace = true
+rcgen.workspace = true
 reqwest.workspace = true
+rsa.workspace = true
+saml-rs.workspace = true
 secrecy.workspace = true
 serde.workspace = true
 serde_json.workspace = true

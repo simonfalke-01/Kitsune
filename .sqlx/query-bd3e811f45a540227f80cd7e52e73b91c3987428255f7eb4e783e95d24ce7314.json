@@ -1,0 +1,120 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE saml_providers SET\n                display_name = $4,\n                idp_entity_id = $5,\n                idp_metadata = $6,\n                metadata_url = $7,\n                metadata_signing_certificate = $8,\n                metadata_verified = $9,\n                email_attribute = $10,\n                display_name_attribute = $11,\n                enabled = $12,\n                auto_provision = $13,\n                allow_email_link = $14,\n                updated_by = $3,\n                updated_at = $15\n            WHERE id = $1 AND organization_id = $2\n            RETURNING id,key,display_name,idp_entity_id,metadata_url,\n                      metadata_verified,sp_entity_id,acs_uri,email_attribute,\n                      display_name_attribute,enabled,auto_provision,\n                      allow_email_link,created_at,updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "key",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "idp_entity_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "metadata_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "metadata_verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "sp_entity_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "acs_uri",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "email_attribute",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "display_name_attribute",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "enabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 11,
+        "name": "auto_provision",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 12,
+        "name": "allow_email_link",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 13,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 14,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Bool",
+        "Text",
+        "Text",
+        "Bool",
+        "Bool",
+        "Bool",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "bd3e811f45a540227f80cd7e52e73b91c3987428255f7eb4e783e95d24ce7314"
+}

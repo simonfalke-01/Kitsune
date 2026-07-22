@@ -1,0 +1,125 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT f.id AS flow_id,p.id AS provider_id,p.organization_id,\n                   o.slug AS \"organization_slug!\",p.key AS provider_key,\n                   p.display_name,p.idp_entity_id,p.idp_metadata,p.sp_entity_id,\n                   p.acs_uri,p.email_attribute,p.display_name_attribute,\n                   p.auto_provision,p.allow_email_link,f.request_id,\n                   f.encrypted_relay_state,f.browser_binding_digest,f.return_path\n            FROM saml_flows f\n            JOIN saml_providers p\n              ON p.id = f.provider_id AND p.organization_id = f.organization_id\n            JOIN organizations o ON o.id = p.organization_id\n            WHERE f.relay_state_digest = $1 AND f.consumed_at IS NULL\n              AND f.expires_at > $2 AND p.enabled = true\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "flow_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "provider_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "organization_slug!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "provider_key",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "idp_entity_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "idp_metadata",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "sp_entity_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "acs_uri",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "email_attribute",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 11,
+        "name": "display_name_attribute",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 12,
+        "name": "auto_provision",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 13,
+        "name": "allow_email_link",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 14,
+        "name": "request_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 15,
+        "name": "encrypted_relay_state",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 16,
+        "name": "browser_binding_digest",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 17,
+        "name": "return_path",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Bytea",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "7f7f86dc486373a403b9f382c59e4742ffe46808737f1a7c22b593598edee391"
+}

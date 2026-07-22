@@ -1,0 +1,123 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO saml_providers (\n                id,organization_id,key,display_name,idp_entity_id,idp_metadata,\n                metadata_url,metadata_signing_certificate,metadata_verified,\n                sp_entity_id,acs_uri,email_attribute,display_name_attribute,\n                enabled,auto_provision,allow_email_link,created_by,updated_by,\n                created_at,updated_at\n            ) VALUES (\n                $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,\n                $17,$17,$18,$18\n            )\n            RETURNING id,key,display_name,idp_entity_id,metadata_url,\n                      metadata_verified,sp_entity_id,acs_uri,email_attribute,\n                      display_name_attribute,enabled,auto_provision,\n                      allow_email_link,created_at,updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "key",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "idp_entity_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "metadata_url",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "metadata_verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "sp_entity_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "acs_uri",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "email_attribute",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 9,
+        "name": "display_name_attribute",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 10,
+        "name": "enabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 11,
+        "name": "auto_provision",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 12,
+        "name": "allow_email_link",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 13,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 14,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Bool",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Bool",
+        "Bool",
+        "Bool",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "0606cb50078999baeb724d1993831601081d1746bc5f5528c676e61962f12d24"
+}

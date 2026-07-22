@@ -5,11 +5,13 @@ use std::{collections::BTreeSet, net::SocketAddr, path::PathBuf, sync::Arc};
 use anyhow::{Context, Result};
 use axum_extra::extract::cookie::Key;
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
-use kitsune_api::{AppState, AuthService, OidcService, PasskeyService, TokenService};
+use kitsune_api::{
+    AppState, AuthService, OidcService, PasskeyService, SamlCredentials, SamlService, TokenService,
+};
 use kitsune_automation::{InProcessCache, InProcessEventBus};
 use kitsune_core::config::{FeatureFlags, RuntimeProfile};
 use kitsune_db::{PostgresStore, auth::AuthRepository};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tokio::signal;
 use tracing::{info, warn};
 use tracing_subscriber::EnvFilter;
@@ -29,6 +31,7 @@ struct ServerConfig {
     auto_migrate: bool,
     public_origin: String,
     oidc_trusted_origins: BTreeSet<String>,
+    saml_trusted_origins: BTreeSet<String>,
 }
 
 impl Default for ServerConfig {
@@ -44,6 +47,7 @@ impl Default for ServerConfig {
             auto_migrate: true,
             public_origin: "http://localhost:3000".into(),
             oidc_trusted_origins: BTreeSet::new(),
+            saml_trusted_origins: BTreeSet::new(),
         }
     }
 }
@@ -118,6 +122,9 @@ async fn main() -> Result<()> {
         .context("OIDC egress configuration")?;
     let passkeys =
         PasskeyService::new(&public_origin).context("passkey relying-party configuration")?;
+    let saml_credentials = load_or_generate_saml_credentials(&config.data_dir).await?;
+    let saml = SamlService::new(saml_credentials, config.saml_trusted_origins.clone())
+        .context("SAML service-provider configuration")?;
     let state = AppState::new(
         store,
         auth_repository,
@@ -129,7 +136,8 @@ async fn main() -> Result<()> {
         config.secure_cookies,
     )
     .with_oidc(oidc, features.external_auth, public_origin)
-    .with_passkeys(passkeys);
+    .with_passkeys(passkeys)
+    .with_saml(saml);
     let app = kitsune_api::router(state);
     let listener = tokio::net::TcpListener::bind(config.listen)
         .await
@@ -207,6 +215,60 @@ async fn load_or_generate_cookie_key(data_dir: &std::path::Path) -> Result<Key> 
         }
         Err(error) => Err(error.into()),
     }
+}
+
+#[derive(Deserialize, Serialize)]
+struct PersistedSamlCredentials {
+    private_key_pem: String,
+    certificate_pem: String,
+}
+
+async fn load_or_generate_saml_credentials(data_dir: &std::path::Path) -> Result<SamlCredentials> {
+    let path = data_dir.join("secrets").join("saml-signing.json");
+    match tokio::fs::read(&path).await {
+        Ok(bytes) => decode_saml_credentials(&bytes),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            let generated = tokio::task::spawn_blocking(SamlCredentials::generate)
+                .await
+                .context("join SAML signing-key generation")?
+                .context("generate SAML signing credentials")?;
+            let persisted = PersistedSamlCredentials {
+                private_key_pem: generated.private_key_pem().to_owned(),
+                certificate_pem: generated.certificate_pem().to_owned(),
+            };
+            let encoded = serde_json::to_vec(&persisted).context("encode SAML credentials")?;
+            let parent = path.parent().context("SAML credential parent")?;
+            tokio::fs::create_dir_all(parent).await?;
+            let mut options = tokio::fs::OpenOptions::new();
+            options.write(true).create_new(true);
+            #[cfg(unix)]
+            {
+                options.mode(0o600);
+            }
+            match options.open(&path).await {
+                Ok(mut file) => {
+                    use tokio::io::AsyncWriteExt;
+                    file.write_all(&encoded).await?;
+                    file.sync_all().await?;
+                    info!(path = %path.display(), "generated SAML signing credentials");
+                    Ok(generated)
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+                    warn!("another process generated SAML credentials; reloading them");
+                    decode_saml_credentials(&tokio::fs::read(&path).await?)
+                }
+                Err(error) => Err(error.into()),
+            }
+        }
+        Err(error) => Err(error.into()),
+    }
+}
+
+fn decode_saml_credentials(bytes: &[u8]) -> Result<SamlCredentials> {
+    let persisted: PersistedSamlCredentials =
+        serde_json::from_slice(bytes).context("decode SAML credentials")?;
+    SamlCredentials::new(persisted.private_key_pem, persisted.certificate_pem)
+        .context("validate SAML credentials")
 }
 
 async fn shutdown_signal() {
