@@ -32,15 +32,19 @@
         challenge details, and idempotent answer submission.
   - [x] Add the SSR first-run setup route with organization, owner, password
         confirmation, completion, and API-unavailable states.
-  - [ ] Complete scoreboard, team, account, and organizer routes.
+  - [x] Add the SSR-ranked scoreboard with division filters, hidden/frozen
+        states, realtime refresh, compact metrics, and accessible score history.
+  - [ ] Complete team, account, and organizer routes.
 - [ ] Port generated OpenAPI access and preserve authenticated realtime
       invalidation without introducing an unapproved dependency.
   - [x] Bootstrap the authenticated session, event catalog, selected event, and
         challenge collection on the server without a client data framework.
   - [ ] Complete server bootstraps and mutation invalidation for remaining
         routes.
-- [ ] Rebuild scoring charts and the automation DAG from approved primitives;
-      stop before adding any dependency outside the locked stack.
+- [x] Rebuild score history from approved primitives with a bounded accessible
+      fallback and no chart dependency.
+- [ ] Rebuild the automation DAG from approved primitives; stop before adding
+      any dependency outside the locked stack.
 - [ ] Keep the mascot slot visually empty; do not ship generated or placeholder
       character artwork.
 - [ ] Pass token-policy lint, formatting, ESLint, strict typecheck, Vitest,
@@ -51,6 +55,8 @@
   - [x] Setup/challenge browser journey and toast-motion checks pass Chromium and
         mobile Playwright with axe on Linux; Node 26 uses Next's webpack dev mode
         because Next 16 Turbopack panics while emitting the challenge route.
+  - [x] Scoreboard passes the token scan, formatting, ESLint, strict typecheck,
+        five Vitest assertions, production build, and authenticated SSR smoke.
 - [ ] Commit and push the completed frontend rewrite in reviewable atomic units;
       repair every GitHub Actions regression before resuming backend work.
 - [ ] Restore the preserved notification vertical slice only after every

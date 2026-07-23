@@ -9,6 +9,7 @@ export interface DomainEnvelope {
     data: unknown;
     type: string;
   };
+  event_id: string | null;
   id: string;
   occurred_at: string;
   schema_version: number;
@@ -33,6 +34,7 @@ function isDomainEnvelope(value: unknown): value is DomainEnvelope {
   const candidate = value as Partial<DomainEnvelope>;
 
   return (
+    (candidate.event_id === null || typeof candidate.event_id === 'string') &&
     typeof candidate.id === 'string' &&
     typeof candidate.occurred_at === 'string' &&
     typeof candidate.schema_version === 'number' &&

@@ -14,7 +14,7 @@ Updated: 2026-07-23 (Asia/Singapore)
   server-rendered route output, Next-native metadata and rewrites, React Aria
   router integration, a development-only `/_kitchen` route excluded from
   production navigation, and no client router or non-table TanStack dependency.
-- In progress: build the scoreboard and team routes on the shared authenticated
+- In progress: build the team and account routes on the shared authenticated
   shell while continuing the caption, icon, density, and interaction audit.
 - Completed: the first application slice now has a server-authenticated platform
   layout, request-cookie event selection, SSR event/challenge bootstrap, staged
@@ -22,6 +22,9 @@ Updated: 2026-07-23 (Asia/Singapore)
 - Completed: first-run setup now has an SSR setup-state boundary, organization
   and owner creation, password confirmation, setup-complete handoff, and a calm
   API-unavailable recovery state.
+- Completed: the scoreboard route now server-renders the selected event's ranked
+  standings, divisions, hidden/frozen state, compact metrics, and bounded score
+  history, then refreshes from typed score events without a chart dependency.
 - Verified: `/login` and `/_kitchen` return 200 in development, `/` safely sends
   unauthenticated or API-unavailable requests to sign-in, and the Next route
   manifest marks `/challenges` as request-time server rendered.
@@ -39,8 +42,8 @@ Updated: 2026-07-23 (Asia/Singapore)
 - Interaction review: toast insertion is browser-verified at zero and
   intermediate frames with a 260 ms translate/opacity transition; rapid queue
   updates retain three visible toasts without runtime errors.
-- Next: implement scoreboard and team workflows, then organizer tables and
-  dialogs, while expanding interaction and accessibility regression coverage.
+- Next: implement team and account workflows, then organizer tables and dialogs,
+  while expanding interaction and accessibility regression coverage.
 
 ## Verified
 
@@ -53,6 +56,9 @@ Updated: 2026-07-23 (Asia/Singapore)
   emitting the authenticated challenge route on this host.
 - The setup/challenge and toast-motion Playwright journeys pass in desktop and
   mobile Chromium with axe against PostgreSQL 17 on the Linux port.
+- The scoreboard token scan, formatter, ESLint, strict TypeScript, five Vitest
+  assertions, production build, and authenticated SSR smoke are green. The
+  production route manifest marks `/scoreboard` as request-time server rendered.
 - Core workspace format, 17 domain tests, and strict workspace Clippy pass.
 - PostgreSQL 17 migration applies from empty state; SQLx compile-time query
   metadata is checked in; transactional audit/outbox/idempotency test passes.

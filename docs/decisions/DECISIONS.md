@@ -479,3 +479,6 @@ Format: `YYYY-MM-DD — decision — rationale`.
   retaining Turbopack production builds — Next 16's development Turbopack panics
   while emitting the authenticated challenge route on the Linux Node 26 host,
   whereas webpack passes the same desktop/mobile browser and axe journey.
+- 2026-07-23 — Render score history as a deterministic token-colored SVG with a
+  bounded screen-reader event list — the route keeps historical standings
+  accessible and responsive without adding an unapproved chart dependency.

@@ -3,7 +3,14 @@ import 'server-only';
 import { cookies, headers } from 'next/headers';
 import createClient from 'openapi-fetch';
 
-import type { ChallengeSummary, EventSummary, Session } from './client';
+import type {
+  ChallengeSummary,
+  DivisionSummary,
+  EventSummary,
+  ScoreHistory,
+  Scoreboard,
+  Session
+} from './client';
 import type { paths } from './schema';
 import { chooseDefaultEvent, normalizeChallenge } from '../events';
 
@@ -102,5 +109,88 @@ export async function getPlatformBootstrap(): Promise<PlatformBootstrap> {
     challenges,
     events,
     selectedEventId: selectedEvent.id
+  };
+}
+
+export interface ScoreboardBootstrap {
+  divisions: DivisionSummary[];
+  error: string | null;
+  eventId: string | null;
+  history: ScoreHistory | null;
+  scoreboard: Scoreboard | null;
+}
+
+export async function getServerScoreboardBootstrap(): Promise<ScoreboardBootstrap> {
+  const client = await getServerClient();
+  const [cookieStore, eventResult] = await Promise.all([cookies(), client.GET('/api/v1/events')]);
+
+  if (!eventResult.data) {
+    return {
+      divisions: [],
+      error: 'The scoreboard could not be loaded.',
+      eventId: null,
+      history: null,
+      scoreboard: null
+    };
+  }
+
+  const persistedEventId = cookieStore.get('kitsune.selected-event')?.value;
+  const selectedEvent =
+    eventResult.data.find((event) => event.id === persistedEventId) ??
+    chooseDefaultEvent(eventResult.data);
+
+  if (!selectedEvent) {
+    return {
+      divisions: [],
+      error: null,
+      eventId: null,
+      history: null,
+      scoreboard: null
+    };
+  }
+
+  const [scoreboardResult, historyResult, divisionResult] = await Promise.all([
+    client.GET('/api/v1/events/{event_id}/scoreboard', {
+      params: {
+        path: {
+          event_id: selectedEvent.id
+        }
+      }
+    }),
+    client.GET('/api/v1/events/{event_id}/score-history', {
+      params: {
+        path: {
+          event_id: selectedEvent.id
+        },
+        query: {
+          limit: 5
+        }
+      }
+    }),
+    client.GET('/api/v1/events/{event_id}/divisions', {
+      params: {
+        path: {
+          event_id: selectedEvent.id
+        }
+      }
+    })
+  ]);
+
+  if (!scoreboardResult.data || !historyResult.data) {
+    return {
+      divisions: divisionResult.data ?? [],
+      error: 'The scoreboard could not be loaded.',
+      eventId: selectedEvent.id,
+      history: historyResult.data ?? null,
+      scoreboard: scoreboardResult.data ?? null
+    };
+  }
+
+  return {
+    divisions: divisionResult.data ?? [],
+    error: null,
+    eventId: selectedEvent.id,
+    history: historyResult.data,
+    scoreboard: scoreboardResult.data
   };
 }
