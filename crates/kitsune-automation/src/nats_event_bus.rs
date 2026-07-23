@@ -19,6 +19,30 @@ const MAX_STREAM_MESSAGES: i64 = 1_000_000;
 const STREAM_MAX_AGE: Duration = Duration::from_hours(168);
 const DEDUPLICATION_WINDOW: Duration = Duration::from_mins(2);
 
+/// Bounded JetStream retention configuration for one Kitsune installation.
+#[derive(Debug, Clone)]
+pub struct NatsEventBusConfig {
+    /// Installation namespace used in subjects and the stream name.
+    pub namespace: String,
+    /// Maximum retained bytes across the event stream.
+    pub max_stream_bytes: i64,
+    /// Maximum retained event count.
+    pub max_stream_messages: i64,
+    /// Maximum event retention age.
+    pub max_stream_age: Duration,
+}
+
+impl Default for NatsEventBusConfig {
+    fn default() -> Self {
+        Self {
+            namespace: DEFAULT_NAMESPACE.into(),
+            max_stream_bytes: MAX_STREAM_BYTES,
+            max_stream_messages: MAX_STREAM_MESSAGES,
+            max_stream_age: STREAM_MAX_AGE,
+        }
+    }
+}
+
 /// JetStream-backed event bus for durable publication and replica fanout.
 #[derive(Clone)]
 pub struct NatsEventBus {
@@ -40,7 +64,17 @@ impl std::fmt::Debug for NatsEventBus {
 impl NatsEventBus {
     /// Connects to NATS and ensures the bounded durable event stream exists.
     pub async fn connect(url: &str, namespace: Option<&str>) -> DomainResult<Self> {
-        let namespace = validate_namespace(namespace.unwrap_or(DEFAULT_NAMESPACE))?;
+        let config = NatsEventBusConfig {
+            namespace: namespace.unwrap_or(DEFAULT_NAMESPACE).to_owned(),
+            ..NatsEventBusConfig::default()
+        };
+        Self::connect_with_config(url, config).await
+    }
+
+    /// Connects with explicit validated stream retention bounds.
+    pub async fn connect_with_config(url: &str, config: NatsEventBusConfig) -> DomainResult<Self> {
+        validate_config(&config)?;
+        let namespace = validate_namespace(&config.namespace)?;
         let subject_prefix = format!("{namespace}.events");
         let client = bounded("connect", async_nats::connect(url)).await?;
         let jetstream = jetstream::new(client.clone());
@@ -49,9 +83,9 @@ impl NatsEventBus {
             name: stream_name,
             subjects: vec![format!("{subject_prefix}.>")],
             storage: jetstream::stream::StorageType::File,
-            max_bytes: MAX_STREAM_BYTES,
-            max_messages: MAX_STREAM_MESSAGES,
-            max_age: STREAM_MAX_AGE,
+            max_bytes: config.max_stream_bytes,
+            max_messages: config.max_stream_messages,
+            max_age: config.max_stream_age,
             max_message_size: i32::try_from(MAX_EVENT_BYTES)
                 .expect("event byte limit fits in an i32"),
             duplicate_window: DEDUPLICATION_WINDOW,
@@ -75,6 +109,18 @@ impl NatsEventBus {
         validate_kind(kind)?;
         Ok(format!("{}.{kind}", self.subject_prefix))
     }
+}
+
+fn validate_config(config: &NatsEventBusConfig) -> DomainResult<()> {
+    if config.max_stream_bytes <= 0
+        || config.max_stream_messages <= 0
+        || config.max_stream_age.is_zero()
+    {
+        return Err(DomainError::Validation(
+            "NATS stream byte, message, and age bounds must be positive".into(),
+        ));
+    }
+    Ok(())
 }
 
 #[async_trait]
@@ -217,7 +263,16 @@ mod tests {
     };
     use uuid::Uuid;
 
-    use super::NatsEventBus;
+    use super::{NatsEventBus, NatsEventBusConfig};
+
+    fn test_config(namespace: &str) -> NatsEventBusConfig {
+        NatsEventBusConfig {
+            namespace: namespace.into(),
+            max_stream_bytes: 16 * 1024 * 1024,
+            max_stream_messages: 10_000,
+            max_stream_age: Duration::from_hours(1),
+        }
+    }
 
     #[tokio::test]
     async fn jetstream_events_fan_out_across_nodes_and_namespaces() {
@@ -233,13 +288,13 @@ mod tests {
             .await
             .expect("mapped NATS port");
         let url = format!("nats://127.0.0.1:{port}");
-        let publisher = NatsEventBus::connect(&url, Some("test-a"))
+        let publisher = NatsEventBus::connect_with_config(&url, test_config("test-a"))
             .await
             .expect("publisher event bus");
-        let subscriber = NatsEventBus::connect(&url, Some("test-a"))
+        let subscriber = NatsEventBus::connect_with_config(&url, test_config("test-a"))
             .await
             .expect("subscriber event bus");
-        let isolated = NatsEventBus::connect(&url, Some("test-b"))
+        let isolated = NatsEventBus::connect_with_config(&url, test_config("test-b"))
             .await
             .expect("isolated event bus");
         let mut matching = subscriber
@@ -300,6 +355,13 @@ mod tests {
     async fn nats_namespaces_and_event_kinds_are_validated_before_connection() {
         assert!(
             NatsEventBus::connect("not a NATS URL", Some("unsafe namespace"))
+                .await
+                .is_err()
+        );
+        let mut config = test_config("test");
+        config.max_stream_bytes = 0;
+        assert!(
+            NatsEventBus::connect_with_config("not a NATS URL", config)
                 .await
                 .is_err()
         );

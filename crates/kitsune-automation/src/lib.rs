@@ -11,7 +11,7 @@ pub mod webhook;
 pub use automation::{AutomationEngine, AutomationGraph, AutomationRun};
 pub use egress::EgressPolicy;
 pub use local::{InProcessCache, InProcessEventBus};
-pub use nats_event_bus::NatsEventBus;
+pub use nats_event_bus::{NatsEventBus, NatsEventBusConfig};
 pub use redis_cache::RedisCache;
 pub use scoreboard_cache::{ScoreboardInvalidatingEventBus, scoreboard_revision_key};
 pub use webhook::{WebhookDelivery, WebhookDispatcher, WebhookEndpoint};
