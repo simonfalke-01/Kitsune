@@ -4,6 +4,7 @@ import { cookies, headers } from 'next/headers';
 import createClient from 'openapi-fetch';
 
 import type {
+  ApiTokenSummary,
   BracketSummary,
   ChallengeSummary,
   DivisionSummary,
@@ -282,26 +283,30 @@ export interface AccountBootstrap {
   error: string | null;
   passkeys: PasskeySummary[];
   sessions: SessionSummary[];
+  tokens: ApiTokenSummary[];
 }
 
 export async function getServerAccountBootstrap(): Promise<AccountBootstrap> {
   const client = await getServerClient();
-  const [sessionResult, passkeyResult] = await Promise.all([
+  const [sessionResult, passkeyResult, tokenResult] = await Promise.all([
     client.GET('/api/v1/auth/sessions'),
-    client.GET('/api/v1/auth/passkeys')
+    client.GET('/api/v1/auth/passkeys'),
+    client.GET('/api/v1/auth/tokens')
   ]);
 
-  if (!sessionResult.data || !passkeyResult.data) {
+  if (!sessionResult.data || !passkeyResult.data || !tokenResult.data) {
     return {
       error: 'Security settings could not be loaded.',
       passkeys: passkeyResult.data ?? [],
-      sessions: sessionResult.data ?? []
+      sessions: sessionResult.data ?? [],
+      tokens: tokenResult.data ?? []
     };
   }
 
   return {
     error: null,
     passkeys: passkeyResult.data,
-    sessions: sessionResult.data
+    sessions: sessionResult.data,
+    tokens: tokenResult.data
   };
 }

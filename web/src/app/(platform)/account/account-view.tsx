@@ -5,6 +5,8 @@ import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { useSession } from '../../session-context';
+import { MfaPanel } from './mfa-panel';
+import { TokenPanel } from './token-panel';
 import {
   Alert,
   AlertDialog,
@@ -24,13 +26,20 @@ import {
   TextField,
   showToast
 } from '@/components/ui';
-import { api, errorMessage, type PasskeySummary, type SessionSummary } from '@/lib/api/client';
+import {
+  api,
+  errorMessage,
+  type ApiTokenSummary,
+  type PasskeySummary,
+  type SessionSummary
+} from '@/lib/api/client';
 import { createPasskey } from '@/lib/auth/passkeys';
 
 interface AccountViewProps {
   initialError: string | null;
   initialPasskeys: PasskeySummary[];
   initialSessions: SessionSummary[];
+  initialTokens: ApiTokenSummary[];
 }
 
 const passkeySchema = z.object({
@@ -176,7 +185,12 @@ function PasskeyForm({
   );
 }
 
-export function AccountView({ initialError, initialPasskeys, initialSessions }: AccountViewProps) {
+export function AccountView({
+  initialError,
+  initialPasskeys,
+  initialSessions,
+  initialTokens
+}: AccountViewProps) {
   const { session } = useSession();
   const [sessions, setSessions] = useState(initialSessions);
   const [passkeys, setPasskeys] = useState(initialPasskeys);
@@ -511,6 +525,9 @@ export function AccountView({ initialError, initialPasskeys, initialSessions }: 
           </Table>
         )}
       </section>
+
+      <MfaPanel />
+      <TokenPanel initialTokens={initialTokens} />
     </div>
   );
 }

@@ -18,6 +18,7 @@ export default async function AccountPage() {
         initialError={bootstrap.error}
         initialPasskeys={bootstrap.passkeys}
         initialSessions={bootstrap.sessions}
+        initialTokens={bootstrap.tokens}
       />
     </div>
   );

@@ -40,7 +40,9 @@
         idempotent updates, withdrawal safeguards, and realtime refresh.
   - [x] Add the SSR account security route with active-session and passkey
         inventory, enrollment, and guarded revocation.
-  - [ ] Complete MFA, API-token, and organizer routes.
+  - [x] Add authenticator setup, one-time recovery codes, scoped API-token
+        creation, one-time token reveal, and guarded token revocation.
+  - [ ] Complete organizer routes.
 - [ ] Port generated OpenAPI access and preserve authenticated realtime
       invalidation without introducing an unapproved dependency.
   - [x] Bootstrap the authenticated session, event catalog, selected event, and
