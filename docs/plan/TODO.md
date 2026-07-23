@@ -45,8 +45,8 @@
   - [x] Add the SSR live-operations route with platform health, event lifecycle,
         and scoreboard visibility controls.
   - [x] Add organizer event inventory, selection, and creation.
-  - [ ] Complete organizer challenge, automation, access, audit, and settings
-        routes.
+  - [x] Add selected-event challenge inventory and static-flag authoring.
+  - [ ] Complete organizer automation, access, audit, and settings routes.
 - [ ] Port generated OpenAPI access and preserve authenticated realtime
       invalidation without introducing an unapproved dependency.
   - [x] Bootstrap the authenticated session, event catalog, selected event, and
