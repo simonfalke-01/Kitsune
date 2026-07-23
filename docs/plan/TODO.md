@@ -47,7 +47,9 @@
   - [x] Add organizer event inventory, selection, and creation.
   - [x] Add selected-event challenge inventory and static-flag authoring.
   - [x] Add SSR account, role, permission, and scoped-grant administration.
-  - [ ] Complete organizer automation, audit, and settings routes.
+  - [x] Add SSR audit history with exact filters, inspection, refresh, and
+        cursor pagination.
+  - [ ] Complete organizer automation and settings routes.
 - [ ] Port generated OpenAPI access and preserve authenticated realtime
       invalidation without introducing an unapproved dependency.
   - [x] Bootstrap the authenticated session, event catalog, selected event, and

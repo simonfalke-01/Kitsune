@@ -5,6 +5,7 @@ import createClient from 'openapi-fetch';
 
 import type {
   ApiTokenSummary,
+  AuditPage,
   BracketSummary,
   ChallengeSummary,
   DivisionSummary,
@@ -364,5 +365,26 @@ export async function getServerAccessBootstrap(): Promise<AccessBootstrap> {
     permissions: permissionResult.data ?? [],
     roles: roleResult.data ?? [],
     users: userResult.data ?? []
+  };
+}
+
+export interface AuditBootstrap {
+  error: string | null;
+  page: AuditPage | null;
+}
+
+export async function getServerAuditBootstrap(): Promise<AuditBootstrap> {
+  const client = await getServerClient();
+  const result = await client.GET('/api/v1/audit', {
+    params: {
+      query: {
+        limit: 50
+      }
+    }
+  });
+
+  return {
+    error: result.data ? null : 'Audit history could not be loaded.',
+    page: result.data ?? null
   };
 }

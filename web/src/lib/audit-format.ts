@@ -3,7 +3,7 @@ export function humanizeAuditAction(action: string): string {
     .split(/[._-]/u)
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' · ');
+    .join(' ');
 }
 
 export function shortIdentifier(value: string | null | undefined): string {

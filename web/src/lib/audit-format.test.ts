@@ -3,9 +3,7 @@ import { humanizeAuditAction, metadataEntries, shortIdentifier } from './audit-f
 
 describe('audit presentation', () => {
   it('turns stable keys and identifiers into calm readable labels', () => {
-    expect(humanizeAuditAction('scoreboard.controls.change')).toBe(
-      'Scoreboard · Controls · Change'
-    );
+    expect(humanizeAuditAction('scoreboard.controls.change')).toBe('Scoreboard Controls Change');
     expect(shortIdentifier(null)).toBe('System');
     expect(shortIdentifier('018f1234-1234-7890-abcd-123456789abc')).toBe('018f1234…9abc');
   });
