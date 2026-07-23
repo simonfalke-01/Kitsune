@@ -3,8 +3,11 @@
 ## Immediate frontend reset
 
 - [x] Preserve the interrupted notification vertical slice in `stash@{0}`.
-- [x] Remove the rejected Svelte UI and replace its build tooling with React 19,
-      Vite, React Router, and strict TypeScript.
+- [x] Complete the owner-directed framework migration from the temporary React
+      Vite shell to React 19 on Next.js App Router with SSR; retain TanStack
+      Table as the only TanStack dependency.
+- [x] Record the project-specific interface contract, including the hard ban on
+      redundant explanatory captions and implementation-narrating copy.
 - [x] Step 1: review and lock the two-tier semantic token contract in `app.css`.
 - [ ] Make deep customization first-class: version the theme contract; expose
       semantic color, typography, radius, density, motion, asset, brand, and

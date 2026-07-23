@@ -1,8 +1,10 @@
 /target/
 /web/node_modules/
 /web/.svelte-kit/
+/web/.next/
 /web/build/
 /web/dist/
+/web/tsconfig.tsbuildinfo
 /docs/node_modules/
 /node_modules/
 /.env

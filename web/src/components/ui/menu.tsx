@@ -13,6 +13,7 @@ import { collectionItem, cx } from './styles';
 export { MenuTrigger };
 
 export interface MenuOption {
+  href?: string;
   icon?: ReactNode;
   id: number | string;
   isDisabled?: boolean;
@@ -47,6 +48,7 @@ export function Menu({
         {(option) => (
           <ReactAriaMenuItem
             className={collectionItem}
+            href={option.href}
             id={option.id}
             isDisabled={option.isDisabled}
             onAction={option.onAction}

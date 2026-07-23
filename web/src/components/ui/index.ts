@@ -12,6 +12,7 @@ export * from './empty-state';
 export * from './file-drop-zone';
 export * from './link';
 export * from './menu';
+export * from './navigation-link';
 export * from './number-field';
 export * from './pagination';
 export * from './popover';

@@ -122,20 +122,20 @@
 :where(.dark, [data-theme='dark']) {
   color-scheme: dark;
 
-  --surface: oklch(17.8% 0.006 260);
-  --surface-raised: oklch(21.4% 0.007 260);
-  --surface-sunken: oklch(14.2% 0.005 260);
-  --surface-hover: oklch(25% 0.008 260);
-  --surface-active: oklch(28.4% 0.009 260);
+  --surface: oklch(17.8% 0.002 270);
+  --surface-raised: oklch(21.4% 0.002 270);
+  --surface-sunken: oklch(14.2% 0.001 270);
+  --surface-hover: oklch(25% 0.002 270);
+  --surface-active: oklch(28.4% 0.002 270);
 
-  --border-subtle: oklch(26% 0.008 260);
-  --border: oklch(32% 0.01 260);
-  --border-strong: oklch(40% 0.012 260);
+  --border-subtle: oklch(26% 0.002 270);
+  --border: oklch(32% 0.003 270);
+  --border-strong: oklch(40% 0.003 270);
 
-  --text: oklch(96% 0.003 260);
-  --text-muted: oklch(72% 0.01 260);
-  --text-subtle: oklch(62% 0.01 260);
-  --text-on-accent: oklch(17.8% 0.006 260);
+  --text: oklch(96% 0.001 270);
+  --text-muted: oklch(72% 0.002 270);
+  --text-subtle: oklch(62% 0.002 270);
+  --text-on-accent: oklch(17.8% 0.002 270);
 
   --accent-subtle: oklch(25% 0.04 250);
   --accent-border: oklch(42% 0.075 250);
@@ -168,7 +168,7 @@
   --info-text: oklch(77% 0.075 225);
 
   --focus-ring: oklch(69% 0.12 250);
-  --overlay: oklch(8% 0.004 260 / 72%);
+  --overlay: oklch(8% 0.001 270 / 72%);
 }
 
 @theme inline {
@@ -265,6 +265,7 @@
   --container-toast: 24rem;
 
   --spacing-control: 2.75rem;
+  --spacing-sidebar: 15rem;
 
   --z-index-overlay: 50;
 }
@@ -299,6 +300,21 @@
     overflow: clip;
     transition: height var(--duration-normal) var(--ease-out-quart);
   }
+
+  .kitsune-toast {
+    animation: kitsune-toast-in var(--duration-slow) var(--ease-out-quart) both;
+    view-transition-class: kitsune-toast;
+    will-change: opacity, transform;
+  }
+
+  .kitsune-toast[data-exiting] {
+    animation: kitsune-toast-out var(--duration-normal) var(--ease-out-quart) both;
+  }
+}
+
+::view-transition-group(.kitsune-toast) {
+  animation-duration: var(--duration-slow);
+  animation-timing-function: var(--ease-out-quart);
 }
 
 @layer base {

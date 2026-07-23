@@ -1,5 +1,5 @@
 import { CheckCircle2, CircleAlert, Info, TriangleAlert, X } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import {
   Button as ReactAriaButton,
   UNSTABLE_Toast as ReactAriaToast,
@@ -7,6 +7,7 @@ import {
   UNSTABLE_ToastQueue,
   UNSTABLE_ToastRegion as ReactAriaToastRegion
 } from 'react-aria-components';
+import { flushSync } from 'react-dom';
 
 import { cx, focusRing, variantClass } from './styles';
 
@@ -37,8 +38,31 @@ export interface ToastMessage {
   tone: ToastTone;
 }
 
+let activeToastTransition: ViewTransition | null = null;
+
 export const toastQueue = new UNSTABLE_ToastQueue<ToastMessage>({
-  maxVisibleToasts: 4
+  maxVisibleToasts: 4,
+  wrapUpdate(update) {
+    if (typeof document !== 'undefined' && 'startViewTransition' in document) {
+      activeToastTransition?.skipTransition();
+      const transition = document.startViewTransition(() => {
+        flushSync(update);
+      });
+      activeToastTransition = transition;
+      void transition.finished
+        .catch(() => {
+          // A newer toast update intentionally supersedes the active transition.
+        })
+        .finally(() => {
+          if (activeToastTransition === transition) {
+            activeToastTransition = null;
+          }
+        });
+      return;
+    }
+
+    update();
+  }
 });
 
 export function showToast(message: ToastMessage, options: { timeout?: number } = {}): string {
@@ -59,13 +83,16 @@ export function ToastRegion() {
     >
       {({ toast }) => {
         const Icon = toastTones[toast.content.tone].icon;
+        const transitionName = String(toast.key).replaceAll(/[^a-zA-Z0-9_-]/g, '-');
+        const transitionStyle: CSSProperties = {
+          viewTransitionName: `kitsune-toast-${transitionName}`
+        };
 
         return (
           <ReactAriaToast
             className={cx(
-              'flex items-start gap-3 rounded-lg border p-4',
+              'kitsune-toast flex items-start gap-3 rounded-lg border p-4',
               'shadow-lg outline-none',
-              'entering:animate-toast-in exiting:animate-toast-out',
               focusRing,
               variantClass(
                 {
@@ -77,6 +104,7 @@ export function ToastRegion() {
                 toast.content.tone
               )
             )}
+            style={transitionStyle}
             toast={toast}
           >
             <Icon aria-hidden className="mt-1 size-4 shrink-0" />

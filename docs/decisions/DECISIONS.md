@@ -461,3 +461,17 @@ Format: `YYYY-MM-DD — decision — rationale`.
   command input/output — badges, taxonomy, pagination, measurements, IDs, and
   general operational data use the primary sans with tabular figures where
   alignment matters.
+- 2026-07-23 — Make the dark canvas near-achromatic charcoal while retaining
+  cobalt only for action, focus, and selected state — removing the blue cast
+  gives operational content a calmer ground and makes meaningful color clearer.
+- 2026-07-23 — Adopt Next.js App Router as the React application framework and
+  SSR boundary while retaining TanStack Table as the only TanStack dependency —
+  route structure and initial content need a real server-rendering contract
+  without introducing a parallel router or client data framework.
+- 2026-07-23 — Treat explanatory captions as opt-in rather than structural
+  defaults — subtitles may report live state or resolve genuine ambiguity, but
+  copy that narrates the page, repeats visible content, or describes the
+  implementation is deleted.
+- 2026-07-23 — Use icons only when they materially clarify an unlabeled action
+  or state — Kitsune does not decorate headings, labels, navigation, or brand
+  text with generic Lucide symbols.

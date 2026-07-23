@@ -5,14 +5,20 @@ Updated: 2026-07-23 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: frontend reset — explicit owner-directed replacement of
-  the Svelte application with React 19 and React Aria Components.
+  the Svelte application with React 19, Next.js App Router SSR, and React Aria
+  Components.
 - Completed: the two-tier semantic token contract, locked React build stack,
   required React Aria primitive wrappers, and expanded CTF/admin control layer
   all pass strict TypeScript and a production build.
-- In progress: visually inspect the dual-theme `/_kitchen` drift detector at
-  desktop and 390px, then compose the application shell and domain surfaces.
-- Design authority: repository-root `AGENTS.md` records the locked stack,
-  mechanical constraints, quality gate, references, and filled project brief.
+- Completed: the verified React Aria system now runs on Next.js App Router with
+  server-rendered route output, Next-native metadata and rewrites, React Aria
+  router integration, a production-visible `/_kitchen` route, and no client
+  router or non-table TanStack dependency.
+- In progress: compose the shared authenticated shell and domain surfaces while
+  continuing the caption, icon, density, and interaction audit.
+- Design authority: repository-root `AGENTS.md` and
+  `docs/design/INTERFACE_CONTRACT.md` record the locked stack, copy discipline,
+  mechanical constraints, quality gate, references, and project task model.
 - Customization boundary: theme packs, white-label configuration, first-party
   screens, and plugin panels must share one versioned semantic token and
   extension-slot contract. No component fork may be required to rebrand.
@@ -21,6 +27,9 @@ Updated: 2026-07-23 (Asia/Singapore)
 - Visual review: desktop and 390px full-page Chromium captures confirm aligned
   control heights, responsive single-column collapse, deliberate semantic
   color, flat card hierarchy, and explicit loading/empty/error treatments.
+- Interaction review: toast insertion is browser-verified at zero and
+  intermediate frames with a 260 ms translate/opacity transition; rapid queue
+  updates retain three visible toasts without runtime errors.
 - Next: add product-level CTF composites, port every application route, and run
   the full interaction/a11y regression suite.
 

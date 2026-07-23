@@ -1,7 +1,7 @@
 import js from '@eslint/js';
+import nextVitals from 'eslint-config-next/core-web-vitals';
 import prettier from 'eslint-config-prettier';
 import reactHooks from 'eslint-plugin-react-hooks';
-import reactRefresh from 'eslint-plugin-react-refresh';
 import globals from 'globals';
 import ts from 'typescript-eslint';
 
@@ -9,16 +9,20 @@ export default ts.config(
   {
     ignores: [
       '.svelte-kit/**',
+      '.next/**',
       'build/**',
       'dist/**',
       'coverage/**',
       'eslint.config.js',
       'openapi.json',
+      'next-env.d.ts',
+      'postcss.config.mjs',
       'playwright-report/**',
       'test-results/**'
     ]
   },
   js.configs.recommended,
+  ...nextVitals,
   ...ts.configs.recommendedTypeChecked,
   {
     files: ['**/*.{ts,tsx}'],
@@ -33,8 +37,7 @@ export default ts.config(
       }
     },
     plugins: {
-      'react-hooks': reactHooks,
-      'react-refresh': reactRefresh
+      'react-hooks': reactHooks
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
@@ -46,8 +49,7 @@ export default ts.config(
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-misused-promises': 'error',
       '@typescript-eslint/no-unnecessary-condition': 'error',
-      curly: ['error', 'all'],
-      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }]
+      curly: ['error', 'all']
     }
   },
   prettier

@@ -1,13 +1,6 @@
-import {
-  Bell,
-  Ellipsis,
-  Eye,
-  FilePlus2,
-  LockKeyhole,
-  Settings,
-  ShieldCheck,
-  Trash2
-} from 'lucide-react';
+'use client';
+
+import { Bell, Ellipsis } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 
 import {
@@ -87,36 +80,29 @@ const eventOptions = [
 const menuOptions = [
   {
     id: 'inspect',
-    label: 'Inspect event',
-    icon: <Eye className="size-4" />
+    label: 'Inspect event'
   },
   {
     id: 'settings',
-    label: 'Event settings',
-    icon: <Settings className="size-4" />
+    label: 'Event settings'
   },
   {
     id: 'delete',
     label: 'Delete event',
-    icon: <Trash2 className="size-4" />,
     isDisabled: true
   }
 ] as const;
 
 interface PreviewSectionProps {
   children: ReactNode;
-  description: string;
   id?: string;
   title: string;
 }
 
-function PreviewSection({ children, description, id, title }: PreviewSectionProps) {
+function PreviewSection({ children, id, title }: PreviewSectionProps) {
   return (
     <section className="grid gap-4 border-t border-border-subtle py-8" id={id}>
-      <header className="grid max-w-prose gap-1">
-        <h3 className="m-0 font-display text-lg font-semibold text-text">{title}</h3>
-        <p className="m-0 text-sm text-text-muted">{description}</p>
-      </header>
+      <h3 className="m-0 font-display text-lg font-semibold text-text">{title}</h3>
       {children}
     </section>
   );
@@ -138,21 +124,9 @@ function ThemePreview({ isDark = false, title }: ThemePreviewProps) {
       data-theme={isDark ? 'dark' : 'light'}
     >
       <div className="mx-auto grid max-w-shell gap-8 px-4 py-12 sm:px-6">
-        <header className="grid max-w-prose gap-3">
-          <p className="m-0 text-xs font-semibold tracking-wide text-accent-text">{title}</p>
-          <h2 className="m-0 font-display text-2xl font-semibold tracking-tight">
-            Component contract
-          </h2>
-          <p className="m-0 text-base text-text-muted">
-            Every control below uses the same semantic roles, spacing scale, focus treatment, and
-            React Aria behavior that product screens consume.
-          </p>
-        </header>
+        <h2 className="m-0 font-display text-2xl font-semibold tracking-tight">{title}</h2>
 
-        <PreviewSection
-          description="Four intentional tones, four approved sizes, and explicit unavailable and pending states."
-          title="Buttons and links"
-        >
+        <PreviewSection title="Buttons and links">
           <div className="flex flex-wrap items-center gap-3">
             <Button>Publish event</Button>
             <Button tone="secondary">Save draft</Button>
@@ -180,10 +154,7 @@ function ThemePreview({ isDark = false, title }: ThemePreviewProps) {
           </div>
         </PreviewSection>
 
-        <PreviewSection
-          description="Labels, descriptions, validation, disabled controls, filtering, and selection share one field grammar."
-          title="Forms"
-        >
+        <PreviewSection title="Forms">
           <div className="grid gap-6 md:grid-cols-2" id="forms">
             <TextField
               description="Shown to competitors before the event begins."
@@ -256,10 +227,7 @@ function ThemePreview({ isDark = false, title }: ThemePreviewProps) {
           />
         </PreviewSection>
 
-        <PreviewSection
-          description="Overlays use native focus management, Escape behavior, and restrained enter/exit motion."
-          title="Overlays and feedback"
-        >
+        <PreviewSection title="Overlays and feedback">
           <div className="flex flex-wrap items-center gap-3">
             <DialogTrigger>
               <Button tone="secondary">Open event dialog</Button>
@@ -306,9 +274,7 @@ function ThemePreview({ isDark = false, title }: ThemePreviewProps) {
             </MenuTrigger>
 
             <TooltipTrigger delay={0}>
-              <Button aria-label="Access policy" size="icon" tone="quiet">
-                <ShieldCheck aria-hidden className="size-4" />
-              </Button>
+              <Button tone="quiet">Access policy</Button>
               <Tooltip>RBAC is enforced for this action.</Tooltip>
             </TooltipTrigger>
 
@@ -338,11 +304,7 @@ function ThemePreview({ isDark = false, title }: ThemePreviewProps) {
           </div>
         </PreviewSection>
 
-        <PreviewSection
-          description="Tabs and data collections retain strong keyboard navigation and define empty, loading, and error states."
-          id="tables"
-          title="Collections"
-        >
+        <PreviewSection id="tables" title="Collections">
           <Tabs defaultSelectedKey="ready">
             <TabsList aria-label="Challenge state">
               <TabsTab id="ready">Ready</TabsTab>
@@ -369,10 +331,7 @@ function ThemePreview({ isDark = false, title }: ThemePreviewProps) {
           </Tabs>
         </PreviewSection>
 
-        <PreviewSection
-          description="System meaning is communicated with semantic roles, plain language, and more than color alone."
-          title="Status and feedback"
-        >
+        <PreviewSection title="Status and feedback">
           <div className="flex flex-wrap gap-2">
             <Badge>Draft</Badge>
             <Badge tone="accent">Live</Badge>
@@ -410,10 +369,7 @@ function ThemePreview({ isDark = false, title }: ThemePreviewProps) {
           </div>
         </PreviewSection>
 
-        <PreviewSection
-          description="Cards define quiet surface hierarchy. Shadows remain reserved for real overlays."
-          title="Cards and navigation"
-        >
+        <PreviewSection title="Cards and navigation">
           <Breadcrumbs
             items={[
               { href: '#admin', label: 'Admin' },
@@ -421,7 +377,7 @@ function ThemePreview({ isDark = false, title }: ThemePreviewProps) {
               { label: 'Foxden Invitational' }
             ]}
           />
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="grid items-start gap-4 lg:grid-cols-3">
             <Card>
               <CardHeader>
                 <div className="flex flex-wrap items-center justify-between gap-3">
@@ -482,10 +438,7 @@ function ThemePreview({ isDark = false, title }: ThemePreviewProps) {
           </div>
         </PreviewSection>
 
-        <PreviewSection
-          description="Specialized controls cover search, bounded numbers, file authoring, disclosure, and long-form panels."
-          title="Extended controls"
-        >
+        <PreviewSection title="Extended controls">
           <div className="grid gap-6 md:grid-cols-2">
             <SearchField
               description="Search names, tags, categories, and authors."
@@ -547,11 +500,7 @@ function ThemePreview({ isDark = false, title }: ThemePreviewProps) {
           </div>
         </PreviewSection>
 
-        <PreviewSection
-          description="Every async region has explicit loading, empty, and recovery-oriented error treatments."
-          id="states"
-          title="Async states"
-        >
+        <PreviewSection id="states" title="Async states">
           <div className="grid items-start gap-4 lg:grid-cols-3">
             <Card>
               <CardHeader>
@@ -566,14 +515,8 @@ function ThemePreview({ isDark = false, title }: ThemePreviewProps) {
               </CardContent>
             </Card>
             <EmptyState
-              action={
-                <Button size="small">
-                  <FilePlus2 aria-hidden className="size-4" />
-                  Create challenge
-                </Button>
-              }
+              action={<Button size="small">Create challenge</Button>}
               description="Author a challenge here or import a challenge.yml definition."
-              icon={FilePlus2}
               title="No challenges yet"
             />
             <Alert
@@ -645,16 +588,10 @@ export function KitchenSinkPage() {
     <>
       <main>
         <div className="border-b border-border-subtle bg-surface-sunken">
-          <div className="mx-auto flex max-w-shell items-start gap-4 px-4 py-6 sm:px-6">
-            <LockKeyhole aria-hidden className="mt-1 size-6 shrink-0 text-accent-text" />
-            <div className="grid max-w-prose gap-1">
-              <h1 className="m-0 font-display text-xl font-semibold tracking-tight">
-                Kitsune kitchen
-              </h1>
-              <p className="m-0 text-sm text-text-muted">
-                Development-only drift detector. It is excluded from production navigation.
-              </p>
-            </div>
+          <div className="mx-auto flex max-w-shell items-center px-4 py-4 sm:px-6">
+            <h1 className="m-0 font-display text-lg font-semibold tracking-tight">
+              Kitsune kitchen
+            </h1>
           </div>
         </div>
         <ThemePreview title="Light theme" />

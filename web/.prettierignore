@@ -1,9 +1,11 @@
 .svelte-kit
+.next
 build
 coverage
 data
 dist
 openapi.json
+next-env.d.ts
 playwright-report
 src/lib/api/schema.d.ts
 test-results

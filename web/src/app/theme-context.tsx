@@ -1,3 +1,5 @@
+'use client';
+
 import {
   createContext,
   type ReactNode,
@@ -5,7 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useState
+  useSyncExternalStore
 } from 'react';
 
 export type ThemePreference = 'dark' | 'light' | 'system';
@@ -18,6 +20,7 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 const themePreferenceKey = 'kitsune.theme';
+const themePreferenceEvent = 'kitsune-theme-preference';
 
 interface ThemeProviderProps {
   children: ReactNode;
@@ -36,37 +39,55 @@ function resolveDark(preference: ThemePreference): boolean {
     return false;
   }
 
-  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  return typeof window !== 'undefined'
+    ? window.matchMedia('(prefers-color-scheme: dark)').matches
+    : false;
+}
+
+function getThemePreference(): ThemePreference {
+  if (typeof window === 'undefined') {
+    return 'system';
+  }
+
+  const storedPreference = window.localStorage.getItem(themePreferenceKey);
+  return isThemePreference(storedPreference) ? storedPreference : 'system';
+}
+
+function subscribeToTheme(onStoreChange: () => void): () => void {
+  const media = window.matchMedia('(prefers-color-scheme: dark)');
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === themePreferenceKey) {
+      onStoreChange();
+    }
+  };
+
+  window.addEventListener('storage', handleStorage);
+  window.addEventListener(themePreferenceEvent, onStoreChange);
+  media.addEventListener('change', onStoreChange);
+
+  return () => {
+    window.removeEventListener('storage', handleStorage);
+    window.removeEventListener(themePreferenceEvent, onStoreChange);
+    media.removeEventListener('change', onStoreChange);
+  };
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const storedPreference = window.localStorage.getItem(themePreferenceKey);
-  const initialPreference = isThemePreference(storedPreference) ? storedPreference : 'system';
-  const [preference, setPreferenceState] = useState<ThemePreference>(initialPreference);
-  const [isDark, setIsDark] = useState(() => resolveDark(initialPreference));
+  const preference = useSyncExternalStore<ThemePreference>(
+    subscribeToTheme,
+    getThemePreference,
+    () => 'system'
+  );
+  const isDark = resolveDark(preference);
 
   useEffect(() => {
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-
-    const applyTheme = () => {
-      const nextIsDark = resolveDark(preference);
-
-      setIsDark(nextIsDark);
-      document.documentElement.dataset.theme = nextIsDark ? 'dark' : 'light';
-      document.documentElement.classList.toggle('dark', nextIsDark);
-    };
-
-    applyTheme();
-    media.addEventListener('change', applyTheme);
-
-    return () => {
-      media.removeEventListener('change', applyTheme);
-    };
-  }, [preference]);
+    document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+    document.documentElement.classList.toggle('dark', isDark);
+  }, [isDark]);
 
   const setPreference = useCallback((nextPreference: ThemePreference) => {
-    setPreferenceState(nextPreference);
     window.localStorage.setItem(themePreferenceKey, nextPreference);
+    window.dispatchEvent(new Event(themePreferenceEvent));
   }, []);
 
   const value = useMemo<ThemeContextValue>(

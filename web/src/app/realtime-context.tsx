@@ -1,3 +1,5 @@
+'use client';
+
 import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 
 import { useSession } from './session-context';

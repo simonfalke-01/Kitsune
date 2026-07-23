@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
+'use client';
 
-import { EventProvider } from './event-context';
-import { RealtimeProvider } from './realtime-context';
-import { SessionProvider } from './session-context';
+import { useRouter } from 'next/navigation';
+import type { ReactNode } from 'react';
+import { I18nProvider, RouterProvider } from 'react-aria-components';
+
 import { ThemeProvider } from './theme-context';
 
 interface AppProvidersProps {
@@ -10,13 +11,17 @@ interface AppProvidersProps {
 }
 
 export function AppProviders({ children }: AppProvidersProps) {
+  const router = useRouter();
+
   return (
-    <ThemeProvider>
-      <SessionProvider>
-        <RealtimeProvider>
-          <EventProvider>{children}</EventProvider>
-        </RealtimeProvider>
-      </SessionProvider>
-    </ThemeProvider>
+    <RouterProvider
+      navigate={(href) => {
+        router.push(href.toString());
+      }}
+    >
+      <I18nProvider locale="en">
+        <ThemeProvider>{children}</ThemeProvider>
+      </I18nProvider>
+    </RouterProvider>
   );
 }

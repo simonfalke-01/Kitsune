@@ -1,5 +1,9 @@
 # Frontend Design System — Agent Operating Rules
 
+`docs/design/INTERFACE_CONTRACT.md` is the binding product-interface contract.
+It applies to every route and component and takes precedence when a generic
+design-system example conflicts with Kitsune's task, density, or copy rules.
+
 ## 0. Your role
 
 You are the design lead and implementing engineer for this project. The client
@@ -20,6 +24,7 @@ You are not finished when it works. You are finished when it passes §9.
 
 | Concern | Choice |
 |---|---|
+| Framework / SSR | Next.js App Router |
 | Behaviour / a11y primitives | `react-aria-components` |
 | Styling | Tailwind CSS v4 (CSS-first `@theme`) |
 | RAC state variants | `tailwindcss-react-aria-components` |
@@ -27,7 +32,7 @@ You are not finished when it works. You are finished when it passes §9.
 | Icons | Lucide — one set, no mixing |
 | Animation | CSS transitions first; `motion` only for gesture/layout |
 | Forms | React Hook Form + Zod |
-| Tables | TanStack Table (headless) |
+| Tables | TanStack Table (headless; the only approved TanStack package) |
 | Dates | `@internationalized/date` (RAC dependency) |
 | Fonts | Self-hosted via Fontsource |
 
@@ -41,6 +46,14 @@ Setup:
 Do not install a component library. Do not add a second icon set. Do not add a
 CSS-in-JS runtime. If you believe a new dependency is required, stop and ask —
 do not add it and mention it afterwards.
+
+Lucide is a functional vocabulary, not decoration. Do not place icons beside
+obvious labels, in decorative chips, throughout navigation, or where text is
+clearer. Never invent a generic icon as the product mark.
+
+Do not add TanStack Router, Query, DB, Store, Virtual, Pacer, Form, Start, or
+any other TanStack package. Next.js owns routing and SSR. TanStack Table is the
+sole exception.
 
 ## 2. Hard constraints
 
@@ -72,7 +85,9 @@ rg -n --glob 'src/**/*.{tsx,ts}' -e '\[[0-9]+(px|rem|%)\]' -e '#[0-9a-fA-F]{3,8}
 ## 3. Token system
 
 Two tiers. Primitives are raw scales and are never referenced by components.
-Semantic tokens are the only values components consume.
+Semantic tokens are the only values components consume. `web/src/app.css` is
+the canonical source of truth; do not duplicate its live values in instruction
+or component files.
 
 ```css
 @import "tailwindcss";
@@ -188,16 +203,16 @@ or Tailwind defaults. Add a semantic role rather than reaching down.
 
 ## 4. Build order
 
-Do not skip ahead. Each step gets reviewed before the next begins.
+Do not skip ahead. Verify each step before continuing.
 
-1. **Tokens.** Write `app.css`. Stop. Show it.
+1. **Tokens.** Write and verify `app.css`.
 2. **Primitives.** Build `src/components/ui/` as thin React Aria wrappers:
    `Button`, `Link`, `TextField`, `TextArea`, `Select`, `ComboBox`, `Checkbox`,
    `Radio`, `Switch`, `Dialog`, `Popover`, `Menu`, `Tooltip`, `Tabs`, `Table`,
    and `Toast`. Export variants through a small cva-style map, not prop soup.
-   Stop. Show them.
+   Verify them in isolation.
 3. **Kitchen sink.** Add `/_kitchen` with every component, variant, and state in
-   both themes. It does not ship to production. Stop. Show it.
+   both themes. It does not ship to production. Inspect it visually.
 4. **Screens.** Screens compose only from `ui/` and add no visual decisions. A
    missing expression requires a reviewed primitive, never a one-off.
 
@@ -243,6 +258,13 @@ list.
 
 ## 8. Copy
 
+- Prefer deleting copy over rewriting it.
+- Do not add captions, subtitles, or descriptions that narrate architecture,
+  explain the page, repeat a heading, or restate visible controls.
+- Subtitles are permitted only when they report useful live state or resolve
+  real ambiguity.
+- Use terse factual fragments. Avoid semicolons, em dashes, centered dots,
+  ornamental arrows, and unnecessary periods.
 - Name things by what users control.
 - Use active voice and sentence case.
 - Keep action names stable through button, dialog, result, and toast.
