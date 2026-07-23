@@ -44,8 +44,9 @@
         creation, one-time token reveal, and guarded token revocation.
   - [x] Add the SSR live-operations route with platform health, event lifecycle,
         and scoreboard visibility controls.
-  - [ ] Complete organizer event, challenge, automation, access, audit, and
-        settings routes.
+  - [x] Add organizer event inventory, selection, and creation.
+  - [ ] Complete organizer challenge, automation, access, audit, and settings
+        routes.
 - [ ] Port generated OpenAPI access and preserve authenticated realtime
       invalidation without introducing an unapproved dependency.
   - [x] Bootstrap the authenticated session, event catalog, selected event, and
