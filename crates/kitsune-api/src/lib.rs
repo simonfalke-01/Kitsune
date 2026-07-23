@@ -608,7 +608,16 @@ mod tests {
     use chrono::Utc;
     use http_body_util::BodyExt;
     use kitsune_automation::{InProcessCache, InProcessEventBus};
-    use kitsune_db::{MIGRATOR, PostgresStore, auth::AuthRepository};
+    use kitsune_core::{
+        identity::{ChallengeId, EventId, InstanceId, OrganizationId, UserId},
+        scoring::CompetitorId,
+    };
+    use kitsune_db::{
+        MIGRATOR, PostgresStore,
+        auth::AuthRepository,
+        instances::{InstanceRepository, IssueReadyInstance},
+    };
+    use secrecy::SecretString;
     use sha2::{Digest, Sha256};
     use sqlx::PgPool;
     use totp_rs::{Algorithm as TotpAlgorithm, Secret, TOTP};
@@ -1833,32 +1842,41 @@ mod tests {
         );
 
         let dynamic_flag = "kit{player-bound-foxfire-6d83619d}";
-        let flag_digest = Sha256::digest(dynamic_flag.as_bytes()).to_vec();
         let now = Utc::now();
-        sqlx::query!(
-            r#"
-            INSERT INTO instances (
-                id,event_id,challenge_id,team_id,user_id,orchestrator,provider_id,
-                template,state,connection,idempotency_key,expires_at,created_at,
-                updated_at,flag_digest,flag_generation,flag_rotated_at
-            ) VALUES ($1,$2,$3,NULL,$4,$5,$6,$7,'ready',$8,$9,$10,$11,$11,$12,1,$11)
-            "#,
-            Uuid::now_v7(),
-            Uuid::parse_str(event_id).expect("event UUID"),
-            Uuid::parse_str(dynamic_challenge_id).expect("challenge UUID"),
-            Uuid::parse_str(player_id).expect("player UUID"),
-            "test-fixture",
-            "fixture-instance",
-            "pwnbox-v1",
-            serde_json::json!({"protocol": "https", "host": "instance.example.test"}),
-            Uuid::now_v7(),
-            now + chrono::Duration::minutes(30),
-            now,
-            flag_digest,
+        let event_uuid = Uuid::parse_str(event_id).expect("event UUID");
+        let organization_id = sqlx::query_scalar!(
+            "SELECT organization_id FROM events WHERE id = $1",
+            event_uuid,
         )
-        .execute(&pool)
+        .fetch_one(&pool)
         .await
-        .expect("ready dynamic instance");
+        .expect("event organization");
+        let connection = serde_json::json!({"protocol": "https", "host": "instance.example.test"});
+        let secret_flag = SecretString::from(dynamic_flag);
+        InstanceRepository::new(pool.clone())
+            .issue_ready(IssueReadyInstance {
+                organization_id: OrganizationId(organization_id),
+                event_id: EventId(event_uuid),
+                challenge_id: ChallengeId(
+                    Uuid::parse_str(dynamic_challenge_id).expect("challenge UUID"),
+                ),
+                instance_id: InstanceId::new(),
+                competitor: CompetitorId::User(UserId(
+                    Uuid::parse_str(player_id).expect("player UUID"),
+                )),
+                actor: None,
+                orchestrator: "kubernetes",
+                provider_id: "outfox/pwnbox-player",
+                template: "pwnbox-v1",
+                connection: &connection,
+                flag: &secret_flag,
+                idempotency_key: Uuid::now_v7(),
+                expires_at: now + chrono::Duration::minutes(30),
+                correlation_id: Uuid::now_v7(),
+                now,
+            })
+            .await
+            .expect("ready dynamic instance");
 
         for (answer, expected) in [
             ("kit{someone-elses-flag}", "incorrect"),
@@ -2272,8 +2290,8 @@ mod tests {
             .fetch_one(&pool)
             .await
             .expect("outbox count");
-        assert_eq!(audit_count, 35);
-        assert_eq!(outbox_count, 35);
+        assert_eq!(audit_count, 36);
+        assert_eq!(outbox_count, 36);
     }
 
     fn response_cookies(headers: &axum::http::HeaderMap) -> String {

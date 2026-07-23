@@ -73,6 +73,11 @@ constant-time verifies against its unexpired ready or unhealthy lease inside
 the same challenge transaction used for solve and score writes. Provisioning
 and rotation remain orchestrator operations, so no database lock is held while
 calling Kubernetes, Docker/Podman, or Nomad.
+The provider-ready commit validates the authored template and tenant owner,
+enforces a bounded TTL and one active lease, rejects secret-bearing connection
+metadata, and is idempotent on the provisioning operation key. Rotation uses a
+monotonic generation compare-and-swap and commits its digest, audit record, and
+typed event together after successful provider injection.
 
 ## Security boundaries
 

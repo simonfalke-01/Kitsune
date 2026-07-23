@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT flag_digest,connection::text AS connection FROM instances WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "flag_digest",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 1,
+        "name": "connection",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      null
+    ]
+  },
+  "hash": "5dd815679d3eb7b427ce1e59616059b48ccd05a3131b6e6d7dab03d84428d07a"
+}

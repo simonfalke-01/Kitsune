@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT flag_digest,flag_generation FROM instances WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "flag_digest",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 1,
+        "name": "flag_generation",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      true,
+      false
+    ]
+  },
+  "hash": "d3c2f2fc27ebcfe9945e18a9d11f17703a9e4fb761120ab646d224413c9eaff7"
+}

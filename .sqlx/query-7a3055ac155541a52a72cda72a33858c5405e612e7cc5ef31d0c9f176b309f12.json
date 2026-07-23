@@ -1,0 +1,84 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT i.event_id,i.challenge_id,i.user_id,i.team_id,i.orchestrator,\n                   i.provider_id,i.template,i.state,i.connection,i.flag_generation,\n                   i.expires_at\n            FROM instances i\n            JOIN events e ON e.id = i.event_id\n            WHERE i.id = $1 AND i.event_id = $2 AND e.organization_id = $3\n            FOR UPDATE OF i\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "event_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "challenge_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "orchestrator",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "provider_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "template",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "state",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "connection",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 9,
+        "name": "flag_generation",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 10,
+        "name": "expires_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "7a3055ac155541a52a72cda72a33858c5405e612e7cc5ef31d0c9f176b309f12"
+}

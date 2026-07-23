@@ -5,12 +5,12 @@ Updated: 2026-07-23 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: complete the production instance issuer/rotation repository and
-  then the capability-bound plugin Jeopardy verifier.
+- In progress: implement the capability-bound plugin Jeopardy verifier on the
+  Wasmtime Component Model host.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
-- Next: expose audited instance lease/rotation operations to orchestrator
-  adapters, then implement plugin verification.
+- Next: define the WIT verifier contract, bounded Wasmtime host, and signed
+  installed-artifact lookup used by plugin challenge submissions.
 
 ## Verified
 
@@ -19,7 +19,7 @@ Updated: 2026-07-23 (Asia/Singapore)
   concepts; no source or assets copied.
 - Local toolchain: Rust 1.93.1 default plus Rust 1.97.0 CI-parity
   validation, Node 24.13.0, Corepack 0.34.5, Docker 29.4.0.
-- Core workspace format, 16 domain tests, and strict workspace Clippy pass.
+- Core workspace format, 17 domain tests, and strict workspace Clippy pass.
 - PostgreSQL 17 migration applies from empty state; SQLx compile-time query
   metadata is checked in; transactional audit/outbox/idempotency test passes.
 - Lean cache/EventBus, typed automation DAG validation/execution, centralized
@@ -167,6 +167,13 @@ Updated: 2026-07-23 (Asia/Singapore)
   receipt, solve, first-blood, score, audit, and outbox transaction. Core policy
   tests and the PostgreSQL-backed API journey cover mixed-policy rejection,
   missing leases, wrong flags, accepted flags, and plaintext non-persistence.
+- Instance-ready issuance and flag rotation now use an audited PostgreSQL
+  repository shared by provider adapters and submission verification. It
+  validates tenant/template ownership, bounds TTL and connection data, rejects
+  connection secrets, enforces one active competitor lease, replays exact
+  provisioning retries, and protects rotations with a monotonic generation
+  compare-and-swap. Six database tests, the core lifecycle test, and strict
+  Clippy are green.
 - Main CI run 29934247886 is green across Rust, Web, dependency audit, and the
   complete desktop/mobile Browser E2E journey.
 

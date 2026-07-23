@@ -8,6 +8,7 @@ pub mod challenge;
 pub mod config;
 pub mod events;
 pub mod identity;
+pub mod instances;
 pub mod modes;
 pub mod ports;
 pub mod scoring;

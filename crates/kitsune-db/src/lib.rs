@@ -7,6 +7,7 @@ use std::time::Duration;
 
 pub mod auth;
 pub mod engagement;
+pub mod instances;
 pub mod oauth;
 pub mod oidc;
 pub mod passkeys;

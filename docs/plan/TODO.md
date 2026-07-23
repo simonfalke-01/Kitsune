@@ -105,7 +105,7 @@ or scaffolding alone.
   - [x] Dynamic-instance answers bind to the exact user/team lease, verify only
         digest material in constant time, reject expired/unready leases, and
         preserve transactional solve/score semantics.
-  - [ ] Audited instance lease issuance and monotonic flag rotation repository.
+  - [x] Audited instance lease issuance and monotonic flag rotation repository.
   - [ ] Capability-bound plugin answer verifier.
 - [x] Encrypted manual-verification persistence, RBAC review API, duplicate
       pending protection, and transactional accept/discard scoring.

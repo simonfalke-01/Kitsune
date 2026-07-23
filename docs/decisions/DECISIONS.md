@@ -284,3 +284,11 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-23 — Treat ready and temporarily unhealthy instance leases as valid
   flag issuers until expiry — a player who recovered a legitimate flag is not
   denied merely because the service health probe changed after exploitation.
+- 2026-07-23 — Rotate instance flags with a generation compare-and-swap after
+  provider injection — overlapping ticks cannot silently overwrite a newer
+  digest, and the emitted generation is safe to correlate without exposing the
+  flag.
+- 2026-07-23 — Persist only player-safe instance connection documents and reject
+  recursively named credential, token, password, secret, or flag fields — the
+  lease projection can be exposed to players without becoming a second secrets
+  store.
