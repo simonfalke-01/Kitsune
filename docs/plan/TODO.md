@@ -76,10 +76,16 @@
         because Next 16 Turbopack panics while emitting the challenge route.
   - [x] Scoreboard passes the token scan, formatting, ESLint, strict typecheck,
         five Vitest assertions, production build, and authenticated SSR smoke.
-- [ ] Commit and push the completed frontend rewrite in reviewable atomic units;
-      repair every GitHub Actions regression before resuming backend work.
-- [ ] Restore the preserved notification vertical slice only after every
-      frontend gate is green, then resume the pre-reset milestone.
+- [x] Commit and push the completed frontend rewrite in reviewable atomic units.
+- [x] Restore the preserved notification vertical slice after the frontend gates
+      are green.
+- [x] Complete durable notification feed delivery, read receipts, unread counts,
+      organizer announcement history, and retraction with atomic audit/outbox
+      events.
+- [x] Expose player notification and organizer announcement REST/OpenAPI routes
+      with bounded cursors, validation, RBAC, CSRF, and lifecycle integration
+      coverage.
+- [ ] Add the SSR notification feed/bell and organizer announcement workspace.
 
 ## Milestone 01
 

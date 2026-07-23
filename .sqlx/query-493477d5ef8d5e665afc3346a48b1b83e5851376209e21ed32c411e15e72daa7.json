@@ -1,0 +1,69 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                n.id,\n                n.event_id,\n                n.template,\n                n.data,\n                n.priority,\n                n.created_at,\n                n.expires_at,\n                receipt.read_at\n            FROM notifications n\n            LEFT JOIN notification_receipts receipt\n              ON receipt.notification_id = n.id\n             AND receipt.user_id = $2\n             AND receipt.channel = 'in_app'\n            WHERE n.organization_id = $1\n              AND n.retracted_at IS NULL\n              AND n.audience_id IS NULL\n              AND (n.expires_at IS NULL OR n.expires_at > $3)\n              AND (\n                    n.recipient_user_id = $2\n                    OR (\n                        n.recipient_user_id IS NULL\n                        AND (\n                            n.event_id IS NULL\n                            OR EXISTS (\n                                SELECT 1\n                                FROM role_grants grant_row\n                                JOIN roles role_row ON role_row.id = grant_row.role_id\n                                WHERE grant_row.organization_id = $1\n                                  AND grant_row.user_id = $2\n                                  AND grant_row.team_id IS NULL\n                                  AND (\n                                      grant_row.event_id IS NULL\n                                      OR grant_row.event_id = n.event_id\n                                  )\n                                  AND (\n                                      'event_read' = ANY(role_row.permissions)\n                                      OR 'platform_manage' = ANY(role_row.permissions)\n                                  )\n                            )\n                        )\n                    )\n              )\n              AND (\n                    $4::timestamptz IS NULL\n                    OR (n.created_at, n.id) < ($4, $5)\n              )\n            ORDER BY n.created_at DESC, n.id DESC\n            LIMIT $6\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "event_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "template",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "data",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "priority",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "expires_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "read_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz",
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "493477d5ef8d5e665afc3346a48b1b83e5851376209e21ed32c411e15e72daa7"
+}

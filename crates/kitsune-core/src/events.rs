@@ -206,6 +206,13 @@ pub enum DomainEvent {
     ConfigurationChanged { keys: Vec<String> },
     /// Notification created.
     NotificationCreated { notification_id: NotificationId },
+    /// A user acknowledged one in-app notification.
+    NotificationRead {
+        notification_id: NotificationId,
+        user_id: UserId,
+    },
+    /// An organizer retracted an announcement.
+    NotificationRetracted { notification_id: NotificationId },
     /// Plugin lifecycle or grants changed.
     PluginChanged { plugin: String, state: String },
     /// Security/integrity review signal.
@@ -251,6 +258,8 @@ impl DomainEvent {
             Self::AutomationExecuted { .. } => "automation.executed",
             Self::ConfigurationChanged { .. } => "configuration.changed",
             Self::NotificationCreated { .. } => "notification.created",
+            Self::NotificationRead { .. } => "notification.read",
+            Self::NotificationRetracted { .. } => "notification.retracted",
             Self::PluginChanged { .. } => "plugin.changed",
             Self::IntegritySignal { .. } => "integrity.signal",
         }

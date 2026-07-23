@@ -5,6 +5,7 @@ mod auth;
 mod engagement;
 mod error;
 mod identity_admin;
+mod notifications;
 mod oauth;
 mod oidc;
 mod oidc_routes;
@@ -211,6 +212,11 @@ pub struct ReadinessResponse {
         health,
         readiness,
         audit::list_audit,
+        notifications::list_notifications,
+        notifications::mark_notification_read,
+        notifications::list_announcements,
+        notifications::create_announcement,
+        notifications::retract_announcement,
         identity_admin::list_users,
         identity_admin::create_user,
         identity_admin::update_user,
@@ -309,6 +315,10 @@ pub struct ReadinessResponse {
         ErrorBody,
         audit::AuditEntryResponse,
         audit::AuditPageResponse,
+        notifications::NotificationResponse,
+        notifications::NotificationPageResponse,
+        notifications::AnnouncementResponse,
+        notifications::CreateAnnouncementRequest,
         identity_admin::ManagedUserResponse,
         identity_admin::CreateManagedUserRequest,
         identity_admin::UpdateManagedUserRequest,
@@ -417,6 +427,8 @@ pub struct ReadinessResponse {
     tags(
         (name = "system", description = "Health and diagnostics"),
         (name = "audit", description = "Immutable organizer activity history"),
+        (name = "notifications", description = "Player in-app notification feed"),
+        (name = "announcements", description = "Organizer notification broadcasts"),
         (name = "identity administration", description = "Organizer accounts, roles, and scoped grants"),
         (name = "auth", description = "Setup, sessions, and authentication"),
         (name = "events", description = "Competition and workshop events"),
@@ -480,6 +492,22 @@ pub fn router(state: AppState) -> Router {
         .route("/health", get(health))
         .route("/ready", get(readiness))
         .route("/api/v1/audit", get(audit::list_audit))
+        .route(
+            "/api/v1/notifications",
+            get(notifications::list_notifications),
+        )
+        .route(
+            "/api/v1/notifications/{notification_id}/read",
+            post(notifications::mark_notification_read),
+        )
+        .route(
+            "/api/v1/admin/announcements",
+            get(notifications::list_announcements).post(notifications::create_announcement),
+        )
+        .route(
+            "/api/v1/admin/announcements/{notification_id}",
+            axum::routing::delete(notifications::retract_announcement),
+        )
         .route(
             "/api/v1/admin/users",
             get(identity_admin::list_users).post(identity_admin::create_user),
@@ -870,12 +898,151 @@ mod tests {
     fn generated_document_is_openapi_31() {
         assert_eq!(openapi_json()["openapi"], "3.1.0");
         assert!(openapi_json()["paths"]["/api/v1/auth/login"].is_object());
+        assert!(openapi_json()["paths"]["/api/v1/notifications"].is_object());
+        assert!(
+            openapi_json()["paths"]["/api/v1/notifications/{notification_id}/read"].is_object()
+        );
+        assert!(openapi_json()["paths"]["/api/v1/admin/announcements"].is_object());
+        assert!(
+            openapi_json()["paths"]["/api/v1/admin/announcements/{notification_id}"].is_object()
+        );
         assert!(openapi_json()["paths"]["/api/v1/events/{event_id}/divisions"].is_object());
         assert!(openapi_json()["paths"]["/api/v1/events/{event_id}/brackets"].is_object());
         assert!(
             openapi_json()["paths"]["/api/v1/auth/oidc/{organization}/{provider_key}/callback"]
                 .is_object()
         );
+    }
+
+    #[sqlx::test(migrator = "MIGRATOR")]
+    async fn notification_feed_and_announcement_lifecycle_are_exposed(pool: PgPool) {
+        let app = router(test_state(pool.clone()));
+        let admin = setup_test_admin(
+            &app,
+            "Notification Shrine",
+            "notification-shrine",
+            "Announcement Keeper",
+            "keeper@notification.test",
+        )
+        .await;
+        let player = register_test_player(
+            &app,
+            "notification-shrine",
+            "Feed Reader",
+            "reader@notification.test",
+        )
+        .await;
+        let event =
+            create_test_event(&app, &admin, "Notification Event", "notification-event").await;
+        let event_id = event["id"].as_str().expect("event ID");
+
+        let announcement = authorized_json_request(
+            &app,
+            "POST",
+            "/api/v1/admin/announcements",
+            &admin,
+            Some(serde_json::json!({
+                "event_id": event_id,
+                "data": {
+                    "title": "Round starts",
+                    "body": "Scoring is now live."
+                },
+                "priority": 2,
+                "expires_at": null
+            })),
+        )
+        .await;
+        let notification_id = announcement["id"]
+            .as_str()
+            .expect("notification ID")
+            .to_owned();
+
+        let forbidden = Request::builder()
+            .uri("/api/v1/admin/announcements")
+            .header(header::COOKIE, &player.cookies)
+            .body(Body::empty())
+            .expect("forbidden announcement request");
+        let response = app
+            .clone()
+            .oneshot(forbidden)
+            .await
+            .expect("forbidden announcement response");
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+
+        let feed =
+            authorized_json_request(&app, "GET", "/api/v1/notifications?limit=1", &player, None)
+                .await;
+        assert_eq!(feed["unread_count"], 1);
+        assert_eq!(feed["items"][0]["id"], notification_id);
+        assert!(feed["items"][0]["read_at"].is_null());
+
+        let mark_read = Request::builder()
+            .method("POST")
+            .uri(format!("/api/v1/notifications/{notification_id}/read"))
+            .header(header::COOKIE, &player.cookies)
+            .header("x-csrf-token", &player.csrf)
+            .body(Body::empty())
+            .expect("mark notification read request");
+        let response = app
+            .clone()
+            .oneshot(mark_read)
+            .await
+            .expect("mark notification read response");
+        assert_eq!(response.status(), StatusCode::NO_CONTENT);
+
+        let duplicate_read = Request::builder()
+            .method("POST")
+            .uri(format!("/api/v1/notifications/{notification_id}/read"))
+            .header(header::COOKIE, &player.cookies)
+            .header("x-csrf-token", &player.csrf)
+            .body(Body::empty())
+            .expect("duplicate notification read request");
+        let response = app
+            .clone()
+            .oneshot(duplicate_read)
+            .await
+            .expect("duplicate notification read response");
+        assert_eq!(response.status(), StatusCode::NO_CONTENT);
+
+        let feed =
+            authorized_json_request(&app, "GET", "/api/v1/notifications", &player, None).await;
+        assert_eq!(feed["unread_count"], 0);
+        assert!(feed["items"][0]["read_at"].is_string());
+
+        let retract = Request::builder()
+            .method("DELETE")
+            .uri(format!("/api/v1/admin/announcements/{notification_id}"))
+            .header(header::COOKIE, &admin.cookies)
+            .header("x-csrf-token", &admin.csrf)
+            .body(Body::empty())
+            .expect("retract announcement request");
+        let response = app
+            .clone()
+            .oneshot(retract)
+            .await
+            .expect("retract announcement response");
+        assert_eq!(response.status(), StatusCode::NO_CONTENT);
+
+        let feed =
+            authorized_json_request(&app, "GET", "/api/v1/notifications", &player, None).await;
+        assert_eq!(feed["unread_count"], 0);
+        assert_eq!(feed["items"].as_array().expect("feed items").len(), 0);
+        let history =
+            authorized_json_request(&app, "GET", "/api/v1/admin/announcements", &admin, None).await;
+        assert_eq!(history[0]["id"], notification_id);
+        assert!(history[0]["retracted_at"].is_string());
+
+        let notification_audits =
+            sqlx::query_scalar::<_, i64>("SELECT count(*) FROM audit_log WHERE action = ANY($1)")
+                .bind(vec![
+                    "announcement.create",
+                    "notification.read",
+                    "announcement.retract",
+                ])
+                .fetch_one(&pool)
+                .await
+                .expect("notification audit count");
+        assert_eq!(notification_audits, 3);
     }
 
     #[sqlx::test(migrator = "MIGRATOR")]

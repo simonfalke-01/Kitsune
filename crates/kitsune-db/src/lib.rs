@@ -10,6 +10,7 @@ pub mod auth;
 pub mod engagement;
 pub mod identity_admin;
 pub mod instances;
+pub mod notifications;
 pub mod oauth;
 pub mod oidc;
 pub mod passkeys;

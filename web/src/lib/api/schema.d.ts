@@ -4,6 +4,38 @@
  */
 
 export interface paths {
+    "/api/v1/admin/announcements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_announcements"];
+        put?: never;
+        post: operations["create_announcement"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/announcements/{notification_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["retract_announcement"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/permissions": {
         parameters: {
             query?: never;
@@ -1050,6 +1082,38 @@ export interface paths {
         patch: operations["review_writeup"];
         trace?: never;
     };
+    "/api/v1/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_notifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/{notification_id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["mark_notification_read"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/setup": {
         parameters: {
             query?: never;
@@ -1241,6 +1305,23 @@ export interface components {
              * @description Surviving team that receives the source roster and history.
              */
             target_team_id: string;
+        };
+        AnnouncementResponse: {
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            created_by?: string | null;
+            data: unknown;
+            /** Format: uuid */
+            event_id?: string | null;
+            /** Format: date-time */
+            expires_at?: string | null;
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            priority: number;
+            /** Format: date-time */
+            retracted_at?: string | null;
         };
         /** @description Author-submitted answer rule. Exact plaintext is digested before storage. */
         AnswerInput: {
@@ -1486,6 +1567,15 @@ export interface components {
             standing?: null | components["schemas"]["ProfileStandingResponse"];
             /** @description Team associations for a user profile. */
             teams: components["schemas"]["ProfileTeamResponse"][];
+        };
+        CreateAnnouncementRequest: {
+            data: unknown;
+            /** Format: uuid */
+            event_id?: string | null;
+            /** Format: date-time */
+            expires_at?: string | null;
+            /** Format: int32 */
+            priority: number;
         };
         /** @description New API-token request. The cleartext token is returned exactly once. */
         CreateApiTokenRequest: {
@@ -1958,6 +2048,28 @@ export interface components {
          * @enum {string}
          */
         ModeInput: "jeopardy" | "koth" | "attack_defense" | "workshop";
+        NotificationPageResponse: {
+            items: components["schemas"]["NotificationResponse"][];
+            next_cursor?: string | null;
+            /** Format: int64 */
+            unread_count: number;
+        };
+        NotificationResponse: {
+            /** Format: date-time */
+            created_at: string;
+            data: unknown;
+            /** Format: uuid */
+            event_id?: string | null;
+            /** Format: date-time */
+            expires_at?: string | null;
+            /** Format: uuid */
+            id: string;
+            /** Format: int32 */
+            priority: number;
+            /** Format: date-time */
+            read_at?: string | null;
+            template: string;
+        };
         /** @description Safe persisted OAuth2 client metadata. */
         OAuthClientResponse: {
             /** @description Public client identifier. */
@@ -2874,6 +2986,152 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_announcements: {
+        parameters: {
+            query?: {
+                /** @description History size from 1 through 250. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnouncementResponse"][];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    create_announcement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateAnnouncementRequest"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AnnouncementResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    retract_announcement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Notification ID */
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Announcement retracted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
     list_permissions: {
         parameters: {
             query?: never;
@@ -6829,6 +7087,99 @@ export interface operations {
                 };
             };
             422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_notifications: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned by the preceding page. */
+                cursor?: string;
+                /** @description Page size from 1 through 100. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationPageResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    mark_notification_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Notification ID */
+                notification_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Notification marked read */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO notification_receipts (\n                    notification_id,user_id,channel,state,delivered_at,read_at,error\n                )\n                SELECT id,$2,'in_app','delivered',$3,NULL,NULL\n                FROM UNNEST($1::uuid[]) AS id\n                WHERE NOT EXISTS (\n                    SELECT 1\n                    FROM notification_receipts existing\n                    WHERE existing.notification_id = id\n                      AND existing.user_id = $2\n                      AND existing.channel = 'in_app'\n                )\n                ON CONFLICT (notification_id,user_id,channel) DO NOTHING\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "UuidArray",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1c2d21eeec8c0d3daaf2d1739e63e3cbc5de6bc7e3067eb7c6e544fccc54ec25"
+}

@@ -1,0 +1,71 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO notifications (\n                id,organization_id,event_id,recipient_user_id,audience_id,template,\n                data,priority,created_at,expires_at,created_by,retracted_at\n            ) VALUES ($1,$2,$3,NULL,NULL,'announcement',$4,$5,$6,$7,$8,NULL)\n            RETURNING id,event_id,created_by,data,priority,created_at,expires_at,retracted_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "event_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "created_by",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "data",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "priority",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "expires_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "retracted_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Jsonb",
+        "Int2",
+        "Timestamptz",
+        "Timestamptz",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      true,
+      true
+    ]
+  },
+  "hash": "968e456ed738e2705a9a369f12fa05c46c8df853eaec7cc97a422fe40bb3d24e"
+}

@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO notification_receipts (\n                notification_id,user_id,channel,state,delivered_at,read_at,error\n            ) VALUES ($1,$2,'in_app','read',$3,$3,NULL)\n            ON CONFLICT (notification_id,user_id,channel) DO UPDATE SET\n                state = 'read',\n                delivered_at = COALESCE(notification_receipts.delivered_at, EXCLUDED.delivered_at),\n                read_at = COALESCE(notification_receipts.read_at, EXCLUDED.read_at),\n                error = NULL\n            WHERE notification_receipts.read_at IS NULL\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d5ceb01041fc6669d46c0117d96b74c218b782a8100e1dcc1cb9f8c1ef2fbd0d"
+}

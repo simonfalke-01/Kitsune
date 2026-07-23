@@ -140,6 +140,9 @@ impl RealtimeAudience {
             DomainEvent::AuthenticationSucceeded { user_id, .. } if *user_id == self.user_id => {
                 return true;
             }
+            DomainEvent::NotificationRead { user_id, .. } if *user_id == self.user_id => {
+                return true;
+            }
             DomainEvent::ApiTokenChanged { .. }
             | DomainEvent::OAuthClientChanged { .. }
             | DomainEvent::PasskeyChanged { .. }
@@ -159,11 +162,12 @@ impl RealtimeAudience {
             | DomainEvent::OAuthClientChanged { .. }
             | DomainEvent::PasskeyChanged { .. }
             | DomainEvent::ConfigurationChanged { .. }
-            | DomainEvent::NotificationCreated { .. }
-            | DomainEvent::IntegritySignal { .. } => "audit_read",
-            DomainEvent::EventChanged { .. } | DomainEvent::EventRegistrationChanged { .. } => {
-                "event_read"
-            }
+            | DomainEvent::IntegritySignal { .. }
+            | DomainEvent::NotificationRead { .. } => "audit_read",
+            DomainEvent::NotificationCreated { .. }
+            | DomainEvent::NotificationRetracted { .. }
+            | DomainEvent::EventChanged { .. }
+            | DomainEvent::EventRegistrationChanged { .. } => "event_read",
             DomainEvent::TeamCreated { .. }
             | DomainEvent::TeamMembershipChanged { .. }
             | DomainEvent::TeamMemberTransferred { .. }

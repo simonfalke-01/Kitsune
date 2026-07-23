@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT COUNT(*) AS \"count!\"\n        FROM notifications n\n        LEFT JOIN notification_receipts receipt\n          ON receipt.notification_id = n.id\n         AND receipt.user_id = $2\n         AND receipt.channel = 'in_app'\n        WHERE n.organization_id = $1\n          AND n.retracted_at IS NULL\n          AND n.audience_id IS NULL\n          AND (n.expires_at IS NULL OR n.expires_at > $3)\n          AND receipt.read_at IS NULL\n          AND (\n                n.recipient_user_id = $2\n                OR (\n                    n.recipient_user_id IS NULL\n                    AND (\n                        n.event_id IS NULL\n                        OR EXISTS (\n                            SELECT 1\n                            FROM role_grants grant_row\n                            JOIN roles role_row ON role_row.id = grant_row.role_id\n                            WHERE grant_row.organization_id = $1\n                              AND grant_row.user_id = $2\n                              AND grant_row.team_id IS NULL\n                              AND (\n                                  grant_row.event_id IS NULL\n                                  OR grant_row.event_id = n.event_id\n                              )\n                              AND (\n                                  'event_read' = ANY(role_row.permissions)\n                                  OR 'platform_manage' = ANY(role_row.permissions)\n                              )\n                        )\n                    )\n                )\n          )\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "57c5cb586e1c71eec94044d871cb0d6de75874b91a902f90d00e30412a11e9be"
+}

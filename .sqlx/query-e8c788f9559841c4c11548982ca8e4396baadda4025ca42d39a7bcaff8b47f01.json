@@ -1,0 +1,24 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE notifications\n            SET retracted_at = $3\n            WHERE id = $1 AND organization_id = $2 AND template = 'announcement'\n              AND retracted_at IS NULL\n            RETURNING event_id\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "event_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "e8c788f9559841c4c11548982ca8e4396baadda4025ca42d39a7bcaff8b47f01"
+}

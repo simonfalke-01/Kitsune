@@ -4,9 +4,8 @@ Updated: 2026-07-23 (Asia/Singapore)
 
 ## Cursor
 
-- Current milestone: frontend reset — explicit owner-directed replacement of
-  the Svelte application with React 19, Next.js App Router SSR, and React Aria
-  Components.
+- Current milestone: notification delivery, resumed after the completed
+  owner-directed React 19 and Next.js App Router frontend reset.
 - Completed: the two-tier semantic token contract, locked React build stack,
   required React Aria primitive wrappers, and expanded CTF/admin control layer
   all pass strict TypeScript and a production build.
@@ -54,6 +53,10 @@ Updated: 2026-07-23 (Asia/Singapore)
 - Completed: organizer team administration now server-renders every roster with
   guarded member transfer, captain replacement, and destructive team merge
   workflows.
+- Completed: the restored notification backend now provides a tenant-scoped,
+  keyset-paginated player feed, delivery/read receipts, unread counts, durable
+  organizer announcements, retraction, atomic audit/outbox events, realtime
+  policy, and RBAC/CSRF-guarded REST/OpenAPI routes.
 - Verified: `/login` and `/_kitchen` return 200 in development, `/` safely sends
   unauthenticated or API-unavailable requests to sign-in, and the Next route
   manifest marks `/challenges` as request-time server rendered.
@@ -63,16 +66,17 @@ Updated: 2026-07-23 (Asia/Singapore)
 - Customization boundary: theme packs, white-label configuration, first-party
   screens, and plugin panels must share one versioned semantic token and
   extension-slot contract. No component fork may be required to rebrand.
-- Preserved work: the interrupted notification vertical slice is stored in
-  `stash@{0}` and must not resume until the frontend reset is green.
+- Restored work: the interrupted notification vertical slice from `stash@{0}`
+  has been reconciled with the current backend and completed through its API
+  boundary. The stash remains available until the milestone commit is safe.
 - Visual review: desktop and 390px full-page Chromium captures confirm aligned
   control heights, responsive single-column collapse, deliberate semantic
   color, flat card hierarchy, and explicit loading/empty/error treatments.
 - Interaction review: toast insertion is browser-verified at zero and
   intermediate frames with a 260 ms translate/opacity transition; rapid queue
   updates retain three visible toasts without runtime errors.
-- Next: finish the cross-route interaction audit and remaining responsive and
-  accessibility regression coverage.
+- Next: add the SSR player notification feed/bell and organizer announcement
+  workspace, then finish the cross-route responsive and accessibility audit.
 
 ## Verified
 
@@ -401,6 +405,13 @@ Updated: 2026-07-23 (Asia/Singapore)
 - Cache-commit CI exposed one team-merge assertion comparing Rust nanoseconds
   to PostgreSQL microseconds. The assertion now matches the storage contract;
   five repeated focused runs and the full all-feature workspace suite pass.
+- Notification delivery now uses descending `(created_at,id)` cursors, creates
+  in-app delivery receipts transactionally, keeps mark-read idempotent without
+  duplicate audit/outbox events, filters tenant/event visibility through role
+  grants, and hides expired or retracted records. Organizer creation and
+  retraction publish typed events after durable commits. Repository and API
+  lifecycle tests, all 53 core/database/API tests, offline SQLx checking, and
+  strict all-feature workspace Clippy are green.
 
 ## Risks being actively retired
 
