@@ -379,3 +379,10 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-23 — Namespace all Redis keys and implement first-increment expiry in
   one Lua operation — multiple API nodes share atomic budgets without extending
   an attacker's rate-limit window or colliding with another installation.
+- 2026-07-23 — Select NATS only when an explicit URL is configured and retain
+  the bounded local event bus in every profile — durable cross-node fanout is a
+  production-ready escape hatch without violating zero-forced-setup boot.
+- 2026-07-23 — Await a deduplicated JetStream publish acknowledgement, then use
+  per-node core wildcard subscriptions for live fanout — events are durably
+  retained while every stateless API replica receives updates instead of
+  competing through a queue group; PostgreSQL outbox remains replay authority.

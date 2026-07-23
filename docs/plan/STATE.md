@@ -5,8 +5,8 @@ Updated: 2026-07-23 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: complete the NATS JetStream half of the scaled cache/event
-  adapters after landing the Redis half.
+- In progress: audit and close the remaining versioned REST/OpenAPI resource
+  surface after landing both scaled cache/event adapters.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
 - Next: close uncovered authorization paths, regenerate the contract, and run
@@ -239,6 +239,15 @@ Updated: 2026-07-23 (Asia/Singapore)
   local adapter when absent. A real Redis 8.2 Testcontainer proves cross-client
   visibility, namespace isolation, 24-way atomicity, expiry reset, and removal;
   full workspace tests and strict Clippy are green.
+- NATS JetStream now implements durable, deduplicated event publication and
+  live broadcast fanout across stateless API nodes. The adapter bounds connect,
+  stream-management, publish, and acknowledgement operations; caps event and
+  stream storage; validates installation namespaces and subjects; and discards
+  malformed or subject-mismatched envelopes without logging payloads. Explicit
+  `nats_url` configuration selects it while zero-config profiles retain the
+  bounded local bus. A real NATS 2.12 Testcontainer proves cross-client fanout,
+  filtering, malformed-message rejection, and namespace isolation; strict
+  workspace Clippy and the all-feature workspace suite are green.
 - Cache-commit CI exposed one team-merge assertion comparing Rust nanoseconds
   to PostgreSQL microseconds. The assertion now matches the storage contract;
   five repeated focused runs and the full all-feature workspace suite pass.

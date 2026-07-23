@@ -54,6 +54,18 @@ when an invalidation queue or adapter is unavailable. WebSocket nodes subscribe
 to the shared bus without requiring affinity; browser stores independently
 coalesce score bursts into one bounded refresh.
 
+At scale, an explicitly configured NATS adapter publishes every envelope to a
+bounded file-backed JetStream and waits for the server acknowledgement before
+returning. Event UUIDs are JetStream deduplication keys. Each online API replica
+uses a core wildcard subscription over that installation's validated namespace,
+then validates the envelope/subject pair and applies typed kind filtering before
+delivery; every replica therefore receives live updates without queue-group load
+balancing or sticky sessions. JetStream retains a bounded seven-day history for
+durable integration consumers, while PostgreSQL's transactional outbox remains
+the authoritative replay and acknowledgement source. Without an explicit NATS
+URL, both runtime profiles use the bounded in-process adapter and still boot
+without an external service.
+
 Competitor profiles reuse the revisioned overall scoreboard for rank and totals,
 then add tenant-scoped identity, event registration, roster relationships, and a
 12-item indexed solve trail. Public requests receive no standing or activity

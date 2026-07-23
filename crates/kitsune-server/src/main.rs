@@ -8,10 +8,10 @@ use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use kitsune_api::{
     AppState, AuthService, OidcService, PasskeyService, SamlCredentials, SamlService, TokenService,
 };
-use kitsune_automation::{InProcessCache, InProcessEventBus, RedisCache};
+use kitsune_automation::{InProcessCache, InProcessEventBus, NatsEventBus, RedisCache};
 use kitsune_core::{
     config::{FeatureFlags, RuntimeProfile},
-    ports::Cache,
+    ports::{Cache, EventBus},
 };
 use kitsune_db::{PostgresStore, auth::AuthRepository};
 use kitsune_integrations::{SmtpConfig, SmtpNotifier};
@@ -40,6 +40,8 @@ struct ServerConfig {
     saml_trusted_origins: BTreeSet<String>,
     redis_url: Option<SecretString>,
     redis_namespace: String,
+    nats_url: Option<SecretString>,
+    nats_namespace: String,
     smtp: Option<SmtpConfig>,
 }
 
@@ -59,6 +61,8 @@ impl Default for ServerConfig {
             saml_trusted_origins: BTreeSet::new(),
             redis_url: None,
             redis_namespace: "kitsune".into(),
+            nats_url: None,
+            nats_namespace: "kitsune".into(),
             smtp: None,
         }
     }
@@ -80,6 +84,7 @@ impl ServerConfig {
             .set_default("auto_migrate", defaults.auto_migrate)?
             .set_default("public_origin", defaults.public_origin)?
             .set_default("redis_namespace", defaults.redis_namespace)?
+            .set_default("nats_namespace", defaults.nats_namespace)?
             .add_source(config::File::with_name("kit.toml").required(false))
             .add_source(config::File::with_name("config").required(false))
             .add_source(
@@ -132,7 +137,15 @@ async fn main() -> Result<()> {
     } else {
         Arc::new(InProcessCache::new(100_000).context("lean cache")?)
     };
-    let event_bus = Arc::new(InProcessEventBus::new(16_384).context("lean event bus")?);
+    let event_bus: Arc<dyn EventBus> = if let Some(nats_url) = &config.nats_url {
+        Arc::new(
+            NatsEventBus::connect(nats_url.expose_secret(), Some(&config.nats_namespace))
+                .await
+                .context("connect NATS event bus")?,
+        )
+    } else {
+        Arc::new(InProcessEventBus::new(16_384).context("lean event bus")?)
+    };
     let auth_repository = AuthRepository::new(store.pool().clone());
     let auth =
         AuthService::from_master_key(cookie_key.master()).context("authentication service")?;
@@ -343,6 +356,7 @@ mod tests {
         assert!(!features.smtp);
         assert!(config.oidc_trusted_origins.is_empty());
         assert!(config.redis_url.is_none());
+        assert!(config.nats_url.is_none());
     }
 
     #[test]
@@ -351,10 +365,14 @@ mod tests {
             redis_url: Some(SecretString::from(
                 "rediss://user:never-log-me@example.test".to_owned(),
             )),
+            nats_url: Some(SecretString::from(
+                "tls://user:also-never-log-me@example.test".to_owned(),
+            )),
             ..ServerConfig::default()
         };
         let debug = format!("{config:?}");
         assert!(!debug.contains("never-log-me"));
+        assert!(!debug.contains("also-never-log-me"));
         assert!(debug.contains("REDACTED"));
     }
 
