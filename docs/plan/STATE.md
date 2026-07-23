@@ -5,7 +5,8 @@ Updated: 2026-07-23 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: audit deny-by-default RBAC across every versioned REST resource.
+- In progress: run the milestone-wide secured API, realtime, and browser
+  regression gate after closing the authorization audit.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
 - Next: close uncovered authorization paths, regenerate the contract, and run
@@ -223,6 +224,13 @@ Updated: 2026-07-23 (Asia/Singapore)
   TypeScript contracts, user/team API coverage, strict workspace Clippy,
   responsive production builds, and desktop/mobile profile journeys with axe
   are green.
+- The protected route audit now resolves organization and canonical event-scoped
+  grants through the shared actor extractor. Scoped credentials remain denied on
+  non-event and sibling-event resources. Realtime WS/SSE requires `event_read`,
+  drops cross-organization and platform envelopes before serialization, and
+  gates sensitive auth, submission, instance, automation, plugin, configuration,
+  notification, and integrity events by explicit permissions. Focused policy,
+  path parsing, and PostgreSQL grant-scope tests plus strict Clippy are green.
 - Cache-commit CI exposed one team-merge assertion comparing Rust nanoseconds
   to PostgreSQL microseconds. The assertion now matches the storage contract;
   five repeated focused runs and the full all-feature workspace suite pass.

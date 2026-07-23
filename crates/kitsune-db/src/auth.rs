@@ -780,3 +780,122 @@ fn conflict_or_unavailable(error: sqlx::Error) -> DomainError {
         unavailable(error)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use chrono::Utc;
+    use kitsune_core::identity::{EventId, OrganizationId, UserId};
+    use sqlx::PgPool;
+    use uuid::Uuid;
+
+    use super::AuthRepository;
+    use crate::MIGRATOR;
+
+    #[sqlx::test(migrator = "MIGRATOR")]
+    async fn permission_keys_include_only_the_requested_event_scope(pool: PgPool) {
+        let repository = AuthRepository::new(pool.clone());
+        let organization_id = OrganizationId::new();
+        let admin_id = UserId::new();
+        let player_id = UserId::new();
+        let first_event = EventId::new();
+        let second_event = EventId::new();
+        let now = Utc::now();
+
+        repository
+            .create_first_admin(
+                organization_id,
+                "Scoped Shrine",
+                "scoped-shrine",
+                admin_id,
+                "admin@example.test",
+                "Admin",
+                "$argon2id$test-placeholder",
+                now,
+            )
+            .await
+            .expect("create organization");
+        repository
+            .create_local_player(
+                "scoped-shrine",
+                player_id,
+                "player@example.test",
+                "Event Author",
+                "$argon2id$test-placeholder",
+                b"verification-digest",
+                now + chrono::Duration::hours(1),
+                now,
+            )
+            .await
+            .expect("create player");
+        for (event_id, slug) in [(first_event, "first"), (second_event, "second")] {
+            sqlx::query!(
+                r#"
+                INSERT INTO events (
+                    id,organization_id,name,slug,state,participation,modes,created_at,updated_at
+                ) VALUES ($1,$2,$3,$4,'draft','individual',$5,$6,$6)
+                "#,
+                event_id.0,
+                organization_id.0,
+                format!("{slug} event"),
+                slug,
+                &["jeopardy".to_owned()],
+                now,
+            )
+            .execute(&pool)
+            .await
+            .expect("create event");
+        }
+        let scoped_role_id = Uuid::now_v7();
+        sqlx::query!(
+            r#"
+            INSERT INTO roles (id,organization_id,key,name,permissions,built_in)
+            VALUES ($1,$2,'event_author','Event Author',$3,false)
+            "#,
+            scoped_role_id,
+            organization_id.0,
+            &["event_manage".to_owned()],
+        )
+        .execute(&pool)
+        .await
+        .expect("create scoped role");
+        sqlx::query!(
+            r#"
+            INSERT INTO role_grants (
+                id,user_id,role_id,organization_id,event_id,granted_by,granted_at
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7)
+            "#,
+            Uuid::now_v7(),
+            player_id.0,
+            scoped_role_id,
+            organization_id.0,
+            first_event.0,
+            admin_id.0,
+            now,
+        )
+        .execute(&pool)
+        .await
+        .expect("grant scoped role");
+
+        let first_permissions = repository
+            .permission_keys(player_id, organization_id, Some(first_event.0))
+            .await
+            .expect("first-event permissions");
+        let second_permissions = repository
+            .permission_keys(player_id, organization_id, Some(second_event.0))
+            .await
+            .expect("second-event permissions");
+        let organization_permissions = repository
+            .permission_keys(player_id, organization_id, None)
+            .await
+            .expect("organization permissions");
+
+        assert!(first_permissions.iter().any(|key| key == "event_manage"));
+        assert!(first_permissions.iter().any(|key| key == "event_read"));
+        assert!(!second_permissions.iter().any(|key| key == "event_manage"));
+        assert!(
+            !organization_permissions
+                .iter()
+                .any(|key| key == "event_manage")
+        );
+    }
+}

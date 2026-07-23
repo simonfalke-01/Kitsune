@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO roles (id,organization_id,key,name,permissions,built_in)\n            VALUES ($1,$2,'event_author','Event Author',$3,false)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "TextArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f2e1fd42d30e527aab4a5d1071c00a2da798329cb2d726811887f7d6ef23dc34"
+}

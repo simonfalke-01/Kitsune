@@ -366,3 +366,10 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-23 — Bound profile activity to 12 recent solves and add partial
   user/team recency indexes — profile reads stay predictable as the append-only
   event history grows without duplicating the authoritative score ledger.
+- 2026-07-23 — Project realtime events through an organization and permission
+  audience before WS/SSE serialization — authenticated connections must not turn
+  the shared cross-node bus into a tenant or privileged-operations side channel.
+- 2026-07-23 — Derive an event scope only from the canonical
+  `/api/v1/events/{uuid}` path segment and load org plus matching event grants in
+  the shared actor extractor — scoped author and organizer roles work without
+  becoming valid for sibling events or organization-wide resources.

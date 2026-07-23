@@ -390,12 +390,13 @@ impl FromRequestParts<AppState> for Actor {
             .await
             .map_err(|_| ApiError::unauthorized())?;
         let session = SessionIdentity::require(&state.auth_repository, &jar).await?;
+        let event_id = event_id_from_path(parts.uri.path());
         let permissions = state
             .auth_repository
             .permission_keys(
                 session.account.user_id,
                 session.account.organization_id,
-                None,
+                event_id,
             )
             .await
             .map_err(ApiError::from)?
@@ -411,6 +412,7 @@ impl FromRequestParts<AppState> for Actor {
 impl Actor {
     async fn from_bearer(path: &str, state: &AppState, token: &str) -> ApiResult<Self> {
         let now = Utc::now();
+        let event_id = event_id_from_path(path);
         let claims = state
             .tokens
             .parse(token, now)
@@ -421,10 +423,10 @@ impl Actor {
             }
             ProgrammaticTokenKind::OAuthAccess => Self::oauth_principal(state, &claims).await?,
         };
-        enforce_token_event_scope(path, &principal.event_ids)?;
+        enforce_token_event_scope(event_id, &principal.event_ids)?;
         let granted = state
             .auth_repository
-            .permission_keys(principal.user_id, principal.organization_id, None)
+            .permission_keys(principal.user_id, principal.organization_id, event_id)
             .await
             .map_err(ApiError::from)?
             .into_iter()
@@ -561,12 +563,9 @@ impl SessionIdentity {
     }
 }
 
-fn enforce_token_event_scope(path: &str, event_ids: &[Uuid]) -> ApiResult<()> {
-    if event_ids.is_empty() {
-        return Ok(());
-    }
+fn event_id_from_path(path: &str) -> Option<Uuid> {
     let mut segments = path.split('/');
-    let requested_event = segments
+    segments
         .by_ref()
         .zip(path.split('/').skip(1))
         .find_map(|(segment, next)| {
@@ -576,7 +575,13 @@ fn enforce_token_event_scope(path: &str, event_ids: &[Uuid]) -> ApiResult<()> {
                 None
             }
         })
-        .ok_or_else(|| ApiError::from(DomainError::Forbidden))?;
+}
+
+fn enforce_token_event_scope(requested_event: Option<Uuid>, event_ids: &[Uuid]) -> ApiResult<()> {
+    if event_ids.is_empty() {
+        return Ok(());
+    }
+    let requested_event = requested_event.ok_or_else(|| ApiError::from(DomainError::Forbidden))?;
     if event_ids.contains(&requested_event) {
         Ok(())
     } else {
@@ -1543,5 +1548,24 @@ mod tests {
                 .iter()
                 .all(|code| code.len() == 13 && code.as_bytes()[6] == b'-')
         );
+    }
+
+    #[test]
+    fn event_scope_is_derived_only_from_the_canonical_event_path_segment() {
+        let event_id = Uuid::now_v7();
+        assert_eq!(
+            event_id_from_path(&format!("/api/v1/events/{event_id}/challenges")),
+            Some(event_id)
+        );
+        assert_eq!(
+            event_id_from_path("/api/v1/events/not-a-uuid/challenges"),
+            None
+        );
+        assert_eq!(event_id_from_path("/api/v1/auth/tokens"), None);
+
+        assert!(enforce_token_event_scope(Some(event_id), &[event_id]).is_ok());
+        assert!(enforce_token_event_scope(Some(Uuid::now_v7()), &[event_id]).is_err());
+        assert!(enforce_token_event_scope(None, &[event_id]).is_err());
+        assert!(enforce_token_event_scope(None, &[]).is_ok());
     }
 }

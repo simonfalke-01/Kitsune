@@ -75,7 +75,8 @@ or scaffolding alone.
       digest-only secrets, short-lived PASETO access, live RBAC/event scoping,
       immediate revocation, durable auth audit/outbox, OpenAPI, UI, and browser
       coverage.
-- [ ] Deny-by-default RBAC extractor on every protected endpoint.
+- [x] Deny-by-default RBAC extractor on every protected endpoint, including
+      tenant/permission-projected WS/SSE and canonical event-scoped grants.
 - [x] Deny-by-default actor extraction plus permission/CSRF enforcement on the
       event and challenge resource endpoints.
 - [x] Tenant-scoped event and challenge create/list APIs with player-safe
