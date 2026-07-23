@@ -97,7 +97,7 @@
 
   .button:disabled {
     cursor: not-allowed;
-    opacity: 0.5;
+    filter: saturate(0.45);
   }
 
   .spinner {

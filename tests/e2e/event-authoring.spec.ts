@@ -386,6 +386,75 @@ test('organizer authors a published challenge visible on the player board', asyn
   const teamOperationsAccessibility = await new AxeBuilder({ page }).analyze();
   expect(teamOperationsAccessibility.violations).toEqual([]);
 
+  const accessLoaded = Promise.all([
+    page.waitForResponse((response) => response.url().endsWith('/api/v1/admin/users')),
+    page.waitForResponse((response) => response.url().endsWith('/api/v1/admin/roles')),
+    page.waitForResponse((response) => response.url().endsWith('/api/v1/admin/role-grants')),
+    page.waitForResponse((response) => response.url().endsWith('/api/v1/admin/permissions'))
+  ]);
+  await page.goto('/admin/access');
+  for (const response of await accessLoaded) {
+    expect(response.status()).toBe(200);
+  }
+  await expect(page.getByRole('heading', { name: 'Access, without ambiguity.' })).toBeVisible();
+
+  const managedAccountName = `Access Scout ${testInfo.project.name} ${run}`;
+  await page.getByRole('button', { name: 'New account' }).click();
+  const accountForm = page.locator('form.create-user');
+  await accountForm.getByLabel('Display name').fill(managedAccountName);
+  await accountForm
+    .getByLabel('Email', { exact: true })
+    .fill(`access-${key}-${run}@e2e.kitsune.test`);
+  await accountForm.getByLabel('Temporary password').fill('temporary e2e foxfire battery');
+  await accountForm.getByLabel('Mark email as operator-verified').check();
+  await accountForm
+    .getByLabel('Profile fields · JSON object')
+    .fill(JSON.stringify({ cohort: 'browser-e2e' }));
+  const accountCreated = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && response.url().endsWith('/api/v1/admin/users')
+  );
+  await accountForm.getByRole('button', { name: 'Create account' }).click();
+  expect((await accountCreated).status()).toBe(201);
+  await expect(page.getByText('Account created with the built-in player role.')).toBeVisible();
+  await expect(page.locator('.selection-list').getByText(managedAccountName)).toBeVisible();
+
+  await page.getByRole('tab', { name: 'Roles & grants' }).click();
+  await page.getByRole('button', { name: 'New role' }).click();
+  const roleForm = page.locator('form.role-editor');
+  const roleName = `Challenge Observer ${testInfo.project.name} ${run}`;
+  await roleForm.getByLabel('Role name').fill(roleName);
+  await roleForm.getByLabel('Stable key').fill(`challenge_observer_${key}_${run}`);
+  await roleForm.getByRole('checkbox', { name: 'Challenge Read', exact: true }).check();
+  const roleCreated = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && response.url().endsWith('/api/v1/admin/roles')
+  );
+  await roleForm.getByRole('button', { name: 'Create role' }).click();
+  expect((await roleCreated).status()).toBe(201);
+  await expect(page.getByText('Custom role created.')).toBeVisible();
+
+  const grantForm = page.locator('form.grant-form');
+  await grantForm.getByLabel('Account').selectOption({ label: managedAccountName });
+  await grantForm.getByLabel('Role').selectOption({ label: roleName });
+  await grantForm.getByLabel('Event scope').selectOption({ label: eventName });
+  const grantCreated = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' && response.url().endsWith('/api/v1/admin/role-grants')
+  );
+  await grantForm.getByRole('button', { name: 'Assign role' }).click();
+  expect((await grantCreated).status()).toBe(201);
+  await expect(page.getByText('Role assigned at the selected scope.')).toBeVisible();
+  const assignedGrant = page.locator('.grant-list article').filter({
+    hasText: managedAccountName
+  });
+  await expect(
+    assignedGrant.getByText(`${roleName} · ${eventName}`, { exact: true })
+  ).toBeVisible();
+
+  const accessAccessibility = await new AxeBuilder({ page }).analyze();
+  expect(accessAccessibility.violations).toEqual([]);
+
   const tokenName = `Challenge reader ${testInfo.project.name} ${run}`;
   const passkeyName = `E2E passkey ${testInfo.project.name} ${run}`;
   await page.goto('/account/security');

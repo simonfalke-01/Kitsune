@@ -6,7 +6,7 @@ Updated: 2026-07-23 (Asia/Singapore)
 
 - Current milestone: 03 — secured API, authentication, and realtime.
 - In progress: close the remaining versioned REST/OpenAPI resource surface
-  after landing the searchable immutable audit history.
+  after landing complete organizer identity and authorization administration.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
 - Next: close uncovered authorization paths, regenerate the contract, and run
@@ -285,6 +285,14 @@ Updated: 2026-07-23 (Asia/Singapore)
   PostgreSQL API journey covers player denial, Argon2id-only account creation,
   role/grant lifecycle, session revocation, protected invariants, and immutable
   audit/outbox events; SQLx metadata and strict workspace Clippy are green.
+- Delegated identity operators now require independent `platform_manage`
+  authority before editing a platform manager or assigning/revoking a
+  platform-authority grant. The responsive access workspace uses the generated
+  client for local account lifecycle, custom-role composition, permission
+  discovery, and organization/event/team-scoped grants. The complete real
+  browser journey creates and scopes an account role on desktop and mobile,
+  passes axe with no violations, and the shared disabled-button treatment keeps
+  its contrast during asynchronous state transitions.
 - Main CI run 29974725515 exposed GitHub runner storage admission when two test
   JetStreams each reserved the one-gigabyte production limit. Stream retention
   is now an explicit validated adapter configuration; production retains its

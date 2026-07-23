@@ -416,3 +416,6 @@ Format: `YYYY-MM-DD — decision — rationale`.
   editing a platform manager or assigning/revoking a platform-authority grant —
   delegated identity operators can administer ordinary access without acquiring
   or disrupting installation-wide authority.
+- 2026-07-23 — Desaturate disabled buttons without reducing whole-control
+  opacity — unavailable actions remain visually distinct while their labels
+  retain AA contrast during fast asynchronous transitions.

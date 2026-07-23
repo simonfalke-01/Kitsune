@@ -53,6 +53,14 @@ export type PasskeyBrowserCredential = components['schemas']['PasskeyBrowserCred
 export type AuditEntry = components['schemas']['AuditEntryResponse'];
 export type AuditPage = components['schemas']['AuditPageResponse'];
 export type AuditQuery = NonNullable<paths['/api/v1/audit']['get']['parameters']['query']>;
+export type ManagedUser = components['schemas']['ManagedUserResponse'];
+export type CreateManagedUserInput = components['schemas']['CreateManagedUserRequest'];
+export type UpdateManagedUserInput = components['schemas']['UpdateManagedUserRequest'];
+export type ManagedRole = components['schemas']['ManagedRoleResponse'];
+export type RoleMutationInput = components['schemas']['RoleMutationRequest'];
+export type ManagedGrant = components['schemas']['ManagedGrantResponse'];
+export type CreateGrantInput = components['schemas']['CreateGrantRequest'];
+export type ManagedPermission = components['schemas']['PermissionResponse'];
 
 export const api = createClient<paths>({
   baseUrl: '',
