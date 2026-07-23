@@ -59,8 +59,66 @@ pub struct NewSubmission<'a> {
     pub answer: &'a str,
     /// Authenticated-encrypted answer retained only for manual review outcomes.
     pub sealed_answer: &'a [u8],
+    /// Optional process-local attestation produced by the bounded plugin host.
+    pub plugin_verification: Option<&'a VerifiedPluginAnswer<'a>>,
     /// Timestamp.
     pub now: DateTime<Utc>,
+}
+
+/// Identity and retry key sufficient to replay a safe immutable receipt.
+pub struct SubmissionReplayKey<'a> {
+    /// Organization boundary.
+    pub organization_id: OrganizationId,
+    /// Event boundary.
+    pub event_id: EventId,
+    /// Challenge target.
+    pub challenge_id: ChallengeId,
+    /// Authenticated retrying actor.
+    pub actor: UserId,
+    /// Original client-generated key.
+    pub idempotency_key: Uuid,
+    /// Exact answer payload originally submitted with the key.
+    pub answer: &'a str,
+}
+
+/// Plugin verifier inputs read before executing untrusted component code.
+#[derive(Debug, Clone)]
+pub struct PluginVerificationContext {
+    /// Installed plugin name.
+    pub plugin: String,
+    /// Registered challenge kind.
+    pub kind: String,
+    /// Organizer-authored bounded plugin configuration.
+    pub config: serde_json::Value,
+    /// Challenge revision bound to the verifier result.
+    pub challenge_updated_at: DateTime<Utc>,
+    /// Resolved competitor kind under the event participation policy.
+    pub competitor_kind: &'static str,
+    /// Resolved competitor identifier under the event participation policy.
+    pub competitor_id: Uuid,
+}
+
+/// Narrow decision returned by a plugin verifier.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PluginAnswerDecision {
+    /// Reject the answer.
+    Incorrect,
+    /// Accept the answer.
+    Correct,
+}
+
+/// Process-local verifier attestation checked again under the challenge lock.
+pub struct VerifiedPluginAnswer<'a> {
+    /// Plugin name read from the challenge before invocation.
+    pub plugin: &'a str,
+    /// Plugin challenge kind read before invocation.
+    pub kind: &'a str,
+    /// Challenge revision that supplied plugin configuration.
+    pub challenge_updated_at: DateTime<Utc>,
+    /// Digest of the exact normalized answer passed to the component.
+    pub answer_digest: [u8; 32],
+    /// Component decision.
+    pub decision: PluginAnswerDecision,
 }
 
 #[derive(Clone, Copy)]
@@ -298,6 +356,70 @@ impl SubmissionRepository {
         Self { pool }
     }
 
+    /// Returns an existing immutable receipt before any external verifier work.
+    pub async fn replay(
+        &self,
+        key: &SubmissionReplayKey<'_>,
+    ) -> DomainResult<Option<SubmissionResult>> {
+        let mut tx = self.pool.begin().await.map_err(unavailable)?;
+        let record = replayed_submission_by_key(&mut tx, key).await?;
+        tx.rollback().await.map_err(unavailable)?;
+        Ok(record.map(|record| SubmissionResult {
+            record,
+            events: Vec::new(),
+            replayed: true,
+        }))
+    }
+
+    /// Loads the immutable plugin selector/configuration used for one bounded
+    /// verifier call. The submission transaction rechecks its revision.
+    pub async fn plugin_verification_context(
+        &self,
+        organization_id: OrganizationId,
+        event_id: EventId,
+        challenge_id: ChallengeId,
+        actor: UserId,
+        now: DateTime<Utc>,
+    ) -> DomainResult<Option<PluginVerificationContext>> {
+        let scope = GameplayScope {
+            organization_id,
+            event_id,
+            challenge_id,
+            actor,
+            now,
+        };
+        let mut tx = self.pool.begin().await.map_err(unavailable)?;
+        let challenge = read_challenge(&mut tx, scope).await?;
+        validate_event_window(&challenge, now)?;
+        let competitor = resolve_competitor(&mut tx, scope, &challenge).await?;
+        validate_challenge_visibility(&mut tx, scope, competitor, &challenge).await?;
+        if competitor_has_solved(&mut tx, challenge_id, competitor).await? {
+            return Err(DomainError::Conflict("challenge is already solved".into()));
+        }
+        let failed_attempts = failed_attempts(&mut tx, challenge_id, competitor).await?;
+        remaining_attempts(challenge.max_attempts, failed_attempts)?;
+        let kind = serde_json::from_value::<ChallengeKind>(challenge.kind)
+            .map_err(|error| DomainError::Unavailable(format!("stored challenge type: {error}")))?;
+        let (competitor_kind, competitor_id) = competitor_identity(competitor);
+        let result = match kind {
+            ChallengeKind::Plugin {
+                plugin,
+                kind,
+                config,
+            } => Some(PluginVerificationContext {
+                plugin,
+                kind,
+                config,
+                challenge_updated_at: challenge.updated_at,
+                competitor_kind,
+                competitor_id,
+            }),
+            _ => None,
+        };
+        tx.rollback().await.map_err(unavailable)?;
+        Ok(result)
+    }
+
     /// Validates and records an answer, solve, score changes, audit records,
     /// and outbox events in one transaction.
     pub async fn submit(&self, command: NewSubmission<'_>) -> DomainResult<SubmissionResult> {
@@ -342,6 +464,7 @@ impl SubmissionRepository {
             &challenge,
             &answer_rules,
             command.answer,
+            command.plugin_verification,
         )
         .await?;
         if outcome == SubmissionOutcome::Pending
@@ -967,6 +1090,7 @@ impl SubmissionRepository {
 struct LockedChallenge {
     state: String,
     kind: serde_json::Value,
+    updated_at: DateTime<Utc>,
     scoring: serde_json::Value,
     visibility: serde_json::Value,
     max_attempts: Option<i32>,
@@ -1018,9 +1142,28 @@ async fn replayed_submission(
     tx: &mut Transaction<'_, Postgres>,
     command: &NewSubmission<'_>,
 ) -> DomainResult<Option<SubmissionRecord>> {
+    replayed_submission_by_key(
+        tx,
+        &SubmissionReplayKey {
+            organization_id: command.organization_id,
+            event_id: command.event_id,
+            challenge_id: command.challenge_id,
+            actor: command.actor,
+            idempotency_key: command.idempotency_key,
+            answer: command.answer,
+        },
+    )
+    .await
+}
+
+async fn replayed_submission_by_key(
+    tx: &mut Transaction<'_, Postgres>,
+    key: &SubmissionReplayKey<'_>,
+) -> DomainResult<Option<SubmissionRecord>> {
     let row = sqlx::query!(
         r#"
-        SELECT s.id,s.challenge_id,s.user_id,s.team_id,s.outcome,s.awarded_points,
+        SELECT s.id,s.challenge_id,s.user_id,s.team_id,s.outcome,s.answer_digest,
+               s.awarded_points,
                s.first_blood,s.attempts_remaining,s.submitted_at,
                EXISTS(
                    SELECT 1 FROM team_members tm
@@ -1030,10 +1173,10 @@ async fn replayed_submission(
         JOIN events e ON e.id = s.event_id
         WHERE s.event_id = $1 AND s.idempotency_key = $2 AND e.organization_id = $3
         "#,
-        command.event_id.0,
-        command.idempotency_key,
-        command.organization_id.0,
-        command.actor.0,
+        key.event_id.0,
+        key.idempotency_key,
+        key.organization_id.0,
+        key.actor.0,
     )
     .fetch_optional(&mut **tx)
     .await
@@ -1041,14 +1184,24 @@ async fn replayed_submission(
     let Some(row) = row else {
         return Ok(None);
     };
-    if row.user_id != Some(command.actor.0) && !row.team_member {
+    if row.user_id != Some(key.actor.0) && !row.team_member {
         return Err(DomainError::Conflict(
             "idempotency key is already in use".into(),
         ));
     }
-    if row.challenge_id != Some(command.challenge_id.0) {
+    if row.challenge_id != Some(key.challenge_id.0) {
         return Err(DomainError::Conflict(
             "idempotency key belongs to another challenge".into(),
+        ));
+    }
+    let submitted_digest = Sha256::digest(key.answer.trim().as_bytes());
+    let digest_matches = row
+        .answer_digest
+        .as_deref()
+        .is_some_and(|stored| bool::from(stored.ct_eq(submitted_digest.as_slice())));
+    if !digest_matches {
+        return Err(DomainError::Conflict(
+            "idempotency key was used with a different answer".into(),
         ));
     }
     Ok(Some(SubmissionRecord {
@@ -1070,7 +1223,7 @@ async fn lock_challenge(
 ) -> DomainResult<LockedChallenge> {
     let row = sqlx::query!(
         r#"
-        SELECT c.state,c.kind,c.scoring,c.visibility,c.max_attempts,
+        SELECT c.state,c.kind,c.scoring,c.visibility,c.max_attempts,c.updated_at,
                e.state AS event_state,e.participation,e.scoreboard_frozen,
                e.starts_at,e.ends_at,e.team_size_limit,
                COALESCE((e.config->>'first_blood_bonus')::bigint, $4) AS "first_blood_bonus!"
@@ -1091,6 +1244,7 @@ async fn lock_challenge(
     Ok(LockedChallenge {
         state: row.state,
         kind: row.kind,
+        updated_at: row.updated_at,
         scoring: row.scoring,
         visibility: row.visibility,
         max_attempts: row.max_attempts,
@@ -1110,7 +1264,7 @@ async fn read_challenge(
 ) -> DomainResult<LockedChallenge> {
     let row = sqlx::query!(
         r#"
-        SELECT c.state,c.kind,c.scoring,c.visibility,c.max_attempts,
+        SELECT c.state,c.kind,c.scoring,c.visibility,c.max_attempts,c.updated_at,
                e.state AS event_state,e.participation,e.scoreboard_frozen,
                e.starts_at,e.ends_at,e.team_size_limit,
                COALESCE((e.config->>'first_blood_bonus')::bigint, $4) AS "first_blood_bonus!"
@@ -1130,6 +1284,7 @@ async fn read_challenge(
     Ok(LockedChallenge {
         state: row.state,
         kind: row.kind,
+        updated_at: row.updated_at,
         scoring: row.scoring,
         visibility: row.visibility,
         max_attempts: row.max_attempts,
@@ -1443,6 +1598,7 @@ async fn evaluate_answer(
     challenge: &LockedChallenge,
     rules: &[AnswerRule],
     answer: &str,
+    plugin_verification: Option<&VerifiedPluginAnswer<'_>>,
 ) -> DomainResult<SubmissionOutcome> {
     let kind =
         serde_json::from_value::<ChallengeKind>(challenge.kind.clone()).map_err(|error| {
@@ -1458,6 +1614,14 @@ async fn evaluate_answer(
             AnswerOutcome::RequiresDynamicVerification => {
                 return verify_dynamic_answer(tx, scope, competitor, answer).await;
             }
+            AnswerOutcome::RequiresPluginVerification => {
+                return verify_plugin_answer(
+                    &kind,
+                    challenge.updated_at,
+                    answer,
+                    plugin_verification,
+                );
+            }
             AnswerOutcome::Incorrect => {}
         }
     }
@@ -1465,6 +1629,40 @@ async fn evaluate_answer(
         SubmissionOutcome::Pending
     } else {
         SubmissionOutcome::Incorrect
+    })
+}
+
+fn verify_plugin_answer(
+    challenge_kind: &ChallengeKind,
+    challenge_updated_at: DateTime<Utc>,
+    answer: &str,
+    verification: Option<&VerifiedPluginAnswer<'_>>,
+) -> DomainResult<SubmissionOutcome> {
+    let verification = verification
+        .ok_or_else(|| DomainError::Unavailable("plugin answer verifier is not enabled".into()))?;
+    let ChallengeKind::Plugin { plugin, kind, .. } = challenge_kind else {
+        return Err(DomainError::Validation(
+            "plugin verifier does not match the challenge type".into(),
+        ));
+    };
+    let answer_digest = Sha256::digest(answer.trim().as_bytes());
+    let binding_matches = plugin == verification.plugin
+        && kind == verification.kind
+        && challenge_updated_at.timestamp_micros()
+            == verification.challenge_updated_at.timestamp_micros()
+        && bool::from(
+            answer_digest
+                .as_slice()
+                .ct_eq(verification.answer_digest.as_slice()),
+        );
+    if !binding_matches {
+        return Err(DomainError::Conflict(
+            "plugin challenge changed during answer verification".into(),
+        ));
+    }
+    Ok(match verification.decision {
+        PluginAnswerDecision::Incorrect => SubmissionOutcome::Incorrect,
+        PluginAnswerDecision::Correct => SubmissionOutcome::Correct,
     })
 }
 
@@ -1778,6 +1976,13 @@ const fn competitor_columns(competitor: CompetitorId) -> (Option<Uuid>, Option<U
     match competitor {
         CompetitorId::User(user_id) => (Some(user_id.0), None),
         CompetitorId::Team(team_id) => (None, Some(team_id.0)),
+    }
+}
+
+const fn competitor_identity(competitor: CompetitorId) -> (&'static str, Uuid) {
+    match competitor {
+        CompetitorId::User(user_id) => ("user", user_id.0),
+        CompetitorId::Team(team_id) => ("team", team_id.0),
     }
 }
 

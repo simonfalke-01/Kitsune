@@ -32,7 +32,12 @@ pub enum ChallengeKind {
     /// Submission enters a review queue.
     ManualVerification,
     /// Component-provided type with a stable registration key.
-    Plugin { plugin: String, kind: String },
+    Plugin {
+        plugin: String,
+        kind: String,
+        #[serde(default)]
+        config: serde_json::Value,
+    },
 }
 
 /// Authoring lifecycle.
@@ -282,6 +287,8 @@ pub enum AnswerRule {
     Dynamic,
     /// Organizer approval required.
     Manual,
+    /// Capability-bound Component Model verifier.
+    Plugin,
 }
 
 /// Answer evaluation outcome.
@@ -295,6 +302,8 @@ pub enum AnswerOutcome {
     PendingReview,
     /// Requires a dynamic issuer/verifier.
     RequiresDynamicVerification,
+    /// Requires a capability-bound plugin verifier.
+    RequiresPluginVerification,
 }
 
 impl AnswerRule {
@@ -357,6 +366,7 @@ impl AnswerRule {
             }),
             Self::Dynamic => Ok(AnswerOutcome::RequiresDynamicVerification),
             Self::Manual => Ok(AnswerOutcome::PendingReview),
+            Self::Plugin => Ok(AnswerOutcome::RequiresPluginVerification),
         }
     }
 }
@@ -387,13 +397,22 @@ pub fn validate_answer_contract(kind: &ChallengeKind, rules: &[AnswerRule]) -> D
                 ));
             }
         }
-        _ => {
-            if rules
-                .iter()
-                .any(|rule| matches!(rule, AnswerRule::Dynamic | AnswerRule::Manual))
-            {
+        ChallengeKind::Plugin { .. } => {
+            if rules.len() != 1 || !matches!(rules[0], AnswerRule::Plugin) {
                 return Err(DomainError::Validation(
-                    "dynamic and manual verifiers must match their challenge type".into(),
+                    "plugin challenges require exactly one plugin answer verifier".into(),
+                ));
+            }
+        }
+        _ => {
+            if rules.iter().any(|rule| {
+                matches!(
+                    rule,
+                    AnswerRule::Dynamic | AnswerRule::Manual | AnswerRule::Plugin
+                )
+            }) {
+                return Err(DomainError::Validation(
+                    "privileged verifiers must match their challenge type".into(),
                 ));
             }
         }

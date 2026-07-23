@@ -14,7 +14,8 @@
     | 'dynamic_instance'
     | 'file_backed'
     | 'remote_service'
-    | 'manual_verification';
+    | 'manual_verification'
+    | 'plugin';
 
   interface HintDraft {
     key: number;
@@ -40,6 +41,10 @@
   let answer = $state('');
   let description = $state('');
   let details = $state('');
+  let pluginName = $state('');
+  let pluginKind = $state('');
+  let pluginConfig = $state('{}');
+  let formError = $state('');
   let points = $state(500);
   let lifecycle = $state<'draft' | 'testing' | 'published'>('draft');
   let hints = $state<HintDraft[]>([]);
@@ -73,6 +78,13 @@
         return { type: 'remote_service', connection: details.trim() };
       case 'manual_verification':
         return { type: 'manual_verification' };
+      case 'plugin':
+        return {
+          type: 'plugin',
+          plugin: pluginName.trim(),
+          kind: pluginKind.trim(),
+          config: parsePluginConfig()
+        };
       default:
         return { type: 'static_flag' };
     }
@@ -85,6 +97,9 @@
     if (challengeType === 'dynamic_instance') {
       return [{ kind: 'dynamic' }];
     }
+    if (challengeType === 'plugin') {
+      return [{ kind: 'plugin' }];
+    }
     if (challengeType === 'multiple_choice') {
       return [{ kind: 'choice', value: answer }];
     }
@@ -96,11 +111,19 @@
 
   async function save(event: SubmitEvent): Promise<void> {
     event.preventDefault();
+    formError = '';
+    let kind: CreateChallengeInput['kind'];
+    try {
+      kind = challengeKind();
+    } catch (error) {
+      formError = error instanceof Error ? error.message : 'Plugin configuration is invalid.';
+      return;
+    }
     const created = await events.createChallenge({
       name: title,
       category,
       description,
-      kind: challengeKind(),
+      kind,
       state: lifecycle,
       scoring: { kind: 'dynamic', initial: points, minimum: Math.min(100, points), decay: 50 },
       visibility: { division_ids: [], prerequisites: [] },
@@ -129,6 +152,10 @@
     description = '';
     answer = '';
     details = '';
+    pluginName = '';
+    pluginKind = '';
+    pluginConfig = '{}';
+    formError = '';
     hints = [];
     surveys = [];
     writeupsEnabled = true;
@@ -178,6 +205,19 @@
 
   function requiresDetails(type: ChallengeType): boolean {
     return ['multiple_choice', 'dynamic_instance', 'remote_service'].includes(type);
+  }
+
+  function parsePluginConfig(): unknown {
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(pluginConfig);
+    } catch {
+      throw new Error('Plugin configuration must be valid JSON.');
+    }
+    if (parsed === null || Array.isArray(parsed) || typeof parsed !== 'object') {
+      throw new Error('Plugin configuration must be a JSON object.');
+    }
+    return parsed;
   }
 </script>
 
@@ -241,6 +281,7 @@
               <option value="file_backed">File-backed</option>
               <option value="remote_service">Remote service</option>
               <option value="manual_verification">Manual verification</option>
+              <option value="plugin">Plugin verifier</option>
             </select>
           </label>
           <label class="field">
@@ -270,6 +311,43 @@
               <textarea bind:value={details} rows="3" required></textarea>
             </label>
           {/if}
+          {#if challengeType === 'plugin'}
+            <fieldset class="plugin-editor wide">
+              <legend>Capability-bound verifier</legend>
+              <p>
+                Select an installed component and one challenge kind declared by its signed
+                manifest. Configuration is sent only to that sandboxed verifier.
+              </p>
+              <div class="plugin-grid">
+                <label class="field">
+                  <span>Plugin package</span>
+                  <input
+                    bind:value={pluginName}
+                    required
+                    maxlength="120"
+                    pattern="[A-Za-z0-9._-]+"
+                    placeholder="foxfire-verifier"
+                  />
+                </label>
+                <label class="field">
+                  <span>Declared challenge kind</span>
+                  <input
+                    bind:value={pluginKind}
+                    required
+                    maxlength="120"
+                    pattern="[A-Za-z0-9._-]+"
+                    placeholder="memory-corruption"
+                  />
+                </label>
+                <label class="field wide">
+                  <span>Public verifier configuration (JSON)</span>
+                  <textarea bind:value={pluginConfig} rows="5" required spellcheck="false"
+                  ></textarea>
+                  <small>Do not place credentials here; plugin secrets use granted storage.</small>
+                </label>
+              </div>
+            </fieldset>
+          {/if}
           <label class="field wide">
             <span>Description</span>
             <textarea
@@ -278,7 +356,7 @@
               required
               placeholder="Give players a clear trailhead without giving away the path."></textarea>
           </label>
-          {#if challengeType !== 'manual_verification' && challengeType !== 'dynamic_instance'}
+          {#if challengeType !== 'manual_verification' && challengeType !== 'dynamic_instance' && challengeType !== 'plugin'}
             <label class="field wide">
               <span>
                 {challengeType === 'multiple_choice' ? 'Correct choice' : 'Accepted answer'}
@@ -378,8 +456,8 @@
             {/each}
           </section>
         </div>
-        {#if events.error}
-          <p class="error-text" role="alert">{events.error}</p>
+        {#if formError || events.error}
+          <p class="error-text" role="alert">{formError || events.error}</p>
         {/if}
         <div class="form-actions">
           <Button variant="quiet" onclick={() => (showComposer = false)}>Cancel</Button>
@@ -487,6 +565,35 @@
     border-radius: var(--radius-sm);
   }
 
+  .plugin-editor {
+    display: grid;
+    gap: 0.8rem;
+    min-width: 0;
+    margin: 0;
+    padding: 1rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+  }
+
+  .plugin-editor legend {
+    padding: 0 0.35rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .plugin-editor p,
+  .plugin-editor small {
+    margin: 0;
+    color: var(--ink-secondary);
+    font-size: 0.72rem;
+  }
+
+  .plugin-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
   .hint-heading,
   .hint-row,
   .survey-row,
@@ -572,6 +679,10 @@
 
   @media (max-width: 700px) {
     .form-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .plugin-grid {
       grid-template-columns: 1fr;
     }
 

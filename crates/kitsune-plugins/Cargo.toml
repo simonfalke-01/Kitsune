@@ -7,8 +7,21 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
+base64.workspace = true
+dashmap.workspace = true
+ed25519-dalek.workspace = true
+hex.workspace = true
 kitsune-core = { path = "../kitsune-core" }
+semver.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+subtle.workspace = true
+tokio.workspace = true
+wasmtime.workspace = true
+
+[dev-dependencies]
+rand.workspace = true
 
 [lints]
 workspace = true
-

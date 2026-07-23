@@ -19,6 +19,7 @@ hex.workspace = true
 kitsune-automation = { path = "../kitsune-automation" }
 kitsune-core = { path = "../kitsune-core" }
 kitsune-db = { path = "../kitsune-db" }
+kitsune-plugins = { path = "../kitsune-plugins" }
 openidconnect.workspace = true
 pasetors.workspace = true
 rand.workspace = true
@@ -47,6 +48,8 @@ webauthn-rs.workspace = true
 workspace = true
 
 [dev-dependencies]
+ed25519-dalek.workspace = true
 http-body-util = "0.1.3"
 jsonwebtoken.workspace = true
+semver.workspace = true
 sqlx.workspace = true

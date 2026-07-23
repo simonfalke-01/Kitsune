@@ -292,3 +292,24 @@ Format: `YYYY-MM-DD — decision — rationale`.
   recursively named credential, token, password, secret, or flag fields — the
   lease projection can be exposed to players without becoming a second secrets
   store.
+- 2026-07-23 — Sign plugin manifests with Ed25519 over a domain-separated,
+  canonical payload that includes semantic version, artifact digest,
+  capabilities, and challenge kinds — every installation path can share one
+  deterministic publisher and artifact trust boundary.
+- 2026-07-23 — Give the initial challenge-verifier Component Model world no host
+  imports — answer checking needs no ambient authority, and later storage,
+  event, or allow-listed HTTP imports remain explicit capability additions.
+- 2026-07-23 — Advance one shared Wasmtime engine epoch on a five-millisecond
+  ticker and assign each store a relative deadline — concurrent calls receive
+  independent wall-clock ceilings without one request interrupting every other
+  component.
+- 2026-07-23 — Run the full read-only gameplay policy before invoking a plugin
+  and bind its decision to the exact normalized answer, challenge revision,
+  selector, and resolved competitor — hidden or ineligible challenges cannot be
+  used as a compute oracle, and concurrent authoring changes fail closed.
+- 2026-07-23 — Bind idempotency keys to the normalized answer digest and replay
+  immutable receipts before external verification — retries cannot substitute a
+  different answer and do not require an installed or healthy plugin.
+- 2026-07-23 — Require Rust 1.94 as the workspace minimum for Wasmtime 47 while
+  continuing to verify with Rust 1.97 in CI parity — the plugin runtime remains
+  on its current stable line without silently exceeding the declared MSRV.

@@ -11,6 +11,7 @@ use kitsune_api::{
 use kitsune_automation::{InProcessCache, InProcessEventBus};
 use kitsune_core::config::{FeatureFlags, RuntimeProfile};
 use kitsune_db::{PostgresStore, auth::AuthRepository};
+use kitsune_plugins::{PluginBudgets, PluginHost, PluginTrustStore};
 use serde::{Deserialize, Serialize};
 use tokio::signal;
 use tracing::{info, warn};
@@ -125,7 +126,7 @@ async fn main() -> Result<()> {
     let saml_credentials = load_or_generate_saml_credentials(&config.data_dir).await?;
     let saml = SamlService::new(saml_credentials, config.saml_trusted_origins.clone())
         .context("SAML service-provider configuration")?;
-    let state = AppState::new(
+    let mut state = AppState::new(
         store,
         auth_repository,
         auth,
@@ -138,6 +139,11 @@ async fn main() -> Result<()> {
     .with_oidc(oidc, features.external_auth, public_origin)
     .with_passkeys(passkeys)
     .with_saml(saml);
+    if features.plugins {
+        let plugins = PluginHost::new(PluginTrustStore::default(), PluginBudgets::default())
+            .context("initialize Component Model plugin host")?;
+        state = state.with_plugins(Arc::new(plugins));
+    }
     let app = kitsune_api::router(state);
     let listener = tokio::net::TcpListener::bind(config.listen)
         .await

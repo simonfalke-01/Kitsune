@@ -98,6 +98,21 @@
               "kind"
             ],
             "type": "object"
+          },
+          {
+            "description": "Capability-bound Component Model verifier.",
+            "properties": {
+              "kind": {
+                "enum": [
+                  "plugin"
+                ],
+                "type": "string"
+              }
+            },
+            "required": [
+              "kind"
+            ],
+            "type": "object"
           }
         ]
       },
@@ -276,6 +291,7 @@
           {
             "description": "Capability-bound plugin type.",
             "properties": {
+              "config": {},
               "kind": {
                 "type": "string"
               },

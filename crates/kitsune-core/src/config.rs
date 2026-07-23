@@ -33,6 +33,8 @@ pub struct FeatureFlags {
     pub external_auth: bool,
     /// Plugin registry browsing.
     pub marketplace: bool,
+    /// Local and registry-installed Component Model plugins.
+    pub plugins: bool,
     /// Discord integration.
     pub discord: bool,
     /// SMTP channel.
@@ -55,6 +57,7 @@ impl FeatureFlags {
                 automation: true,
                 external_auth: true,
                 marketplace: true,
+                plugins: true,
                 discord: true,
                 smtp: true,
                 s3: true,
@@ -74,6 +77,7 @@ impl Default for FeatureFlags {
             automation: false,
             external_auth: false,
             marketplace: false,
+            plugins: false,
             discord: false,
             smtp: false,
             s3: false,

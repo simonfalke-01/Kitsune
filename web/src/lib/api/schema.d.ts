@@ -915,6 +915,9 @@ export interface components {
         } | {
             /** @enum {string} */
             kind: "manual";
+        } | {
+            /** @enum {string} */
+            kind: "plugin";
         };
         /** @description Safe persisted API-token metadata. */
         ApiTokenResponse: {
@@ -973,6 +976,7 @@ export interface components {
             /** @enum {string} */
             type: "manual_verification";
         } | {
+            config?: unknown;
             kind: string;
             plugin: string;
             /** @enum {string} */

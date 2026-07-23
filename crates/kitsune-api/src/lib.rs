@@ -26,6 +26,7 @@ use axum::{
 use axum_extra::extract::cookie::Key;
 use kitsune_core::ports::{Cache, EventBus};
 use kitsune_db::{PostgresStore, auth::AuthRepository};
+use kitsune_plugins::PluginHost;
 use serde::Serialize;
 use tower::ServiceBuilder;
 use tower_http::{
@@ -71,6 +72,8 @@ pub struct AppState {
     pub passkeys: PasskeyService,
     /// Signed SAML service provider. Installed once external auth is composed.
     pub saml: Option<SamlService>,
+    /// Capability-bound Component Model runtime; absent when plugins are off.
+    pub plugins: Option<Arc<PluginHost>>,
     /// Whether external identity routes are exposed for this runtime profile.
     pub external_auth_enabled: bool,
     /// Canonical browser-facing origin used for authentication callbacks.
@@ -103,6 +106,7 @@ impl AppState {
             oidc: OidcService::default(),
             passkeys: PasskeyService::default(),
             saml: None,
+            plugins: None,
             external_auth_enabled: false,
             public_origin: url::Url::parse("http://localhost:3000")
                 .expect("static public origin is valid"),
@@ -131,6 +135,13 @@ impl AppState {
     #[must_use]
     pub fn with_saml(mut self, saml: SamlService) -> Self {
         self.saml = Some(saml);
+        self
+    }
+
+    /// Installs the capability-bound Component Model plugin runtime.
+    #[must_use]
+    pub fn with_plugins(mut self, plugins: Arc<PluginHost>) -> Self {
+        self.plugins = Some(plugins);
         self
     }
 }
@@ -598,14 +609,16 @@ pub fn openapi_json() -> serde_json::Value {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
+    use std::{collections::BTreeSet, sync::Arc};
 
     use axum::{
         body::Body,
         http::{Request, StatusCode, header},
     };
     use axum_extra::extract::cookie::Key;
+    use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
     use chrono::Utc;
+    use ed25519_dalek::{Signer, SigningKey};
     use http_body_util::BodyExt;
     use kitsune_automation::{InProcessCache, InProcessEventBus};
     use kitsune_core::{
@@ -617,7 +630,12 @@ mod tests {
         auth::AuthRepository,
         instances::{InstanceRepository, IssueReadyInstance},
     };
+    use kitsune_plugins::{
+        ManifestSignature, PluginBudgets, PluginCapability, PluginHost, PluginManifest,
+        PluginTrustStore,
+    };
     use secrecy::SecretString;
+    use semver::Version;
     use sha2::{Digest, Sha256};
     use sqlx::PgPool;
     use totp_rs::{Algorithm as TotpAlgorithm, Secret, TOTP};
@@ -638,6 +656,35 @@ mod tests {
             Key::generate(),
             false,
         )
+    }
+
+    fn test_plugin_host() -> Arc<PluginHost> {
+        let mut key_bytes = [0_u8; 32];
+        rand::fill(&mut key_bytes);
+        let signing_key = SigningKey::from_bytes(&key_bytes);
+        let mut trust = PluginTrustStore::default();
+        trust
+            .insert("api-test", signing_key.verifying_key())
+            .expect("trust plugin publisher");
+        let host = PluginHost::new(trust, PluginBudgets::default()).expect("plugin host");
+        let artifact = include_str!("../../../plugins/foxfire-verifier/component.wat");
+        let mut manifest = PluginManifest {
+            name: "foxfire-verifier".into(),
+            version: Version::new(1, 0, 0),
+            artifact_sha256: hex::encode(Sha256::digest(artifact.as_bytes())),
+            capabilities: BTreeSet::from([PluginCapability::ChallengeVerify]),
+            challenge_kinds: BTreeSet::from(["memory-corruption".into()]),
+            signature: ManifestSignature {
+                key_id: "api-test".into(),
+                signature: String::new(),
+            },
+        };
+        let payload = manifest.signing_payload().expect("plugin signing payload");
+        manifest.signature.signature =
+            URL_SAFE_NO_PAD.encode(signing_key.sign(&payload).to_bytes());
+        host.install(manifest, artifact.as_bytes())
+            .expect("install test plugin");
+        Arc::new(host)
     }
 
     #[test]
@@ -1066,7 +1113,8 @@ mod tests {
 
     #[sqlx::test(migrator = "MIGRATOR")]
     async fn event_and_challenge_resources_are_tenant_scoped_and_rbac_guarded(pool: PgPool) {
-        let app = router(test_state(pool.clone()));
+        let plugins = test_plugin_host();
+        let app = router(test_state(pool.clone()).with_plugins(Arc::clone(&plugins)));
         let setup = Request::builder()
             .method("POST")
             .uri("/api/v1/setup")
@@ -1913,6 +1961,131 @@ mod tests {
             assert_eq!(receipt["outcome"], expected);
         }
 
+        let create_plugin = Request::builder()
+            .method("POST")
+            .uri(format!("/api/v1/events/{event_id}/challenges"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "name": "Component verifier",
+                    "category": "Reversing",
+                    "description": "Verified inside a signed, bounded WebAssembly component.",
+                    "kind": {
+                        "type": "plugin",
+                        "plugin": "foxfire-verifier",
+                        "kind": "memory-corruption",
+                        "config": {"strict": true}
+                    },
+                    "state": "published",
+                    "scoring": {"kind": "static", "points": 150},
+                    "visibility": {
+                        "visible_from": null,
+                        "visible_until": null,
+                        "division_ids": [],
+                        "prerequisites": []
+                    },
+                    "tags": ["plugin", "wasm"],
+                    "max_attempts": 5,
+                    "writeups_enabled": false,
+                    "position": 2,
+                    "answers": [{"kind": "plugin"}],
+                    "hints": [],
+                    "survey": []
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(create_plugin)
+            .await
+            .expect("create plugin challenge");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let plugin_challenge: serde_json::Value =
+            serde_json::from_slice(&body).expect("plugin challenge");
+        let plugin_challenge_id = plugin_challenge["id"]
+            .as_str()
+            .expect("plugin challenge id");
+        let plugin_path =
+            format!("/api/v1/events/{event_id}/challenges/{plugin_challenge_id}/submissions");
+        let plugin_correct_key = Uuid::now_v7();
+        for (answer, expected, idempotency_key) in [
+            ("kit{component-rejected}", "incorrect", Uuid::now_v7()),
+            ("kit{component-verified}", "correct", plugin_correct_key),
+        ] {
+            let submission = Request::builder()
+                .method("POST")
+                .uri(&plugin_path)
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::COOKIE, &player_cookies)
+                .header("x-csrf-token", player_csrf)
+                .body(Body::from(
+                    serde_json::json!({
+                        "idempotency_key": idempotency_key,
+                        "answer": answer
+                    })
+                    .to_string(),
+                ))
+                .expect("request");
+            let response = app
+                .clone()
+                .oneshot(submission)
+                .await
+                .expect("plugin submission");
+            assert_eq!(response.status(), StatusCode::OK);
+            let body = response
+                .into_body()
+                .collect()
+                .await
+                .expect("body")
+                .to_bytes();
+            let receipt: serde_json::Value = serde_json::from_slice(&body).expect("plugin receipt");
+            assert_eq!(receipt["outcome"], expected);
+        }
+        assert!(
+            plugins
+                .remove("foxfire-verifier")
+                .expect("remove test plugin")
+        );
+        let replay_plugin_submission = Request::builder()
+            .method("POST")
+            .uri(&plugin_path)
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "idempotency_key": plugin_correct_key,
+                    "answer": "kit{component-verified}"
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(replay_plugin_submission)
+            .await
+            .expect("replay plugin submission after removal");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let replayed: serde_json::Value =
+            serde_json::from_slice(&body).expect("plugin replay receipt");
+        assert_eq!(replayed["outcome"], "correct");
+        assert_eq!(replayed["replayed"], true);
+
         let create_manual = Request::builder()
             .method("POST")
             .uri(format!("/api/v1/events/{event_id}/challenges"))
@@ -2080,8 +2253,8 @@ mod tests {
             .to_bytes();
         let board: serde_json::Value = serde_json::from_slice(&body).expect("scoreboard");
         assert_eq!(board["rows"][0]["name"], "Player");
-        assert_eq!(board["rows"][0]["score"], 1140);
-        assert_eq!(board["rows"][0]["solves"], 3);
+        assert_eq!(board["rows"][0]["score"], 1340);
+        assert_eq!(board["rows"][0]["solves"], 4);
 
         let score_history = Request::builder()
             .uri(format!("/api/v1/events/{event_id}/score-history"))
@@ -2106,9 +2279,9 @@ mod tests {
                 .as_array()
                 .expect("history points")
                 .len(),
-            7
+            9
         );
-        assert_eq!(history["series"][0]["points"][6]["score"], 1140);
+        assert_eq!(history["series"][0]["points"][8]["score"], 1340);
 
         let hide_scoreboard = Request::builder()
             .method("PATCH")
@@ -2217,7 +2390,7 @@ mod tests {
             .to_bytes();
         let frozen_public: serde_json::Value =
             serde_json::from_slice(&body).expect("frozen public board");
-        assert_eq!(frozen_public["rows"][0]["score"], 1140);
+        assert_eq!(frozen_public["rows"][0]["score"], 1340);
 
         let frozen_admin_board = Request::builder()
             .uri(format!("/api/v1/events/{event_id}/scoreboard"))
@@ -2237,7 +2410,7 @@ mod tests {
             .to_bytes();
         let frozen_admin: serde_json::Value =
             serde_json::from_slice(&body).expect("frozen admin board");
-        assert_eq!(frozen_admin["rows"][0]["score"], 1240);
+        assert_eq!(frozen_admin["rows"][0]["score"], 1440);
 
         let forbidden = Request::builder()
             .method("POST")
@@ -2276,11 +2449,12 @@ mod tests {
                 .fetch_all(&pool)
                 .await
                 .expect("submission digests");
-        assert_eq!(submitted_digests.len(), 5);
+        assert_eq!(submitted_digests.len(), 7);
         assert!(submitted_digests.iter().flatten().all(|digest| {
             digest.as_slice() != b"kit{never-persist-plaintext}"
                 && digest.as_slice() != b"kit{wrong-trail}"
                 && digest.as_slice() != dynamic_flag.as_bytes()
+                && digest.as_slice() != b"kit{component-verified}"
         }));
         let audit_count = sqlx::query_scalar!("SELECT count(*) AS \"count!\" FROM audit_log")
             .fetch_one(&pool)
@@ -2290,8 +2464,8 @@ mod tests {
             .fetch_one(&pool)
             .await
             .expect("outbox count");
-        assert_eq!(audit_count, 36);
-        assert_eq!(outbox_count, 36);
+        assert_eq!(audit_count, 42);
+        assert_eq!(outbox_count, 42);
     }
 
     fn response_cookies(headers: &axum::http::HeaderMap) -> String {

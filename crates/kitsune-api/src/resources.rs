@@ -157,7 +157,12 @@ pub enum ChallengeKindInput {
     /// Organizer review.
     ManualVerification,
     /// Capability-bound plugin type.
-    Plugin { plugin: String, kind: String },
+    Plugin {
+        plugin: String,
+        kind: String,
+        #[serde(default)]
+        config: Value,
+    },
 }
 
 /// Challenge lifecycle input.
@@ -227,6 +232,8 @@ pub enum AnswerInput {
     Dynamic,
     /// Organizer review.
     Manual,
+    /// Capability-bound Component Model verifier.
+    Plugin,
 }
 
 /// Hint authoring input.
@@ -838,7 +845,15 @@ fn challenge_kind(value: ChallengeKindInput) -> ChallengeKind {
             ChallengeKind::RemoteService { connection }
         }
         ChallengeKindInput::ManualVerification => ChallengeKind::ManualVerification,
-        ChallengeKindInput::Plugin { plugin, kind } => ChallengeKind::Plugin { plugin, kind },
+        ChallengeKindInput::Plugin {
+            plugin,
+            kind,
+            config,
+        } => ChallengeKind::Plugin {
+            plugin,
+            kind,
+            config,
+        },
     }
 }
 
@@ -883,6 +898,7 @@ fn answer_rule(value: AnswerInput) -> AnswerRule {
         AnswerInput::Choice { value } => AnswerRule::Choice { value },
         AnswerInput::Dynamic => AnswerRule::Dynamic,
         AnswerInput::Manual => AnswerRule::Manual,
+        AnswerInput::Plugin => AnswerRule::Plugin,
     }
 }
 

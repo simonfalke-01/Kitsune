@@ -106,7 +106,9 @@ or scaffolding alone.
         digest material in constant time, reject expired/unready leases, and
         preserve transactional solve/score semantics.
   - [x] Audited instance lease issuance and monotonic flag rotation repository.
-  - [ ] Capability-bound plugin answer verifier.
+  - [x] Capability-bound plugin answer verifier with signed manifest, bounded
+        zero-import Wasmtime execution, gameplay preflight, locked attestation
+        recheck, idempotent replay, and admin authoring.
 - [x] Encrypted manual-verification persistence, RBAC review API, duplicate
       pending protection, and transactional accept/discard scoring.
 - [x] Wire the organizer manual-verification queue and player pending outcome

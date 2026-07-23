@@ -1,0 +1,21 @@
+package kitsune:plugin@0.1.0;
+
+/// The smallest capability world used for challenge answer verification.
+/// It deliberately imports nothing: verifiers receive bounded data and have no
+/// ambient database, network, clock, random, filesystem, or environment access.
+interface challenge-verifier {
+    enum verification {
+        incorrect,
+        correct,
+    }
+
+    verify: func(
+        answer: list<u8>,
+        context-json: list<u8>,
+        config-json: list<u8>,
+    ) -> verification;
+}
+
+world challenge-verifier-plugin {
+    export challenge-verifier;
+}

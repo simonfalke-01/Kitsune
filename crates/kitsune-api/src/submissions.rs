@@ -11,10 +11,13 @@ use chrono::{DateTime, Utc};
 use kitsune_core::identity::{ChallengeId, DivisionId, EventId};
 use kitsune_db::submissions::{
     HintRecord, HintUnlockResult, ManualReviewRecord, NewHintUnlock, NewManualReview,
-    NewSubmission, ScoreHistoryPointRecord, ScoreHistoryRecord, ScoreHistorySeriesRecord,
-    ScoreboardRecord, ScoreboardRowRecord, SubmissionRepository, SubmissionResult,
+    NewSubmission, PluginAnswerDecision, ScoreHistoryPointRecord, ScoreHistoryRecord,
+    ScoreHistorySeriesRecord, ScoreboardRecord, ScoreboardRowRecord, SubmissionReplayKey,
+    SubmissionRepository, SubmissionResult, VerifiedPluginAnswer,
 };
+use kitsune_plugins::{VerificationDecision, VerifyChallengeAnswer};
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
@@ -222,11 +225,85 @@ pub(crate) async fn submit_answer(
         )));
     }
     enforce_rate_limit(&state, &actor, event_id, challenge_id).await?;
+    let repository = SubmissionRepository::new(state.db.pool().clone());
+    let replay_key = SubmissionReplayKey {
+        organization_id: actor.session.account.organization_id,
+        event_id: EventId(event_id),
+        challenge_id: ChallengeId(challenge_id),
+        actor: actor.session.account.user_id,
+        idempotency_key: request.idempotency_key,
+        answer: &request.answer,
+    };
+    if let Some(result) = repository
+        .replay(&replay_key)
+        .await
+        .map_err(ApiError::from)?
+    {
+        return Ok(Json(result.into()));
+    }
+    let plugin_context = repository
+        .plugin_verification_context(
+            actor.session.account.organization_id,
+            EventId(event_id),
+            ChallengeId(challenge_id),
+            actor.session.account.user_id,
+            Utc::now(),
+        )
+        .await
+        .map_err(ApiError::from)?;
+    let plugin_verification = if let Some(context) = plugin_context.as_ref() {
+        let host = state.plugins.as_ref().ok_or_else(|| {
+            ApiError::from(kitsune_core::DomainError::Unavailable(
+                "plugin verification is disabled".into(),
+            ))
+        })?;
+        let public_context = serde_json::json!({
+            "schema_version": 1,
+            "organization_id": actor.session.account.organization_id,
+            "event_id": event_id,
+            "challenge_id": challenge_id,
+            "actor_user_id": actor.session.account.user_id,
+            "competitor_kind": context.competitor_kind,
+            "competitor_id": context.competitor_id,
+        });
+        let decision = host
+            .verify(VerifyChallengeAnswer {
+                plugin: &context.plugin,
+                kind: &context.kind,
+                answer: &request.answer,
+                context: &public_context,
+                config: &context.config,
+            })
+            .await
+            .map_err(|error| {
+                tracing::warn!(
+                    plugin = %context.plugin,
+                    kind = %context.kind,
+                    error = %error,
+                    "plugin answer verifier failed safely"
+                );
+                ApiError::from(kitsune_core::DomainError::Unavailable(
+                    "plugin answer verifier failed safely".into(),
+                ))
+            })?;
+        Some(VerifiedPluginAnswer {
+            plugin: &context.plugin,
+            kind: &context.kind,
+            challenge_updated_at: context.challenge_updated_at,
+            answer_digest: Sha256::digest(request.answer.trim().as_bytes()).into(),
+            decision: match decision {
+                VerificationDecision::Incorrect => PluginAnswerDecision::Incorrect,
+                VerificationDecision::Correct => PluginAnswerDecision::Correct,
+            },
+        })
+    } else {
+        None
+    };
     let sealed_answer = state
         .auth
         .seal(request.answer.as_bytes())
         .map_err(ApiError::from)?;
-    let result = SubmissionRepository::new(state.db.pool().clone())
+    let result = repository
         .submit(NewSubmission {
             organization_id: actor.session.account.organization_id,
             event_id: EventId(event_id),
@@ -236,6 +313,7 @@ pub(crate) async fn submit_answer(
             idempotency_key: request.idempotency_key,
             answer: &request.answer,
             sealed_answer: &sealed_answer,
+            plugin_verification: plugin_verification.as_ref(),
             now: Utc::now(),
         })
         .await

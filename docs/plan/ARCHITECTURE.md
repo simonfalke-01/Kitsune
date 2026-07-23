@@ -79,6 +79,19 @@ metadata, and is idempotent on the provisioning operation key. Rotation uses a
 monotonic generation compare-and-swap and commits its digest, audit record, and
 typed event together after successful provider injection.
 
+Plugin challenge answers cross a deliberately narrow Component Model boundary.
+An Ed25519-signed manifest binds the package version, artifact digest, declared
+challenge kinds, and granted capabilities before Wasmtime compiles the
+component. The v1 verifier world imports nothing, so it has no ambient files,
+network, environment, clock, or database authority. Each call receives bounded
+answer and JSON byte arrays and is constrained by memory, fuel, relative epoch
+deadline, and per-plugin concurrency. A read-only PostgreSQL preflight applies
+the same event, competitor, visibility, solved-state, and attempt policy as the
+submission transaction before untrusted code can run. Its decision is bound to
+the exact answer digest, plugin selector, resolved competitor, and challenge
+revision, then checked again under the normal challenge lock. Idempotent receipt
+replays are answer-bound and bypass component execution entirely.
+
 ## Security boundaries
 
 HTTP authorization is deny-by-default and evaluated using org/event-scoped RBAC.

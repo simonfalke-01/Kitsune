@@ -5,12 +5,12 @@ Updated: 2026-07-23 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: implement the capability-bound plugin Jeopardy verifier on the
-  Wasmtime Component Model host.
+- In progress: complete team administration, event registration, and
+  event-specific size-limit enforcement.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
-- Next: define the WIT verifier contract, bounded Wasmtime host, and signed
-  installed-artifact lookup used by plugin challenge submissions.
+- Next: add captain invite rotation, member leave/removal, admin merge/transfer,
+  and explicit event registration through the REST and organizer surfaces.
 
 ## Verified
 
@@ -174,7 +174,16 @@ Updated: 2026-07-23 (Asia/Singapore)
   provisioning retries, and protects rotations with a monotonic generation
   compare-and-swap. Six database tests, the core lifecycle test, and strict
   Clippy are green.
-- Main CI run 29934247886 is green across Rust, Web, dependency audit, and the
+- Plugin Jeopardy answers now execute through a zero-import Wasmtime Component
+  Model world after Ed25519 manifest, artifact digest, declared-kind, and
+  capability checks. Memory, fuel, relative epoch deadlines, and concurrency
+  budgets fail closed. A read-only gameplay preflight prevents hidden,
+  inactive, solved, or exhausted challenges from invoking untrusted code; the
+  locked transaction rechecks a revision- and answer-bound verifier decision.
+  Exact-answer idempotent replays bypass the component safely. Core contracts,
+  signed component tests, the PostgreSQL scoring journey, strict Clippy,
+  generated API client, and the admin authoring form are green.
+- Main CI run 29968482559 is green across Rust, Web, dependency audit, and the
   complete desktop/mobile Browser E2E journey.
 
 ## Risks being actively retired
