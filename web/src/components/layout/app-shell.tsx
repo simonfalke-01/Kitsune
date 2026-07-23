@@ -43,6 +43,10 @@ const playerNavigation: readonly NavigationItem[] = [
   {
     href: '/team',
     label: 'Team'
+  },
+  {
+    href: '/account',
+    label: 'Account'
   }
 ];
 

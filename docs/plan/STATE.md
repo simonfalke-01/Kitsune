@@ -14,8 +14,9 @@ Updated: 2026-07-23 (Asia/Singapore)
   server-rendered route output, Next-native metadata and rewrites, React Aria
   router integration, a development-only `/_kitchen` route excluded from
   production navigation, and no client router or non-table TanStack dependency.
-- In progress: build the account routes on the shared authenticated shell while
-  continuing the caption, icon, density, and interaction audit.
+- In progress: complete account MFA/API-token workflows on the shared
+  authenticated shell while continuing the caption, icon, density, and
+  interaction audit.
 - Completed: the first application slice now has a server-authenticated platform
   layout, request-cookie event selection, SSR event/challenge bootstrap, staged
   local/MFA sign-in, compact challenge search, and idempotent answer submission.
@@ -29,6 +30,8 @@ Updated: 2026-07-23 (Asia/Singapore)
   supports create/join, one-time invite replacement, captain transfer, member
   removal, member departure, selected-event registration, division/bracket
   placement, guarded withdrawal, and typed realtime refresh.
+- Completed: the account route now server-renders identity status, active
+  sessions, and passkeys with WebAuthn enrollment and guarded revocation.
 - Verified: `/login` and `/_kitchen` return 200 in development, `/` safely sends
   unauthenticated or API-unavailable requests to sign-in, and the Next route
   manifest marks `/challenges` as request-time server rendered.
@@ -46,7 +49,7 @@ Updated: 2026-07-23 (Asia/Singapore)
 - Interaction review: toast insertion is browser-verified at zero and
   intermediate frames with a 260 ms translate/opacity transition; rapid queue
   updates retain three visible toasts without runtime errors.
-- Next: implement account workflows, then organizer tables and dialogs while
+- Next: add MFA and API-token workflows, then organizer tables and dialogs while
   expanding interaction and accessibility regression coverage.
 
 ## Verified
@@ -67,6 +70,9 @@ Updated: 2026-07-23 (Asia/Singapore)
   nine Vitest assertions, production build, authenticated team creation, event
   registration, and SSR roster/registration smoke. The route manifest marks
   `/team` as request-time rendered.
+- The account route passes the token scan, formatter, ESLint, strict TypeScript,
+  nine Vitest assertions, production build, and authenticated SSR inventory
+  smoke. The route manifest marks `/account` as request-time rendered.
 - Core workspace format, 17 domain tests, and strict workspace Clippy pass.
 - PostgreSQL 17 migration applies from empty state; SQLx compile-time query
   metadata is checked in; transactional audit/outbox/idempotency test passes.

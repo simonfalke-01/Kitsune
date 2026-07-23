@@ -9,9 +9,11 @@ import type {
   DivisionSummary,
   EventRegistration,
   EventSummary,
+  PasskeySummary,
   ScoreHistory,
   Scoreboard,
   Session,
+  SessionSummary,
   TeamSummary
 } from './client';
 import type { paths } from './schema';
@@ -273,5 +275,33 @@ export async function getServerTeamBootstrap(): Promise<TeamBootstrap> {
     eventId: selectedEvent.id,
     registration: registrationResult.data?.registration ?? null,
     teams: teamResult.data
+  };
+}
+
+export interface AccountBootstrap {
+  error: string | null;
+  passkeys: PasskeySummary[];
+  sessions: SessionSummary[];
+}
+
+export async function getServerAccountBootstrap(): Promise<AccountBootstrap> {
+  const client = await getServerClient();
+  const [sessionResult, passkeyResult] = await Promise.all([
+    client.GET('/api/v1/auth/sessions'),
+    client.GET('/api/v1/auth/passkeys')
+  ]);
+
+  if (!sessionResult.data || !passkeyResult.data) {
+    return {
+      error: 'Security settings could not be loaded.',
+      passkeys: passkeyResult.data ?? [],
+      sessions: sessionResult.data ?? []
+    };
+  }
+
+  return {
+    error: null,
+    passkeys: passkeyResult.data,
+    sessions: sessionResult.data
   };
 }

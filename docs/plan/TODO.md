@@ -38,7 +38,9 @@
         handling, roster state, captain controls, and realtime refresh.
   - [x] Add selected-event registration with division/bracket placement,
         idempotent updates, withdrawal safeguards, and realtime refresh.
-  - [ ] Complete account and organizer routes.
+  - [x] Add the SSR account security route with active-session and passkey
+        inventory, enrollment, and guarded revocation.
+  - [ ] Complete MFA, API-token, and organizer routes.
 - [ ] Port generated OpenAPI access and preserve authenticated realtime
       invalidation without introducing an unapproved dependency.
   - [x] Bootstrap the authenticated session, event catalog, selected event, and

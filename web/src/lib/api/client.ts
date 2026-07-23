@@ -52,6 +52,7 @@ export type UpdateSamlProviderInput = components['schemas']['UpdateSamlProviderR
 export type PasskeySummary = components['schemas']['PasskeyResponse'];
 export type PasskeyCeremony = components['schemas']['PasskeyCeremonyResponse'];
 export type PasskeyBrowserCredential = components['schemas']['PasskeyBrowserCredential'];
+export type SessionSummary = components['schemas']['SessionSummaryResponse'];
 export type AuditEntry = components['schemas']['AuditEntryResponse'];
 export type AuditPage = components['schemas']['AuditPageResponse'];
 export type AuditQuery = NonNullable<paths['/api/v1/audit']['get']['parameters']['query']>;
