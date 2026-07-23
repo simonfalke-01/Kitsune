@@ -341,3 +341,15 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-23 — Pin the repository toolchain to Rust 1.97 with Rustfmt and Clippy
   components — local `cargo`, Playwright-managed servers, CI, and contributor
   commands now honor the same Wasmtime-compatible compiler automatically.
+- 2026-07-23 — Partition scoreboard snapshots by tenant, event, revision,
+  audience, division, and projection, and keep them behind the shared `Cache`
+  trait — Redis provides cross-node reuse in full mode while the bounded local
+  adapter preserves lean mode without transport-specific handler code.
+- 2026-07-23 — Coalesce high-volume score invalidations into one shared revision
+  increment per event every 100 milliseconds, but invalidate hide/freeze control
+  changes synchronously — gameplay bursts avoid cache thrash while explicit
+  organizer controls retain read-after-write consistency.
+- 2026-07-23 — Treat scoreboard cache failures as misses and cap snapshot life at
+  750 milliseconds — PostgreSQL remains authoritative and degraded cache or
+  queue operation cannot hide current standings for longer than the one-second
+  realtime latency budget.

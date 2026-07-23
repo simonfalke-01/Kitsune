@@ -21,7 +21,10 @@ use sha2::{Digest, Sha256};
 use utoipa::{IntoParams, ToSchema};
 use uuid::Uuid;
 
-use crate::{Actor, ApiError, ApiResult, AppState, ErrorBody};
+use crate::{
+    Actor, ApiError, ApiResult, AppState, ErrorBody,
+    scoreboard_cache::{self, ScoreboardAudience},
+};
 
 const CHALLENGE_ATTEMPTS_PER_MINUTE: u64 = 20;
 const GLOBAL_ATTEMPTS_PER_MINUTE: u64 = 60;
@@ -73,7 +76,7 @@ pub struct ScoreHistoryQuery {
 }
 
 /// Ranked scoreboard row.
-#[derive(Serialize, ToSchema)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct ScoreboardRowResponse {
     /// One-based public rank.
     pub rank: usize,
@@ -92,7 +95,7 @@ pub struct ScoreboardRowResponse {
 }
 
 /// Scoreboard controls and ordered standings.
-#[derive(Serialize, ToSchema)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct ScoreboardResponse {
     /// Organizer has hidden the public board.
     pub hidden: bool,
@@ -103,7 +106,7 @@ pub struct ScoreboardResponse {
 }
 
 /// One running-total point in score history.
-#[derive(Serialize, ToSchema)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct ScoreHistoryPointResponse {
     /// Global score-ledger sequence.
     pub sequence: i64,
@@ -114,7 +117,7 @@ pub struct ScoreHistoryPointResponse {
 }
 
 /// One competitor's historical score series.
-#[derive(Serialize, ToSchema)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct ScoreHistorySeriesResponse {
     /// `user` or `team`.
     pub competitor_kind: String,
@@ -127,7 +130,7 @@ pub struct ScoreHistorySeriesResponse {
 }
 
 /// Historical graph data under scoreboard concealment rules.
-#[derive(Serialize, ToSchema)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct ScoreHistoryResponse {
     /// Organizer has hidden the public board.
     pub hidden: bool,
@@ -428,16 +431,34 @@ pub(crate) async fn scoreboard(
     Query(query): Query<ScoreboardQuery>,
 ) -> ApiResult<Json<ScoreboardResponse>> {
     actor.require("scoreboard_read")?;
+    let organization_id = actor.session.account.organization_id;
+    let event_id = EventId(event_id);
+    let division_id = query.division_id.map(DivisionId);
+    let organizer = actor.can("scoreboard_manage");
+    let audience = if organizer {
+        ScoreboardAudience::Organizer
+    } else {
+        ScoreboardAudience::Public
+    };
+    let cache_key = scoreboard_cache::snapshot_key(
+        &state.cache,
+        organization_id,
+        event_id,
+        division_id,
+        audience,
+        "ranked",
+    )
+    .await;
+    if let Some(board) = scoreboard_cache::read(&state.cache, &cache_key).await {
+        return Ok(Json(board));
+    }
     let board = SubmissionRepository::new(state.db.pool().clone())
-        .scoreboard(
-            actor.session.account.organization_id,
-            EventId(event_id),
-            query.division_id.map(DivisionId),
-            actor.can("scoreboard_manage"),
-        )
+        .scoreboard(organization_id, event_id, division_id, organizer)
         .await
         .map_err(ApiError::from)?;
-    Ok(Json(board.into()))
+    let response = ScoreboardResponse::from(board);
+    scoreboard_cache::write(&state.cache, &cache_key, &response).await;
+    Ok(Json(response))
 }
 
 #[utoipa::path(
@@ -462,18 +483,42 @@ pub(crate) async fn score_history(
     Query(query): Query<ScoreHistoryQuery>,
 ) -> ApiResult<Json<ScoreHistoryResponse>> {
     actor.require("scoreboard_read")?;
+    let organization_id = actor.session.account.organization_id;
+    let event_id = EventId(event_id);
+    let division_id = query.division_id.map(DivisionId);
+    let organizer = actor.can("scoreboard_manage");
+    let audience = if organizer {
+        ScoreboardAudience::Organizer
+    } else {
+        ScoreboardAudience::Public
+    };
     let series_limit = i64::from(query.limit.unwrap_or(5).clamp(1, 20));
+    let projection = format!("history:{series_limit}");
+    let cache_key = scoreboard_cache::snapshot_key(
+        &state.cache,
+        organization_id,
+        event_id,
+        division_id,
+        audience,
+        &projection,
+    )
+    .await;
+    if let Some(history) = scoreboard_cache::read(&state.cache, &cache_key).await {
+        return Ok(Json(history));
+    }
     let history = SubmissionRepository::new(state.db.pool().clone())
         .score_history(
-            actor.session.account.organization_id,
-            EventId(event_id),
-            query.division_id.map(DivisionId),
-            actor.can("scoreboard_manage"),
+            organization_id,
+            event_id,
+            division_id,
+            organizer,
             series_limit,
         )
         .await
         .map_err(ApiError::from)?;
-    Ok(Json(history.into()))
+    let response = ScoreHistoryResponse::from(history);
+    scoreboard_cache::write(&state.cache, &cache_key, &response).await;
+    Ok(Json(response))
 }
 
 #[utoipa::path(

@@ -11,11 +11,15 @@ mod realtime;
 mod resources;
 mod saml;
 mod saml_routes;
+mod scoreboard_cache;
 mod submissions;
 mod teams;
 mod tokens;
 
-use std::{sync::Arc, time::Instant};
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use axum::{
     Json, Router,
@@ -24,6 +28,7 @@ use axum::{
     routing::{get, post},
 };
 use axum_extra::extract::cookie::Key;
+use kitsune_automation::ScoreboardInvalidatingEventBus;
 use kitsune_core::ports::{Cache, EventBus};
 use kitsune_db::{PostgresStore, auth::AuthRepository};
 use kitsune_plugins::PluginHost;
@@ -94,6 +99,15 @@ impl AppState {
         cookie_key: Key,
         secure_cookies: bool,
     ) -> Self {
+        let event_bus: Arc<dyn EventBus> = Arc::new(
+            ScoreboardInvalidatingEventBus::new(
+                event_bus,
+                Arc::clone(&cache),
+                Duration::from_millis(100),
+                4_096,
+            )
+            .expect("static scoreboard invalidation budgets are valid"),
+        );
         Self {
             db,
             auth_repository,

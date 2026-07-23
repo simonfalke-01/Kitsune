@@ -115,6 +115,9 @@ or scaffolding alone.
   - [x] Capability-bound plugin answer verifier with signed manifest, bounded
         zero-import Wasmtime execution, gameplay preflight, locked attestation
         recheck, idempotent replay, and admin authoring.
+  - [x] Revision-scoped ranked/history snapshots with bounded cross-node score
+        invalidation, immediate control consistency, and fail-open cache access.
+  - [ ] Competitor profile REST/OpenAPI projections and ranking/roster links.
 - [x] Encrypted manual-verification persistence, RBAC review API, duplicate
       pending protection, and transactional accept/discard scoring.
 - [x] Wire the organizer manual-verification queue and player pending outcome

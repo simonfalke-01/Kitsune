@@ -5,12 +5,12 @@ Updated: 2026-07-23 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: add server-side cross-node scoreboard batching/cache and
-  competitor profile links.
+- In progress: expose competitor-owned profile projections from rankings and
+  team rosters.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
-- Next: make scoreboard invalidation bounded across nodes, then expose
-  competitor-owned profile projections from rankings and team rosters.
+- Next: complete competitor profile REST/OpenAPI and responsive player routes,
+  then close the dynamic-verifier/scoreboard-profile acceptance slice.
 
 ## Verified
 
@@ -203,6 +203,12 @@ Updated: 2026-07-23 (Asia/Singapore)
   complete desktop/mobile Browser E2E journey. The local browser gate also now
   selects the pinned Rust 1.97 toolchain automatically and covers the
   responsive, axe-clean organizer team-operations surface.
+- Ranked and historical score projections now use tenant/event/division/
+  audience/revision-scoped snapshots through the shared cache adapter. Score
+  bursts coalesce into one cross-node revision increment every 100 milliseconds,
+  scoreboard controls invalidate synchronously, and cache failures fall back to
+  PostgreSQL with a 750-millisecond stale-read ceiling. Focused cache tests,
+  strict Clippy, and the full PostgreSQL-backed scoring journey are green.
 
 ## Risks being actively retired
 

@@ -44,9 +44,15 @@ unfreeze reveals history without rewriting it. A&D tick ownership uses
 PostgreSQL advisory locks; orchestration operations use idempotency keys.
 The score-history projection computes cumulative totals from that immutable
 ledger and applies the same organization, division, hidden, freeze, and
-reversal rules as the ranked snapshot. WebSocket nodes subscribe to the shared
-bus without requiring affinity; browser stores coalesce score bursts into one
-bounded refresh while server-side cross-node batching remains a scale milestone.
+reversal rules as the ranked snapshot. Ranked and historical responses use
+revision-scoped snapshots in the shared `Cache`, partitioned by tenant, event,
+division, public/organizer audience, and projection. Score events coalesce into
+one revision increment per event every 100 milliseconds; infrequent hide/freeze
+controls increment synchronously for read-after-write consistency. Cache errors
+fail open to PostgreSQL, and a 750-millisecond snapshot TTL bounds stale reads
+when an invalidation queue or adapter is unavailable. WebSocket nodes subscribe
+to the shared bus without requiring affinity; browser stores independently
+coalesce score bursts into one bounded refresh.
 
 Hint bodies live only in the private hint table and are projected as `null`
 until a competitor-scoped unlock exists. The unique unlock key makes repeated
