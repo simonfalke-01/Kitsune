@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use kitsune_core::{
     DomainError, DomainResult, EventEnvelope,
     events::DomainEvent,
-    identity::{ChallengeId, EventId, EventState, OrganizationId, UserId},
+    identity::{BracketId, ChallengeId, DivisionId, EventId, EventState, OrganizationId, UserId},
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -38,6 +38,68 @@ pub struct EventRecord {
     pub scoreboard_frozen: bool,
     /// Hidden-board state.
     pub scoreboard_hidden: bool,
+}
+
+/// Persisted event division projection.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DivisionRecord {
+    /// Division ID.
+    pub id: Uuid,
+    /// Parent event.
+    pub event_id: Uuid,
+    /// Display name.
+    pub name: String,
+    /// Stable scoreboard order.
+    pub position: i32,
+}
+
+/// Persisted tournament bracket projection.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BracketRecord {
+    /// Bracket ID.
+    pub id: Uuid,
+    /// Parent event.
+    pub event_id: Uuid,
+    /// Display name.
+    pub name: String,
+    /// Entrants advanced from this bracket.
+    pub advancement_slots: i16,
+}
+
+/// Atomic division create/update data.
+pub struct DivisionMutation<'a> {
+    /// Tenant.
+    pub organization_id: OrganizationId,
+    /// Parent event.
+    pub event_id: EventId,
+    /// Authenticated actor.
+    pub actor: UserId,
+    /// Division identifier.
+    pub division_id: DivisionId,
+    /// Validated display name.
+    pub name: &'a str,
+    /// Stable scoreboard order.
+    pub position: i32,
+    /// Mutation timestamp.
+    pub now: DateTime<Utc>,
+}
+
+/// Atomic bracket create/update data.
+pub struct BracketMutation<'a> {
+    /// Tenant.
+    pub organization_id: OrganizationId,
+    /// Parent event.
+    pub event_id: EventId,
+    /// Authenticated actor.
+    pub actor: UserId,
+    /// Bracket identifier.
+    pub bracket_id: BracketId,
+    /// Validated display name.
+    pub name: &'a str,
+    /// Entrants advanced from this bracket.
+    pub advancement_slots: i16,
+    /// Mutation timestamp.
+    pub now: DateTime<Utc>,
 }
 
 /// Atomic event creation data.
@@ -357,6 +419,330 @@ impl ResourceRepository {
         .map_err(unavailable)
     }
 
+    /// Lists event divisions in stable scoreboard order.
+    pub async fn divisions(
+        &self,
+        organization_id: OrganizationId,
+        event_id: EventId,
+    ) -> DomainResult<Vec<DivisionRecord>> {
+        sqlx::query_as!(
+            DivisionRecord,
+            r#"
+            SELECT d.id,d.event_id,d.name,d.position
+            FROM divisions d
+            JOIN events e ON e.id = d.event_id
+            WHERE d.event_id = $1 AND e.organization_id = $2
+            ORDER BY d.position,d.name,d.id
+            "#,
+            event_id.0,
+            organization_id.0,
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(unavailable)
+    }
+
+    /// Creates an event division and its audit/outbox event atomically.
+    pub async fn create_division(
+        &self,
+        division: DivisionMutation<'_>,
+    ) -> DomainResult<(DivisionRecord, EventEnvelope)> {
+        let mut tx = self.pool.begin().await.map_err(unavailable)?;
+        lock_owned_event(&mut tx, division.organization_id, division.event_id).await?;
+        let row = sqlx::query_as!(
+            DivisionRecord,
+            r#"
+            INSERT INTO divisions (id,event_id,name,position)
+            VALUES ($1,$2,$3,$4)
+            RETURNING id,event_id,name,position
+            "#,
+            division.division_id.0,
+            division.event_id.0,
+            division.name,
+            division.position,
+        )
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(conflict_or_unavailable)?;
+        let envelope = EventEnvelope::new(
+            division.organization_id,
+            Some(division.event_id),
+            Some(division.actor),
+            Uuid::now_v7(),
+            division.now,
+            DomainEvent::EventChanged {
+                event_id: division.event_id,
+            },
+        );
+        persist_audit_event(
+            &mut tx,
+            &envelope,
+            "division.create",
+            "division",
+            &division.division_id.to_string(),
+        )
+        .await?;
+        tx.commit().await.map_err(unavailable)?;
+        Ok((row, envelope))
+    }
+
+    /// Updates a tenant-owned event division.
+    pub async fn update_division(
+        &self,
+        division: DivisionMutation<'_>,
+    ) -> DomainResult<(DivisionRecord, EventEnvelope)> {
+        let mut tx = self.pool.begin().await.map_err(unavailable)?;
+        let row = sqlx::query_as!(
+            DivisionRecord,
+            r#"
+            UPDATE divisions d
+            SET name = $4, position = $5
+            FROM events e
+            WHERE d.id = $1 AND d.event_id = $2
+              AND e.id = d.event_id AND e.organization_id = $3
+            RETURNING d.id,d.event_id,d.name,d.position
+            "#,
+            division.division_id.0,
+            division.event_id.0,
+            division.organization_id.0,
+            division.name,
+            division.position,
+        )
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(conflict_or_unavailable)?
+        .ok_or(DomainError::NotFound)?;
+        let envelope = EventEnvelope::new(
+            division.organization_id,
+            Some(division.event_id),
+            Some(division.actor),
+            Uuid::now_v7(),
+            division.now,
+            DomainEvent::EventChanged {
+                event_id: division.event_id,
+            },
+        );
+        persist_audit_event(
+            &mut tx,
+            &envelope,
+            "division.update",
+            "division",
+            &division.division_id.to_string(),
+        )
+        .await?;
+        tx.commit().await.map_err(unavailable)?;
+        Ok((row, envelope))
+    }
+
+    /// Deletes an unassigned division without silently reclassifying entrants.
+    pub async fn delete_division(
+        &self,
+        organization_id: OrganizationId,
+        event_id: EventId,
+        actor: UserId,
+        division_id: DivisionId,
+        now: DateTime<Utc>,
+    ) -> DomainResult<EventEnvelope> {
+        let mut tx = self.pool.begin().await.map_err(unavailable)?;
+        lock_owned_division(&mut tx, organization_id, event_id, division_id).await?;
+        let assigned = sqlx::query_scalar!(
+            "SELECT EXISTS(SELECT 1 FROM event_participants WHERE division_id = $1) AS \"exists!\"",
+            division_id.0,
+        )
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(unavailable)?;
+        if assigned {
+            return Err(DomainError::Conflict(
+                "division is assigned to one or more event entrants".into(),
+            ));
+        }
+        sqlx::query!("DELETE FROM divisions WHERE id = $1", division_id.0)
+            .execute(&mut *tx)
+            .await
+            .map_err(unavailable)?;
+        let envelope = EventEnvelope::new(
+            organization_id,
+            Some(event_id),
+            Some(actor),
+            Uuid::now_v7(),
+            now,
+            DomainEvent::EventChanged { event_id },
+        );
+        persist_audit_event(
+            &mut tx,
+            &envelope,
+            "division.delete",
+            "division",
+            &division_id.to_string(),
+        )
+        .await?;
+        tx.commit().await.map_err(unavailable)?;
+        Ok(envelope)
+    }
+
+    /// Lists event brackets in stable name order.
+    pub async fn brackets(
+        &self,
+        organization_id: OrganizationId,
+        event_id: EventId,
+    ) -> DomainResult<Vec<BracketRecord>> {
+        sqlx::query_as!(
+            BracketRecord,
+            r#"
+            SELECT b.id,b.event_id,b.name,b.advancement_slots
+            FROM brackets b
+            JOIN events e ON e.id = b.event_id
+            WHERE b.event_id = $1 AND e.organization_id = $2
+            ORDER BY b.name,b.id
+            "#,
+            event_id.0,
+            organization_id.0,
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(unavailable)
+    }
+
+    /// Creates a tournament bracket and its audit/outbox event atomically.
+    pub async fn create_bracket(
+        &self,
+        bracket: BracketMutation<'_>,
+    ) -> DomainResult<(BracketRecord, EventEnvelope)> {
+        let mut tx = self.pool.begin().await.map_err(unavailable)?;
+        lock_owned_event(&mut tx, bracket.organization_id, bracket.event_id).await?;
+        let row = sqlx::query_as!(
+            BracketRecord,
+            r#"
+            INSERT INTO brackets (id,event_id,name,advancement_slots)
+            VALUES ($1,$2,$3,$4)
+            RETURNING id,event_id,name,advancement_slots
+            "#,
+            bracket.bracket_id.0,
+            bracket.event_id.0,
+            bracket.name,
+            bracket.advancement_slots,
+        )
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(conflict_or_unavailable)?;
+        let envelope = EventEnvelope::new(
+            bracket.organization_id,
+            Some(bracket.event_id),
+            Some(bracket.actor),
+            Uuid::now_v7(),
+            bracket.now,
+            DomainEvent::EventChanged {
+                event_id: bracket.event_id,
+            },
+        );
+        persist_audit_event(
+            &mut tx,
+            &envelope,
+            "bracket.create",
+            "bracket",
+            &bracket.bracket_id.to_string(),
+        )
+        .await?;
+        tx.commit().await.map_err(unavailable)?;
+        Ok((row, envelope))
+    }
+
+    /// Updates a tenant-owned tournament bracket.
+    pub async fn update_bracket(
+        &self,
+        bracket: BracketMutation<'_>,
+    ) -> DomainResult<(BracketRecord, EventEnvelope)> {
+        let mut tx = self.pool.begin().await.map_err(unavailable)?;
+        let row = sqlx::query_as!(
+            BracketRecord,
+            r#"
+            UPDATE brackets b
+            SET name = $4, advancement_slots = $5
+            FROM events e
+            WHERE b.id = $1 AND b.event_id = $2
+              AND e.id = b.event_id AND e.organization_id = $3
+            RETURNING b.id,b.event_id,b.name,b.advancement_slots
+            "#,
+            bracket.bracket_id.0,
+            bracket.event_id.0,
+            bracket.organization_id.0,
+            bracket.name,
+            bracket.advancement_slots,
+        )
+        .fetch_optional(&mut *tx)
+        .await
+        .map_err(conflict_or_unavailable)?
+        .ok_or(DomainError::NotFound)?;
+        let envelope = EventEnvelope::new(
+            bracket.organization_id,
+            Some(bracket.event_id),
+            Some(bracket.actor),
+            Uuid::now_v7(),
+            bracket.now,
+            DomainEvent::EventChanged {
+                event_id: bracket.event_id,
+            },
+        );
+        persist_audit_event(
+            &mut tx,
+            &envelope,
+            "bracket.update",
+            "bracket",
+            &bracket.bracket_id.to_string(),
+        )
+        .await?;
+        tx.commit().await.map_err(unavailable)?;
+        Ok((row, envelope))
+    }
+
+    /// Deletes an unassigned bracket without silently changing entrants.
+    pub async fn delete_bracket(
+        &self,
+        organization_id: OrganizationId,
+        event_id: EventId,
+        actor: UserId,
+        bracket_id: BracketId,
+        now: DateTime<Utc>,
+    ) -> DomainResult<EventEnvelope> {
+        let mut tx = self.pool.begin().await.map_err(unavailable)?;
+        lock_owned_bracket(&mut tx, organization_id, event_id, bracket_id).await?;
+        let assigned = sqlx::query_scalar!(
+            "SELECT EXISTS(SELECT 1 FROM event_participants WHERE bracket_id = $1) AS \"exists!\"",
+            bracket_id.0,
+        )
+        .fetch_one(&mut *tx)
+        .await
+        .map_err(unavailable)?;
+        if assigned {
+            return Err(DomainError::Conflict(
+                "bracket is assigned to one or more event entrants".into(),
+            ));
+        }
+        sqlx::query!("DELETE FROM brackets WHERE id = $1", bracket_id.0)
+            .execute(&mut *tx)
+            .await
+            .map_err(unavailable)?;
+        let envelope = EventEnvelope::new(
+            organization_id,
+            Some(event_id),
+            Some(actor),
+            Uuid::now_v7(),
+            now,
+            DomainEvent::EventChanged { event_id },
+        );
+        persist_audit_event(
+            &mut tx,
+            &envelope,
+            "bracket.delete",
+            "bracket",
+            &bracket_id.to_string(),
+        )
+        .await?;
+        tx.commit().await.map_err(unavailable)?;
+        Ok(envelope)
+    }
+
     /// Creates a challenge, answers, and hints in one transaction.
     pub async fn create_challenge(
         &self,
@@ -537,6 +923,73 @@ impl ResourceRepository {
             solves,
         })
     }
+}
+
+async fn lock_owned_event(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    organization_id: OrganizationId,
+    event_id: EventId,
+) -> DomainResult<()> {
+    sqlx::query_scalar!(
+        "SELECT id FROM events WHERE id = $1 AND organization_id = $2 FOR UPDATE",
+        event_id.0,
+        organization_id.0,
+    )
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(unavailable)?
+    .ok_or(DomainError::NotFound)?;
+    Ok(())
+}
+
+async fn lock_owned_division(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    organization_id: OrganizationId,
+    event_id: EventId,
+    division_id: DivisionId,
+) -> DomainResult<()> {
+    sqlx::query_scalar!(
+        r#"
+        SELECT d.id
+        FROM divisions d
+        JOIN events e ON e.id = d.event_id
+        WHERE d.id = $1 AND d.event_id = $2 AND e.organization_id = $3
+        FOR UPDATE OF d
+        "#,
+        division_id.0,
+        event_id.0,
+        organization_id.0,
+    )
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(unavailable)?
+    .ok_or(DomainError::NotFound)?;
+    Ok(())
+}
+
+async fn lock_owned_bracket(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    organization_id: OrganizationId,
+    event_id: EventId,
+    bracket_id: BracketId,
+) -> DomainResult<()> {
+    sqlx::query_scalar!(
+        r#"
+        SELECT b.id
+        FROM brackets b
+        JOIN events e ON e.id = b.event_id
+        WHERE b.id = $1 AND b.event_id = $2 AND e.organization_id = $3
+        FOR UPDATE OF b
+        "#,
+        bracket_id.0,
+        event_id.0,
+        organization_id.0,
+    )
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(unavailable)?
+    .ok_or(DomainError::NotFound)?;
+    Ok(())
 }
 
 pub(crate) async fn persist_audit_event(

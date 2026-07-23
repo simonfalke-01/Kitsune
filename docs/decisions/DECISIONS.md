@@ -386,3 +386,9 @@ Format: `YYYY-MM-DD — decision — rationale`.
   per-node core wildcard subscriptions for live fanout — events are durably
   retained while every stateless API replica receives updates instead of
   competing through a queue group; PostgreSQL outbox remains replay authority.
+- 2026-07-23 — Expose positive JetStream byte, message, and age retention as one
+  validated adapter configuration — production keeps coherent bounded defaults
+  while tests and constrained installations avoid false storage reservations.
+- 2026-07-23 — Reject division or bracket deletion while an entrant references
+  it — an explicit organizer reassignment/withdrawal must precede removal so a
+  convenient API action cannot silently destroy historical classification.

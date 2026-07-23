@@ -248,6 +248,21 @@ Updated: 2026-07-23 (Asia/Singapore)
   bounded local bus. A real NATS 2.12 Testcontainer proves cross-client fanout,
   filtering, malformed-message rejection, and namespace isolation; strict
   workspace Clippy and the all-feature workspace suite are green.
+- Event divisions and tournament brackets now have complete tenant/event-scoped
+  REST and OpenAPI resources for list, create, update, and delete. Mutations use
+  explicit command objects, event-management RBAC, CSRF, bounded Unicode-safe
+  names and numeric limits, database uniqueness, and atomic audit/outbox events.
+  Deletion locks the classification and rejects assigned entrants instead of
+  silently nulling historical placement. A fresh-database API journey covers
+  organizer lifecycle, player read/denied-write access, registration linkage,
+  conflict-safe deletion, withdrawal, and all six audit actions. Generated SQLx
+  metadata/TypeScript contracts, 18 API tests, the full all-feature workspace,
+  strict Clippy, and every frontend check/build are green.
+- Main CI run 29974725515 exposed GitHub runner storage admission when two test
+  JetStreams each reserved the one-gigabyte production limit. Stream retention
+  is now an explicit validated adapter configuration; production retains its
+  bounded default while integration tests reserve 16 MiB per namespace. Three
+  repeated real-container runs and the full workspace suite pass locally.
 - Cache-commit CI exposed one team-merge assertion comparing Rust nanoseconds
   to PostgreSQL microseconds. The assertion now matches the storage contract;
   five repeated focused runs and the full all-feature workspace suite pass.

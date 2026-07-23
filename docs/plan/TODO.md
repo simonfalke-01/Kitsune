@@ -98,6 +98,9 @@ or scaffolding alone.
         ownership and race-safe event size-limit enforcement.
   - [x] Administrator merge and cross-team transfer with historical competitor
         reassignment.
+- [x] Division and bracket list/create/update/delete REST/OpenAPI resources with
+      event-scoped authorization, assignment-safe removal, audit/outbox events,
+      generated TypeScript contracts, and PostgreSQL API coverage.
 - [x] Exact/regex/choice/manual submission validation, digest-only receipts,
       client idempotency, immutable score ledger, solves, first blood, authored and
       runtime attempt limits, and individual/team competitor resolution.

@@ -14,11 +14,12 @@ use kitsune_core::{
         AnswerRule, ChallengeKind, ChallengeState, Hint, SurveyQuestion, VisibilityRule,
         validate_answer_contract,
     },
-    identity::{ChallengeId, DivisionId, EventId, EventState, ParticipationMode},
+    identity::{BracketId, ChallengeId, DivisionId, EventId, EventState, ParticipationMode},
     scoring::ScoringRule,
 };
 use kitsune_db::resources::{
-    ChallengeRecord, EventRecord, NewChallenge, NewEvent, ResourceRepository,
+    BracketMutation, BracketRecord, ChallengeRecord, DivisionMutation, DivisionRecord, EventRecord,
+    NewChallenge, NewEvent, ResourceRepository,
 };
 use secrecy::SecretString;
 use serde::{Deserialize, Serialize};
@@ -122,6 +123,50 @@ pub struct EventResponse {
     pub scoreboard_frozen: bool,
     /// Hidden state.
     pub scoreboard_hidden: bool,
+}
+
+/// Event division document.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct DivisionResponse {
+    /// Division ID.
+    pub id: Uuid,
+    /// Parent event ID.
+    pub event_id: Uuid,
+    /// Display name.
+    pub name: String,
+    /// Stable scoreboard order.
+    pub position: i32,
+}
+
+/// Organizer division create/update document.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct DivisionMutationRequest {
+    /// Unique display name inside the event.
+    pub name: String,
+    /// Stable scoreboard order from 0 through 100,000.
+    pub position: i32,
+}
+
+/// Tournament bracket document.
+#[derive(Debug, Serialize, ToSchema)]
+pub struct BracketResponse {
+    /// Bracket ID.
+    pub id: Uuid,
+    /// Parent event ID.
+    pub event_id: Uuid,
+    /// Display name.
+    pub name: String,
+    /// Number of entrants advanced from this bracket.
+    pub advancement_slots: i16,
+}
+
+/// Organizer bracket create/update document.
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct BracketMutationRequest {
+    /// Unique display name inside the event.
+    pub name: String,
+    /// Number of entrants advanced from this bracket.
+    pub advancement_slots: u16,
 }
 
 /// Organizer event lifecycle mutation.
@@ -517,6 +562,346 @@ pub(crate) async fn update_scoreboard_controls(
 
 #[utoipa::path(
     get,
+    path = "/api/v1/events/{event_id}/divisions",
+    tag = "divisions",
+    params(("event_id" = Uuid, Path, description = "Event ID")),
+    responses(
+        (status = 200, body = [DivisionResponse]),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody)
+    )
+)]
+pub(crate) async fn list_divisions(
+    State(state): State<AppState>,
+    actor: Actor,
+    Path(event_id): Path<Uuid>,
+) -> ApiResult<Json<Vec<DivisionResponse>>> {
+    actor.require("event_read")?;
+    let repository = ResourceRepository::new(state.db.pool().clone());
+    let event_id = EventId(event_id);
+    if !repository
+        .owns_event(actor.session.account.organization_id, event_id)
+        .await
+        .map_err(ApiError::from)?
+    {
+        return Err(ApiError::from(DomainError::NotFound));
+    }
+    let divisions = repository
+        .divisions(actor.session.account.organization_id, event_id)
+        .await
+        .map_err(ApiError::from)?;
+    Ok(Json(divisions.into_iter().map(Into::into).collect()))
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/events/{event_id}/divisions",
+    tag = "divisions",
+    params(("event_id" = Uuid, Path, description = "Event ID")),
+    request_body = DivisionMutationRequest,
+    responses(
+        (status = 201, body = DivisionResponse),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 409, body = ErrorBody),
+        (status = 422, body = ErrorBody)
+    )
+)]
+pub(crate) async fn create_division(
+    State(state): State<AppState>,
+    actor: Actor,
+    headers: HeaderMap,
+    Path(event_id): Path<Uuid>,
+    Json(request): Json<DivisionMutationRequest>,
+) -> ApiResult<(StatusCode, Json<DivisionResponse>)> {
+    actor.require("event_manage")?;
+    actor.require_csrf(&headers)?;
+    let name = validate_classification_name(&request.name)?;
+    validate_division_position(request.position)?;
+    let (division, envelope) = ResourceRepository::new(state.db.pool().clone())
+        .create_division(DivisionMutation {
+            organization_id: actor.session.account.organization_id,
+            event_id: EventId(event_id),
+            actor: actor.session.account.user_id,
+            division_id: DivisionId::new(),
+            name: &name,
+            position: request.position,
+            now: Utc::now(),
+        })
+        .await
+        .map_err(ApiError::from)?;
+    state
+        .event_bus
+        .publish(envelope)
+        .await
+        .map_err(ApiError::from)?;
+    Ok((StatusCode::CREATED, Json(division.into())))
+}
+
+#[utoipa::path(
+    patch,
+    path = "/api/v1/events/{event_id}/divisions/{division_id}",
+    tag = "divisions",
+    params(
+        ("event_id" = Uuid, Path, description = "Event ID"),
+        ("division_id" = Uuid, Path, description = "Division ID")
+    ),
+    request_body = DivisionMutationRequest,
+    responses(
+        (status = 200, body = DivisionResponse),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody),
+        (status = 409, body = ErrorBody),
+        (status = 422, body = ErrorBody)
+    )
+)]
+pub(crate) async fn update_division(
+    State(state): State<AppState>,
+    actor: Actor,
+    headers: HeaderMap,
+    Path((event_id, division_id)): Path<(Uuid, Uuid)>,
+    Json(request): Json<DivisionMutationRequest>,
+) -> ApiResult<Json<DivisionResponse>> {
+    actor.require("event_manage")?;
+    actor.require_csrf(&headers)?;
+    let name = validate_classification_name(&request.name)?;
+    validate_division_position(request.position)?;
+    let (division, envelope) = ResourceRepository::new(state.db.pool().clone())
+        .update_division(DivisionMutation {
+            organization_id: actor.session.account.organization_id,
+            event_id: EventId(event_id),
+            actor: actor.session.account.user_id,
+            division_id: DivisionId(division_id),
+            name: &name,
+            position: request.position,
+            now: Utc::now(),
+        })
+        .await
+        .map_err(ApiError::from)?;
+    state
+        .event_bus
+        .publish(envelope)
+        .await
+        .map_err(ApiError::from)?;
+    Ok(Json(division.into()))
+}
+
+#[utoipa::path(
+    delete,
+    path = "/api/v1/events/{event_id}/divisions/{division_id}",
+    tag = "divisions",
+    params(
+        ("event_id" = Uuid, Path, description = "Event ID"),
+        ("division_id" = Uuid, Path, description = "Division ID")
+    ),
+    responses(
+        (status = 204, description = "Division deleted"),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody),
+        (status = 409, body = ErrorBody)
+    )
+)]
+pub(crate) async fn delete_division(
+    State(state): State<AppState>,
+    actor: Actor,
+    headers: HeaderMap,
+    Path((event_id, division_id)): Path<(Uuid, Uuid)>,
+) -> ApiResult<StatusCode> {
+    actor.require("event_manage")?;
+    actor.require_csrf(&headers)?;
+    let envelope = ResourceRepository::new(state.db.pool().clone())
+        .delete_division(
+            actor.session.account.organization_id,
+            EventId(event_id),
+            actor.session.account.user_id,
+            DivisionId(division_id),
+            Utc::now(),
+        )
+        .await
+        .map_err(ApiError::from)?;
+    state
+        .event_bus
+        .publish(envelope)
+        .await
+        .map_err(ApiError::from)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/events/{event_id}/brackets",
+    tag = "brackets",
+    params(("event_id" = Uuid, Path, description = "Event ID")),
+    responses(
+        (status = 200, body = [BracketResponse]),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody)
+    )
+)]
+pub(crate) async fn list_brackets(
+    State(state): State<AppState>,
+    actor: Actor,
+    Path(event_id): Path<Uuid>,
+) -> ApiResult<Json<Vec<BracketResponse>>> {
+    actor.require("event_read")?;
+    let repository = ResourceRepository::new(state.db.pool().clone());
+    let event_id = EventId(event_id);
+    if !repository
+        .owns_event(actor.session.account.organization_id, event_id)
+        .await
+        .map_err(ApiError::from)?
+    {
+        return Err(ApiError::from(DomainError::NotFound));
+    }
+    let brackets = repository
+        .brackets(actor.session.account.organization_id, event_id)
+        .await
+        .map_err(ApiError::from)?;
+    Ok(Json(brackets.into_iter().map(Into::into).collect()))
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/events/{event_id}/brackets",
+    tag = "brackets",
+    params(("event_id" = Uuid, Path, description = "Event ID")),
+    request_body = BracketMutationRequest,
+    responses(
+        (status = 201, body = BracketResponse),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 409, body = ErrorBody),
+        (status = 422, body = ErrorBody)
+    )
+)]
+pub(crate) async fn create_bracket(
+    State(state): State<AppState>,
+    actor: Actor,
+    headers: HeaderMap,
+    Path(event_id): Path<Uuid>,
+    Json(request): Json<BracketMutationRequest>,
+) -> ApiResult<(StatusCode, Json<BracketResponse>)> {
+    actor.require("event_manage")?;
+    actor.require_csrf(&headers)?;
+    let name = validate_classification_name(&request.name)?;
+    let advancement_slots = validate_advancement_slots(request.advancement_slots)?;
+    let (bracket, envelope) = ResourceRepository::new(state.db.pool().clone())
+        .create_bracket(BracketMutation {
+            organization_id: actor.session.account.organization_id,
+            event_id: EventId(event_id),
+            actor: actor.session.account.user_id,
+            bracket_id: BracketId::new(),
+            name: &name,
+            advancement_slots,
+            now: Utc::now(),
+        })
+        .await
+        .map_err(ApiError::from)?;
+    state
+        .event_bus
+        .publish(envelope)
+        .await
+        .map_err(ApiError::from)?;
+    Ok((StatusCode::CREATED, Json(bracket.into())))
+}
+
+#[utoipa::path(
+    patch,
+    path = "/api/v1/events/{event_id}/brackets/{bracket_id}",
+    tag = "brackets",
+    params(
+        ("event_id" = Uuid, Path, description = "Event ID"),
+        ("bracket_id" = Uuid, Path, description = "Bracket ID")
+    ),
+    request_body = BracketMutationRequest,
+    responses(
+        (status = 200, body = BracketResponse),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody),
+        (status = 409, body = ErrorBody),
+        (status = 422, body = ErrorBody)
+    )
+)]
+pub(crate) async fn update_bracket(
+    State(state): State<AppState>,
+    actor: Actor,
+    headers: HeaderMap,
+    Path((event_id, bracket_id)): Path<(Uuid, Uuid)>,
+    Json(request): Json<BracketMutationRequest>,
+) -> ApiResult<Json<BracketResponse>> {
+    actor.require("event_manage")?;
+    actor.require_csrf(&headers)?;
+    let name = validate_classification_name(&request.name)?;
+    let advancement_slots = validate_advancement_slots(request.advancement_slots)?;
+    let (bracket, envelope) = ResourceRepository::new(state.db.pool().clone())
+        .update_bracket(BracketMutation {
+            organization_id: actor.session.account.organization_id,
+            event_id: EventId(event_id),
+            actor: actor.session.account.user_id,
+            bracket_id: BracketId(bracket_id),
+            name: &name,
+            advancement_slots,
+            now: Utc::now(),
+        })
+        .await
+        .map_err(ApiError::from)?;
+    state
+        .event_bus
+        .publish(envelope)
+        .await
+        .map_err(ApiError::from)?;
+    Ok(Json(bracket.into()))
+}
+
+#[utoipa::path(
+    delete,
+    path = "/api/v1/events/{event_id}/brackets/{bracket_id}",
+    tag = "brackets",
+    params(
+        ("event_id" = Uuid, Path, description = "Event ID"),
+        ("bracket_id" = Uuid, Path, description = "Bracket ID")
+    ),
+    responses(
+        (status = 204, description = "Bracket deleted"),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody),
+        (status = 409, body = ErrorBody)
+    )
+)]
+pub(crate) async fn delete_bracket(
+    State(state): State<AppState>,
+    actor: Actor,
+    headers: HeaderMap,
+    Path((event_id, bracket_id)): Path<(Uuid, Uuid)>,
+) -> ApiResult<StatusCode> {
+    actor.require("event_manage")?;
+    actor.require_csrf(&headers)?;
+    let envelope = ResourceRepository::new(state.db.pool().clone())
+        .delete_bracket(
+            actor.session.account.organization_id,
+            EventId(event_id),
+            actor.session.account.user_id,
+            BracketId(bracket_id),
+            Utc::now(),
+        )
+        .await
+        .map_err(ApiError::from)?;
+    state
+        .event_bus
+        .publish(envelope)
+        .await
+        .map_err(ApiError::from)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[utoipa::path(
+    get,
     path = "/api/v1/events/{event_id}/challenges",
     tag = "challenges",
     params(("event_id" = Uuid, Path, description = "Event ID")),
@@ -742,6 +1127,55 @@ impl From<EventRecord> for EventResponse {
     }
 }
 
+impl From<DivisionRecord> for DivisionResponse {
+    fn from(record: DivisionRecord) -> Self {
+        Self {
+            id: record.id,
+            event_id: record.event_id,
+            name: record.name,
+            position: record.position,
+        }
+    }
+}
+
+impl From<BracketRecord> for BracketResponse {
+    fn from(record: BracketRecord) -> Self {
+        Self {
+            id: record.id,
+            event_id: record.event_id,
+            name: record.name,
+            advancement_slots: record.advancement_slots,
+        }
+    }
+}
+
+fn validate_classification_name(value: &str) -> ApiResult<String> {
+    let name = value.trim();
+    if name.is_empty() || name.chars().count() > 100 || name.chars().any(char::is_control) {
+        return Err(ApiError::from(DomainError::Validation(
+            "classification name must contain 1 to 100 printable characters".into(),
+        )));
+    }
+    Ok(name.to_owned())
+}
+
+fn validate_division_position(position: i32) -> ApiResult<()> {
+    if !(0..=100_000).contains(&position) {
+        return Err(ApiError::from(DomainError::Validation(
+            "division position must be between 0 and 100000".into(),
+        )));
+    }
+    Ok(())
+}
+
+fn validate_advancement_slots(value: u16) -> ApiResult<i16> {
+    i16::try_from(value).map_err(|_| {
+        ApiError::from(DomainError::Validation(
+            "advancement slots cannot exceed 32767".into(),
+        ))
+    })
+}
+
 impl ChallengeResponse {
     fn from_record(row: ChallengeRecord, solved: bool) -> Self {
         Self {
@@ -904,4 +1338,31 @@ fn answer_rule(value: AnswerInput) -> AnswerRule {
 
 fn serialization_error(error: serde_json::Error) -> ApiError {
     ApiError::from(DomainError::Validation(error.to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        validate_advancement_slots, validate_classification_name, validate_division_position,
+    };
+
+    #[test]
+    fn classification_inputs_are_bounded_and_normalized() {
+        assert_eq!(
+            validate_classification_name("  University  ").expect("valid name"),
+            "University"
+        );
+        assert!(validate_classification_name("\n").is_err());
+        assert!(validate_classification_name(&"x".repeat(101)).is_err());
+        assert!(validate_division_position(0).is_ok());
+        assert!(validate_division_position(100_000).is_ok());
+        assert!(validate_division_position(-1).is_err());
+        assert!(validate_division_position(100_001).is_err());
+        let maximum_slots = u16::try_from(i16::MAX).expect("positive i16 maximum");
+        assert_eq!(
+            validate_advancement_slots(maximum_slots).expect("maximum slots"),
+            i16::MAX
+        );
+        assert!(validate_advancement_slots(maximum_slots + 1).is_err());
+    }
 }

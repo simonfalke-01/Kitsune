@@ -60,11 +60,19 @@ returning. Event UUIDs are JetStream deduplication keys. Each online API replica
 uses a core wildcard subscription over that installation's validated namespace,
 then validates the envelope/subject pair and applies typed kind filtering before
 delivery; every replica therefore receives live updates without queue-group load
-balancing or sticky sessions. JetStream retains a bounded seven-day history for
+balancing or sticky sessions. JetStream retains a configurable bounded history
+(one GiB, one million events, and seven days by default) for
 durable integration consumers, while PostgreSQL's transactional outbox remains
 the authoritative replay and acknowledgement source. Without an explicit NATS
 URL, both runtime profiles use the bounded in-process adapter and still boot
 without an external service.
+
+Divisions and tournament brackets are event-owned classification resources.
+Their organizer mutations validate at the API boundary and commit the row,
+audit record, and event outbox envelope in one PostgreSQL transaction. Deletion
+locks the target row and fails while any entrant references it, even though the
+schema's defensive foreign-key action is `SET NULL`; ordinary administration
+therefore cannot erase historical classification by accident.
 
 Competitor profiles reuse the revisioned overall scoreboard for rank and totals,
 then add tenant-scoped identity, event registration, roster relationships, and a

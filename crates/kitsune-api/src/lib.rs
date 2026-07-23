@@ -251,6 +251,14 @@ pub struct ReadinessResponse {
         resources::create_event,
         resources::update_event_state,
         resources::update_scoreboard_controls,
+        resources::list_divisions,
+        resources::create_division,
+        resources::update_division,
+        resources::delete_division,
+        resources::list_brackets,
+        resources::create_bracket,
+        resources::update_bracket,
+        resources::delete_bracket,
         resources::list_challenges,
         resources::create_challenge,
         engagement::get_writeup,
@@ -303,6 +311,10 @@ pub struct ReadinessResponse {
         resources::UpdateEventStateRequest,
         resources::UpdateScoreboardControlsRequest,
         resources::EventResponse,
+        resources::DivisionMutationRequest,
+        resources::DivisionResponse,
+        resources::BracketMutationRequest,
+        resources::BracketResponse,
         resources::ChallengeKindInput,
         resources::ChallengeStateInput,
         resources::ScoringInput,
@@ -382,6 +394,8 @@ pub struct ReadinessResponse {
         (name = "system", description = "Health and diagnostics"),
         (name = "auth", description = "Setup, sessions, and authentication"),
         (name = "events", description = "Competition and workshop events"),
+        (name = "divisions", description = "Event scoreboard classifications"),
+        (name = "brackets", description = "Event tournament groupings"),
         (name = "challenges", description = "Challenge board and authoring"),
         (name = "writeups", description = "Player writeups and organizer review"),
         (name = "surveys", description = "Post-solve feedback and analytics"),
@@ -550,6 +564,22 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/events/{event_id}/scoreboard-controls",
             axum::routing::patch(resources::update_scoreboard_controls),
+        )
+        .route(
+            "/api/v1/events/{event_id}/divisions",
+            get(resources::list_divisions).post(resources::create_division),
+        )
+        .route(
+            "/api/v1/events/{event_id}/divisions/{division_id}",
+            axum::routing::patch(resources::update_division).delete(resources::delete_division),
+        )
+        .route(
+            "/api/v1/events/{event_id}/brackets",
+            get(resources::list_brackets).post(resources::create_bracket),
+        )
+        .route(
+            "/api/v1/events/{event_id}/brackets/{bracket_id}",
+            axum::routing::patch(resources::update_bracket).delete(resources::delete_bracket),
         )
         .route(
             "/api/v1/events/{event_id}/challenges",
@@ -785,9 +815,293 @@ mod tests {
     fn generated_document_is_openapi_31() {
         assert_eq!(openapi_json()["openapi"], "3.1.0");
         assert!(openapi_json()["paths"]["/api/v1/auth/login"].is_object());
+        assert!(openapi_json()["paths"]["/api/v1/events/{event_id}/divisions"].is_object());
+        assert!(openapi_json()["paths"]["/api/v1/events/{event_id}/brackets"].is_object());
         assert!(
             openapi_json()["paths"]["/api/v1/auth/oidc/{organization}/{provider_key}/callback"]
                 .is_object()
+        );
+    }
+
+    #[sqlx::test(migrator = "MIGRATOR")]
+    async fn divisions_and_brackets_are_managed_and_assignment_safe(pool: PgPool) {
+        let app = router(test_state(pool.clone()));
+        let setup = Request::builder()
+            .method("POST")
+            .uri("/api/v1/setup")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "organization_name": "Classification Shrine",
+                    "organization_slug": "classification-shrine",
+                    "display_name": "Tournament Keeper",
+                    "email": "keeper@classification.test",
+                    "password": "correct horse foxfire battery"
+                })
+                .to_string(),
+            ))
+            .expect("setup request");
+        let response = app.clone().oneshot(setup).await.expect("setup response");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let admin_cookies = response_cookies(response.headers());
+        let admin_session = response_json(response).await;
+        let admin_csrf = admin_session["csrf_token"]
+            .as_str()
+            .expect("admin CSRF")
+            .to_owned();
+
+        let create_event = Request::builder()
+            .method("POST")
+            .uri("/api/v1/events")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", &admin_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "name": "Nine Tails Tournament",
+                    "slug": "nine-tails-tournament",
+                    "description": "Division and bracket resource coverage.",
+                    "state": "draft",
+                    "participation": "individual",
+                    "modes": ["jeopardy"],
+                    "starts_at": null,
+                    "ends_at": null,
+                    "team_size_limit": null
+                })
+                .to_string(),
+            ))
+            .expect("create event request");
+        let response = app
+            .clone()
+            .oneshot(create_event)
+            .await
+            .expect("create event response");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let event = response_json(response).await;
+        let event_id = event["id"].as_str().expect("event ID");
+
+        let create_division = Request::builder()
+            .method("POST")
+            .uri(format!("/api/v1/events/{event_id}/divisions"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", &admin_csrf)
+            .body(Body::from(
+                serde_json::json!({"name": "Student", "position": 20}).to_string(),
+            ))
+            .expect("create division request");
+        let response = app
+            .clone()
+            .oneshot(create_division)
+            .await
+            .expect("create division response");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let division = response_json(response).await;
+        let division_id = division["id"].as_str().expect("division ID");
+
+        let duplicate_division = Request::builder()
+            .method("POST")
+            .uri(format!("/api/v1/events/{event_id}/divisions"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", &admin_csrf)
+            .body(Body::from(
+                serde_json::json!({"name": "Student", "position": 30}).to_string(),
+            ))
+            .expect("duplicate division request");
+        let response = app
+            .clone()
+            .oneshot(duplicate_division)
+            .await
+            .expect("duplicate division response");
+        assert_eq!(response.status(), StatusCode::CONFLICT);
+
+        let update_division = Request::builder()
+            .method("PATCH")
+            .uri(format!("/api/v1/events/{event_id}/divisions/{division_id}"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", &admin_csrf)
+            .body(Body::from(
+                serde_json::json!({"name": "University", "position": 10}).to_string(),
+            ))
+            .expect("update division request");
+        let response = app
+            .clone()
+            .oneshot(update_division)
+            .await
+            .expect("update division response");
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response_json(response).await["name"], "University");
+
+        let create_bracket = Request::builder()
+            .method("POST")
+            .uri(format!("/api/v1/events/{event_id}/brackets"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", &admin_csrf)
+            .body(Body::from(
+                serde_json::json!({"name": "Qualifiers", "advancement_slots": 8}).to_string(),
+            ))
+            .expect("create bracket request");
+        let response = app
+            .clone()
+            .oneshot(create_bracket)
+            .await
+            .expect("create bracket response");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let bracket = response_json(response).await;
+        let bracket_id = bracket["id"].as_str().expect("bracket ID");
+
+        let update_bracket = Request::builder()
+            .method("PATCH")
+            .uri(format!("/api/v1/events/{event_id}/brackets/{bracket_id}"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", &admin_csrf)
+            .body(Body::from(
+                serde_json::json!({"name": "Finalists", "advancement_slots": 4}).to_string(),
+            ))
+            .expect("update bracket request");
+        let response = app
+            .clone()
+            .oneshot(update_bracket)
+            .await
+            .expect("update bracket response");
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response_json(response).await["advancement_slots"], 4);
+
+        let player = register_test_player(
+            &app,
+            "classification-shrine",
+            "Bracket Runner",
+            "runner@classification.test",
+        )
+        .await;
+        let list_divisions = Request::builder()
+            .uri(format!("/api/v1/events/{event_id}/divisions"))
+            .header(header::COOKIE, &player.cookies)
+            .body(Body::empty())
+            .expect("list divisions request");
+        let response = app
+            .clone()
+            .oneshot(list_divisions)
+            .await
+            .expect("list divisions response");
+        assert_eq!(response.status(), StatusCode::OK);
+        assert_eq!(response_json(response).await[0]["name"], "University");
+
+        let forbidden_create = Request::builder()
+            .method("POST")
+            .uri(format!("/api/v1/events/{event_id}/brackets"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player.cookies)
+            .header("x-csrf-token", &player.csrf)
+            .body(Body::from(
+                serde_json::json!({"name": "Forbidden", "advancement_slots": 1}).to_string(),
+            ))
+            .expect("forbidden bracket request");
+        let response = app
+            .clone()
+            .oneshot(forbidden_create)
+            .await
+            .expect("forbidden bracket response");
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+
+        let register = Request::builder()
+            .method("PUT")
+            .uri(format!("/api/v1/events/{event_id}/registration"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player.cookies)
+            .header("x-csrf-token", &player.csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "division_id": division_id,
+                    "bracket_id": bracket_id
+                })
+                .to_string(),
+            ))
+            .expect("register event request");
+        let response = app
+            .clone()
+            .oneshot(register)
+            .await
+            .expect("register event response");
+        assert_eq!(response.status(), StatusCode::OK);
+
+        for uri in [
+            format!("/api/v1/events/{event_id}/divisions/{division_id}"),
+            format!("/api/v1/events/{event_id}/brackets/{bracket_id}"),
+        ] {
+            let request = Request::builder()
+                .method("DELETE")
+                .uri(uri)
+                .header(header::COOKIE, &admin_cookies)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::empty())
+                .expect("assigned classification delete request");
+            let response = app
+                .clone()
+                .oneshot(request)
+                .await
+                .expect("assigned classification delete response");
+            assert_eq!(response.status(), StatusCode::CONFLICT);
+        }
+
+        let unregister = Request::builder()
+            .method("DELETE")
+            .uri(format!("/api/v1/events/{event_id}/registration"))
+            .header(header::COOKIE, &player.cookies)
+            .header("x-csrf-token", &player.csrf)
+            .body(Body::empty())
+            .expect("unregister event request");
+        let response = app
+            .clone()
+            .oneshot(unregister)
+            .await
+            .expect("unregister event response");
+        assert_eq!(response.status(), StatusCode::NO_CONTENT);
+
+        for uri in [
+            format!("/api/v1/events/{event_id}/divisions/{division_id}"),
+            format!("/api/v1/events/{event_id}/brackets/{bracket_id}"),
+        ] {
+            let request = Request::builder()
+                .method("DELETE")
+                .uri(uri)
+                .header(header::COOKIE, &admin_cookies)
+                .header("x-csrf-token", &admin_csrf)
+                .body(Body::empty())
+                .expect("classification delete request");
+            let response = app
+                .clone()
+                .oneshot(request)
+                .await
+                .expect("classification delete response");
+            assert_eq!(response.status(), StatusCode::NO_CONTENT);
+        }
+
+        let actions = sqlx::query_scalar!(
+            r#"
+            SELECT action
+            FROM audit_log
+            WHERE action LIKE 'division.%' OR action LIKE 'bracket.%'
+            ORDER BY action
+            "#,
+        )
+        .fetch_all(&pool)
+        .await
+        .expect("classification audit actions");
+        assert_eq!(
+            actions,
+            vec![
+                "bracket.create",
+                "bracket.delete",
+                "bracket.update",
+                "division.create",
+                "division.delete",
+                "division.update",
+            ]
         );
     }
 
@@ -3454,6 +3768,16 @@ mod tests {
             .filter_map(|value| value.split(';').next())
             .collect::<Vec<_>>()
             .join("; ")
+    }
+
+    async fn response_json(response: axum::response::Response) -> serde_json::Value {
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("response body")
+            .to_bytes();
+        serde_json::from_slice(&body).expect("response JSON")
     }
 
     fn local_login(mfa_code: Option<String>) -> Request<Body> {
