@@ -234,6 +234,96 @@
         ],
         "type": "object"
       },
+      "AuditEntryResponse": {
+        "description": "Safe immutable audit entry.",
+        "properties": {
+          "action": {
+            "description": "Stable action key.",
+            "type": "string"
+          },
+          "actor_id": {
+            "description": "Optional initiating user.",
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "correlation_id": {
+            "description": "Correlation ID spanning the command and its effects.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "event_id": {
+            "description": "Optional event scope.",
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "id": {
+            "description": "Audit entry ID.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "metadata": {
+            "description": "Safe structured context."
+          },
+          "occurred_at": {
+            "description": "Authoritative occurrence time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "organization_id": {
+            "description": "Owning organization.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "resource_id": {
+            "description": "Resource identifier or safe key.",
+            "type": "string"
+          },
+          "resource_type": {
+            "description": "Resource classification.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "organization_id",
+          "action",
+          "resource_type",
+          "resource_id",
+          "metadata",
+          "correlation_id",
+          "occurred_at"
+        ],
+        "type": "object"
+      },
+      "AuditPageResponse": {
+        "description": "One descending audit-history page.",
+        "properties": {
+          "entries": {
+            "description": "Immutable entries in descending chronology.",
+            "items": {
+              "$ref": "#/components/schemas/AuditEntryResponse"
+            },
+            "type": "array"
+          },
+          "next_cursor": {
+            "description": "Opaque cursor for the next page, when one exists.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "entries"
+        ],
+        "type": "object"
+      },
       "BracketMutationRequest": {
         "description": "Organizer bracket create/update document.",
         "properties": {
@@ -3658,6 +3748,136 @@
         },
         "tags": [
           "team administration"
+        ]
+      }
+    },
+    "/api/v1/audit": {
+      "get": {
+        "operationId": "list_audit",
+        "parameters": [
+          {
+            "description": "Opaque cursor returned by the preceding page.",
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page size from 1 through 250.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "format": "int32",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Exact event scope.",
+            "in": "query",
+            "name": "event_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Exact actor scope.",
+            "in": "query",
+            "name": "actor_id",
+            "required": false,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Exact stable action key.",
+            "in": "query",
+            "name": "action",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Exact resource type.",
+            "in": "query",
+            "name": "resource_type",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Inclusive earliest occurrence.",
+            "in": "query",
+            "name": "occurred_after",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Inclusive latest occurrence.",
+            "in": "query",
+            "name": "occurred_before",
+            "required": false,
+            "schema": {
+              "format": "date-time",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuditPageResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "audit"
         ]
       }
     },
@@ -8733,6 +8953,10 @@
     {
       "description": "Health and diagnostics",
       "name": "system"
+    },
+    {
+      "description": "Immutable organizer activity history",
+      "name": "audit"
     },
     {
       "description": "Setup, sessions, and authentication",

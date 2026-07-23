@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE audit_log SET action = 'tampered'",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "8c6de2e27c0be9667c32bf5c76675d6c48d08729089ccc0f40ce7f289569324e"
+}

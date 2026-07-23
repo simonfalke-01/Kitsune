@@ -1,0 +1,85 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT id,organization_id,event_id,actor_id,action,resource_type,\n                   resource_id,metadata,correlation_id,occurred_at\n            FROM audit_log\n            WHERE organization_id = $1\n              AND ($2::timestamptz IS NULL OR (occurred_at,id) < ($2,$3))\n              AND ($4::uuid IS NULL OR event_id = $4)\n              AND ($5::uuid IS NULL OR actor_id = $5)\n              AND ($6::text IS NULL OR action = $6)\n              AND ($7::text IS NULL OR resource_type = $7)\n              AND ($8::timestamptz IS NULL OR occurred_at >= $8)\n              AND ($9::timestamptz IS NULL OR occurred_at <= $9)\n            ORDER BY occurred_at DESC,id DESC\n            LIMIT $10\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "organization_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "event_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "actor_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "action",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "resource_type",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 6,
+        "name": "resource_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "metadata",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 8,
+        "name": "correlation_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 9,
+        "name": "occurred_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Timestamptz",
+        "Timestamptz",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "feb967ebd987e995a1de5f6ac848f30a18c0ad66f99ed7814edf81964f96df15"
+}

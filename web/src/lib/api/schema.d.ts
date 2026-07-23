@@ -52,6 +52,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/audit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_audit"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/email/verify": {
         parameters: {
             query?: never;
@@ -1172,6 +1188,54 @@ export interface components {
             revoked_at?: string | null;
             /** @description Effective requested scope ceiling. */
             scopes: string[];
+        };
+        /** @description Safe immutable audit entry. */
+        AuditEntryResponse: {
+            /** @description Stable action key. */
+            action: string;
+            /**
+             * Format: uuid
+             * @description Optional initiating user.
+             */
+            actor_id?: string | null;
+            /**
+             * Format: uuid
+             * @description Correlation ID spanning the command and its effects.
+             */
+            correlation_id: string;
+            /**
+             * Format: uuid
+             * @description Optional event scope.
+             */
+            event_id?: string | null;
+            /**
+             * Format: uuid
+             * @description Audit entry ID.
+             */
+            id: string;
+            /** @description Safe structured context. */
+            metadata: unknown;
+            /**
+             * Format: date-time
+             * @description Authoritative occurrence time.
+             */
+            occurred_at: string;
+            /**
+             * Format: uuid
+             * @description Owning organization.
+             */
+            organization_id: string;
+            /** @description Resource identifier or safe key. */
+            resource_id: string;
+            /** @description Resource classification. */
+            resource_type: string;
+        };
+        /** @description One descending audit-history page. */
+        AuditPageResponse: {
+            /** @description Immutable entries in descending chronology. */
+            entries: components["schemas"]["AuditEntryResponse"][];
+            /** @description Opaque cursor for the next page, when one exists. */
+            next_cursor?: string | null;
         };
         /** @description Organizer bracket create/update document. */
         BracketMutationRequest: {
@@ -2772,6 +2836,66 @@ export interface operations {
                 };
             };
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    list_audit: {
+        parameters: {
+            query?: {
+                /** @description Opaque cursor returned by the preceding page. */
+                cursor?: string;
+                /** @description Page size from 1 through 250. */
+                limit?: number;
+                /** @description Exact event scope. */
+                event_id?: string;
+                /** @description Exact actor scope. */
+                actor_id?: string;
+                /** @description Exact stable action key. */
+                action?: string;
+                /** @description Exact resource type. */
+                resource_type?: string;
+                /** @description Inclusive earliest occurrence. */
+                occurred_after?: string;
+                /** @description Inclusive latest occurrence. */
+                occurred_before?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuditPageResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -5,6 +5,7 @@
 
 use std::time::Duration;
 
+pub mod audit;
 pub mod auth;
 pub mod engagement;
 pub mod instances;

@@ -1,5 +1,6 @@
 //! Secured Kitsune HTTP, OpenAPI, WebSocket, and SSE transports.
 
+mod audit;
 mod auth;
 mod engagement;
 mod error;
@@ -208,6 +209,7 @@ pub struct ReadinessResponse {
     paths(
         health,
         readiness,
+        audit::list_audit,
         auth::setup_status,
         auth::setup,
         auth::register,
@@ -293,6 +295,8 @@ pub struct ReadinessResponse {
         HealthResponse,
         ReadinessResponse,
         ErrorBody,
+        audit::AuditEntryResponse,
+        audit::AuditPageResponse,
         auth::SetupStatusResponse,
         auth::SetupRequest,
         auth::LoginRequest,
@@ -392,6 +396,7 @@ pub struct ReadinessResponse {
     )),
     tags(
         (name = "system", description = "Health and diagnostics"),
+        (name = "audit", description = "Immutable organizer activity history"),
         (name = "auth", description = "Setup, sessions, and authentication"),
         (name = "events", description = "Competition and workshop events"),
         (name = "divisions", description = "Event scoreboard classifications"),
@@ -453,6 +458,7 @@ pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/health", get(health))
         .route("/ready", get(readiness))
+        .route("/api/v1/audit", get(audit::list_audit))
         .route("/api/v1/setup", get(auth::setup_status).post(auth::setup))
         .route("/api/v1/auth/login", post(auth::login))
         .route("/api/v1/auth/register", post(auth::register))
@@ -1103,6 +1109,134 @@ mod tests {
                 "division.update",
             ]
         );
+    }
+
+    #[sqlx::test(migrator = "MIGRATOR")]
+    async fn audit_history_is_filtered_paginated_authorized_and_immutable(pool: PgPool) {
+        let app = router(test_state(pool.clone()));
+        let admin = setup_test_admin(
+            &app,
+            "Audit Shrine",
+            "audit-shrine",
+            "Trail Keeper",
+            "keeper@audit.test",
+        )
+        .await;
+        let event = create_test_event(&app, &admin, "Fox Trail", "fox-trail").await;
+        let event_id = event["id"].as_str().expect("event ID");
+
+        let schedule = Request::builder()
+            .method("PATCH")
+            .uri(format!("/api/v1/events/{event_id}/state"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin.cookies)
+            .header("x-csrf-token", &admin.csrf)
+            .body(Body::from(
+                serde_json::json!({"state": "scheduled"}).to_string(),
+            ))
+            .expect("event schedule request");
+        let response = app
+            .clone()
+            .oneshot(schedule)
+            .await
+            .expect("event schedule response");
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let first_page = Request::builder()
+            .uri("/api/v1/audit?limit=1")
+            .header(header::COOKIE, &admin.cookies)
+            .body(Body::empty())
+            .expect("first audit page request");
+        let response = app
+            .clone()
+            .oneshot(first_page)
+            .await
+            .expect("first audit page response");
+        assert_eq!(response.status(), StatusCode::OK);
+        let first_page = response_json(response).await;
+        assert_eq!(first_page["entries"].as_array().expect("entries").len(), 1);
+        assert_eq!(first_page["entries"][0]["action"], "event.state.change");
+        let first_id = first_page["entries"][0]["id"]
+            .as_str()
+            .expect("first audit ID");
+        let next_cursor = first_page["next_cursor"]
+            .as_str()
+            .expect("next audit cursor");
+
+        let second_page = Request::builder()
+            .uri(format!("/api/v1/audit?limit=1&cursor={next_cursor}"))
+            .header(header::COOKIE, &admin.cookies)
+            .body(Body::empty())
+            .expect("second audit page request");
+        let response = app
+            .clone()
+            .oneshot(second_page)
+            .await
+            .expect("second audit page response");
+        assert_eq!(response.status(), StatusCode::OK);
+        let second_page = response_json(response).await;
+        assert_eq!(second_page["entries"][0]["action"], "event.create");
+        assert_ne!(second_page["entries"][0]["id"], first_id);
+        assert!(second_page["next_cursor"].is_null());
+
+        let filtered = Request::builder()
+            .uri(format!(
+                "/api/v1/audit?action=event.create&event_id={event_id}"
+            ))
+            .header(header::COOKIE, &admin.cookies)
+            .body(Body::empty())
+            .expect("filtered audit request");
+        let response = app
+            .clone()
+            .oneshot(filtered)
+            .await
+            .expect("filtered audit response");
+        assert_eq!(response.status(), StatusCode::OK);
+        let filtered = response_json(response).await;
+        assert_eq!(filtered["entries"].as_array().expect("entries").len(), 1);
+        assert_eq!(filtered["entries"][0]["resource_type"], "event");
+
+        let invalid_cursor = Request::builder()
+            .uri("/api/v1/audit?cursor=not%2Bbase64")
+            .header(header::COOKIE, &admin.cookies)
+            .body(Body::empty())
+            .expect("invalid cursor request");
+        let response = app
+            .clone()
+            .oneshot(invalid_cursor)
+            .await
+            .expect("invalid cursor response");
+        assert_eq!(response.status(), StatusCode::UNPROCESSABLE_ENTITY);
+
+        let player =
+            register_test_player(&app, "audit-shrine", "Curious Player", "player@audit.test").await;
+        let forbidden = Request::builder()
+            .uri("/api/v1/audit")
+            .header(header::COOKIE, &player.cookies)
+            .body(Body::empty())
+            .expect("forbidden audit request");
+        let response = app
+            .clone()
+            .oneshot(forbidden)
+            .await
+            .expect("forbidden audit response");
+        assert_eq!(response.status(), StatusCode::FORBIDDEN);
+
+        let update_error = sqlx::query!("UPDATE audit_log SET action = 'tampered'")
+            .execute(&pool)
+            .await
+            .expect_err("audit update must fail");
+        assert_eq!(
+            update_error
+                .as_database_error()
+                .and_then(sqlx::error::DatabaseError::code)
+                .as_deref(),
+            Some("55000")
+        );
+        sqlx::query!("DELETE FROM audit_log")
+            .execute(&pool)
+            .await
+            .expect_err("audit deletion must fail");
     }
 
     #[sqlx::test(migrator = "MIGRATOR")]
@@ -3664,6 +3798,82 @@ mod tests {
         cookies: String,
         csrf: String,
         user_id: String,
+    }
+
+    async fn setup_test_admin(
+        app: &Router,
+        organization_name: &str,
+        organization_slug: &str,
+        display_name: &str,
+        email: &str,
+    ) -> TestPlayerSession {
+        let request = Request::builder()
+            .method("POST")
+            .uri("/api/v1/setup")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "organization_name": organization_name,
+                    "organization_slug": organization_slug,
+                    "display_name": display_name,
+                    "email": email,
+                    "password": "correct horse foxfire battery"
+                })
+                .to_string(),
+            ))
+            .expect("setup test admin request");
+        let response = app
+            .clone()
+            .oneshot(request)
+            .await
+            .expect("setup test admin response");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let cookies = response_cookies(response.headers());
+        let session = response_json(response).await;
+        TestPlayerSession {
+            cookies,
+            csrf: session["csrf_token"]
+                .as_str()
+                .expect("admin CSRF")
+                .to_owned(),
+            user_id: session["user"]["id"].as_str().expect("admin ID").to_owned(),
+        }
+    }
+
+    async fn create_test_event(
+        app: &Router,
+        admin: &TestPlayerSession,
+        name: &str,
+        slug: &str,
+    ) -> serde_json::Value {
+        let request = Request::builder()
+            .method("POST")
+            .uri("/api/v1/events")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin.cookies)
+            .header("x-csrf-token", &admin.csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "name": name,
+                    "slug": slug,
+                    "description": "A test event with a complete audit trail.",
+                    "state": "draft",
+                    "participation": "individual",
+                    "modes": ["jeopardy"],
+                    "starts_at": null,
+                    "ends_at": null,
+                    "team_size_limit": null
+                })
+                .to_string(),
+            ))
+            .expect("create test event request");
+        let response = app
+            .clone()
+            .oneshot(request)
+            .await
+            .expect("create test event response");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        response_json(response).await
     }
 
     async fn register_test_player(
