@@ -16,10 +16,13 @@ import type {
   ManagedPermission,
   ManagedRole,
   ManagedUser,
+  OAuthClient,
+  OidcProvider,
   PasskeySummary,
   ReadinessSummary,
   ScoreHistory,
   Scoreboard,
+  SamlProvider,
   Session,
   SessionSummary,
   TeamSummary
@@ -386,5 +389,31 @@ export async function getServerAuditBootstrap(): Promise<AuditBootstrap> {
   return {
     error: result.data ? null : 'Audit history could not be loaded.',
     page: result.data ?? null
+  };
+}
+
+export interface SettingsBootstrap {
+  error: string | null;
+  oauthClients: OAuthClient[];
+  oidcProviders: OidcProvider[];
+  samlProviders: SamlProvider[];
+}
+
+export async function getServerSettingsBootstrap(): Promise<SettingsBootstrap> {
+  const client = await getServerClient();
+  const [oauthResult, oidcResult, samlResult] = await Promise.all([
+    client.GET('/api/v1/auth/oauth-clients'),
+    client.GET('/api/v1/auth/oidc/providers'),
+    client.GET('/api/v1/auth/saml/providers')
+  ]);
+
+  return {
+    error:
+      oauthResult.data && oidcResult.data && samlResult.data
+        ? null
+        : 'Platform settings could not be loaded.',
+    oauthClients: oauthResult.data ?? [],
+    oidcProviders: oidcResult.data ?? [],
+    samlProviders: samlResult.data ?? []
   };
 }

@@ -49,7 +49,8 @@
   - [x] Add SSR account, role, permission, and scoped-grant administration.
   - [x] Add SSR audit history with exact filters, inspection, refresh, and
         cursor pagination.
-  - [ ] Complete organizer automation and settings routes.
+  - [x] Add SSR OAuth-client and identity-provider settings.
+  - [ ] Complete the organizer automation route.
 - [ ] Port generated OpenAPI access and preserve authenticated realtime
       invalidation without introducing an unapproved dependency.
   - [x] Bootstrap the authenticated session, event catalog, selected event, and
