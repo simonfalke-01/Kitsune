@@ -50,7 +50,8 @@
   - [x] Add SSR audit history with exact filters, inspection, refresh, and
         cursor pagination.
   - [x] Add SSR OAuth-client and identity-provider settings.
-  - [ ] Complete the organizer automation route.
+  - [x] Add the organizer automation graph with local validation, reordering,
+        dry-run traces, and JSON review.
 - [ ] Port generated OpenAPI access and preserve authenticated realtime
       invalidation without introducing an unapproved dependency.
   - [x] Bootstrap the authenticated session, event catalog, selected event, and
@@ -59,7 +60,7 @@
         routes.
 - [x] Rebuild score history from approved primitives with a bounded accessible
       fallback and no chart dependency.
-- [ ] Rebuild the automation DAG from approved primitives; stop before adding
+- [x] Rebuild the automation DAG from approved primitives; stop before adding
       any dependency outside the locked stack.
 - [ ] Keep the mascot slot visually empty; do not ship generated or placeholder
       character artwork.

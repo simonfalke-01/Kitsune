@@ -14,8 +14,8 @@ Updated: 2026-07-23 (Asia/Singapore)
   server-rendered route output, Next-native metadata and rewrites, React Aria
   router integration, a development-only `/_kitchen` route excluded from
   production navigation, and no client router or non-table TanStack dependency.
-- In progress: rebuild the organizer automation route from approved primitives
-  while continuing the caption, icon, density, and interaction audit.
+- In progress: continue the caption, icon, density, and interaction audit across
+  the complete player, account, and organizer route set.
 - Completed: the first application slice now has a server-authenticated platform
   layout, request-cookie event selection, SSR event/challenge bootstrap, staged
   local/MFA sign-in, compact challenge search, and idempotent answer submission.
@@ -48,6 +48,9 @@ Updated: 2026-07-23 (Asia/Singapore)
 - Completed: platform settings now server-renders OAuth clients and OIDC/SAML
   providers with scoped client creation, one-time secret reveal, revocation, and
   provider availability controls.
+- Completed: the organizer automation route now provides a dependency-free typed
+  graph draft, sequential edge editor, validation, deterministic dry-run trace,
+  and JSON review while clearly holding persistence behind the missing API.
 - Verified: `/login` and `/_kitchen` return 200 in development, `/` safely sends
   unauthenticated or API-unavailable requests to sign-in, and the Next route
   manifest marks `/challenges` as request-time server rendered.
@@ -65,7 +68,8 @@ Updated: 2026-07-23 (Asia/Singapore)
 - Interaction review: toast insertion is browser-verified at zero and
   intermediate frames with a 260 ms translate/opacity transition; rapid queue
   updates retain three visible toasts without runtime errors.
-- Next: implement the organizer automation graph without adding dependencies.
+- Next: finish the cross-route interaction audit and remaining responsive and
+  accessibility regression coverage.
 
 ## Verified
 
@@ -107,6 +111,8 @@ Updated: 2026-07-23 (Asia/Singapore)
 - Platform settings passes the token scan, formatter, ESLint, strict TypeScript,
   nine Vitest assertions, production build, authenticated SSR inventory smoke,
   and a disposable OAuth-client creation and revocation lifecycle.
+- Automation passes the token scan, formatter, ESLint, strict TypeScript, eleven
+  Vitest assertions, production build, and authenticated SSR empty-state smoke.
 - Core workspace format, 17 domain tests, and strict workspace Clippy pass.
 - PostgreSQL 17 migration applies from empty state; SQLx compile-time query
   metadata is checked in; transactional audit/outbox/idempotency test passes.
