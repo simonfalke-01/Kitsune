@@ -11,6 +11,10 @@ import type {
   EventRegistration,
   EventSummary,
   HealthSummary,
+  ManagedGrant,
+  ManagedPermission,
+  ManagedRole,
+  ManagedUser,
   PasskeySummary,
   ReadinessSummary,
   ScoreHistory,
@@ -331,5 +335,34 @@ export async function getServerAdminBootstrap(): Promise<AdminBootstrap> {
       healthResult.data && readinessResult.data ? null : 'Platform health could not be loaded.',
     health: healthResult.data ?? null,
     readiness: readinessResult.data ?? null
+  };
+}
+
+export interface AccessBootstrap {
+  error: string | null;
+  grants: ManagedGrant[];
+  permissions: ManagedPermission[];
+  roles: ManagedRole[];
+  users: ManagedUser[];
+}
+
+export async function getServerAccessBootstrap(): Promise<AccessBootstrap> {
+  const client = await getServerClient();
+  const [userResult, roleResult, grantResult, permissionResult] = await Promise.all([
+    client.GET('/api/v1/admin/users'),
+    client.GET('/api/v1/admin/roles'),
+    client.GET('/api/v1/admin/role-grants'),
+    client.GET('/api/v1/admin/permissions')
+  ]);
+
+  return {
+    error:
+      userResult.data && roleResult.data && grantResult.data && permissionResult.data
+        ? null
+        : 'Access inventory could not be loaded.',
+    grants: grantResult.data ?? [],
+    permissions: permissionResult.data ?? [],
+    roles: roleResult.data ?? [],
+    users: userResult.data ?? []
   };
 }
