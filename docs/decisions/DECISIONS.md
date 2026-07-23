@@ -274,3 +274,13 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Compare persisted timestamps at PostgreSQL's microsecond
   precision in repository tests — the database intentionally rounds Rust's
   nanosecond values, so tests assert the real storage contract across platforms.
+- 2026-07-23 — Verify dynamic-instance answers inside the challenge transaction
+  against a digest on the exact unexpired user/team lease — flag rotation,
+  idempotency, first blood, and scoring remain one consistency boundary without
+  holding a database lock across an orchestrator network call.
+- 2026-07-23 — Require dynamic and manual challenges to use exactly one matching
+  privileged verifier — an authored static or choice rule cannot bypass the
+  identity-bound flag issuer or organizer-review boundary.
+- 2026-07-23 — Treat ready and temporarily unhealthy instance leases as valid
+  flag issuers until expiry — a player who recovered a legitimate flag is not
+  denied merely because the service health probe changed after exploitation.

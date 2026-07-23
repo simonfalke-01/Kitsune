@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO instances (\n                id,event_id,challenge_id,team_id,user_id,orchestrator,provider_id,\n                template,state,connection,idempotency_key,expires_at,created_at,\n                updated_at,flag_digest,flag_generation,flag_rotated_at\n            ) VALUES ($1,$2,$3,NULL,$4,$5,$6,$7,'ready',$8,$9,$10,$11,$11,$12,1,$11)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Jsonb",
+        "Uuid",
+        "Timestamptz",
+        "Timestamptz",
+        "Bytea"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "abb05e1885209d7fb133ca1891c0db318c200dd83ee2ed2c80d0f0f45be5eb30"
+}

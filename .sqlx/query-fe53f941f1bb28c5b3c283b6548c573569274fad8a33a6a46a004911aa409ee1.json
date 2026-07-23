@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT flag_digest\n        FROM instances\n        WHERE event_id = $1\n          AND challenge_id = $2\n          AND user_id IS NOT DISTINCT FROM $3\n          AND team_id IS NOT DISTINCT FROM $4\n          AND state IN ('ready', 'unhealthy')\n          AND flag_digest IS NOT NULL\n          AND expires_at > $5\n        ORDER BY updated_at DESC\n        LIMIT 1\n        FOR SHARE\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "flag_digest",
+        "type_info": "Bytea"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      true
+    ]
+  },
+  "hash": "fe53f941f1bb28c5b3c283b6548c573569274fad8a33a6a46a004911aa409ee1"
+}

@@ -65,6 +65,15 @@ review projection decrypts in memory. Acceptance locks the challenge and pending
 submission in the same order as automatic solves, then reuses the deterministic
 solve, first-blood, score-ledger, audit, and outbox path.
 
+Dynamic challenge instances bind to exactly one event competitor with a
+null-safe active-lease uniqueness constraint. Issued high-entropy flags are
+represented in PostgreSQL only by fixed-length SHA-256 digests and a monotonic
+generation. Submission resolves the authoritative user/team competitor and
+constant-time verifies against its unexpired ready or unhealthy lease inside
+the same challenge transaction used for solve and score writes. Provisioning
+and rotation remain orchestrator operations, so no database lock is held while
+calling Kubernetes, Docker/Podman, or Nomad.
+
 ## Security boundaries
 
 HTTP authorization is deny-by-default and evaluated using org/event-scoped RBAC.

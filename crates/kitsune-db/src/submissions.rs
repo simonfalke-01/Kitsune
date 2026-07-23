@@ -5,7 +5,9 @@ use std::collections::{BTreeMap, BTreeSet};
 use chrono::{DateTime, Utc};
 use kitsune_core::{
     DomainError, DomainResult, EventEnvelope,
-    challenge::{AnswerOutcome, AnswerRule, VisibilityRule},
+    challenge::{
+        AnswerOutcome, AnswerRule, ChallengeKind, VisibilityRule, validate_answer_contract,
+    },
     events::{DomainEvent, SubmissionOutcome},
     identity::{ChallengeId, DivisionId, EventId, OrganizationId, SubmissionId, TeamId, UserId},
     scoring::{CompetitorId, ScoreReason, ScoringRule, ScoringStrategy},
@@ -13,6 +15,7 @@ use kitsune_core::{
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use sqlx::{PgPool, Postgres, Transaction};
+use subtle::ConstantTimeEq;
 use uuid::Uuid;
 
 use crate::resources::persist_audit_event;
@@ -332,7 +335,15 @@ impl SubmissionRepository {
         let failed_attempts = failed_attempts(&mut tx, command.challenge_id, competitor).await?;
         let attempts_remaining = remaining_attempts(challenge.max_attempts, failed_attempts)?;
         let answer_rules = load_answer_rules(&mut tx, command.challenge_id).await?;
-        let outcome = evaluate_answer(&answer_rules, command.answer)?;
+        let outcome = evaluate_answer(
+            &mut tx,
+            scope,
+            competitor,
+            &challenge,
+            &answer_rules,
+            command.answer,
+        )
+        .await?;
         if outcome == SubmissionOutcome::Pending
             && competitor_has_pending(&mut tx, command.challenge_id, competitor).await?
         {
@@ -955,6 +966,7 @@ impl SubmissionRepository {
 
 struct LockedChallenge {
     state: String,
+    kind: serde_json::Value,
     scoring: serde_json::Value,
     visibility: serde_json::Value,
     max_attempts: Option<i32>,
@@ -1058,7 +1070,7 @@ async fn lock_challenge(
 ) -> DomainResult<LockedChallenge> {
     let row = sqlx::query!(
         r#"
-        SELECT c.state,c.scoring,c.visibility,c.max_attempts,
+        SELECT c.state,c.kind,c.scoring,c.visibility,c.max_attempts,
                e.state AS event_state,e.participation,e.scoreboard_frozen,
                e.starts_at,e.ends_at,e.team_size_limit,
                COALESCE((e.config->>'first_blood_bonus')::bigint, $4) AS "first_blood_bonus!"
@@ -1078,6 +1090,7 @@ async fn lock_challenge(
     .ok_or(DomainError::NotFound)?;
     Ok(LockedChallenge {
         state: row.state,
+        kind: row.kind,
         scoring: row.scoring,
         visibility: row.visibility,
         max_attempts: row.max_attempts,
@@ -1097,7 +1110,7 @@ async fn read_challenge(
 ) -> DomainResult<LockedChallenge> {
     let row = sqlx::query!(
         r#"
-        SELECT c.state,c.scoring,c.visibility,c.max_attempts,
+        SELECT c.state,c.kind,c.scoring,c.visibility,c.max_attempts,
                e.state AS event_state,e.participation,e.scoreboard_frozen,
                e.starts_at,e.ends_at,e.team_size_limit,
                COALESCE((e.config->>'first_blood_bonus')::bigint, $4) AS "first_blood_bonus!"
@@ -1116,6 +1129,7 @@ async fn read_challenge(
     .ok_or(DomainError::NotFound)?;
     Ok(LockedChallenge {
         state: row.state,
+        kind: row.kind,
         scoring: row.scoring,
         visibility: row.visibility,
         max_attempts: row.max_attempts,
@@ -1422,22 +1436,79 @@ async fn hint_records(
         .collect()
 }
 
-fn evaluate_answer(rules: &[AnswerRule], answer: &str) -> DomainResult<SubmissionOutcome> {
+async fn evaluate_answer(
+    tx: &mut Transaction<'_, Postgres>,
+    scope: GameplayScope,
+    competitor: CompetitorId,
+    challenge: &LockedChallenge,
+    rules: &[AnswerRule],
+    answer: &str,
+) -> DomainResult<SubmissionOutcome> {
+    let kind =
+        serde_json::from_value::<ChallengeKind>(challenge.kind.clone()).map_err(|error| {
+            DomainError::Unavailable(format!("stored challenge type is invalid: {error}"))
+        })?;
+    validate_answer_contract(&kind, rules)?;
+
     let mut pending = false;
     for rule in rules {
         match rule.evaluate(answer)? {
             AnswerOutcome::Correct => return Ok(SubmissionOutcome::Correct),
             AnswerOutcome::PendingReview => pending = true,
             AnswerOutcome::RequiresDynamicVerification => {
-                return Err(DomainError::Unavailable(
-                    "dynamic answer verifier is not enabled".into(),
-                ));
+                return verify_dynamic_answer(tx, scope, competitor, answer).await;
             }
             AnswerOutcome::Incorrect => {}
         }
     }
     Ok(if pending {
         SubmissionOutcome::Pending
+    } else {
+        SubmissionOutcome::Incorrect
+    })
+}
+
+async fn verify_dynamic_answer(
+    tx: &mut Transaction<'_, Postgres>,
+    scope: GameplayScope,
+    competitor: CompetitorId,
+    answer: &str,
+) -> DomainResult<SubmissionOutcome> {
+    let (user_id, team_id) = competitor_columns(competitor);
+    let stored_digest = sqlx::query_scalar!(
+        r#"
+        SELECT flag_digest
+        FROM instances
+        WHERE event_id = $1
+          AND challenge_id = $2
+          AND user_id IS NOT DISTINCT FROM $3
+          AND team_id IS NOT DISTINCT FROM $4
+          AND state IN ('ready', 'unhealthy')
+          AND flag_digest IS NOT NULL
+          AND expires_at > $5
+        ORDER BY updated_at DESC
+        LIMIT 1
+        FOR SHARE
+        "#,
+        scope.event_id.0,
+        scope.challenge_id.0,
+        user_id,
+        team_id,
+        scope.now,
+    )
+    .fetch_optional(&mut **tx)
+    .await
+    .map_err(unavailable)?
+    .flatten()
+    .ok_or_else(|| DomainError::Unavailable("no unexpired challenge instance is ready".into()))?;
+
+    let submitted_digest = Sha256::digest(answer.trim().as_bytes());
+    let accepted = stored_digest
+        .as_slice()
+        .ct_eq(submitted_digest.as_slice())
+        .into();
+    Ok(if accepted {
+        SubmissionOutcome::Correct
     } else {
         SubmissionOutcome::Incorrect
     })

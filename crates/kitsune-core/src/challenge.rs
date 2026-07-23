@@ -361,6 +361,47 @@ impl AnswerRule {
     }
 }
 
+/// Enforces the verifier contract implied by a challenge type.
+///
+/// Dynamic flags and manual evidence are deliberately exclusive so a weaker
+/// static rule cannot bypass their identity or review boundary.
+pub fn validate_answer_contract(kind: &ChallengeKind, rules: &[AnswerRule]) -> DomainResult<()> {
+    if rules.is_empty() {
+        return Err(DomainError::Validation(
+            "at least one answer rule is required".into(),
+        ));
+    }
+
+    match kind {
+        ChallengeKind::DynamicInstance { .. } => {
+            if rules.len() != 1 || !matches!(rules[0], AnswerRule::Dynamic) {
+                return Err(DomainError::Validation(
+                    "dynamic instances require exactly one dynamic answer verifier".into(),
+                ));
+            }
+        }
+        ChallengeKind::ManualVerification => {
+            if rules.len() != 1 || !matches!(rules[0], AnswerRule::Manual) {
+                return Err(DomainError::Validation(
+                    "manual challenges require exactly one manual answer verifier".into(),
+                ));
+            }
+        }
+        _ => {
+            if rules
+                .iter()
+                .any(|rule| matches!(rule, AnswerRule::Dynamic | AnswerRule::Manual))
+            {
+                return Err(DomainError::Validation(
+                    "dynamic and manual verifiers must match their challenge type".into(),
+                ));
+            }
+        }
+    }
+
+    Ok(())
+}
+
 fn answer_digest(answer: &str, case_insensitive: bool) -> [u8; 32] {
     let normalized = if case_insensitive {
         answer.trim().to_lowercase()
@@ -456,6 +497,30 @@ mod tests {
             rule.evaluate("xkit{123}").expect("evaluate"),
             AnswerOutcome::Incorrect
         );
+    }
+
+    #[test]
+    fn privileged_answer_verifiers_cannot_be_mixed_with_weaker_rules() {
+        let dynamic = ChallengeKind::DynamicInstance {
+            template: "web-shell".into(),
+        };
+        assert!(validate_answer_contract(&dynamic, &[AnswerRule::Dynamic]).is_ok());
+        assert!(
+            validate_answer_contract(
+                &dynamic,
+                &[
+                    AnswerRule::Dynamic,
+                    AnswerRule::Choice {
+                        value: "bypass".into(),
+                    },
+                ],
+            )
+            .is_err()
+        );
+
+        let static_flag = ChallengeKind::StaticFlag;
+        assert!(validate_answer_contract(&static_flag, &[AnswerRule::Manual]).is_err());
+        assert!(validate_answer_contract(&ChallengeKind::ManualVerification, &[]).is_err());
     }
 
     #[test]

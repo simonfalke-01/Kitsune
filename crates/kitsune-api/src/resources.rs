@@ -10,7 +10,10 @@ use axum::{
 use chrono::{DateTime, Utc};
 use kitsune_core::{
     Challenge, DomainError, Event,
-    challenge::{AnswerRule, ChallengeKind, ChallengeState, Hint, SurveyQuestion, VisibilityRule},
+    challenge::{
+        AnswerRule, ChallengeKind, ChallengeState, Hint, SurveyQuestion, VisibilityRule,
+        validate_answer_contract,
+    },
     identity::{ChallengeId, DivisionId, EventId, EventState, ParticipationMode},
     scoring::ScoringRule,
 };
@@ -645,11 +648,7 @@ pub(crate) async fn create_challenge(
         .into_iter()
         .map(answer_rule)
         .collect::<Vec<_>>();
-    if answer_rules.is_empty() {
-        return Err(ApiError::from(DomainError::Validation(
-            "at least one answer rule is required".into(),
-        )));
-    }
+    validate_answer_contract(&challenge.kind, &answer_rules).map_err(ApiError::from)?;
     for rule in &answer_rules {
         rule.validate().map_err(ApiError::from)?;
     }

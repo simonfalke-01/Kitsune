@@ -1,15 +1,16 @@
 # Current State
 
-Updated: 2026-07-22 (Asia/Singapore)
+Updated: 2026-07-23 (Asia/Singapore)
 
 ## Cursor
 
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: complete the remaining dynamic-instance and plugin Jeopardy
-  verifier seams.
+- In progress: complete the production instance issuer/rotation repository and
+  then the capability-bound plugin Jeopardy verifier.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
-- Next: implement dynamic-instance answer verification, then plugin verification.
+- Next: expose audited instance lease/rotation operations to orchestrator
+  adapters, then implement plugin verification.
 
 ## Verified
 
@@ -18,7 +19,7 @@ Updated: 2026-07-22 (Asia/Singapore)
   concepts; no source or assets copied.
 - Local toolchain: Rust 1.93.1 default plus Rust 1.97.0 CI-parity
   validation, Node 24.13.0, Corepack 0.34.5, Docker 29.4.0.
-- Core workspace format, 13 domain tests, and strict workspace Clippy pass.
+- Core workspace format, 16 domain tests, and strict workspace Clippy pass.
 - PostgreSQL 17 migration applies from empty state; SQLx compile-time query
   metadata is checked in; transactional audit/outbox/idempotency test passes.
 - Lean cache/EventBus, typed automation DAG validation/execution, centralized
@@ -160,6 +161,14 @@ Updated: 2026-07-22 (Asia/Singapore)
   provisioning/link policy, organizer management, public login discovery,
   generated OpenAPI types, and responsive axe-clean UI are exercised by a real
   signed IdP integration plus the complete desktop/mobile browser journey.
+- Dynamic-instance submission verification now binds the authored dynamic-only
+  policy to the exact unexpired user/team lease, compares only fixed-length flag
+  digests in constant time, and reuses the existing challenge lock, idempotent
+  receipt, solve, first-blood, score, audit, and outbox transaction. Core policy
+  tests and the PostgreSQL-backed API journey cover mixed-policy rejection,
+  missing leases, wrong flags, accepted flags, and plaintext non-persistence.
+- Main CI run 29934247886 is green across Rust, Web, dependency audit, and the
+  complete desktop/mobile Browser E2E journey.
 
 ## Risks being actively retired
 

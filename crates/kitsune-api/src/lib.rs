@@ -1715,6 +1715,186 @@ mod tests {
         assert_eq!(summary["response_count"], 1);
         assert_eq!(summary["questions"][0]["average"], 4.0);
 
+        let invalid_dynamic = Request::builder()
+            .method("POST")
+            .uri(format!("/api/v1/events/{event_id}/challenges"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "name": "Unsafe dynamic verifier",
+                    "category": "Pwn",
+                    "description": "This authoring request must be rejected.",
+                    "kind": {"type": "dynamic_instance", "template": "pwnbox-v1"},
+                    "state": "published",
+                    "scoring": {"kind": "static", "points": 200},
+                    "visibility": {
+                        "visible_from": null,
+                        "visible_until": null,
+                        "division_ids": [],
+                        "prerequisites": []
+                    },
+                    "tags": ["dynamic"],
+                    "max_attempts": 5,
+                    "writeups_enabled": false,
+                    "position": 1,
+                    "answers": [{
+                        "kind": "exact",
+                        "value": "kit{static-bypass}",
+                        "case_insensitive": false
+                    }],
+                    "hints": [],
+                    "survey": []
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        assert_eq!(
+            app.clone()
+                .oneshot(invalid_dynamic)
+                .await
+                .expect("invalid dynamic challenge")
+                .status(),
+            StatusCode::UNPROCESSABLE_ENTITY
+        );
+
+        let create_dynamic = Request::builder()
+            .method("POST")
+            .uri(format!("/api/v1/events/{event_id}/challenges"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "name": "Per-player pwnbox",
+                    "category": "Pwn",
+                    "description": "Outfox an isolated service instance.",
+                    "kind": {"type": "dynamic_instance", "template": "pwnbox-v1"},
+                    "state": "published",
+                    "scoring": {"kind": "static", "points": 200},
+                    "visibility": {
+                        "visible_from": null,
+                        "visible_until": null,
+                        "division_ids": [],
+                        "prerequisites": []
+                    },
+                    "tags": ["dynamic"],
+                    "max_attempts": 5,
+                    "writeups_enabled": false,
+                    "position": 1,
+                    "answers": [{"kind": "dynamic"}],
+                    "hints": [],
+                    "survey": []
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        let response = app
+            .clone()
+            .oneshot(create_dynamic)
+            .await
+            .expect("create dynamic challenge");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("body")
+            .to_bytes();
+        let dynamic_challenge: serde_json::Value =
+            serde_json::from_slice(&body).expect("dynamic challenge");
+        let dynamic_challenge_id = dynamic_challenge["id"]
+            .as_str()
+            .expect("dynamic challenge id");
+        let dynamic_path =
+            format!("/api/v1/events/{event_id}/challenges/{dynamic_challenge_id}/submissions");
+        let unavailable_submission = Request::builder()
+            .method("POST")
+            .uri(&dynamic_path)
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "idempotency_key": Uuid::now_v7(),
+                    "answer": "kit{not-issued-yet}"
+                })
+                .to_string(),
+            ))
+            .expect("request");
+        assert_eq!(
+            app.clone()
+                .oneshot(unavailable_submission)
+                .await
+                .expect("unavailable dynamic verifier")
+                .status(),
+            StatusCode::SERVICE_UNAVAILABLE
+        );
+
+        let dynamic_flag = "kit{player-bound-foxfire-6d83619d}";
+        let flag_digest = Sha256::digest(dynamic_flag.as_bytes()).to_vec();
+        let now = Utc::now();
+        sqlx::query!(
+            r#"
+            INSERT INTO instances (
+                id,event_id,challenge_id,team_id,user_id,orchestrator,provider_id,
+                template,state,connection,idempotency_key,expires_at,created_at,
+                updated_at,flag_digest,flag_generation,flag_rotated_at
+            ) VALUES ($1,$2,$3,NULL,$4,$5,$6,$7,'ready',$8,$9,$10,$11,$11,$12,1,$11)
+            "#,
+            Uuid::now_v7(),
+            Uuid::parse_str(event_id).expect("event UUID"),
+            Uuid::parse_str(dynamic_challenge_id).expect("challenge UUID"),
+            Uuid::parse_str(player_id).expect("player UUID"),
+            "test-fixture",
+            "fixture-instance",
+            "pwnbox-v1",
+            serde_json::json!({"protocol": "https", "host": "instance.example.test"}),
+            Uuid::now_v7(),
+            now + chrono::Duration::minutes(30),
+            now,
+            flag_digest,
+        )
+        .execute(&pool)
+        .await
+        .expect("ready dynamic instance");
+
+        for (answer, expected) in [
+            ("kit{someone-elses-flag}", "incorrect"),
+            (dynamic_flag, "correct"),
+        ] {
+            let submission = Request::builder()
+                .method("POST")
+                .uri(&dynamic_path)
+                .header(header::CONTENT_TYPE, "application/json")
+                .header(header::COOKIE, &player_cookies)
+                .header("x-csrf-token", player_csrf)
+                .body(Body::from(
+                    serde_json::json!({
+                        "idempotency_key": Uuid::now_v7(),
+                        "answer": answer
+                    })
+                    .to_string(),
+                ))
+                .expect("request");
+            let response = app
+                .clone()
+                .oneshot(submission)
+                .await
+                .expect("dynamic submission");
+            assert_eq!(response.status(), StatusCode::OK);
+            let body = response
+                .into_body()
+                .collect()
+                .await
+                .expect("body")
+                .to_bytes();
+            let receipt: serde_json::Value =
+                serde_json::from_slice(&body).expect("dynamic receipt");
+            assert_eq!(receipt["outcome"], expected);
+        }
+
         let create_manual = Request::builder()
             .method("POST")
             .uri(format!("/api/v1/events/{event_id}/challenges"))
@@ -1882,8 +2062,8 @@ mod tests {
             .to_bytes();
         let board: serde_json::Value = serde_json::from_slice(&body).expect("scoreboard");
         assert_eq!(board["rows"][0]["name"], "Player");
-        assert_eq!(board["rows"][0]["score"], 890);
-        assert_eq!(board["rows"][0]["solves"], 2);
+        assert_eq!(board["rows"][0]["score"], 1140);
+        assert_eq!(board["rows"][0]["solves"], 3);
 
         let score_history = Request::builder()
             .uri(format!("/api/v1/events/{event_id}/score-history"))
@@ -1908,9 +2088,9 @@ mod tests {
                 .as_array()
                 .expect("history points")
                 .len(),
-            5
+            7
         );
-        assert_eq!(history["series"][0]["points"][4]["score"], 890);
+        assert_eq!(history["series"][0]["points"][6]["score"], 1140);
 
         let hide_scoreboard = Request::builder()
             .method("PATCH")
@@ -2019,7 +2199,7 @@ mod tests {
             .to_bytes();
         let frozen_public: serde_json::Value =
             serde_json::from_slice(&body).expect("frozen public board");
-        assert_eq!(frozen_public["rows"][0]["score"], 890);
+        assert_eq!(frozen_public["rows"][0]["score"], 1140);
 
         let frozen_admin_board = Request::builder()
             .uri(format!("/api/v1/events/{event_id}/scoreboard"))
@@ -2039,7 +2219,7 @@ mod tests {
             .to_bytes();
         let frozen_admin: serde_json::Value =
             serde_json::from_slice(&body).expect("frozen admin board");
-        assert_eq!(frozen_admin["rows"][0]["score"], 990);
+        assert_eq!(frozen_admin["rows"][0]["score"], 1240);
 
         let forbidden = Request::builder()
             .method("POST")
@@ -2078,10 +2258,11 @@ mod tests {
                 .fetch_all(&pool)
                 .await
                 .expect("submission digests");
-        assert_eq!(submitted_digests.len(), 3);
+        assert_eq!(submitted_digests.len(), 5);
         assert!(submitted_digests.iter().flatten().all(|digest| {
             digest.as_slice() != b"kit{never-persist-plaintext}"
                 && digest.as_slice() != b"kit{wrong-trail}"
+                && digest.as_slice() != dynamic_flag.as_bytes()
         }));
         let audit_count = sqlx::query_scalar!("SELECT count(*) AS \"count!\" FROM audit_log")
             .fetch_one(&pool)
@@ -2091,8 +2272,8 @@ mod tests {
             .fetch_one(&pool)
             .await
             .expect("outbox count");
-        assert_eq!(audit_count, 29);
-        assert_eq!(outbox_count, 29);
+        assert_eq!(audit_count, 35);
+        assert_eq!(outbox_count, 35);
     }
 
     fn response_cookies(headers: &axum::http::HeaderMap) -> String {
