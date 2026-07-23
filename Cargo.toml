@@ -92,3 +92,14 @@ missing_panics_doc = "allow"
 needless_pass_by_value = "allow"
 struct_excessive_bools = "allow"
 too_many_lines = "allow"
+
+# CI and local builds compile Wasmtime, SQLx, and every adapter together. Debug
+# symbols and incremental caches multiply that graph until hosted runners run
+# out of storage without improving test fidelity.
+[profile.dev]
+debug = 0
+incremental = false
+
+[profile.test]
+debug = 0
+incremental = false

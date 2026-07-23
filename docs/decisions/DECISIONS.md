@@ -398,3 +398,7 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-23 — Page audit history by the descending `(occurred_at, id)` tuple and
   allow only bounded exact-match filters — investigation results remain stable
   under concurrent writes and query cost stays predictable as the trail grows.
+- 2026-07-23 — Disable debug symbols and incremental artifacts in repository
+  development/test profiles — the all-feature Wasmtime/SQLx adapter graph
+  otherwise exhausts hosted-runner storage after successful quality gates, while
+  neither artifact class changes compile checks or test behavior.

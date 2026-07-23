@@ -270,8 +270,8 @@ Updated: 2026-07-23 (Asia/Singapore)
 - Main CI run 29975439643 passed Browser E2E, Web, dependency audit, strict Rust
   Clippy, OpenAPI drift, and the full all-feature Rust suite. Its Rust job was
   marked failed only when the cache post-job exhausted runner disk after those
-  gates; the pinned-toolchain, no-debug/incremental, registry-only-cache cleanup
-  fix is staged for the next run.
+  gates; repository-wide no-debug/non-incremental development and test profiles
+  now bound artifact storage without requiring privileged workflow-file access.
 - Main CI run 29974725515 exposed GitHub runner storage admission when two test
   JetStreams each reserved the one-gigabyte production limit. Stream retention
   is now an explicit validated adapter configuration; production retains its
