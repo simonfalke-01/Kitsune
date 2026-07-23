@@ -1,6 +1,60 @@
 {
   "components": {
     "schemas": {
+      "AdminMemberTransferRequest": {
+        "description": "Organizer request to move a member between teams.",
+        "properties": {
+          "replacement_captain_id": {
+            "description": "Required successor when the member currently captains the source team.",
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "target_team_id": {
+            "description": "Team receiving the member.",
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_team_id"
+        ],
+        "type": "object"
+      },
+      "AdminMemberTransferResponse": {
+        "description": "Both rosters after an organizer member transfer.",
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/TeamResponse",
+            "description": "Source roster after transfer."
+          },
+          "target": {
+            "$ref": "#/components/schemas/TeamResponse",
+            "description": "Target roster after transfer."
+          }
+        },
+        "required": [
+          "source",
+          "target"
+        ],
+        "type": "object"
+      },
+      "AdminTeamMergeRequest": {
+        "description": "Organizer request to merge a source team into a surviving target.",
+        "properties": {
+          "target_team_id": {
+            "description": "Surviving team that receives the source roster and history.",
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "target_team_id"
+        ],
+        "type": "object"
+      },
       "AnswerInput": {
         "description": "Author-submitted answer rule. Exact plaintext is digested before storage.",
         "oneOf": [
@@ -3006,6 +3060,243 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/admin/teams": {
+      "get": {
+        "operationId": "list_admin_teams",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TeamResponse"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "team administration"
+        ]
+      }
+    },
+    "/api/v1/admin/teams/{source_team_id}/members/{user_id}/transfer": {
+      "post": {
+        "operationId": "transfer_member_admin",
+        "parameters": [
+          {
+            "description": "Source team ID",
+            "in": "path",
+            "name": "source_team_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Member user ID",
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminMemberTransferRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMemberTransferResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "team administration"
+        ]
+      }
+    },
+    "/api/v1/admin/teams/{source_team_id}/merge": {
+      "post": {
+        "operationId": "merge_team_admin",
+        "parameters": [
+          {
+            "description": "Source team ID",
+            "in": "path",
+            "name": "source_team_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminTeamMergeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TeamResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "team administration"
+        ]
+      }
+    },
     "/api/v1/auth/email/verify": {
       "post": {
         "operationId": "verify_email",
@@ -7379,6 +7670,10 @@
     {
       "description": "Player teams and captain controls",
       "name": "teams"
+    },
+    {
+      "description": "Organizer team transfer and merge controls",
+      "name": "team administration"
     }
   ]
 }

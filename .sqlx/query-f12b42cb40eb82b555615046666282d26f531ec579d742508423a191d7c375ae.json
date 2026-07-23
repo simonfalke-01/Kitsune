@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM attack_defense_flags source_row\n        WHERE source_row.team_id = $1\n          AND EXISTS (\n              SELECT 1 FROM attack_defense_flags target_row\n              WHERE target_row.team_id = $2\n                AND target_row.event_id = source_row.event_id\n                AND target_row.tick = source_row.tick\n                AND target_row.service = source_row.service\n          )\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f12b42cb40eb82b555615046666282d26f531ec579d742508423a191d7c375ae"
+}

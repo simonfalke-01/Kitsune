@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO survey_responses (\n                    id,challenge_id,team_id,answers,submitted_at\n                ) VALUES ($1,$2,$3,'{\"difficulty\":4}',$4)\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "300badf2086f99ba52907600dabcf7e35586d0c1be0b979781902d89a9cd5138"
+}

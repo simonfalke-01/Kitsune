@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO score_entries (\n                    event_id,sequence,team_id,points,reason,occurred_at\n                ) VALUES ($1,$2,$3,$4,'{\"adjustment\":{\"note\":\"history\"}}',$5)\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int8",
+        "Uuid",
+        "Int8",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "226ddf58ac65dec95679461447552a89ae20266c5e0834ad8ddd859135a23c5d"
+}

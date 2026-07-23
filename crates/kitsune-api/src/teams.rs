@@ -11,6 +11,7 @@ use kitsune_core::{
     DomainError,
     identity::{BracketId, DivisionId, EventId, TeamId, UserId},
 };
+use kitsune_db::team_admin::{TeamAdminRepository, TransferMember};
 use kitsune_db::teams::{EventRegistrationRecord, TeamMemberRecord, TeamRecord, TeamRepository};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -115,6 +116,31 @@ pub struct EventRegistrationStatusResponse {
     pub registration: Option<EventRegistrationResponse>,
 }
 
+/// Organizer request to move a member between teams.
+#[derive(Deserialize, ToSchema)]
+pub struct AdminMemberTransferRequest {
+    /// Team receiving the member.
+    pub target_team_id: Uuid,
+    /// Required successor when the member currently captains the source team.
+    pub replacement_captain_id: Option<Uuid>,
+}
+
+/// Both rosters after an organizer member transfer.
+#[derive(Serialize, ToSchema)]
+pub struct AdminMemberTransferResponse {
+    /// Source roster after transfer.
+    pub source: TeamResponse,
+    /// Target roster after transfer.
+    pub target: TeamResponse,
+}
+
+/// Organizer request to merge a source team into a surviving target.
+#[derive(Deserialize, ToSchema)]
+pub struct AdminTeamMergeRequest {
+    /// Surviving team that receives the source roster and history.
+    pub target_team_id: Uuid,
+}
+
 #[utoipa::path(
     get,
     path = "/api/v1/teams",
@@ -138,6 +164,120 @@ pub(crate) async fn list_teams(
         .await
         .map_err(ApiError::from)?;
     Ok(Json(teams.into_iter().map(TeamResponse::from).collect()))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/admin/teams",
+    tag = "team administration",
+    responses(
+        (status = 200, body = [TeamResponse]),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody)
+    )
+)]
+pub(crate) async fn list_admin_teams(
+    State(state): State<AppState>,
+    actor: Actor,
+) -> ApiResult<Json<Vec<TeamResponse>>> {
+    actor.require("team_manage")?;
+    let teams = TeamRepository::new(state.db.pool().clone())
+        .all(actor.session.account.organization_id)
+        .await
+        .map_err(ApiError::from)?;
+    Ok(Json(teams.into_iter().map(TeamResponse::from).collect()))
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/admin/teams/{source_team_id}/members/{user_id}/transfer",
+    tag = "team administration",
+    params(
+        ("source_team_id" = Uuid, Path, description = "Source team ID"),
+        ("user_id" = Uuid, Path, description = "Member user ID")
+    ),
+    request_body = AdminMemberTransferRequest,
+    responses(
+        (status = 200, body = AdminMemberTransferResponse),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody),
+        (status = 409, body = ErrorBody),
+        (status = 422, body = ErrorBody)
+    )
+)]
+pub(crate) async fn transfer_member_admin(
+    State(state): State<AppState>,
+    actor: Actor,
+    headers: HeaderMap,
+    Path((source_team_id, user_id)): Path<(Uuid, Uuid)>,
+    Json(request): Json<AdminMemberTransferRequest>,
+) -> ApiResult<Json<AdminMemberTransferResponse>> {
+    actor.require("team_manage")?;
+    actor.require_csrf(&headers)?;
+    let result = TeamAdminRepository::new(state.db.pool().clone())
+        .transfer_member(TransferMember {
+            organization_id: actor.session.account.organization_id,
+            source_team_id: TeamId(source_team_id),
+            target_team_id: TeamId(request.target_team_id),
+            member_id: UserId(user_id),
+            replacement_captain_id: request.replacement_captain_id.map(UserId),
+            actor: actor.session.account.user_id,
+            now: Utc::now(),
+        })
+        .await
+        .map_err(ApiError::from)?;
+    state
+        .event_bus
+        .publish(result.event)
+        .await
+        .map_err(ApiError::from)?;
+    Ok(Json(AdminMemberTransferResponse {
+        source: result.source.into(),
+        target: result.target.into(),
+    }))
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/v1/admin/teams/{source_team_id}/merge",
+    tag = "team administration",
+    params(("source_team_id" = Uuid, Path, description = "Source team ID")),
+    request_body = AdminTeamMergeRequest,
+    responses(
+        (status = 200, body = TeamResponse),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody),
+        (status = 409, body = ErrorBody),
+        (status = 422, body = ErrorBody)
+    )
+)]
+pub(crate) async fn merge_team_admin(
+    State(state): State<AppState>,
+    actor: Actor,
+    headers: HeaderMap,
+    Path(source_team_id): Path<Uuid>,
+    Json(request): Json<AdminTeamMergeRequest>,
+) -> ApiResult<Json<TeamResponse>> {
+    actor.require("team_manage")?;
+    actor.require_csrf(&headers)?;
+    let result = TeamAdminRepository::new(state.db.pool().clone())
+        .merge(
+            actor.session.account.organization_id,
+            TeamId(source_team_id),
+            TeamId(request.target_team_id),
+            actor.session.account.user_id,
+            Utc::now(),
+        )
+        .await
+        .map_err(ApiError::from)?;
+    state
+        .event_bus
+        .publish(result.event)
+        .await
+        .map_err(ApiError::from)?;
+    Ok(Json(result.target.into()))
 }
 
 #[utoipa::path(

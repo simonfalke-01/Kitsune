@@ -109,6 +109,17 @@ pub enum DomainEvent {
     TeamCreated { team_id: TeamId },
     /// Team membership changed.
     TeamMembershipChanged { team_id: TeamId, user_id: UserId },
+    /// An organizer transferred a member between teams.
+    TeamMemberTransferred {
+        user_id: UserId,
+        source_team_id: TeamId,
+        target_team_id: TeamId,
+    },
+    /// An organizer merged one team and its historical ownership into another.
+    TeamMerged {
+        source_team_id: TeamId,
+        target_team_id: TeamId,
+    },
     /// Team configuration changed without exposing its secret material.
     TeamChanged { team_id: TeamId, change: String },
     /// A user or team registration changed for an event.
@@ -206,6 +217,8 @@ impl DomainEvent {
             Self::EventChanged { .. } => "event.changed",
             Self::TeamCreated { .. } => "identity.team.created",
             Self::TeamMembershipChanged { .. } => "identity.team.membership_changed",
+            Self::TeamMemberTransferred { .. } => "identity.team.member_transferred",
+            Self::TeamMerged { .. } => "identity.team.merged",
             Self::TeamChanged { .. } => "identity.team.changed",
             Self::EventRegistrationChanged { .. } => "event.registration.changed",
             Self::ChallengeChanged { .. } => "challenge.changed",

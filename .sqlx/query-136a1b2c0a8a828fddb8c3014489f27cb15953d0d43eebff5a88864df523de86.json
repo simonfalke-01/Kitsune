@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE survey_responses SET team_id = $1 WHERE team_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "136a1b2c0a8a828fddb8c3014489f27cb15953d0d43eebff5a88864df523de86"
+}

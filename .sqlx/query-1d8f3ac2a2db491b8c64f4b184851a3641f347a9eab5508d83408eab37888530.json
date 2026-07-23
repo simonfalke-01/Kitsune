@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE score_entries SET team_id = $1 WHERE team_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "1d8f3ac2a2db491b8c64f4b184851a3641f347a9eab5508d83408eab37888530"
+}

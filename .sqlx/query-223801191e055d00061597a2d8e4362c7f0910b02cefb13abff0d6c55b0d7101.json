@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE team_members\n            SET team_id = $1, captain = false\n            WHERE team_id = $2 AND user_id = $3\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "223801191e055d00061597a2d8e4362c7f0910b02cefb13abff0d6c55b0d7101"
+}

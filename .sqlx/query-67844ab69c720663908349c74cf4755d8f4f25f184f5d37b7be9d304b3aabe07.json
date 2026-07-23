@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO challenge_hints (challenge_id,id,content,cost)\n            VALUES ($1,1,'A historical hint',10)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "67844ab69c720663908349c74cf4755d8f4f25f184f5d37b7be9d304b3aabe07"
+}

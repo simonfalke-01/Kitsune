@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE hint_unlocks SET team_id = $1 WHERE team_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "f3c08840af5447d59a3e9bba156d348289cb7f2d13796b3c92c21dad892ab6f9"
+}

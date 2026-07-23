@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT EXISTS(\n            SELECT 1\n            FROM event_participants participant\n            JOIN events event ON event.id = participant.event_id\n            WHERE participant.team_id = ANY($1)\n              AND event.state NOT IN ('ended','archived')\n              AND event.team_size_limit IS NOT NULL\n              AND $2::bigint > event.team_size_limit::bigint\n        ) AS \"exists!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "0f24685e91b176fb0b94df180d1d283024f89499378eb1aedb9eb3ffd5a092b7"
+}

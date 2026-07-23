@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE writeups SET team_id = $1 WHERE team_id = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "2e87659cc39462471aed9c416741f0a89b09e7a6e022dc60dd96593a71b76dd2"
+}

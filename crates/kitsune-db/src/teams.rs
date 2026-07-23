@@ -100,6 +100,32 @@ impl TeamRepository {
         Ok(records)
     }
 
+    /// Lists every team in an organization for authorized administration.
+    pub async fn all(&self, organization_id: OrganizationId) -> DomainResult<Vec<TeamRecord>> {
+        let teams = sqlx::query!(
+            r#"
+            SELECT id,name,created_at
+            FROM teams
+            WHERE organization_id = $1
+            ORDER BY name,id
+            "#,
+            organization_id.0,
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(unavailable)?;
+        let mut records = Vec::with_capacity(teams.len());
+        for team in teams {
+            records.push(TeamRecord {
+                id: team.id,
+                name: team.name,
+                created_at: team.created_at,
+                members: self.members(organization_id, TeamId(team.id)).await?,
+            });
+        }
+        Ok(records)
+    }
+
     /// Creates a team with the creator as its sole captain.
     pub async fn create(
         &self,
@@ -575,7 +601,7 @@ impl TeamRepository {
         Ok((record, envelope))
     }
 
-    async fn one(
+    pub(crate) async fn one(
         &self,
         organization_id: OrganizationId,
         team_id: TeamId,

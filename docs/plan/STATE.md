@@ -5,13 +5,12 @@ Updated: 2026-07-23 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: complete administrator team merge and cross-team transfer with
-  historical competitor integrity.
+- In progress: add server-side cross-node scoreboard batching/cache and
+  competitor profile links.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
-- Next: add audited team-management resources that migrate historical solves,
-  scores, unlocks, registrations, writeups, surveys, and instance ownership
-  without violating competitor uniqueness.
+- Next: make scoreboard invalidation bounded across nodes, then expose
+  competitor-owned profile projections from rankings and team rosters.
 
 ## Verified
 
@@ -191,8 +190,19 @@ Updated: 2026-07-23 (Asia/Singapore)
   every active registered event's size limit. Generated REST/UI surfaces, the
   PostgreSQL journey, strict workspace Clippy/tests, responsive production build,
   and the complete desktop/mobile Playwright plus axe journey are green.
-- Main CI run 29968482559 is green across Rust, Web, dependency audit, and the
-  complete desktop/mobile Browser E2E journey.
+- Organizer team operations now provide tenant-scoped roster discovery,
+  captain-safe member transfers, and complete historical team merges through
+  RBAC/CSRF-guarded OpenAPI resources and a dedicated responsive admin surface.
+  Mutations lock teams deterministically, block live competitors and active
+  instances, enforce pending-event size limits, reassign every persisted
+  `team_id` owner, resolve uniqueness collisions deterministically, and commit
+  audit/outbox events atomically. PostgreSQL collision tests, API RBAC/CSRF
+  integration, generated TypeScript contracts, strict frontend checks, and the
+  browser admin/axe journey cover the slice.
+- Main CI run 29970291645 is green across Rust, Web, dependency audit, and the
+  complete desktop/mobile Browser E2E journey. The local browser gate also now
+  selects the pinned Rust 1.97 toolchain automatically and covers the
+  responsive, axe-clean organizer team-operations surface.
 
 ## Risks being actively retired
 

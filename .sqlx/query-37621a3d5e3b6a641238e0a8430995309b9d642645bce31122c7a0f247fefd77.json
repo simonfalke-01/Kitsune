@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO challenge_solves (\n                    challenge_id,team_id,submission_id,solved_at\n                ) VALUES ($1,$2,$3,$4)\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "37621a3d5e3b6a641238e0a8430995309b9d642645bce31122c7a0f247fefd77"
+}

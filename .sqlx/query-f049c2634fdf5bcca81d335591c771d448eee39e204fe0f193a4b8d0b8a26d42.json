@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT EXISTS(\n            SELECT 1\n            FROM instances\n            WHERE team_id = ANY($1)\n              AND state IN ('requested','provisioning','ready','unhealthy','stopping')\n        ) AS \"exists!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "f049c2634fdf5bcca81d335591c771d448eee39e204fe0f193a4b8d0b8a26d42"
+}

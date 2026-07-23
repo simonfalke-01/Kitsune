@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO challenges (\n                id,event_id,name,category,description,kind,state,scoring,visibility,\n                created_by,created_at,updated_at\n            ) VALUES (\n                $1,$2,'History Challenge','Forensics','Historical ownership',\n                '{\"kind\":\"static_flag\"}','archived',\n                '{\"kind\":\"static\",\"points\":100}','{}',$3,$4,$4\n            )\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "60bc4c781631b51c0c3ad4d3f7e39d80c831684e69d9c49f985b965102be7cae"
+}

@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO teams (\n                    id,organization_id,name,invite_code_digest,custom_fields,created_at,updated_at\n                ) VALUES ($1,$2,$3,$4,'{}',$5,$5)\n                ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Bytea",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "238d928e6fc9acfa660e0b10e9bd8384622ae0ff1e484a538f8d0ecf8ffeb149"
+}

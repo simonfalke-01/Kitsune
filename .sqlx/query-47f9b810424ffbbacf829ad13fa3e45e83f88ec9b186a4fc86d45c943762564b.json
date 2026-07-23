@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT count(*) AS \"entries!\",sum(points)::bigint AS \"points!\"\n            FROM score_entries\n            WHERE event_id = $1 AND team_id = $2\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "entries!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "points!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      null
+    ]
+  },
+  "hash": "47f9b810424ffbbacf829ad13fa3e45e83f88ec9b186a4fc86d45c943762564b"
+}

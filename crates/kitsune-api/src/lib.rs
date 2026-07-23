@@ -242,6 +242,9 @@ pub struct ReadinessResponse {
         submissions::manual_review_queue,
         submissions::review_manual_submission,
         teams::list_teams,
+        teams::list_admin_teams,
+        teams::transfer_member_admin,
+        teams::merge_team_admin,
         teams::create_team,
         teams::join_team,
         teams::transfer_captain,
@@ -312,6 +315,9 @@ pub struct ReadinessResponse {
         teams::EventRegistrationRequest,
         teams::EventRegistrationResponse,
         teams::EventRegistrationStatusResponse,
+        teams::AdminMemberTransferRequest,
+        teams::AdminMemberTransferResponse,
+        teams::AdminTeamMergeRequest,
         auth::SessionResponse,
         auth::UserResponse,
         tokens::CreateApiTokenRequest,
@@ -349,7 +355,8 @@ pub struct ReadinessResponse {
         (name = "surveys", description = "Post-solve feedback and analytics"),
         (name = "submissions", description = "Challenge attempts and solves"),
         (name = "scoreboard", description = "Ranked event standings"),
-        (name = "teams", description = "Player teams and captain controls")
+        (name = "teams", description = "Player teams and captain controls"),
+        (name = "team administration", description = "Organizer team transfer and merge controls")
     )
 )]
 pub struct ApiDoc;
@@ -518,6 +525,15 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/teams",
             get(teams::list_teams).post(teams::create_team),
+        )
+        .route("/api/v1/admin/teams", get(teams::list_admin_teams))
+        .route(
+            "/api/v1/admin/teams/{source_team_id}/members/{user_id}/transfer",
+            post(teams::transfer_member_admin),
+        )
+        .route(
+            "/api/v1/admin/teams/{source_team_id}/merge",
+            post(teams::merge_team_admin),
         )
         .route("/api/v1/teams/join", post(teams::join_team))
         .route(
@@ -1134,6 +1150,226 @@ mod tests {
         let sessions: serde_json::Value = serde_json::from_slice(&body).expect("sessions");
         assert_eq!(sessions.as_array().expect("array").len(), 1);
         assert_eq!(sessions[0]["current"], true);
+    }
+
+    #[sqlx::test(migrator = "MIGRATOR")]
+    async fn team_administration_is_rbac_csrf_and_audit_guarded(pool: PgPool) {
+        let app = router(test_state(pool.clone()));
+        let setup = Request::builder()
+            .method("POST")
+            .uri("/api/v1/setup")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "organization_name": "Team Operations",
+                    "organization_slug": "team-operations",
+                    "display_name": "Organizer",
+                    "email": "organizer@example.test",
+                    "password": "correct horse foxfire battery"
+                })
+                .to_string(),
+            ))
+            .expect("setup request");
+        let response = app.clone().oneshot(setup).await.expect("setup response");
+        let admin_cookies = response_cookies(response.headers());
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("setup body")
+            .to_bytes();
+        let admin_session: serde_json::Value = serde_json::from_slice(&body).expect("session");
+        let admin_csrf = admin_session["csrf_token"].as_str().expect("admin CSRF");
+
+        let first = register_test_player(
+            &app,
+            "team-operations",
+            "First Captain",
+            "first@example.test",
+        )
+        .await;
+        let second = register_test_player(
+            &app,
+            "team-operations",
+            "Second Member",
+            "second@example.test",
+        )
+        .await;
+        let third = register_test_player(
+            &app,
+            "team-operations",
+            "Target Captain",
+            "third@example.test",
+        )
+        .await;
+
+        let source = create_test_team(&app, &first, "Source Operators").await;
+        let target = create_test_team(&app, &third, "Target Operators").await;
+        join_test_team(
+            &app,
+            &second,
+            source["invite_code"].as_str().expect("invite code"),
+        )
+        .await;
+        let source_id = source["team"]["id"].as_str().expect("source team ID");
+        let target_id = target["team"]["id"].as_str().expect("target team ID");
+
+        let forbidden_list = Request::builder()
+            .uri("/api/v1/admin/teams")
+            .header(header::COOKIE, &first.cookies)
+            .body(Body::empty())
+            .expect("forbidden list request");
+        assert_eq!(
+            app.clone()
+                .oneshot(forbidden_list)
+                .await
+                .expect("forbidden list response")
+                .status(),
+            StatusCode::FORBIDDEN
+        );
+
+        let admin_list = Request::builder()
+            .uri("/api/v1/admin/teams")
+            .header(header::COOKIE, &admin_cookies)
+            .body(Body::empty())
+            .expect("admin list request");
+        let response = app
+            .clone()
+            .oneshot(admin_list)
+            .await
+            .expect("admin list response");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("admin list body")
+            .to_bytes();
+        let teams: serde_json::Value = serde_json::from_slice(&body).expect("team list");
+        assert_eq!(teams.as_array().expect("team array").len(), 2);
+
+        let missing_csrf = Request::builder()
+            .method("POST")
+            .uri(format!(
+                "/api/v1/admin/teams/{source_id}/members/{}/transfer",
+                first.user_id
+            ))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .body(Body::from(
+                serde_json::json!({
+                    "target_team_id": target_id,
+                    "replacement_captain_id": second.user_id
+                })
+                .to_string(),
+            ))
+            .expect("missing CSRF request");
+        assert_eq!(
+            app.clone()
+                .oneshot(missing_csrf)
+                .await
+                .expect("missing CSRF response")
+                .status(),
+            StatusCode::FORBIDDEN
+        );
+
+        let transfer = Request::builder()
+            .method("POST")
+            .uri(format!(
+                "/api/v1/admin/teams/{source_id}/members/{}/transfer",
+                first.user_id
+            ))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "target_team_id": target_id,
+                    "replacement_captain_id": second.user_id
+                })
+                .to_string(),
+            ))
+            .expect("transfer request");
+        let response = app
+            .clone()
+            .oneshot(transfer)
+            .await
+            .expect("transfer response");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("transfer body")
+            .to_bytes();
+        let transfer: serde_json::Value = serde_json::from_slice(&body).expect("transfer JSON");
+        assert_eq!(
+            transfer["source"]["members"]
+                .as_array()
+                .expect("source roster")
+                .len(),
+            1
+        );
+        assert_eq!(transfer["source"]["members"][0]["user_id"], second.user_id);
+        assert_eq!(transfer["source"]["members"][0]["captain"], true);
+        assert_eq!(
+            transfer["target"]["members"]
+                .as_array()
+                .expect("target roster")
+                .len(),
+            2
+        );
+
+        let merge = Request::builder()
+            .method("POST")
+            .uri(format!("/api/v1/admin/teams/{source_id}/merge"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(
+                serde_json::json!({"target_team_id": target_id}).to_string(),
+            ))
+            .expect("merge request");
+        let response = app.clone().oneshot(merge).await.expect("merge response");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("merge body")
+            .to_bytes();
+        let merged: serde_json::Value = serde_json::from_slice(&body).expect("merged team");
+        assert_eq!(merged["id"], target_id);
+        assert_eq!(
+            merged["members"].as_array().expect("merged roster").len(),
+            3
+        );
+        assert_eq!(
+            sqlx::query_scalar!(
+                r#"
+                SELECT count(*) AS "count!"
+                FROM event_outbox
+                WHERE kind IN ('identity.team.member_transferred','identity.team.merged')
+                "#,
+            )
+            .fetch_one(&pool)
+            .await
+            .expect("team administration event count"),
+            2
+        );
+        assert_eq!(
+            sqlx::query_scalar!(
+                r#"
+                SELECT count(*) AS "count!"
+                FROM audit_log
+                WHERE action IN ('team.member.admin_transfer','team.merge')
+                "#,
+            )
+            .fetch_one(&pool)
+            .await
+            .expect("team administration audit count"),
+            2
+        );
     }
 
     #[sqlx::test(migrator = "MIGRATOR")]
@@ -2774,6 +3010,106 @@ mod tests {
             .expect("outbox count");
         assert_eq!(audit_count, 49);
         assert_eq!(outbox_count, 49);
+    }
+
+    struct TestPlayerSession {
+        cookies: String,
+        csrf: String,
+        user_id: String,
+    }
+
+    async fn register_test_player(
+        app: &Router,
+        organization: &str,
+        display_name: &str,
+        email: &str,
+    ) -> TestPlayerSession {
+        let request = Request::builder()
+            .method("POST")
+            .uri("/api/v1/auth/register")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "organization": organization,
+                    "display_name": display_name,
+                    "email": email,
+                    "password": "another correct foxfire secret"
+                })
+                .to_string(),
+            ))
+            .expect("register test player request");
+        let response = app
+            .clone()
+            .oneshot(request)
+            .await
+            .expect("register test player response");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let cookies = response_cookies(response.headers());
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("register test player body")
+            .to_bytes();
+        let session: serde_json::Value = serde_json::from_slice(&body).expect("player session");
+        TestPlayerSession {
+            cookies,
+            csrf: session["csrf_token"]
+                .as_str()
+                .expect("player CSRF")
+                .to_owned(),
+            user_id: session["user"]["id"]
+                .as_str()
+                .expect("player ID")
+                .to_owned(),
+        }
+    }
+
+    async fn create_test_team(
+        app: &Router,
+        player: &TestPlayerSession,
+        name: &str,
+    ) -> serde_json::Value {
+        let request = Request::builder()
+            .method("POST")
+            .uri("/api/v1/teams")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player.cookies)
+            .header("x-csrf-token", &player.csrf)
+            .body(Body::from(serde_json::json!({"name": name}).to_string()))
+            .expect("create test team request");
+        let response = app
+            .clone()
+            .oneshot(request)
+            .await
+            .expect("create test team response");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("create test team body")
+            .to_bytes();
+        serde_json::from_slice(&body).expect("created team JSON")
+    }
+
+    async fn join_test_team(app: &Router, player: &TestPlayerSession, invite_code: &str) {
+        let request = Request::builder()
+            .method("POST")
+            .uri("/api/v1/teams/join")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player.cookies)
+            .header("x-csrf-token", &player.csrf)
+            .body(Body::from(
+                serde_json::json!({"invite_code": invite_code}).to_string(),
+            ))
+            .expect("join test team request");
+        let response = app
+            .clone()
+            .oneshot(request)
+            .await
+            .expect("join test team response");
+        assert_eq!(response.status(), StatusCode::OK);
     }
 
     fn response_cookies(headers: &axum::http::HeaderMap) -> String {

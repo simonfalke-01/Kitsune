@@ -83,13 +83,13 @@ or scaffolding alone.
 - [x] Team create/join/list and captain-transfer REST/UI slice with one-time
       digest-only invite codes, upgrade-safe role grants, tenant isolation, audit,
       outbox, PostgreSQL constraints, and desktop/mobile browser coverage.
-- [ ] Team invite rotation, leave/removal, merge/transfer administration,
+- [x] Team invite rotation, leave/removal, merge/transfer administration,
       event registration, and event-specific size-limit enforcement.
   - [x] Captain-only digest invite rotation with one-time reveal.
   - [x] Captain transfer-before-leave, member removal, and self-service leave.
   - [x] Explicit event registration/status/withdrawal with division/bracket
         ownership and race-safe event size-limit enforcement.
-  - [ ] Administrator merge and cross-team transfer with historical competitor
+  - [x] Administrator merge and cross-team transfer with historical competitor
         reassignment.
 - [x] Exact/regex/choice/manual submission validation, digest-only receipts,
       client idempotency, immutable score ledger, solves, first blood, authored and

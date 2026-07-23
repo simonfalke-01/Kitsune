@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO audiences (id,event_id,name) VALUES ($1,$2,'Finalists')",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "39f94859d134f9359d5ad633abec1baa56cecb6faf467a0167cfcd9bb256e0d7"
+}

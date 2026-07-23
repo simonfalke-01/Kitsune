@@ -326,3 +326,18 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-23 — Treat event registration as a null-safe competitor upsert and
   allow withdrawal only before gameplay begins — division/bracket choices can
   be corrected safely without erasing live scoring identity.
+- 2026-07-23 — Serialize administrator transfer and merge operations by UUID
+  order and reject them while either team competes in a live/paused event or
+  owns an active instance — roster changes cannot race scoring, flag ownership,
+  or orchestration, and deterministic lock order prevents cross-team deadlocks.
+- 2026-07-23 — Preserve both append-only score histories during a team merge,
+  retain the earliest duplicate solve/unlock/registration, retain the newest
+  writeup/survey, and prefer target-owned conflicting placement/A&D records —
+  the surviving team keeps an auditable combined history while uniqueness
+  conflicts resolve deterministically without rewriting immutable ledgers.
+- 2026-07-23 — Require an explicit source-team successor when an administrator
+  transfers its captain — privileged repair remains possible without ever
+  leaving a persistent team without exactly one accountable captain.
+- 2026-07-23 — Pin the repository toolchain to Rust 1.97 with Rustfmt and Clippy
+  components — local `cargo`, Playwright-managed servers, CI, and contributor
+  commands now honor the same Wasmtime-compatible compiler automatically.

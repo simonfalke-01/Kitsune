@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO roles (id,organization_id,key,name,permissions,built_in)\n            VALUES ($1,$2,'historian','Historian','{}',false)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "52bd7627d77b66b0c347407e41c0e0a6e7ce3c7d6e21f35ed5addd22fbd2f2a3"
+}

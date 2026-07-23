@@ -1,0 +1,94 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT\n                (SELECT count(*) FROM team_members WHERE team_id = $1) AS \"team_members!\",\n                (SELECT count(*) FROM event_participants WHERE team_id = $1) AS \"participants!\",\n                (SELECT count(*) FROM audience_members WHERE team_id = $1) AS \"audiences!\",\n                (SELECT count(*) FROM hint_unlocks WHERE team_id = $1) AS \"hints!\",\n                (SELECT count(*) FROM submissions WHERE team_id = $1) AS \"submissions!\",\n                (SELECT count(*) FROM challenge_solves WHERE team_id = $1) AS \"solves!\",\n                (SELECT count(*) FROM writeups WHERE team_id = $1) AS \"writeups!\",\n                (SELECT count(*) FROM survey_responses WHERE team_id = $1) AS \"surveys!\",\n                (SELECT count(*) FROM score_entries WHERE team_id = $1) AS \"scores!\",\n                (SELECT count(*) FROM instances WHERE team_id = $1) AS \"instances!\",\n                (SELECT count(*) FROM attack_defense_flags WHERE team_id = $1) AS \"flags!\",\n                (SELECT count(*) FROM checker_results WHERE team_id = $1) AS \"checkers!\",\n                (SELECT count(*) FROM role_grants WHERE team_id = $1) AS \"role_grants!\"\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "team_members!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "participants!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 2,
+        "name": "audiences!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 3,
+        "name": "hints!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "submissions!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 5,
+        "name": "solves!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 6,
+        "name": "writeups!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 7,
+        "name": "surveys!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 8,
+        "name": "scores!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 9,
+        "name": "instances!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 10,
+        "name": "flags!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 11,
+        "name": "checkers!",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 12,
+        "name": "role_grants!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+  },
+  "hash": "17698bcbaba2ec4dfc357888a249d9b5bddaac252156aeb668d362a049e18f74"
+}

@@ -14,6 +14,7 @@ pub mod passkeys;
 pub mod resources;
 pub mod saml;
 pub mod submissions;
+pub mod team_admin;
 pub mod teams;
 pub mod tokens;
 

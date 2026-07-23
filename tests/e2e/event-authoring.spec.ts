@@ -343,6 +343,18 @@ test('organizer authors a published challenge visible on the player board', asyn
   await expect(page.locator('.members').getByText('E2E Owner', { exact: true })).toBeVisible();
   await expect(page.getByText('Captain', { exact: true })).toBeVisible();
 
+  const adminTeamsLoaded = page.waitForResponse((response) =>
+    response.url().endsWith('/api/v1/admin/teams')
+  );
+  await page.goto('/admin/teams');
+  await adminTeamsLoaded;
+  await expect(page.getByRole('heading', { name: 'Teams, without loose ends.' })).toBeVisible();
+  await expect(page.locator('.roster').getByText('E2E Owner', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Transfer member' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Merge team' })).toBeDisabled();
+  const teamOperationsAccessibility = await new AxeBuilder({ page }).analyze();
+  expect(teamOperationsAccessibility.violations).toEqual([]);
+
   const tokenName = `Challenge reader ${testInfo.project.name} ${run}`;
   const passkeyName = `E2E passkey ${testInfo.project.name} ${run}`;
   await page.goto('/account/security');

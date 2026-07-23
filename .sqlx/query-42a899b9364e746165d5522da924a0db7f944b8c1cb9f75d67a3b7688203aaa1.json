@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT healthy\n            FROM checker_results\n            WHERE event_id = $1 AND tick = 1 AND service = 'web' AND team_id = $2\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "healthy",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "42a899b9364e746165d5522da924a0db7f944b8c1cb9f75d67a3b7688203aaa1"
+}

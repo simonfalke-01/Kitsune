@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        UPDATE hint_unlocks target_row\n        SET unlocked_at = LEAST(target_row.unlocked_at, source_row.unlocked_at)\n        FROM hint_unlocks source_row\n        WHERE source_row.team_id = $1\n          AND target_row.team_id = $2\n          AND target_row.challenge_id = source_row.challenge_id\n          AND target_row.hint_id = source_row.hint_id\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "dacd94169a5bbcaa3e9a1398d09baea42cd3d1285a9cfc8dd8013531857020b4"
+}

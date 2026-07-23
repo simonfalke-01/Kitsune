@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT EXISTS(\n            SELECT 1\n            FROM event_participants participant\n            JOIN events event ON event.id = participant.event_id\n            WHERE participant.team_id = ANY($1)\n              AND event.state IN ('live','paused')\n        ) AS \"exists!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "UuidArray"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "b04857de1e13c3954468a93a4ed1eea4b3bce5f7d743eb3d856cb356a667c285"
+}

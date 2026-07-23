@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        DELETE FROM audience_members source_row\n        WHERE source_row.team_id = $1\n          AND EXISTS (\n              SELECT 1 FROM audience_members target_row\n              WHERE target_row.team_id = $2\n                AND target_row.audience_id = source_row.audience_id\n          )\n        ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "23cd1e401b34bce64bd8f573367ce5984b130965315478a34853c95630a90439"
+}
