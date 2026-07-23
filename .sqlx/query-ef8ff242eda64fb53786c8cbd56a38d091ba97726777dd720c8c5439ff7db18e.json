@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT ('platform_manage' = ANY(r.permissions)) AS \"platform!\"\n            FROM role_grants g\n            JOIN roles r ON r.id = g.role_id\n            JOIN users u ON u.id = g.user_id\n            WHERE g.id = $1 AND g.organization_id = $2 AND u.organization_id = $2\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "platform!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "ef8ff242eda64fb53786c8cbd56a38d091ba97726777dd720c8c5439ff7db18e"
+}

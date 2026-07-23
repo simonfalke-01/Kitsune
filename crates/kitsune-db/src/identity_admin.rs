@@ -128,6 +128,65 @@ impl IdentityAdminRepository {
         .map_err(unavailable)
     }
 
+    /// Returns whether the tenant user currently has unscoped platform authority.
+    pub async fn user_has_platform_authority(
+        &self,
+        organization_id: OrganizationId,
+        user_id: UserId,
+    ) -> DomainResult<bool> {
+        sqlx::query_scalar!(
+            r#"
+            SELECT EXISTS(
+                SELECT 1
+                FROM role_grants g
+                JOIN roles r ON r.id = g.role_id
+                JOIN users u ON u.id = g.user_id
+                WHERE g.organization_id = $1 AND g.user_id = $2
+                  AND u.organization_id = $1
+                  AND g.event_id IS NULL AND g.team_id IS NULL
+                  AND 'platform_manage' = ANY(r.permissions)
+            ) AS "exists!"
+            "#,
+            organization_id.0,
+            user_id.0,
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(unavailable)
+    }
+
+    /// Returns whether the referenced tenant-visible role grants platform authority.
+    pub async fn role_has_platform_authority(
+        &self,
+        organization_id: OrganizationId,
+        role_id: Uuid,
+    ) -> DomainResult<bool> {
+        role_contains_platform_permission_from_pool(&self.pool, organization_id, role_id).await
+    }
+
+    /// Returns whether the referenced grant carries platform authority.
+    pub async fn grant_has_platform_authority(
+        &self,
+        organization_id: OrganizationId,
+        grant_id: Uuid,
+    ) -> DomainResult<bool> {
+        sqlx::query_scalar!(
+            r#"
+            SELECT ('platform_manage' = ANY(r.permissions)) AS "platform!"
+            FROM role_grants g
+            JOIN roles r ON r.id = g.role_id
+            JOIN users u ON u.id = g.user_id
+            WHERE g.id = $1 AND g.organization_id = $2 AND u.organization_id = $2
+            "#,
+            grant_id,
+            organization_id.0,
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(unavailable)?
+        .ok_or(DomainError::NotFound)
+    }
+
     /// Creates a local account with the built-in player role.
     pub async fn create_user(
         &self,
@@ -695,6 +754,26 @@ async fn role_contains_platform_permission(
         organization_id.0,
     )
     .fetch_optional(&mut **tx)
+    .await
+    .map_err(unavailable)?
+    .ok_or(DomainError::NotFound)
+}
+
+async fn role_contains_platform_permission_from_pool(
+    pool: &PgPool,
+    organization_id: OrganizationId,
+    role_id: Uuid,
+) -> DomainResult<bool> {
+    sqlx::query_scalar!(
+        r#"
+        SELECT ('platform_manage' = ANY(permissions)) AS "platform!"
+        FROM roles
+        WHERE id = $1 AND (organization_id = $2 OR organization_id IS NULL)
+        "#,
+        role_id,
+        organization_id.0,
+    )
+    .fetch_optional(pool)
     .await
     .map_err(unavailable)?
     .ok_or(DomainError::NotFound)

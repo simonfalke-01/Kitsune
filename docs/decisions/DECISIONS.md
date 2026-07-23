@@ -412,3 +412,7 @@ Format: `YYYY-MM-DD — decision — rationale`.
   disables an account, while preventing self-disable and final-platform-manager
   removal — administrative lifecycle changes close access atomically without
   permitting an organization lockout.
+- 2026-07-23 — Require `platform_manage` in addition to `identity_manage` when
+  editing a platform manager or assigning/revoking a platform-authority grant —
+  delegated identity operators can administer ordinary access without acquiring
+  or disrupting installation-wide authority.

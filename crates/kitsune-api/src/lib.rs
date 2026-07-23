@@ -1411,6 +1411,139 @@ mod tests {
             );
         }
 
+        let identity_role = authorized_json_request(
+            &app,
+            "POST",
+            "/api/v1/admin/roles",
+            &admin,
+            Some(serde_json::json!({
+                "key": "identity_operator",
+                "name": "Identity Operator",
+                "permissions": ["identity_manage"]
+            })),
+        )
+        .await;
+        let identity_role_id = identity_role["id"].as_str().expect("identity role ID");
+        let identity_grant = authorized_json_request(
+            &app,
+            "POST",
+            "/api/v1/admin/role-grants",
+            &admin,
+            Some(serde_json::json!({
+                "user_id": player.user_id,
+                "role_id": identity_role_id,
+                "event_id": null,
+                "team_id": null
+            })),
+        )
+        .await;
+        let identity_grant_id = identity_grant["id"].as_str().expect("identity grant ID");
+        let roles_for_identity_operator =
+            authorized_json_request(&app, "GET", "/api/v1/admin/roles", &player, None).await;
+        let super_role_id = roles_for_identity_operator
+            .as_array()
+            .expect("roles for identity operator")
+            .iter()
+            .find(|role| role["key"] == "super_admin")
+            .and_then(|role| role["id"].as_str())
+            .expect("super-admin role ID");
+        let grants_for_identity_operator =
+            authorized_json_request(&app, "GET", "/api/v1/admin/role-grants", &player, None).await;
+        let platform_grant_id = grants_for_identity_operator
+            .as_array()
+            .expect("grants for identity operator")
+            .iter()
+            .find(|grant| grant["role_key"] == "super_admin")
+            .and_then(|grant| grant["id"].as_str())
+            .expect("platform grant ID");
+
+        let escalate = Request::builder()
+            .method("POST")
+            .uri("/api/v1/admin/role-grants")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player.cookies)
+            .header("x-csrf-token", &player.csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "user_id": player.user_id,
+                    "role_id": super_role_id,
+                    "event_id": null,
+                    "team_id": null
+                })
+                .to_string(),
+            ))
+            .expect("platform escalation request");
+        assert_eq!(
+            app.clone()
+                .oneshot(escalate)
+                .await
+                .expect("platform escalation response")
+                .status(),
+            StatusCode::FORBIDDEN
+        );
+
+        let edit_platform_manager = Request::builder()
+            .method("PATCH")
+            .uri(format!("/api/v1/admin/users/{}", admin.user_id))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player.cookies)
+            .header("x-csrf-token", &player.csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "display_name": "Access Keeper",
+                    "email_verified": true,
+                    "disabled": false,
+                    "custom_fields": {}
+                })
+                .to_string(),
+            ))
+            .expect("platform manager edit request");
+        assert_eq!(
+            app.clone()
+                .oneshot(edit_platform_manager)
+                .await
+                .expect("platform manager edit response")
+                .status(),
+            StatusCode::FORBIDDEN
+        );
+
+        let revoke_platform = Request::builder()
+            .method("DELETE")
+            .uri(format!("/api/v1/admin/role-grants/{platform_grant_id}"))
+            .header(header::COOKIE, &player.cookies)
+            .header("x-csrf-token", &player.csrf)
+            .body(Body::empty())
+            .expect("platform grant revoke request");
+        assert_eq!(
+            app.clone()
+                .oneshot(revoke_platform)
+                .await
+                .expect("platform grant revoke response")
+                .status(),
+            StatusCode::FORBIDDEN
+        );
+
+        for uri in [
+            format!("/api/v1/admin/role-grants/{identity_grant_id}"),
+            format!("/api/v1/admin/roles/{identity_role_id}"),
+        ] {
+            let request = Request::builder()
+                .method("DELETE")
+                .uri(uri)
+                .header(header::COOKIE, &admin.cookies)
+                .header("x-csrf-token", &admin.csrf)
+                .body(Body::empty())
+                .expect("identity operator cleanup request");
+            assert_eq!(
+                app.clone()
+                    .oneshot(request)
+                    .await
+                    .expect("identity operator cleanup response")
+                    .status(),
+                StatusCode::NO_CONTENT
+            );
+        }
+
         let created_user = authorized_json_request(
             &app,
             "POST",

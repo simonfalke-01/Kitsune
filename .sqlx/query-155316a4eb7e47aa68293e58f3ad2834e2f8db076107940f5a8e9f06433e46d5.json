@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT ('platform_manage' = ANY(permissions)) AS \"platform!\"\n        FROM roles\n        WHERE id = $1 AND (organization_id = $2 OR organization_id IS NULL)\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "platform!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "155316a4eb7e47aa68293e58f3ad2834e2f8db076107940f5a8e9f06433e46d5"
+}

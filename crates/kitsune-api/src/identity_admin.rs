@@ -239,9 +239,17 @@ pub(crate) async fn update_user(
 ) -> ApiResult<Json<ManagedUserResponse>> {
     actor.require("identity_manage")?;
     actor.require_csrf(&headers)?;
+    let repository = repository(&state);
+    if repository
+        .user_has_platform_authority(actor.session.account.organization_id, UserId(user_id))
+        .await
+        .map_err(ApiError::from)?
+    {
+        actor.require("platform_manage")?;
+    }
     validate_display_name(&request.display_name)?;
     validate_custom_fields(&request.custom_fields)?;
-    let (user, event) = repository(&state)
+    let (user, event) = repository
         .update_user(UpdateUser {
             organization_id: actor.session.account.organization_id,
             actor: actor.session.account.user_id,
@@ -474,7 +482,15 @@ pub(crate) async fn create_grant(
 ) -> ApiResult<(StatusCode, Json<ManagedGrantResponse>)> {
     actor.require("identity_manage")?;
     actor.require_csrf(&headers)?;
-    let (grant, event) = repository(&state)
+    let repository = repository(&state);
+    if repository
+        .role_has_platform_authority(actor.session.account.organization_id, request.role)
+        .await
+        .map_err(ApiError::from)?
+    {
+        actor.require("platform_manage")?;
+    }
+    let (grant, event) = repository
         .create_grant(CreateGrant {
             organization_id: actor.session.account.organization_id,
             actor: actor.session.account.user_id,
@@ -516,7 +532,15 @@ pub(crate) async fn revoke_grant(
 ) -> ApiResult<StatusCode> {
     actor.require("identity_manage")?;
     actor.require_csrf(&headers)?;
-    let event = repository(&state)
+    let repository = repository(&state);
+    if repository
+        .grant_has_platform_authority(actor.session.account.organization_id, grant_id)
+        .await
+        .map_err(ApiError::from)?
+    {
+        actor.require("platform_manage")?;
+    }
+    let event = repository
         .revoke_grant(
             actor.session.account.organization_id,
             actor.session.account.user_id,
