@@ -313,3 +313,7 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-23 — Require Rust 1.94 as the workspace minimum for Wasmtime 47 while
   continuing to verify with Rust 1.97 in CI parity — the plugin runtime remains
   on its current stable line without silently exceeding the declared MSRV.
+- 2026-07-23 — Upgrade HMAC and SHA-2 as one compatible digest-stack change and
+  group future RustCrypto digest updates in Dependabot — independent major
+  upgrades otherwise produce trait-incompatible builds even when both releases
+  are individually correct.

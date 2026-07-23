@@ -2,7 +2,7 @@
 
 use std::{collections::BTreeMap, sync::Arc, time::Duration};
 
-use hmac::{Hmac, Mac};
+use hmac::{Hmac, KeyInit, Mac};
 use kitsune_core::{DomainError, DomainResult, EventEnvelope};
 use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};

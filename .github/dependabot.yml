@@ -4,6 +4,13 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      rustcrypto-digest-stack:
+        patterns:
+          - digest
+          - hmac
+          - sha2
+          - subtle
   - package-ecosystem: npm
     directory: /
     schedule:
@@ -12,4 +19,3 @@ updates:
     directory: /
     schedule:
       interval: weekly
-
