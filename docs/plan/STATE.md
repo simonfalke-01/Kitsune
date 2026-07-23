@@ -5,8 +5,8 @@ Updated: 2026-07-23 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: run the milestone-wide secured API, realtime, and browser
-  regression gate after closing the authorization audit.
+- In progress: complete the NATS JetStream half of the scaled cache/event
+  adapters after landing the Redis half.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
 - Next: close uncovered authorization paths, regenerate the contract, and run
@@ -231,6 +231,14 @@ Updated: 2026-07-23 (Asia/Singapore)
   gates sensitive auth, submission, instance, automation, plugin, configuration,
   notification, and integrity events by explicit permissions. Focused policy,
   path parsing, and PostgreSQL grant-scope tests plus strict Clippy are green.
+- Redis now implements the shared cache contract through a reconnecting,
+  TLS-capable connection manager with two-second command bounds, safe installation
+  namespaces, binary values, idempotent delete, and an atomic Lua increment that
+  applies TTL only when a window begins. Explicit `redis_url` configuration
+  selects it in the server; lean and full profiles remain bootable on the bounded
+  local adapter when absent. A real Redis 8.2 Testcontainer proves cross-client
+  visibility, namespace isolation, 24-way atomicity, expiry reset, and removal;
+  full workspace tests and strict Clippy are green.
 - Cache-commit CI exposed one team-merge assertion comparing Rust nanoseconds
   to PostgreSQL microseconds. The assertion now matches the storage contract;
   five repeated focused runs and the full all-feature workspace suite pass.

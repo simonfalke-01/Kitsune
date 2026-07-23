@@ -8,11 +8,15 @@ use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use kitsune_api::{
     AppState, AuthService, OidcService, PasskeyService, SamlCredentials, SamlService, TokenService,
 };
-use kitsune_automation::{InProcessCache, InProcessEventBus};
-use kitsune_core::config::{FeatureFlags, RuntimeProfile};
+use kitsune_automation::{InProcessCache, InProcessEventBus, RedisCache};
+use kitsune_core::{
+    config::{FeatureFlags, RuntimeProfile},
+    ports::Cache,
+};
 use kitsune_db::{PostgresStore, auth::AuthRepository};
 use kitsune_integrations::{SmtpConfig, SmtpNotifier};
 use kitsune_plugins::{PluginBudgets, PluginHost, PluginTrustStore};
+use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};
 use tokio::signal;
 use tracing::{info, warn};
@@ -34,6 +38,8 @@ struct ServerConfig {
     public_origin: String,
     oidc_trusted_origins: BTreeSet<String>,
     saml_trusted_origins: BTreeSet<String>,
+    redis_url: Option<SecretString>,
+    redis_namespace: String,
     smtp: Option<SmtpConfig>,
 }
 
@@ -51,6 +57,8 @@ impl Default for ServerConfig {
             public_origin: "http://localhost:3000".into(),
             oidc_trusted_origins: BTreeSet::new(),
             saml_trusted_origins: BTreeSet::new(),
+            redis_url: None,
+            redis_namespace: "kitsune".into(),
             smtp: None,
         }
     }
@@ -71,6 +79,7 @@ impl ServerConfig {
             .set_default("secure_cookies", defaults.secure_cookies)?
             .set_default("auto_migrate", defaults.auto_migrate)?
             .set_default("public_origin", defaults.public_origin)?
+            .set_default("redis_namespace", defaults.redis_namespace)?
             .add_source(config::File::with_name("kit.toml").required(false))
             .add_source(config::File::with_name("config").required(false))
             .add_source(
@@ -114,7 +123,15 @@ async fn main() -> Result<()> {
     }
     store.ready().await.context("database readiness")?;
 
-    let cache = Arc::new(InProcessCache::new(100_000).context("lean cache")?);
+    let cache: Arc<dyn Cache> = if let Some(redis_url) = &config.redis_url {
+        Arc::new(
+            RedisCache::connect(redis_url.expose_secret(), Some(&config.redis_namespace))
+                .await
+                .context("connect Redis cache")?,
+        )
+    } else {
+        Arc::new(InProcessCache::new(100_000).context("lean cache")?)
+    };
     let event_bus = Arc::new(InProcessEventBus::new(16_384).context("lean event bus")?);
     let auth_repository = AuthRepository::new(store.pool().clone());
     let auth =
@@ -325,6 +342,20 @@ mod tests {
         assert!(!features.orchestration);
         assert!(!features.smtp);
         assert!(config.oidc_trusted_origins.is_empty());
+        assert!(config.redis_url.is_none());
+    }
+
+    #[test]
+    fn scaled_adapter_credentials_are_redacted_from_configuration_debug() {
+        let config = ServerConfig {
+            redis_url: Some(SecretString::from(
+                "rediss://user:never-log-me@example.test".to_owned(),
+            )),
+            ..ServerConfig::default()
+        };
+        let debug = format!("{config:?}");
+        assert!(!debug.contains("never-log-me"));
+        assert!(debug.contains("REDACTED"));
     }
 
     #[test]

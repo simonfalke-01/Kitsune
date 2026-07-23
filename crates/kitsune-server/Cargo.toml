@@ -20,6 +20,7 @@ kitsune-integrations = { path = "../kitsune-integrations" }
 kitsune-orchestrator = { path = "../kitsune-orchestrator" }
 kitsune-plugins = { path = "../kitsune-plugins" }
 rand.workspace = true
+secrecy.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tokio.workspace = true

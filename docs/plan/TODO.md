@@ -34,6 +34,10 @@ or scaffolding alone.
       registry seam.
 - [x] HMAC-signed retrying webhooks and shared DNS/IP/redirect SSRF defense.
 - [ ] NATS/Redis scaled adapters.
+  - [x] Reconnecting TLS-capable Redis cache with bounded commands, atomic
+        first-write TTL counters, namespace isolation, server composition, and a
+        real concurrent Testcontainers regression.
+  - [ ] JetStream-backed durable cross-node event fanout and server composition.
 - [ ] Milestone-wide format, strict Clippy, unit, and integration gate.
 
 ## Milestone 03

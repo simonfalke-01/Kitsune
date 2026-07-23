@@ -373,3 +373,9 @@ Format: `YYYY-MM-DD — decision — rationale`.
   `/api/v1/events/{uuid}` path segment and load org plus matching event grants in
   the shared actor extractor — scoped author and organizer roles work without
   becoming valid for sibling events or organization-wide resources.
+- 2026-07-23 — Select Redis by explicit `redis_url` presence and otherwise keep
+  the bounded in-process cache in every profile — the scaled escape hatch is
+  production-ready without turning full mode into a mandatory-service checklist.
+- 2026-07-23 — Namespace all Redis keys and implement first-increment expiry in
+  one Lua operation — multiple API nodes share atomic budgets without extending
+  an attacker's rate-limit window or colliding with another installation.
