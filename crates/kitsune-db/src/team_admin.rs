@@ -1501,7 +1501,10 @@ mod tests {
         .await
         .expect("merged event participant");
         assert_eq!(participant.team_id, Some(fixture.target_team.0));
-        assert_eq!(participant.registered_at, fixture.now - Duration::hours(2));
+        assert_eq!(
+            participant.registered_at.timestamp_micros(),
+            (fixture.now - Duration::hours(2)).timestamp_micros()
+        );
 
         let solve = sqlx::query!(
             r#"
