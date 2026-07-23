@@ -428,8 +428,36 @@ Format: `YYYY-MM-DD — decision — rationale`.
   empty until human-authored final artwork exists — generated silhouettes,
   pseudo-illustrations, and temporary character art are not acceptable product
   assets.
-- 2026-07-23 — Use one non-overlapping frontend stack: React Router for route
-  boundaries, TanStack Query/Table for server state and data grids, React Flow
-  for automation, Visx for charts, Motion for restrained transitions, and
-  Storybook for the component contract — no second primitive kit will compete
-  with React Aria's interaction and focus model.
+- 2026-07-23 — Lock the frontend to the owner's specified system: React Aria
+  Components, Tailwind CSS v4, its React Aria state plugin, Radix-style token
+  scales, Lucide, React Hook Form with Zod, TanStack Table,
+  `@internationalized/date`, Fontsource, and Motion only for gesture/layout —
+  unapproved visual kits, icon families, CSS-in-JS, and convenience
+  dependencies are excluded.
+- 2026-07-23 — Treat the semantic theme contract and declared UI extension
+  slots as public versioned APIs shared by first-party screens, plugins, theme
+  packs, and white-label configuration — deep customization must not require a
+  fork or component-level CSS override.
+- 2026-07-23 — Supersede the initial foxfire-teal proposal while retaining its
+  cool graphite ramp and Archivo, Instrument Sans, and IBM Plex Mono type
+  pairing — the typography remains calm and distinctive, but the action color
+  needed less chromatic pressure.
+- 2026-07-23 — Replace the over-chromatic teal with a solid cobalt action family
+  and reserve green, ochre, brick, and steel for semantic status only — the
+  product keeps meaningful color without making routine controls look luminous.
+- 2026-07-23 — Synthesize the supplied Apple, Vercel, Linear, Stripe, and Framer
+  references through one Kitsune rule: single-blue interactivity, precise
+  hairlines, tabular operational data, strong type hierarchy, and surface lift
+  instead of routine card shadows; do not copy their marketing layouts,
+  gradients, or dark-only assumptions.
+- 2026-07-23 — Keep ordinary controls and cards flat and reserve layered shadows
+  for overlays and transient feedback — elevation communicates actual stacking,
+  not decoration.
+- 2026-07-23 — Take from the supplied Figma reference only its deliberate,
+  large-area use of color and mono taxonomy labels — Kitsune maps that principle
+  to meaningful game-mode and health surfaces while rejecting light-only
+  assumptions, pastel marketing blocks, and pill-shaped operational chrome.
+- 2026-07-23 — Restrict monospaced typography to flags and actual code or
+  command input/output — badges, taxonomy, pagination, measurements, IDs, and
+  general operational data use the primary sans with tabular figures where
+  alignment matters.

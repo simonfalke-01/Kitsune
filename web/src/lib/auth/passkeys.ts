@@ -1,4 +1,4 @@
-import type { PasskeyBrowserCredential } from '$lib/api/client';
+import type { PasskeyBrowserCredential } from '@/lib/api/client';
 
 type CreationOptionsJson = Omit<
   PublicKeyCredentialCreationOptions,
@@ -34,15 +34,18 @@ type RequestEnvelope = {
 
 export async function createPasskey(options: unknown): Promise<PasskeyBrowserCredential> {
   requireWebAuthn();
-  const envelope = options as CreationEnvelope;
-  const publicKey = envelope.publicKey;
+  const publicKeyValue = isRecord(options) ? options.publicKey : undefined;
+
   if (
-    !publicKey ||
-    typeof publicKey.challenge !== 'string' ||
-    typeof publicKey.user?.id !== 'string'
+    !isRecord(publicKeyValue) ||
+    typeof publicKeyValue.challenge !== 'string' ||
+    !isRecord(publicKeyValue.user) ||
+    typeof publicKeyValue.user.id !== 'string'
   ) {
     throw new Error('Kitsune returned invalid passkey registration options.');
   }
+
+  const publicKey = publicKeyValue as unknown as CreationEnvelope['publicKey'];
   const credential = await navigator.credentials.create({
     publicKey: {
       ...publicKey,
@@ -59,11 +62,14 @@ export async function createPasskey(options: unknown): Promise<PasskeyBrowserCre
 
 export async function authenticatePasskey(options: unknown): Promise<PasskeyBrowserCredential> {
   requireWebAuthn();
-  const envelope = options as RequestEnvelope;
-  const publicKey = envelope.publicKey;
-  if (!publicKey || typeof publicKey.challenge !== 'string') {
+  const publicKeyValue = isRecord(options) ? options.publicKey : undefined;
+
+  if (!isRecord(publicKeyValue) || typeof publicKeyValue.challenge !== 'string') {
     throw new Error('Kitsune returned invalid passkey authentication options.');
   }
+
+  const envelope = options as RequestEnvelope;
+  const publicKey = publicKeyValue as unknown as RequestEnvelope['publicKey'];
   const credential = await navigator.credentials.get({
     mediation: envelope.mediation,
     publicKey: {
@@ -117,9 +123,13 @@ function decodeDescriptor(descriptor: CredentialDescriptorJson): PublicKeyCreden
 }
 
 function requireWebAuthn(): void {
-  if (!window.isSecureContext || !('PublicKeyCredential' in window) || !navigator.credentials) {
+  if (!window.isSecureContext || !('PublicKeyCredential' in window)) {
     throw new Error('Passkeys require a secure browser context with WebAuthn support.');
   }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
 }
 
 function requirePublicKeyCredential(credential: Credential | null): PublicKeyCredential {

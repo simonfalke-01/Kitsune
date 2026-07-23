@@ -187,26 +187,33 @@ by default. Sensitive config uses redacted secret wrappers.
 
 ## Web
 
-React 19 renders a Vite-built client application. React Router 7 owns nested
-route, error, loading, and authorization boundaries; TanStack Query owns server
-state and consumes one TypeScript client generated from the OpenAPI document.
-WebSocket events invalidate typed query keys rather than synchronizing parallel
-component-local stores.
+React 19 renders a Vite-built client application. React Router owns nested
+route, error, loading, and authorization boundaries. Screens consume one
+TypeScript client generated from the OpenAPI document. WebSocket events drive
+bounded typed refreshes instead of synchronizing parallel component-local
+copies of server state.
 
 React Aria Components is the sole interaction-primitive layer for focus,
 keyboard, pointer, overlay, collection, form, and validation behavior. Kitsune
 owns every visual decision through semantic CSS variables and Tailwind 4:
 color, typography, spacing, control sizing, density, radius, elevation, motion,
-focus, and responsive tokens. `tailwind-variants` defines documented component
-recipes without importing a second visual kit. TanStack Table handles organizer
-data grids, Visx renders score/operations charts, React Flow renders the
-keyboard-accessible automation DAG, and Motion is limited to short
-state-preserving transitions.
+focus, and responsive tokens. Small local variant maps keep primitive recipes
+auditable without a component library or CSS-in-JS runtime. React Hook Form and
+Zod own forms, TanStack Table owns headless data-grid behavior,
+`@internationalized/date` owns calendar values, Lucide is the only icon family,
+and Motion is reserved for gesture or layout transitions that CSS cannot
+express.
 
-Storybook is the executable design-system catalog. Component stories cover
-interaction states, both themes, narrow/wide layouts, keyboard behavior, and
-axe with violations configured as failures. Product Playwright journeys remain
-PostgreSQL-backed and validate the integrated desktop/mobile application.
+The non-production `/_kitchen` route is the executable drift detector. It
+renders every primitive, variant, and state in both themes. Product Playwright
+journeys remain PostgreSQL-backed and validate the integrated desktop/mobile
+application, keyboard behavior, screenshots, and axe.
+
+The versioned theme contract is a public adapter surface. First-party screens,
+declarative theme packs, white-label configuration, and plugin UI slots consume
+semantic color roles plus typography, radii, density, motion, brand assets, and
+slot metadata. Components never reference palette primitives, so an operator
+can replace identity without copying or patching first-party components.
 
 All visible copy comes from tone-aware i18n catalogs. Branding and extension
 slots centralize operator toggles and entitlement behavior, but the mascot slot

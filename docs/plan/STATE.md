@@ -6,13 +6,23 @@ Updated: 2026-07-23 (Asia/Singapore)
 
 - Current milestone: frontend reset — explicit owner-directed replacement of
   the Svelte application with React 19 and React Aria Components.
-- In progress: replace the frontend toolchain, establish the complete Kitsune
-  token/component system, and rebuild every route on a coherent application
-  shell.
+- Completed: the two-tier semantic token contract, locked React build stack,
+  required React Aria primitive wrappers, and expanded CTF/admin control layer
+  all pass strict TypeScript and a production build.
+- In progress: visually inspect the dual-theme `/_kitchen` drift detector at
+  desktop and 390px, then compose the application shell and domain surfaces.
+- Design authority: repository-root `AGENTS.md` records the locked stack,
+  mechanical constraints, quality gate, references, and filled project brief.
+- Customization boundary: theme packs, white-label configuration, first-party
+  screens, and plugin panels must share one versioned semantic token and
+  extension-slot contract. No component fork may be required to rebrand.
 - Preserved work: the interrupted notification vertical slice is stored in
   `stash@{0}` and must not resume until the frontend reset is green.
-- Next: land the React foundation and design-system contract, then port player,
-  authentication, organizer, realtime, chart, and automation surfaces.
+- Visual review: desktop and 390px full-page Chromium captures confirm aligned
+  control heights, responsive single-column collapse, deliberate semantic
+  color, flat card hierarchy, and explicit loading/empty/error treatments.
+- Next: add product-level CTF composites, port every application route, and run
+  the full interaction/a11y regression suite.
 
 ## Verified
 

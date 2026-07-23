@@ -2,6 +2,7 @@
 /web/node_modules/
 /web/.svelte-kit/
 /web/build/
+/web/dist/
 /docs/node_modules/
 /node_modules/
 /.env

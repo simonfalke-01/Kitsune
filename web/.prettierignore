@@ -2,6 +2,7 @@
 build
 coverage
 data
+dist
 openapi.json
 playwright-report
 src/lib/api/schema.d.ts

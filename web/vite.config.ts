@@ -1,9 +1,14 @@
 import tailwindcss from '@tailwindcss/vite';
-import { sveltekit } from '@sveltejs/kit/vite';
+import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  plugins: [tailwindcss(), sveltekit()],
+  plugins: [react(), tailwindcss()],
+  resolve: {
+    alias: {
+      '@': '/src'
+    }
+  },
   server: {
     proxy: {
       '/api': { target: 'http://127.0.0.1:3000', ws: true },
@@ -11,5 +16,9 @@ export default defineConfig({
       '/health': { target: 'http://127.0.0.1:3000' },
       '/ready': { target: 'http://127.0.0.1:3000' }
     }
+  },
+  build: {
+    target: 'es2022',
+    sourcemap: true
   }
 });

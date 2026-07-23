@@ -2,24 +2,39 @@
 
 ## Immediate frontend reset
 
-- [ ] Replace SvelteKit/Svelte runtime and build tooling with React 19, Vite,
-      React Router 7, and strict TypeScript.
-- [ ] Use React Aria Components as the sole interaction-primitive foundation.
-- [ ] Establish semantic color, typography, spacing, sizing, radius, elevation,
-      motion, focus, density, and responsive tokens.
-- [ ] Build documented Button, Link, Field, Select, ComboBox, Checkbox, Switch,
-      Tabs, Dialog, Popover, Menu, Tooltip, Toast, Table, Badge, Card, Empty,
-      Skeleton, and error-state components.
-- [ ] Add Storybook with axe failures enforced for the design-system catalog.
+- [x] Preserve the interrupted notification vertical slice in `stash@{0}`.
+- [x] Remove the rejected Svelte UI and replace its build tooling with React 19,
+      Vite, React Router, and strict TypeScript.
+- [x] Step 1: review and lock the two-tier semantic token contract in `app.css`.
+- [ ] Make deep customization first-class: version the theme contract; expose
+      semantic color, typography, radius, density, motion, asset, brand, and
+      extension-slot overrides; verify theme packs without component forks.
+- [x] Use React Aria Components as the sole interaction-primitive foundation.
+- [x] Step 2: build Button, Link, TextField, TextArea, Select, ComboBox,
+      Checkbox, Radio, Switch, Dialog, Popover, Menu, Tooltip, Tabs, Table, and
+      Toast as thin React Aria wrappers with small variant maps.
+- [x] Expand the primitive set with alert, badge, breadcrumbs, cards, code,
+      disclosures, empty state, file drop zone, number field, pagination,
+      progress/meter, search, sheet, skeleton, spinner, status, and tags.
+- [x] Step 3: build the non-production `/_kitchen` drift detector with every
+      implemented component, variant, async state, and both themes.
+- [x] Capture and inspect desktop and 390px Chromium screenshots of the kitchen;
+      verify no horizontal overflow and consistent responsive collapse.
 - [ ] Rebuild the global shell and every player, auth, account, and organizer
       route without retaining Svelte markup.
-- [ ] Port generated OpenAPI access through TanStack Query and preserve
-      authenticated realtime invalidation.
-- [ ] Rebuild scoring charts with Visx and the automation DAG with React Flow.
+- [ ] Port generated OpenAPI access and preserve authenticated realtime
+      invalidation without introducing an unapproved dependency.
+- [ ] Rebuild scoring charts and the automation DAG from approved primitives;
+      stop before adding any dependency outside the locked stack.
 - [ ] Keep the mascot slot visually empty; do not ship generated or placeholder
       character artwork.
-- [ ] Pass formatting, ESLint, strict typecheck, Vitest, Storybook build,
-      production build, and desktop/mobile Playwright plus axe.
+- [ ] Pass token-policy lint, formatting, ESLint, strict typecheck, Vitest,
+      production build, keyboard review, desktop/mobile Playwright, screenshots,
+      and axe.
+- [ ] Commit and push the completed frontend rewrite in reviewable atomic units;
+      repair every GitHub Actions regression before resuming backend work.
+- [ ] Restore the preserved notification vertical slice only after every
+      frontend gate is green, then resume the pre-reset milestone.
 
 ## Milestone 01
 
