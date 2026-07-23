@@ -1,3 +1,5 @@
+'use client';
+
 import { Link as ReactAriaLink, type LinkProps as ReactAriaLinkProps } from 'react-aria-components';
 
 import { cx, focusRing, variantClass } from './styles';

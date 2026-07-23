@@ -1,3 +1,5 @@
+'use client';
+
 import { CheckCircle2, CircleAlert, Info, TriangleAlert, X } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
 import {

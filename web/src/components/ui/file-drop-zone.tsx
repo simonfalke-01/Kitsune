@@ -1,4 +1,5 @@
-import { FileArchive, Upload } from 'lucide-react';
+'use client';
+
 import type { ReactNode } from 'react';
 import {
   DropZone as ReactAriaDropZone,
@@ -45,9 +46,6 @@ export function FileDropZone({
         typeof className === 'string' ? className : undefined
       )}
     >
-      <div className="rounded-lg border border-border-subtle bg-surface-raised p-3">
-        <FileArchive aria-hidden className="size-6 text-text-muted" />
-      </div>
       <div className="grid max-w-prose gap-1">
         <strong className="text-sm font-semibold text-text">{label}</strong>
         <span className="text-sm text-text-muted">{description}</span>
@@ -58,10 +56,7 @@ export function FileDropZone({
         allowsMultiple={allowsMultiple}
         onSelect={onSelect}
       >
-        <Button tone="secondary">
-          <Upload aria-hidden className="size-4" />
-          Choose files
-        </Button>
+        <Button tone="secondary">Choose files</Button>
       </FileTrigger>
     </ReactAriaDropZone>
   );

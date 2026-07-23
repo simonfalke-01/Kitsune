@@ -1,3 +1,5 @@
+'use client';
+
 import {
   Dialog as ReactAriaDialog,
   Popover as ReactAriaPopover,

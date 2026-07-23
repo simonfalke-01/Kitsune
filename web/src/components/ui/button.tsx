@@ -1,3 +1,5 @@
+'use client';
+
 import { LoaderCircle } from 'lucide-react';
 import {
   Button as ReactAriaButton,
@@ -65,16 +67,21 @@ export function Button({
         variantClass(buttonSizes, size),
         typeof className === 'string' ? className : undefined
       )}
+      aria-busy={isLoading || undefined}
       isDisabled={isDisabled || isLoading}
     >
-      {isLoading ? (
-        <>
-          <LoaderCircle aria-hidden className="size-4 animate-spin" />
-          <span>Working</span>
-        </>
-      ) : (
-        children
-      )}
+      {(values) => {
+        const resolvedChildren = typeof children === 'function' ? children(values) : children;
+
+        return isLoading ? (
+          <>
+            <LoaderCircle aria-hidden className="size-4 animate-spin" />
+            <span>{resolvedChildren}</span>
+          </>
+        ) : (
+          resolvedChildren
+        );
+      }}
     </ReactAriaButton>
   );
 }

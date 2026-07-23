@@ -1,3 +1,5 @@
+'use client';
+
 import { Minus, Plus } from 'lucide-react';
 import type { ReactNode } from 'react';
 import {

@@ -1,5 +1,6 @@
+'use client';
+
 import { Check } from 'lucide-react';
-import type { ReactNode } from 'react';
 import {
   Menu as ReactAriaMenu,
   MenuItem as ReactAriaMenuItem,
@@ -14,7 +15,6 @@ export { MenuTrigger };
 
 export interface MenuOption {
   href?: string;
-  icon?: ReactNode;
   id: number | string;
   isDisabled?: boolean;
   label: string;
@@ -56,11 +56,6 @@ export function Menu({
           >
             {({ isSelected }) => (
               <>
-                {option.icon ? (
-                  <span aria-hidden className="shrink-0">
-                    {option.icon}
-                  </span>
-                ) : null}
                 <span className="min-w-0 flex-1 truncate">{option.label}</span>
                 {isSelected ? <Check aria-hidden className="size-4 shrink-0" /> : null}
               </>
