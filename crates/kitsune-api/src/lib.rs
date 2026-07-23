@@ -244,7 +244,13 @@ pub struct ReadinessResponse {
         teams::list_teams,
         teams::create_team,
         teams::join_team,
-        teams::transfer_captain
+        teams::transfer_captain,
+        teams::rotate_invite,
+        teams::remove_member,
+        teams::leave_team,
+        teams::event_registration,
+        teams::register_event,
+        teams::unregister_event
     ),
     components(schemas(
         HealthResponse,
@@ -302,6 +308,10 @@ pub struct ReadinessResponse {
         teams::CreateTeamResponse,
         teams::JoinTeamRequest,
         teams::TransferCaptainRequest,
+        teams::RotateInviteResponse,
+        teams::EventRegistrationRequest,
+        teams::EventRegistrationResponse,
+        teams::EventRegistrationStatusResponse,
         auth::SessionResponse,
         auth::UserResponse,
         tokens::CreateApiTokenRequest,
@@ -513,6 +523,21 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/teams/{team_id}/captain",
             post(teams::transfer_captain),
+        )
+        .route("/api/v1/teams/{team_id}/invite", post(teams::rotate_invite))
+        .route(
+            "/api/v1/teams/{team_id}/members/{user_id}",
+            axum::routing::delete(teams::remove_member),
+        )
+        .route(
+            "/api/v1/teams/{team_id}/membership",
+            axum::routing::delete(teams::leave_team),
+        )
+        .route(
+            "/api/v1/events/{event_id}/registration",
+            get(teams::event_registration)
+                .put(teams::register_event)
+                .delete(teams::unregister_event),
         )
         .route(
             "/api/v1/events/{event_id}/challenges/{challenge_id}/submissions",
@@ -1140,6 +1165,7 @@ mod tests {
             .to_bytes();
         let admin_session: serde_json::Value = serde_json::from_slice(&body).expect("session");
         let admin_csrf = admin_session["csrf_token"].as_str().expect("csrf");
+        let admin_id = admin_session["user"]["id"].as_str().expect("admin id");
 
         let create_event = Request::builder()
             .method("POST")
@@ -1363,6 +1389,288 @@ mod tests {
         let team: serde_json::Value = serde_json::from_slice(&body).expect("team");
         assert_eq!(team["members"][0]["user_id"], player_id);
         assert_eq!(team["members"][0]["captain"], true);
+
+        let captain_leave = Request::builder()
+            .method("DELETE")
+            .uri(format!("/api/v1/teams/{team_id}/membership"))
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::empty())
+            .expect("captain leave request");
+        assert_eq!(
+            app.clone()
+                .oneshot(captain_leave)
+                .await
+                .expect("captain leave")
+                .status(),
+            StatusCode::CONFLICT
+        );
+
+        let rotate_invite = Request::builder()
+            .method("POST")
+            .uri(format!("/api/v1/teams/{team_id}/invite"))
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::empty())
+            .expect("rotate invite request");
+        let response = app
+            .clone()
+            .oneshot(rotate_invite)
+            .await
+            .expect("rotate invite");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("rotate invite body")
+            .to_bytes();
+        let rotated: serde_json::Value = serde_json::from_slice(&body).expect("rotated invite");
+        let rotated_invite = rotated["invite_code"]
+            .as_str()
+            .expect("rotated invite code");
+        assert_ne!(rotated_invite, invite_code);
+
+        let create_team_event = Request::builder()
+            .method("POST")
+            .uri("/api/v1/events")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "name": "Team Foxfire Cup",
+                    "slug": "team-foxfire-cup",
+                    "description": "A bounded team event.",
+                    "state": "draft",
+                    "participation": "team",
+                    "modes": ["jeopardy"],
+                    "starts_at": null,
+                    "ends_at": null,
+                    "team_size_limit": 2
+                })
+                .to_string(),
+            ))
+            .expect("team event request");
+        let response = app
+            .clone()
+            .oneshot(create_team_event)
+            .await
+            .expect("create team event");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("team event body")
+            .to_bytes();
+        let team_event: serde_json::Value = serde_json::from_slice(&body).expect("team event");
+        let team_event_id = team_event["id"].as_str().expect("team event id");
+
+        let register_team = Request::builder()
+            .method("PUT")
+            .uri(format!("/api/v1/events/{team_event_id}/registration"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::from(r#"{"division_id":null,"bracket_id":null}"#))
+            .expect("register team request");
+        let response = app
+            .clone()
+            .oneshot(register_team)
+            .await
+            .expect("register team");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("registration body")
+            .to_bytes();
+        let registration: serde_json::Value = serde_json::from_slice(&body).expect("registration");
+        assert_eq!(registration["competitor_kind"], "team");
+        assert_eq!(registration["competitor_id"], team_id);
+
+        let registration_status = Request::builder()
+            .uri(format!("/api/v1/events/{team_event_id}/registration"))
+            .header(header::COOKIE, &player_cookies)
+            .body(Body::empty())
+            .expect("registration status request");
+        let response = app
+            .clone()
+            .oneshot(registration_status)
+            .await
+            .expect("registration status");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("registration status body")
+            .to_bytes();
+        let status: serde_json::Value = serde_json::from_slice(&body).expect("registration status");
+        assert_eq!(status["registration"]["competitor_id"], team_id);
+
+        let replay_registration = Request::builder()
+            .method("PUT")
+            .uri(format!("/api/v1/events/{team_event_id}/registration"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::from(r#"{"division_id":null,"bracket_id":null}"#))
+            .expect("replay registration request");
+        let response = app
+            .clone()
+            .oneshot(replay_registration)
+            .await
+            .expect("replay registration");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("replay registration body")
+            .to_bytes();
+        let replayed: serde_json::Value =
+            serde_json::from_slice(&body).expect("replayed registration");
+        assert_eq!(
+            replayed["registered_at"],
+            status["registration"]["registered_at"]
+        );
+
+        let register_third = Request::builder()
+            .method("POST")
+            .uri("/api/v1/auth/register")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "organization": "outfox",
+                    "display_name": "Third Player",
+                    "email": "third@example.test",
+                    "password": "third correct foxfire secret"
+                })
+                .to_string(),
+            ))
+            .expect("third registration request");
+        let response = app
+            .clone()
+            .oneshot(register_third)
+            .await
+            .expect("register third player");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let third_cookies = response_cookies(response.headers());
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("third registration body")
+            .to_bytes();
+        let third_session: serde_json::Value =
+            serde_json::from_slice(&body).expect("third session");
+        let third_csrf = third_session["csrf_token"].as_str().expect("third csrf");
+
+        let stale_join = Request::builder()
+            .method("POST")
+            .uri("/api/v1/teams/join")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &third_cookies)
+            .header("x-csrf-token", third_csrf)
+            .body(Body::from(
+                serde_json::json!({ "invite_code": invite_code }).to_string(),
+            ))
+            .expect("stale invite request");
+        assert_eq!(
+            app.clone()
+                .oneshot(stale_join)
+                .await
+                .expect("stale invite")
+                .status(),
+            StatusCode::NOT_FOUND
+        );
+
+        let over_limit_join = Request::builder()
+            .method("POST")
+            .uri("/api/v1/teams/join")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &third_cookies)
+            .header("x-csrf-token", third_csrf)
+            .body(Body::from(
+                serde_json::json!({ "invite_code": rotated_invite }).to_string(),
+            ))
+            .expect("over-limit join request");
+        assert_eq!(
+            app.clone()
+                .oneshot(over_limit_join)
+                .await
+                .expect("over-limit join")
+                .status(),
+            StatusCode::UNPROCESSABLE_ENTITY
+        );
+
+        let remove_admin = Request::builder()
+            .method("DELETE")
+            .uri(format!("/api/v1/teams/{team_id}/members/{admin_id}"))
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::empty())
+            .expect("remove member request");
+        let response = app
+            .clone()
+            .oneshot(remove_admin)
+            .await
+            .expect("remove member");
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let join_after_space = Request::builder()
+            .method("POST")
+            .uri("/api/v1/teams/join")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &third_cookies)
+            .header("x-csrf-token", third_csrf)
+            .body(Body::from(
+                serde_json::json!({ "invite_code": rotated_invite }).to_string(),
+            ))
+            .expect("join after space request");
+        assert_eq!(
+            app.clone()
+                .oneshot(join_after_space)
+                .await
+                .expect("join after space")
+                .status(),
+            StatusCode::OK
+        );
+
+        let leave_team = Request::builder()
+            .method("DELETE")
+            .uri(format!("/api/v1/teams/{team_id}/membership"))
+            .header(header::COOKIE, &third_cookies)
+            .header("x-csrf-token", third_csrf)
+            .body(Body::empty())
+            .expect("leave team request");
+        assert_eq!(
+            app.clone()
+                .oneshot(leave_team)
+                .await
+                .expect("leave team")
+                .status(),
+            StatusCode::NO_CONTENT
+        );
+
+        let unregister_team = Request::builder()
+            .method("DELETE")
+            .uri(format!("/api/v1/events/{team_event_id}/registration"))
+            .header(header::COOKIE, &player_cookies)
+            .header("x-csrf-token", player_csrf)
+            .body(Body::empty())
+            .expect("unregister team request");
+        assert_eq!(
+            app.clone()
+                .oneshot(unregister_team)
+                .await
+                .expect("unregister team")
+                .status(),
+            StatusCode::NO_CONTENT
+        );
 
         let player_list = Request::builder()
             .uri(format!("/api/v1/events/{event_id}/challenges"))
@@ -2464,8 +2772,8 @@ mod tests {
             .fetch_one(&pool)
             .await
             .expect("outbox count");
-        assert_eq!(audit_count, 42);
-        assert_eq!(outbox_count, 42);
+        assert_eq!(audit_count, 49);
+        assert_eq!(outbox_count, 49);
     }
 
     fn response_cookies(headers: &axum::http::HeaderMap) -> String {

@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT tm.team_id\n        FROM team_members tm\n        JOIN teams t ON t.id = tm.team_id\n        WHERE tm.organization_id = $1 AND tm.user_id = $2\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "team_id",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "56a5e8f5b4d4121a5728a47a5283716f8442cde118aafe262198b6b7be1c8863"
+}

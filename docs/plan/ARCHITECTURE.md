@@ -53,6 +53,16 @@ until a competitor-scoped unlock exists. The unique unlock key makes repeated
 requests free, while the first unlock and its optional negative score entry
 share the challenge transaction and outbox boundary.
 
+Team membership is serialized on the team row whenever event admission and
+membership can race. Invite values are shown once and only SHA-256 digests are
+stored; rotation invalidates the prior digest atomically. Captains must transfer
+authority before leaving, while they may remove only non-captains. Event
+registration resolves the event's individual/team/hybrid competitor policy,
+validates division and bracket ownership, and upserts a single null-safe
+competitor row. Registration and later invite joins both enforce every active
+registered event's team-size limit under the same team lock, preventing a team
+from becoming ineligible through a concurrent join.
+
 Post-solve engagement is isolated in a transactional repository. Writeups and
 survey responses are uniquely keyed by challenge plus null-safe user/team
 competitor and require an accepted solve. Author and reviewer transitions are

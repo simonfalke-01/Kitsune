@@ -1,11 +1,39 @@
 <script lang="ts">
-  import { ArrowRight, Radio, Shield, Sparkles, Workflow } from '@lucide/svelte';
+  import {
+    ArrowRight,
+    CalendarCheck,
+    Radio,
+    Shield,
+    Sparkles,
+    Users,
+    Workflow
+  } from '@lucide/svelte';
   import Badge from '$lib/components/Badge.svelte';
+  import Button from '$lib/components/Button.svelte';
   import Card from '$lib/components/Card.svelte';
   import EmptyState from '$lib/components/EmptyState.svelte';
   import { session } from '$lib/stores/session.svelte';
   import { realtime } from '$lib/stores/realtime.svelte';
+  import { events } from '$lib/stores/events.svelte';
+  import { team } from '$lib/stores/team.svelte';
   import { copy, toned } from '$lib/i18n/index.svelte';
+
+  let workspaceLoaded = $state(false);
+
+  $effect(() => {
+    if (session.authenticated && !workspaceLoaded) {
+      workspaceLoaded = true;
+      void Promise.all([events.load(), team.load()]);
+    }
+  });
+
+  async function register(): Promise<void> {
+    await events.registerSelected({ division_id: null, bracket_id: null });
+  }
+
+  async function unregister(): Promise<void> {
+    await events.unregisterSelected();
+  }
 </script>
 
 {#if session.loading}
@@ -51,11 +79,69 @@
         </a>
       {/if}
     </div>
-    <div class="event-empty">
-      <EmptyState
-        title={toned(copy('empty').event)}
-        detail="Organizers can create an event from Admin."
-      />
+    <div class="event-panel">
+      {#if events.loading}
+        <p class="event-status" role="status">Finding open gates…</p>
+      {:else if events.selectedEvent}
+        <Card elevated>
+          <div class="event-card-head">
+            <div>
+              <span>Selected event</span>
+              <h2>{events.selectedEvent.name}</h2>
+              <p>{events.selectedEvent.description}</p>
+            </div>
+            <Badge tone={events.selectedEvent.state === 'live' ? 'success' : 'neutral'}>
+              {events.selectedEvent.state}
+            </Badge>
+          </div>
+          {#if events.events.length > 1}
+            <label class="event-select field">
+              <span>Event</span>
+              <select
+                value={events.selectedEventId ?? ''}
+                onchange={(event) => events.select(event.currentTarget.value)}
+              >
+                {#each events.events as event (event.id)}
+                  <option value={event.id}>{event.name} · {event.state}</option>
+                {/each}
+              </select>
+            </label>
+          {/if}
+          <div class="registration">
+            <div>
+              <CalendarCheck size={18} />
+              <div>
+                <strong>{events.registration ? 'Registered' : 'Registration open'}</strong>
+                <small>
+                  {events.registration
+                    ? `Competing as ${events.registration.competitor_kind}`
+                    : `${events.selectedEvent.participation} participation`}
+                </small>
+              </div>
+            </div>
+            {#if events.selectedEvent.participation === 'team' && !team.current}
+              <a class="team-link" href="/team">
+                <Users size={15} />
+                Join or create a team
+              </a>
+            {:else if events.registration && ['draft', 'scheduled'].includes(events.selectedEvent.state)}
+              <Button variant="secondary" loading={events.saving} onclick={unregister}>
+                Withdraw
+              </Button>
+            {:else if !events.registration}
+              <Button loading={events.saving} onclick={register}>Register</Button>
+            {/if}
+          </div>
+          {#if events.error}
+            <p class="error-text" role="alert">{events.error}</p>
+          {/if}
+        </Card>
+      {:else}
+        <EmptyState
+          title={toned(copy('empty').event)}
+          detail="Organizers can create an event from Admin."
+        />
+      {/if}
     </div>
   </div>
 {:else}
@@ -148,8 +234,64 @@
     transform: translateY(-2px);
   }
 
-  .event-empty {
+  .event-panel {
     margin-top: 1rem;
+  }
+
+  .event-card-head,
+  .registration,
+  .registration > div,
+  .team-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .event-card-head,
+  .registration {
+    justify-content: space-between;
+  }
+
+  .event-card-head h2,
+  .event-card-head p {
+    margin: 0;
+  }
+
+  .event-card-head > div,
+  .registration > div > div {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .event-card-head span,
+  .event-card-head p,
+  .registration small,
+  .event-status {
+    color: var(--ink-secondary);
+    font-size: 0.78rem;
+  }
+
+  .event-select {
+    width: min(28rem, 100%);
+    margin-top: 1rem;
+  }
+
+  .registration {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--line);
+  }
+
+  .team-link {
+    min-height: 2.65rem;
+    justify-content: center;
+    padding: 0.62rem 1rem;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    background: var(--surface-raised);
+    color: var(--ink);
+    font-size: 0.88rem;
+    font-weight: 680;
   }
 
   .hero {
@@ -227,6 +369,11 @@
     }
     .principles {
       grid-template-columns: 1fr;
+    }
+    .event-card-head,
+    .registration {
+      align-items: stretch;
+      flex-direction: column;
     }
   }
 

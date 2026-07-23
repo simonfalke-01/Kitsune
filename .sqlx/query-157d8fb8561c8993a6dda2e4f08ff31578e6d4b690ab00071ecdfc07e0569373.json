@@ -1,0 +1,39 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO event_participants (\n                event_id,user_id,team_id,division_id,bracket_id,registered_at\n            ) VALUES ($1,$2,$3,$4,$5,$6)\n            ON CONFLICT (event_id,user_id,team_id)\n            DO UPDATE SET division_id = EXCLUDED.division_id,\n                          bracket_id = EXCLUDED.bracket_id\n            RETURNING division_id,bracket_id,registered_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "division_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "bracket_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "registered_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      true,
+      true,
+      false
+    ]
+  },
+  "hash": "157d8fb8561c8993a6dda2e4f08ff31578e6d4b690ab00071ecdfc07e0569373"
+}

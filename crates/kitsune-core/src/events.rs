@@ -109,6 +109,13 @@ pub enum DomainEvent {
     TeamCreated { team_id: TeamId },
     /// Team membership changed.
     TeamMembershipChanged { team_id: TeamId, user_id: UserId },
+    /// Team configuration changed without exposing its secret material.
+    TeamChanged { team_id: TeamId, change: String },
+    /// A user or team registration changed for an event.
+    EventRegistrationChanged {
+        competitor: CompetitorId,
+        registered: bool,
+    },
     /// Challenge lifecycle/configuration changed.
     ChallengeChanged { challenge_id: ChallengeId },
     /// A competitor revealed a hint and paid its one-time cost.
@@ -199,6 +206,8 @@ impl DomainEvent {
             Self::EventChanged { .. } => "event.changed",
             Self::TeamCreated { .. } => "identity.team.created",
             Self::TeamMembershipChanged { .. } => "identity.team.membership_changed",
+            Self::TeamChanged { .. } => "identity.team.changed",
+            Self::EventRegistrationChanged { .. } => "event.registration.changed",
             Self::ChallengeChanged { .. } => "challenge.changed",
             Self::HintUnlocked { .. } => "challenge.hint.unlocked",
             Self::WriteupChanged { .. } => "challenge.writeup.changed",

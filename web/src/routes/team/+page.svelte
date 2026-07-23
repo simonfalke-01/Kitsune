@@ -1,5 +1,15 @@
 <script lang="ts">
-  import { Check, Copy, Crown, LogIn, Plus, Users } from '@lucide/svelte';
+  import {
+    Check,
+    Copy,
+    Crown,
+    LogIn,
+    LogOut,
+    Plus,
+    RotateCw,
+    UserMinus,
+    Users
+  } from '@lucide/svelte';
   import Badge from '$lib/components/Badge.svelte';
   import Button from '$lib/components/Button.svelte';
   import Card from '$lib/components/Card.svelte';
@@ -12,6 +22,8 @@
   let name = $state('');
   let inviteCode = $state('');
   let copied = $state(false);
+  let pendingRemoval = $state<string | null>(null);
+  let confirmLeave = $state(false);
 
   $effect(() => {
     if (session.authenticated && !loaded) {
@@ -40,6 +52,26 @@
     }
     await navigator.clipboard.writeText(team.inviteCode);
     copied = true;
+  }
+
+  async function removeMember(userId: string): Promise<void> {
+    if (pendingRemoval !== userId) {
+      pendingRemoval = userId;
+      return;
+    }
+    if (await team.removeMember(userId)) {
+      pendingRemoval = null;
+    }
+  }
+
+  async function leaveTeam(): Promise<void> {
+    if (!confirmLeave) {
+      confirmLeave = true;
+      return;
+    }
+    if (await team.leave()) {
+      confirmLeave = false;
+    }
   }
 </script>
 
@@ -88,37 +120,81 @@
               {#if member.captain}
                 <Badge tone="accent"><Crown size={11} /> Captain</Badge>
               {:else if team.isCaptain}
-                <Button
-                  variant="quiet"
-                  loading={team.saving}
-                  onclick={() => team.transferCaptain(member.user_id)}
-                >
-                  Make captain
-                </Button>
+                <div class="member-actions">
+                  <Button
+                    variant="quiet"
+                    loading={team.saving}
+                    onclick={() => team.transferCaptain(member.user_id)}
+                  >
+                    Make captain
+                  </Button>
+                  <Button
+                    variant={pendingRemoval === member.user_id ? 'danger' : 'quiet'}
+                    loading={team.saving}
+                    onclick={() => removeMember(member.user_id)}
+                  >
+                    <UserMinus size={14} />
+                    {pendingRemoval === member.user_id ? 'Confirm remove' : 'Remove'}
+                  </Button>
+                </div>
               {/if}
             </article>
           {/each}
         </div>
       </Card>
-      {#if team.inviteCode}
+      {#if team.isCaptain}
         <Card>
           <div class="invite">
             <div>
-              <span>Invite code · shown once</span>
-              <code>{team.inviteCode}</code>
-              <small>Share this over a trusted channel. Kitsune stores only its digest.</small>
-            </div>
-            <Button variant="secondary" onclick={copyInvite}>
-              {#if copied}
-                <Check size={15} />
-                Copied
+              <span>Team invite · each code is shown once</span>
+              {#if team.inviteCode}
+                <code>{team.inviteCode}</code>
+                <small>Share this over a trusted channel. Kitsune stores only its digest.</small>
               {:else}
-                <Copy size={15} />
-                Copy
+                <strong>Ready for a fresh code</strong>
+                <small>Rotating invalidates the previous code immediately.</small>
               {/if}
+            </div>
+            <div class="invite-actions">
+              {#if team.inviteCode}
+                <Button variant="secondary" onclick={copyInvite}>
+                  {#if copied}
+                    <Check size={15} />
+                    Copied
+                  {:else}
+                    <Copy size={15} />
+                    Copy
+                  {/if}
+                </Button>
+              {/if}
+              <Button variant="secondary" loading={team.saving} onclick={() => team.rotateInvite()}>
+                <RotateCw size={15} />
+                Rotate code
+              </Button>
+            </div>
+          </div>
+        </Card>
+      {:else}
+        <Card>
+          <div class="leave-panel">
+            <div>
+              <span>Membership</span>
+              <strong>Leave {team.current.name}</strong>
+              <small>Your existing team score remains with the team.</small>
+            </div>
+            <Button
+              variant={confirmLeave ? 'danger' : 'secondary'}
+              loading={team.saving}
+              onclick={leaveTeam}
+            >
+              <LogOut size={15} />
+              {confirmLeave ? 'Confirm leave' : 'Leave team'}
             </Button>
           </div>
         </Card>
+      {/if}
+      {#if team.error}
+        <p class="error-text" role="alert">{team.error}</p>
       {/if}
     </div>
   {:else if mode}
@@ -179,6 +255,23 @@
     gap: 0.65rem;
   }
 
+  .member-actions,
+  .invite-actions,
+  .leave-panel {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .leave-panel {
+    justify-content: space-between;
+  }
+
+  .leave-panel > div {
+    display: grid;
+    gap: 0.25rem;
+  }
+
   .team-head,
   .members article,
   .invite {
@@ -215,6 +308,8 @@
   .members small,
   .invite span,
   .invite small,
+  .leave-panel span,
+  .leave-panel small,
   .status {
     color: var(--ink-secondary);
     font-size: 0.75rem;
@@ -233,14 +328,20 @@
 
   @media (max-width: 620px) {
     .actions,
-    .invite {
+    .invite,
+    .leave-panel,
+    .member-actions,
+    .invite-actions {
       width: 100%;
       align-items: stretch;
       flex-direction: column;
     }
 
     .actions > :global(*),
-    .invite > :global(*) {
+    .invite > :global(*),
+    .leave-panel > :global(*),
+    .member-actions > :global(*),
+    .invite-actions > :global(*) {
       width: 100%;
     }
   }

@@ -317,3 +317,12 @@ Format: `YYYY-MM-DD — decision — rationale`.
   group future RustCrypto digest updates in Dependabot — independent major
   upgrades otherwise produce trait-incompatible builds even when both releases
   are individually correct.
+- 2026-07-23 — Serialize team registration and membership admission on the team
+  row and recheck all active registered event limits on every join — concurrent
+  registration and invite use cannot create an oversized competitor.
+- 2026-07-23 — Require captains to transfer authority before leaving and expose
+  separate captain-removal and self-leave commands — the single-captain
+  invariant stays database-enforced and destructive intent remains explicit.
+- 2026-07-23 — Treat event registration as a null-safe competitor upsert and
+  allow withdrawal only before gameplay begins — division/bracket choices can
+  be corrected safely without erasing live scoring identity.

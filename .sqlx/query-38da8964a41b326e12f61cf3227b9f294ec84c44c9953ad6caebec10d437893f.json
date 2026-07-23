@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            DELETE FROM event_participants\n            WHERE event_id = $1\n              AND user_id IS NOT DISTINCT FROM $2\n              AND team_id IS NOT DISTINCT FROM $3\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "38da8964a41b326e12f61cf3227b9f294ec84c44c9953ad6caebec10d437893f"
+}

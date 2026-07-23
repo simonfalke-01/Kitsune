@@ -7,8 +7,11 @@ use axum::{
 };
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 use chrono::{DateTime, Utc};
-use kitsune_core::{DomainError, identity::TeamId};
-use kitsune_db::teams::{TeamMemberRecord, TeamRecord, TeamRepository};
+use kitsune_core::{
+    DomainError,
+    identity::{BracketId, DivisionId, EventId, TeamId, UserId},
+};
+use kitsune_db::teams::{EventRegistrationRecord, TeamMemberRecord, TeamRecord, TeamRepository};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use utoipa::ToSchema;
@@ -70,6 +73,46 @@ pub struct JoinTeamRequest {
 pub struct TransferCaptainRequest {
     /// Existing member receiving captain authority.
     pub user_id: Uuid,
+}
+
+/// One-time invite rotation response.
+#[derive(Serialize, ToSchema)]
+pub struct RotateInviteResponse {
+    /// Replacement opaque invite shown once.
+    pub invite_code: String,
+}
+
+/// Optional placement selected during event registration.
+#[derive(Deserialize, ToSchema)]
+pub struct EventRegistrationRequest {
+    /// Event-owned division, when configured.
+    pub division_id: Option<Uuid>,
+    /// Event-owned tournament bracket, when configured.
+    pub bracket_id: Option<Uuid>,
+}
+
+/// Safe registration projection.
+#[derive(Serialize, ToSchema)]
+pub struct EventRegistrationResponse {
+    /// Event boundary.
+    pub event_id: Uuid,
+    /// `user` or `team` under the event participation policy.
+    pub competitor_kind: &'static str,
+    /// Resolved competitor identifier.
+    pub competitor_id: Uuid,
+    /// Selected division.
+    pub division_id: Option<Uuid>,
+    /// Selected bracket.
+    pub bracket_id: Option<Uuid>,
+    /// Original registration instant.
+    pub registered_at: DateTime<Utc>,
+}
+
+/// Current authenticated competitor registration state.
+#[derive(Serialize, ToSchema)]
+pub struct EventRegistrationStatusResponse {
+    /// Registration details, absent until the competitor registers.
+    pub registration: Option<EventRegistrationResponse>,
 }
 
 #[utoipa::path(
@@ -228,6 +271,241 @@ pub(crate) async fn transfer_captain(
     Ok(Json(team.into()))
 }
 
+#[utoipa::path(
+    post,
+    path = "/api/v1/teams/{team_id}/invite",
+    tag = "teams",
+    params(("team_id" = Uuid, Path, description = "Team ID")),
+    responses(
+        (status = 200, body = RotateInviteResponse),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody)
+    )
+)]
+pub(crate) async fn rotate_invite(
+    State(state): State<AppState>,
+    actor: Actor,
+    headers: HeaderMap,
+    Path(team_id): Path<Uuid>,
+) -> ApiResult<Json<RotateInviteResponse>> {
+    actor.require("team_captain")?;
+    actor.require_csrf(&headers)?;
+    let invite_code = generate_invite_code();
+    let digest = Sha256::digest(invite_code.as_bytes());
+    let envelope = TeamRepository::new(state.db.pool().clone())
+        .rotate_invite(
+            actor.session.account.organization_id,
+            TeamId(team_id),
+            actor.session.account.user_id,
+            digest.as_slice(),
+            Utc::now(),
+        )
+        .await
+        .map_err(ApiError::from)?;
+    state
+        .event_bus
+        .publish(envelope)
+        .await
+        .map_err(ApiError::from)?;
+    Ok(Json(RotateInviteResponse { invite_code }))
+}
+
+#[utoipa::path(
+    delete,
+    path = "/api/v1/teams/{team_id}/members/{user_id}",
+    tag = "teams",
+    params(
+        ("team_id" = Uuid, Path, description = "Team ID"),
+        ("user_id" = Uuid, Path, description = "Member user ID")
+    ),
+    responses(
+        (status = 200, body = TeamResponse),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody),
+        (status = 409, body = ErrorBody)
+    )
+)]
+pub(crate) async fn remove_member(
+    State(state): State<AppState>,
+    actor: Actor,
+    headers: HeaderMap,
+    Path((team_id, user_id)): Path<(Uuid, Uuid)>,
+) -> ApiResult<Json<TeamResponse>> {
+    actor.require("team_captain")?;
+    actor.require_csrf(&headers)?;
+    let (team, envelope) = TeamRepository::new(state.db.pool().clone())
+        .remove_member(
+            actor.session.account.organization_id,
+            TeamId(team_id),
+            actor.session.account.user_id,
+            UserId(user_id),
+            Utc::now(),
+        )
+        .await
+        .map_err(ApiError::from)?;
+    state
+        .event_bus
+        .publish(envelope)
+        .await
+        .map_err(ApiError::from)?;
+    Ok(Json(team.into()))
+}
+
+#[utoipa::path(
+    delete,
+    path = "/api/v1/teams/{team_id}/membership",
+    tag = "teams",
+    params(("team_id" = Uuid, Path, description = "Team ID")),
+    responses(
+        (status = 204),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody),
+        (status = 409, body = ErrorBody)
+    )
+)]
+pub(crate) async fn leave_team(
+    State(state): State<AppState>,
+    actor: Actor,
+    headers: HeaderMap,
+    Path(team_id): Path<Uuid>,
+) -> ApiResult<StatusCode> {
+    actor.require("team_join")?;
+    actor.require_csrf(&headers)?;
+    let envelope = TeamRepository::new(state.db.pool().clone())
+        .leave(
+            actor.session.account.organization_id,
+            TeamId(team_id),
+            actor.session.account.user_id,
+            Utc::now(),
+        )
+        .await
+        .map_err(ApiError::from)?;
+    state
+        .event_bus
+        .publish(envelope)
+        .await
+        .map_err(ApiError::from)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/v1/events/{event_id}/registration",
+    tag = "teams",
+    params(("event_id" = Uuid, Path, description = "Event ID")),
+    request_body = EventRegistrationRequest,
+    responses(
+        (status = 200, body = EventRegistrationResponse),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody),
+        (status = 409, body = ErrorBody),
+        (status = 422, body = ErrorBody)
+    )
+)]
+pub(crate) async fn register_event(
+    State(state): State<AppState>,
+    actor: Actor,
+    headers: HeaderMap,
+    Path(event_id): Path<Uuid>,
+    Json(request): Json<EventRegistrationRequest>,
+) -> ApiResult<Json<EventRegistrationResponse>> {
+    actor.require("event_read")?;
+    actor.require_csrf(&headers)?;
+    let (registration, envelope) = TeamRepository::new(state.db.pool().clone())
+        .register_event(
+            actor.session.account.organization_id,
+            EventId(event_id),
+            actor.session.account.user_id,
+            request.division_id.map(DivisionId),
+            request.bracket_id.map(BracketId),
+            Utc::now(),
+        )
+        .await
+        .map_err(ApiError::from)?;
+    if let Some(envelope) = envelope {
+        state
+            .event_bus
+            .publish(envelope)
+            .await
+            .map_err(ApiError::from)?;
+    }
+    Ok(Json(registration.into()))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/v1/events/{event_id}/registration",
+    tag = "teams",
+    params(("event_id" = Uuid, Path, description = "Event ID")),
+    responses(
+        (status = 200, body = EventRegistrationStatusResponse),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody),
+        (status = 422, body = ErrorBody)
+    )
+)]
+pub(crate) async fn event_registration(
+    State(state): State<AppState>,
+    actor: Actor,
+    Path(event_id): Path<Uuid>,
+) -> ApiResult<Json<EventRegistrationStatusResponse>> {
+    actor.require("event_read")?;
+    let registration = TeamRepository::new(state.db.pool().clone())
+        .event_registration(
+            actor.session.account.organization_id,
+            EventId(event_id),
+            actor.session.account.user_id,
+        )
+        .await
+        .map_err(ApiError::from)?;
+    Ok(Json(EventRegistrationStatusResponse {
+        registration: registration.map(EventRegistrationResponse::from),
+    }))
+}
+
+#[utoipa::path(
+    delete,
+    path = "/api/v1/events/{event_id}/registration",
+    tag = "teams",
+    params(("event_id" = Uuid, Path, description = "Event ID")),
+    responses(
+        (status = 204),
+        (status = 401, body = ErrorBody),
+        (status = 403, body = ErrorBody),
+        (status = 404, body = ErrorBody),
+        (status = 409, body = ErrorBody)
+    )
+)]
+pub(crate) async fn unregister_event(
+    State(state): State<AppState>,
+    actor: Actor,
+    headers: HeaderMap,
+    Path(event_id): Path<Uuid>,
+) -> ApiResult<StatusCode> {
+    actor.require("event_read")?;
+    actor.require_csrf(&headers)?;
+    let envelope = TeamRepository::new(state.db.pool().clone())
+        .unregister_event(
+            actor.session.account.organization_id,
+            EventId(event_id),
+            actor.session.account.user_id,
+            Utc::now(),
+        )
+        .await
+        .map_err(ApiError::from)?;
+    state
+        .event_bus
+        .publish(envelope)
+        .await
+        .map_err(ApiError::from)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
 impl From<TeamRecord> for TeamResponse {
     fn from(team: TeamRecord) -> Self {
         Self {
@@ -250,6 +528,19 @@ impl From<TeamMemberRecord> for TeamMemberResponse {
             display_name: member.display_name,
             captain: member.captain,
             joined_at: member.joined_at,
+        }
+    }
+}
+
+impl From<EventRegistrationRecord> for EventRegistrationResponse {
+    fn from(registration: EventRegistrationRecord) -> Self {
+        Self {
+            event_id: registration.event_id,
+            competitor_kind: registration.competitor_kind,
+            competitor_id: registration.competitor_id,
+            division_id: registration.division_id,
+            bracket_id: registration.bracket_id,
+            registered_at: registration.registered_at,
         }
     }
 }

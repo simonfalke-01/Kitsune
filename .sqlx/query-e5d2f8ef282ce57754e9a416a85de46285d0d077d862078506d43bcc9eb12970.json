@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE teams SET invite_code_digest = $1,updated_at = $2 WHERE id = $3 AND organization_id = $4",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Bytea",
+        "Timestamptz",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "e5d2f8ef282ce57754e9a416a85de46285d0d077d862078506d43bcc9eb12970"
+}

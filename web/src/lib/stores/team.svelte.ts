@@ -100,6 +100,70 @@ class TeamStore {
     return true;
   }
 
+  async rotateInvite(): Promise<boolean> {
+    const csrf = session.current?.csrf_token;
+    const teamId = this.current?.id;
+    if (!csrf || !teamId) {
+      return this.authenticationFailure();
+    }
+    this.saving = true;
+    this.error = null;
+    const { data, error } = await api.POST('/api/v1/teams/{team_id}/invite', {
+      params: { path: { team_id: teamId } },
+      headers: { 'x-csrf-token': csrf }
+    });
+    this.saving = false;
+    if (!data) {
+      this.error = errorMessage(error, 'A replacement invite could not be created.');
+      return false;
+    }
+    this.inviteCode = data.invite_code;
+    return true;
+  }
+
+  async removeMember(userId: string): Promise<boolean> {
+    const csrf = session.current?.csrf_token;
+    const teamId = this.current?.id;
+    if (!csrf || !teamId) {
+      return this.authenticationFailure();
+    }
+    this.saving = true;
+    this.error = null;
+    const { data, error } = await api.DELETE('/api/v1/teams/{team_id}/members/{user_id}', {
+      params: { path: { team_id: teamId, user_id: userId } },
+      headers: { 'x-csrf-token': csrf }
+    });
+    this.saving = false;
+    if (!data) {
+      this.error = errorMessage(error, 'The member could not be removed.');
+      return false;
+    }
+    this.teams = [data];
+    return true;
+  }
+
+  async leave(): Promise<boolean> {
+    const csrf = session.current?.csrf_token;
+    const teamId = this.current?.id;
+    if (!csrf || !teamId) {
+      return this.authenticationFailure();
+    }
+    this.saving = true;
+    this.error = null;
+    const { response, error } = await api.DELETE('/api/v1/teams/{team_id}/membership', {
+      params: { path: { team_id: teamId } },
+      headers: { 'x-csrf-token': csrf }
+    });
+    this.saving = false;
+    if (!response.ok) {
+      this.error = errorMessage(error, 'The team could not be left.');
+      return false;
+    }
+    this.teams = [];
+    this.inviteCode = null;
+    return true;
+  }
+
   clear(): void {
     this.teams = [];
     this.inviteCode = null;

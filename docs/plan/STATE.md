@@ -5,12 +5,13 @@ Updated: 2026-07-23 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: complete team administration, event registration, and
-  event-specific size-limit enforcement.
+- In progress: complete administrator team merge and cross-team transfer with
+  historical competitor integrity.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
-- Next: add captain invite rotation, member leave/removal, admin merge/transfer,
-  and explicit event registration through the REST and organizer surfaces.
+- Next: add audited team-management resources that migrate historical solves,
+  scores, unlocks, registrations, writeups, surveys, and instance ownership
+  without violating competitor uniqueness.
 
 ## Verified
 
@@ -183,6 +184,13 @@ Updated: 2026-07-23 (Asia/Singapore)
   Exact-answer idempotent replays bypass the component safely. Core contracts,
   signed component tests, the PostgreSQL scoring journey, strict Clippy,
   generated API client, and the admin authoring form are green.
+- Team lifecycle now includes digest-only one-time invite rotation, captain
+  transfer-before-leave, captain removal of non-captains, self-service leave,
+  explicit event registration/status/withdrawal, and division/bracket tenant
+  validation. Registration and later joins serialize on the team row and enforce
+  every active registered event's size limit. Generated REST/UI surfaces, the
+  PostgreSQL journey, strict workspace Clippy/tests, responsive production build,
+  and the complete desktop/mobile Playwright plus axe journey are green.
 - Main CI run 29968482559 is green across Rust, Web, dependency audit, and the
   complete desktop/mobile Browser E2E journey.
 

@@ -85,6 +85,12 @@ or scaffolding alone.
       outbox, PostgreSQL constraints, and desktop/mobile browser coverage.
 - [ ] Team invite rotation, leave/removal, merge/transfer administration,
       event registration, and event-specific size-limit enforcement.
+  - [x] Captain-only digest invite rotation with one-time reveal.
+  - [x] Captain transfer-before-leave, member removal, and self-service leave.
+  - [x] Explicit event registration/status/withdrawal with division/bracket
+        ownership and race-safe event size-limit enforcement.
+  - [ ] Administrator merge and cross-team transfer with historical competitor
+        reassignment.
 - [x] Exact/regex/choice/manual submission validation, digest-only receipts,
       client idempotency, immutable score ledger, solves, first blood, authored and
       runtime attempt limits, and individual/team competitor resolution.

@@ -5,6 +5,8 @@ import type {
   CreateChallengeInput,
   CreateEventInput,
   EventSummary,
+  EventRegistration,
+  EventRegistrationInput,
   UpdateScoreboardControlsInput,
   UpdateEventStateInput
 } from '$lib/api/client';
@@ -72,6 +74,8 @@ class EventStore {
   events = $state<EventSummary[]>([]);
   challenges = $state<ChallengeSummary[]>([]);
   selectedEventId = $state<string | null>(null);
+  registration = $state<EventRegistration | null>(null);
+  registrationLoading = $state(false);
   loading = $state(false);
   saving = $state(false);
   error = $state<string | null>(null);
@@ -102,6 +106,7 @@ class EventStore {
     }
     this.persistSelection();
     await this.loadChallenges();
+    await this.loadRegistration();
     this.loading = false;
   }
 
@@ -112,6 +117,7 @@ class EventStore {
     this.selectedEventId = eventId;
     this.persistSelection();
     await this.loadChallenges();
+    await this.loadRegistration();
   }
 
   async loadChallenges(): Promise<void> {
@@ -133,6 +139,70 @@ class EventStore {
       return;
     }
     this.challenges = data.map(normalizeChallenge);
+  }
+
+  async loadRegistration(): Promise<void> {
+    const eventId = this.selectedEventId;
+    if (!eventId) {
+      this.registration = null;
+      return;
+    }
+    this.registrationLoading = true;
+    const { data, error } = await api.GET('/api/v1/events/{event_id}/registration', {
+      params: { path: { event_id: eventId } }
+    });
+    this.registrationLoading = false;
+    if (!data) {
+      this.registration = null;
+      this.error = errorMessage(error, 'Registration status could not be loaded.');
+      return;
+    }
+    this.registration = data.registration ?? null;
+  }
+
+  async registerSelected(input: EventRegistrationInput): Promise<boolean> {
+    const csrf = session.current?.csrf_token;
+    const eventId = this.selectedEventId;
+    if (!csrf || !eventId) {
+      this.authenticationFailure();
+      return false;
+    }
+    this.saving = true;
+    this.error = null;
+    const { data, error } = await api.PUT('/api/v1/events/{event_id}/registration', {
+      params: { path: { event_id: eventId } },
+      headers: { 'x-csrf-token': csrf },
+      body: input
+    });
+    this.saving = false;
+    if (!data) {
+      this.error = errorMessage(error, 'Registration could not be completed.');
+      return false;
+    }
+    this.registration = data;
+    return true;
+  }
+
+  async unregisterSelected(): Promise<boolean> {
+    const csrf = session.current?.csrf_token;
+    const eventId = this.selectedEventId;
+    if (!csrf || !eventId) {
+      this.authenticationFailure();
+      return false;
+    }
+    this.saving = true;
+    this.error = null;
+    const { response, error } = await api.DELETE('/api/v1/events/{event_id}/registration', {
+      params: { path: { event_id: eventId } },
+      headers: { 'x-csrf-token': csrf }
+    });
+    this.saving = false;
+    if (!response.ok) {
+      this.error = errorMessage(error, 'Registration could not be removed.');
+      return false;
+    }
+    this.registration = null;
+    return true;
   }
 
   async createEvent(input: CreateEventInput): Promise<EventSummary | null> {
@@ -229,6 +299,7 @@ class EventStore {
     this.events = [];
     this.challenges = [];
     this.selectedEventId = null;
+    this.registration = null;
     this.error = null;
     this.challengeRequest += 1;
     if (browser) {
