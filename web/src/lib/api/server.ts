@@ -9,7 +9,8 @@ import type {
   EventSummary,
   ScoreHistory,
   Scoreboard,
-  Session
+  Session,
+  TeamSummary
 } from './client';
 import type { paths } from './schema';
 import { chooseDefaultEvent, normalizeChallenge } from '../events';
@@ -192,5 +193,27 @@ export async function getServerScoreboardBootstrap(): Promise<ScoreboardBootstra
     eventId: selectedEvent.id,
     history: historyResult.data,
     scoreboard: scoreboardResult.data
+  };
+}
+
+export interface TeamBootstrap {
+  error: string | null;
+  teams: TeamSummary[];
+}
+
+export async function getServerTeamBootstrap(): Promise<TeamBootstrap> {
+  const client = await getServerClient();
+  const result = await client.GET('/api/v1/teams');
+
+  if (!result.data) {
+    return {
+      error: 'The team could not be loaded.',
+      teams: []
+    };
+  }
+
+  return {
+    error: null,
+    teams: result.data
   };
 }

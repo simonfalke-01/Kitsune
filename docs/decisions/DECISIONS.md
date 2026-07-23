@@ -482,3 +482,6 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-23 — Render score history as a deterministic token-colored SVG with a
   bounded screen-reader event list — the route keeps historical standings
   accessible and responsive without adding an unapproved chart dependency.
+- 2026-07-23 — Route destructive confirmations through a dedicated shared
+  alert-dialog primitive — team removal, departure, captain transfer, and invite
+  replacement need explicit consequence copy and a protected confirmation path.

@@ -1,7 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useId } from 'react';
 import {
   Dialog as ReactAriaDialog,
   DialogTrigger,
@@ -47,11 +47,14 @@ export function Dialog({
   title,
   ...props
 }: DialogProps) {
+  const descriptionId = useId();
+
   return (
     <ModalOverlay className={overlayClass} isDismissable>
       <Modal className={modalClass}>
         <ReactAriaDialog
           {...props}
+          aria-describedby={description ? descriptionId : undefined}
           aria-label={title}
           className={cx(dialogClass, typeof className === 'string' ? className : undefined)}
         >
@@ -61,7 +64,9 @@ export function Dialog({
                 {title}
               </Heading>
               {description ? (
-                <p className="m-0 max-w-prose text-sm text-text-muted">{description}</p>
+                <p className="m-0 max-w-prose text-sm text-text-muted" id={descriptionId}>
+                  {description}
+                </p>
               ) : null}
             </div>
             <Button aria-label="Close dialog" size="icon" slot="close" tone="quiet">
@@ -94,11 +99,14 @@ export function AlertDialog({
   title,
   ...props
 }: AlertDialogProps) {
+  const descriptionId = useId();
+
   return (
     <ModalOverlay className={overlayClass}>
       <Modal className={modalClass}>
         <ReactAriaDialog
           {...props}
+          aria-describedby={descriptionId}
           aria-label={title}
           className={cx(dialogClass, typeof className === 'string' ? className : undefined)}
           role="alertdialog"
@@ -107,7 +115,9 @@ export function AlertDialog({
             <Heading className="font-display text-xl font-semibold tracking-tight" slot="title">
               {title}
             </Heading>
-            <p className="m-0 max-w-prose text-sm text-text-muted">{description}</p>
+            <p className="m-0 max-w-prose text-sm text-text-muted" id={descriptionId}>
+              {description}
+            </p>
           </div>
           {children ? <div>{children}</div> : null}
           <div className="flex flex-wrap justify-end gap-2">{actions}</div>

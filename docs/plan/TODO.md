@@ -34,7 +34,9 @@
         confirmation, completion, and API-unavailable states.
   - [x] Add the SSR-ranked scoreboard with division filters, hidden/frozen
         states, realtime refresh, compact metrics, and accessible score history.
-  - [ ] Complete team, account, and organizer routes.
+  - [x] Add the SSR team membership route with create/join flows, one-time invite
+        handling, roster state, captain controls, and realtime refresh.
+  - [ ] Complete event registration, account, and organizer routes.
 - [ ] Port generated OpenAPI access and preserve authenticated realtime
       invalidation without introducing an unapproved dependency.
   - [x] Bootstrap the authenticated session, event catalog, selected event, and
