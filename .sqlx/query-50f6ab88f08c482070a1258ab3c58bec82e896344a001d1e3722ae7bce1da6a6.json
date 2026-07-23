@@ -1,0 +1,57 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT c.id AS challenge_id,c.name AS challenge_name,c.category,\n                   s.awarded_points,COALESCE(s.first_blood,false) AS \"first_blood!\",\n                   cs.solved_at\n            FROM challenge_solves cs\n            JOIN challenges c ON c.id = cs.challenge_id\n            JOIN submissions s ON s.id = cs.submission_id\n            JOIN score_entries se\n              ON se.event_id = c.event_id\n             AND se.user_id IS NOT DISTINCT FROM cs.user_id\n             AND se.team_id IS NOT DISTINCT FROM cs.team_id\n             AND se.reason->'solve'->>'challenge_id' = c.id::text\n            WHERE c.event_id = $1\n              AND ($2 OR c.state IN ('published','archived'))\n              AND ($2 OR NOT $3 OR NOT se.hidden_by_freeze)\n              AND cs.user_id IS NOT DISTINCT FROM $4::uuid\n              AND cs.team_id IS NOT DISTINCT FROM $5::uuid\n            ORDER BY cs.solved_at DESC,c.id\n            LIMIT $6\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "challenge_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "challenge_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "category",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "awarded_points",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 4,
+        "name": "first_blood!",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "solved_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Bool",
+        "Bool",
+        "Uuid",
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      null,
+      false
+    ]
+  },
+  "hash": "50f6ab88f08c482070a1258ab3c58bec82e896344a001d1e3722ae7bce1da6a6"
+}

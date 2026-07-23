@@ -114,7 +114,9 @@
           {#each team.current.members as member (member.user_id)}
             <article>
               <div>
-                <strong>{member.display_name}</strong>
+                <a class="member-link" href={`/competitors/user/${member.user_id}`}
+                  >{member.display_name}</a
+                >
                 <small>Joined {new Date(member.joined_at).toLocaleDateString()}</small>
               </div>
               {#if member.captain}
@@ -261,6 +263,24 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+  }
+
+  .member-link {
+    display: block;
+    width: fit-content;
+    color: var(--ink);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .member-link:hover {
+    color: var(--accent);
+  }
+
+  .member-link:focus-visible {
+    border-radius: 0.25rem;
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
   }
 
   .leave-panel {

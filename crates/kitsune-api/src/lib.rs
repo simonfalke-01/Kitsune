@@ -7,6 +7,7 @@ mod oauth;
 mod oidc;
 mod oidc_routes;
 mod passkeys;
+mod profiles;
 mod realtime;
 mod resources;
 mod saml;
@@ -251,6 +252,7 @@ pub struct ReadinessResponse {
         submissions::submit_answer,
         submissions::scoreboard,
         submissions::score_history,
+        profiles::competitor_profile,
         submissions::list_hints,
         submissions::unlock_hint,
         submissions::manual_review_queue,
@@ -319,6 +321,12 @@ pub struct ReadinessResponse {
         submissions::HintUnlockResponse,
         submissions::ManualReviewResponse,
         submissions::ReviewManualSubmissionRequest,
+        profiles::ProfileStandingResponse,
+        profiles::ProfileRegistrationResponse,
+        profiles::ProfileMemberResponse,
+        profiles::ProfileTeamResponse,
+        profiles::ProfileSolveResponse,
+        profiles::CompetitorProfileResponse,
         teams::TeamMemberResponse,
         teams::TeamResponse,
         teams::CreateTeamRequest,
@@ -369,6 +377,7 @@ pub struct ReadinessResponse {
         (name = "surveys", description = "Post-solve feedback and analytics"),
         (name = "submissions", description = "Challenge attempts and solves"),
         (name = "scoreboard", description = "Ranked event standings"),
+        (name = "profiles", description = "Public competitor identities and event activity"),
         (name = "teams", description = "Player teams and captain controls"),
         (name = "team administration", description = "Organizer team transfer and merge controls")
     )
@@ -580,6 +589,10 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/events/{event_id}/score-history",
             get(submissions::score_history),
+        )
+        .route(
+            "/api/v1/events/{event_id}/competitors/{competitor_kind}/{competitor_id}",
+            get(profiles::competitor_profile),
         )
         .route(
             "/api/v1/events/{event_id}/challenges/{challenge_id}/hints",
@@ -1761,6 +1774,37 @@ mod tests {
         let status: serde_json::Value = serde_json::from_slice(&body).expect("registration status");
         assert_eq!(status["registration"]["competitor_id"], team_id);
 
+        let team_profile = Request::builder()
+            .uri(format!(
+                "/api/v1/events/{team_event_id}/competitors/team/{team_id}"
+            ))
+            .header(header::COOKIE, &player_cookies)
+            .body(Body::empty())
+            .expect("team profile request");
+        let response = app
+            .clone()
+            .oneshot(team_profile)
+            .await
+            .expect("team profile");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("team profile body")
+            .to_bytes();
+        let team_profile: serde_json::Value = serde_json::from_slice(&body).expect("team profile");
+        assert_eq!(team_profile["name"], "Nine Tails");
+        assert!(team_profile["registration"]["division_name"].is_null());
+        assert_eq!(
+            team_profile["members"]
+                .as_array()
+                .expect("team profile members")
+                .len(),
+            2
+        );
+        assert!(team_profile["standing"].is_null());
+
         let replay_registration = Request::builder()
             .method("PUT")
             .uri(format!("/api/v1/events/{team_event_id}/registration"))
@@ -2814,6 +2858,54 @@ mod tests {
         assert_eq!(board["rows"][0]["score"], 1340);
         assert_eq!(board["rows"][0]["solves"], 4);
 
+        let competitor_profile = Request::builder()
+            .uri(format!(
+                "/api/v1/events/{event_id}/competitors/user/{player_id}"
+            ))
+            .header(header::COOKIE, &player_cookies)
+            .body(Body::empty())
+            .expect("competitor profile request");
+        let response = app
+            .clone()
+            .oneshot(competitor_profile)
+            .await
+            .expect("competitor profile");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("competitor profile body")
+            .to_bytes();
+        let profile: serde_json::Value = serde_json::from_slice(&body).expect("competitor profile");
+        assert_eq!(profile["name"], "Player");
+        assert_eq!(profile["standing"]["rank"], 1);
+        assert_eq!(profile["standing"]["score"], 1340);
+        assert_eq!(
+            profile["recent_solves"]
+                .as_array()
+                .expect("recent solves")
+                .len(),
+            4
+        );
+        assert_eq!(profile["teams"][0]["team_name"], "Nine Tails");
+
+        let invalid_competitor_kind = Request::builder()
+            .uri(format!(
+                "/api/v1/events/{event_id}/competitors/organization/{player_id}"
+            ))
+            .header(header::COOKIE, &player_cookies)
+            .body(Body::empty())
+            .expect("invalid competitor kind request");
+        assert_eq!(
+            app.clone()
+                .oneshot(invalid_competitor_kind)
+                .await
+                .expect("invalid competitor kind")
+                .status(),
+            StatusCode::UNPROCESSABLE_ENTITY
+        );
+
         let score_history = Request::builder()
             .uri(format!("/api/v1/events/{event_id}/score-history"))
             .header(header::COOKIE, &player_cookies)
@@ -2898,6 +2990,65 @@ mod tests {
         assert_eq!(
             hidden_history["series"].as_array().expect("series").len(),
             0
+        );
+
+        let hidden_profile = Request::builder()
+            .uri(format!(
+                "/api/v1/events/{event_id}/competitors/user/{player_id}"
+            ))
+            .header(header::COOKIE, &player_cookies)
+            .body(Body::empty())
+            .expect("hidden competitor profile request");
+        let response = app
+            .clone()
+            .oneshot(hidden_profile)
+            .await
+            .expect("hidden competitor profile");
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("hidden competitor profile body")
+            .to_bytes();
+        let hidden_profile: serde_json::Value =
+            serde_json::from_slice(&body).expect("hidden competitor profile");
+        assert_eq!(hidden_profile["scoreboard_hidden"], true);
+        assert!(hidden_profile["standing"].is_null());
+        assert_eq!(
+            hidden_profile["recent_solves"]
+                .as_array()
+                .expect("hidden recent solves")
+                .len(),
+            0
+        );
+
+        let organizer_profile = Request::builder()
+            .uri(format!(
+                "/api/v1/events/{event_id}/competitors/user/{player_id}"
+            ))
+            .header(header::COOKIE, &admin_cookies)
+            .body(Body::empty())
+            .expect("organizer competitor profile request");
+        let response = app
+            .clone()
+            .oneshot(organizer_profile)
+            .await
+            .expect("organizer competitor profile");
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("organizer competitor profile body")
+            .to_bytes();
+        let organizer_profile: serde_json::Value =
+            serde_json::from_slice(&body).expect("organizer competitor profile");
+        assert_eq!(organizer_profile["standing"]["score"], 1340);
+        assert_eq!(
+            organizer_profile["recent_solves"]
+                .as_array()
+                .expect("organizer recent solves")
+                .len(),
+            4
         );
 
         let freeze_scoreboard = Request::builder()

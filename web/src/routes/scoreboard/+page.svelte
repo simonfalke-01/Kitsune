@@ -169,7 +169,7 @@
         <article class:podium={row.rank <= 3}>
           <strong class="rank">{row.rank}</strong>
           <div class="identity">
-            <strong>{row.name}</strong>
+            <a href={`/competitors/${row.competitor_kind}/${row.competitor_id}`}>{row.name}</a>
             <small>{row.competitor_kind}</small>
           </div>
           <span>{row.solves}</span>
@@ -362,6 +362,23 @@
   .identity {
     display: grid;
     gap: 0.2rem;
+  }
+
+  .identity a {
+    width: fit-content;
+    color: var(--ink);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .identity a:hover {
+    color: var(--accent);
+  }
+
+  .identity a:focus-visible {
+    border-radius: 0.25rem;
+    outline: 2px solid var(--focus);
+    outline-offset: 3px;
   }
 
   .identity small {

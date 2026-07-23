@@ -5,12 +5,12 @@ Updated: 2026-07-23 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: expose competitor-owned profile projections from rankings and
-  team rosters.
+- In progress: deliver email verification and account-recovery messages through
+  the optional SMTP notifier without weakening lean-mode in-app delivery.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
-- Next: complete competitor profile REST/OpenAPI and responsive player routes,
-  then close the dynamic-verifier/scoreboard-profile acceptance slice.
+- Next: complete the SMTP delivery slice, then audit deny-by-default RBAC across
+  the versioned REST surface before closing milestone 03.
 
 ## Verified
 
@@ -209,6 +209,16 @@ Updated: 2026-07-23 (Asia/Singapore)
   scoreboard controls invalidate synchronously, and cache failures fall back to
   PostgreSQL with a 750-millisecond stale-read ceiling. Focused cache tests,
   strict Clippy, and the full PostgreSQL-backed scoring journey are green.
+- Public competitor profiles now combine revision-cached standings with
+  tenant-scoped identity, event registration, team relationships, and indexed
+  recent solves. Hidden/frozen controls cannot be bypassed by direct profile
+  URLs; arbitrary custom fields and email remain private. Generated OpenAPI and
+  TypeScript contracts, user/team API coverage, strict workspace Clippy,
+  responsive production builds, and desktop/mobile profile journeys with axe
+  are green.
+- Cache-commit CI exposed one team-merge assertion comparing Rust nanoseconds
+  to PostgreSQL microseconds. The assertion now matches the storage contract;
+  five repeated focused runs and the full all-feature workspace suite pass.
 
 ## Risks being actively retired
 

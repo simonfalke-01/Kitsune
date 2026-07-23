@@ -54,6 +54,13 @@ when an invalidation queue or adapter is unavailable. WebSocket nodes subscribe
 to the shared bus without requiring affinity; browser stores independently
 coalesce score bursts into one bounded refresh.
 
+Competitor profiles reuse the revisioned overall scoreboard for rank and totals,
+then add tenant-scoped identity, event registration, roster relationships, and a
+12-item indexed solve trail. Public requests receive no standing or activity
+while the scoreboard is hidden and exclude post-freeze entries while frozen;
+organizers receive the operational projection. Email and unclassified custom
+fields never cross this public boundary.
+
 Hint bodies live only in the private hint table and are projected as `null`
 until a competitor-scoped unlock exists. The unique unlock key makes repeated
 requests free, while the first unlock and its optional negative score entry

@@ -11,6 +11,7 @@ pub mod instances;
 pub mod oauth;
 pub mod oidc;
 pub mod passkeys;
+pub mod profiles;
 pub mod resources;
 pub mod saml;
 pub mod submissions;

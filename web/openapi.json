@@ -475,6 +475,92 @@
         ],
         "type": "string"
       },
+      "CompetitorProfileResponse": {
+        "description": "Player-safe identity, standing, roster, and recent event activity.",
+        "properties": {
+          "competitor_id": {
+            "description": "User or team identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "competitor_kind": {
+            "description": "`user` or `team`.",
+            "type": "string"
+          },
+          "created_at": {
+            "description": "Identity creation time.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "members": {
+            "description": "Team roster for a team profile.",
+            "items": {
+              "$ref": "#/components/schemas/ProfileMemberResponse"
+            },
+            "type": "array"
+          },
+          "name": {
+            "description": "Public display name.",
+            "type": "string"
+          },
+          "recent_solves": {
+            "description": "Recent activity under the same concealment rules as the scoreboard.",
+            "items": {
+              "$ref": "#/components/schemas/ProfileSolveResponse"
+            },
+            "type": "array"
+          },
+          "registration": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProfileRegistrationResponse",
+                "description": "Exact event registration, when present."
+              }
+            ]
+          },
+          "scoreboard_frozen": {
+            "description": "Post-freeze concealment state.",
+            "type": "boolean"
+          },
+          "scoreboard_hidden": {
+            "description": "Public scoreboard concealment state.",
+            "type": "boolean"
+          },
+          "standing": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/ProfileStandingResponse",
+                "description": "Current visible overall standing, absent when hidden or unranked."
+              }
+            ]
+          },
+          "teams": {
+            "description": "Team associations for a user profile.",
+            "items": {
+              "$ref": "#/components/schemas/ProfileTeamResponse"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "competitor_kind",
+          "competitor_id",
+          "name",
+          "created_at",
+          "scoreboard_hidden",
+          "scoreboard_frozen",
+          "members",
+          "teams",
+          "recent_solves"
+        ],
+        "type": "object"
+      },
       "CreateApiTokenRequest": {
         "description": "New API-token request. The cleartext token is returned exactly once.",
         "properties": {
@@ -1659,6 +1745,183 @@
           "id",
           "name",
           "created_at"
+        ],
+        "type": "object"
+      },
+      "ProfileMemberResponse": {
+        "description": "Public team roster member.",
+        "properties": {
+          "captain": {
+            "description": "Captain marker.",
+            "type": "boolean"
+          },
+          "display_name": {
+            "description": "Public display name.",
+            "type": "string"
+          },
+          "joined_at": {
+            "description": "Membership start.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "user_id": {
+            "description": "User identifier.",
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "user_id",
+          "display_name",
+          "captain",
+          "joined_at"
+        ],
+        "type": "object"
+      },
+      "ProfileRegistrationResponse": {
+        "description": "Event registration context.",
+        "properties": {
+          "bracket_id": {
+            "description": "Optional bracket identifier.",
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bracket_name": {
+            "description": "Optional bracket name.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "division_id": {
+            "description": "Optional division identifier.",
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "division_name": {
+            "description": "Optional division name.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "registered_at": {
+            "description": "Registration time.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "registered_at"
+        ],
+        "type": "object"
+      },
+      "ProfileSolveResponse": {
+        "description": "Recent visible solve.",
+        "properties": {
+          "awarded_points": {
+            "description": "Total solve and first-blood points awarded.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "category": {
+            "description": "Challenge category.",
+            "type": "string"
+          },
+          "challenge_id": {
+            "description": "Solved challenge identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "challenge_name": {
+            "description": "Challenge name.",
+            "type": "string"
+          },
+          "first_blood": {
+            "description": "Whether this was the first accepted solve.",
+            "type": "boolean"
+          },
+          "solved_at": {
+            "description": "Solve time.",
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "challenge_id",
+          "challenge_name",
+          "category",
+          "awarded_points",
+          "first_blood",
+          "solved_at"
+        ],
+        "type": "object"
+      },
+      "ProfileStandingResponse": {
+        "description": "Visible ranked standing for a competitor.",
+        "properties": {
+          "rank": {
+            "description": "One-based event rank.",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "reached_at": {
+            "description": "Earliest-to-reach tie-break timestamp.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "score": {
+            "description": "Visible score total.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "solves": {
+            "description": "Visible solve count.",
+            "format": "int64",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rank",
+          "score",
+          "solves",
+          "reached_at"
+        ],
+        "type": "object"
+      },
+      "ProfileTeamResponse": {
+        "description": "Public team association on a user profile.",
+        "properties": {
+          "captain": {
+            "description": "Captain marker.",
+            "type": "boolean"
+          },
+          "joined_at": {
+            "description": "Membership start.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "team_id": {
+            "description": "Team identifier.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "team_name": {
+            "description": "Team name.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "team_id",
+          "team_name",
+          "captain",
+          "joined_at"
         ],
         "type": "object"
       },
@@ -6094,6 +6357,97 @@
         ]
       }
     },
+    "/api/v1/events/{event_id}/competitors/{competitor_kind}/{competitor_id}": {
+      "get": {
+        "operationId": "competitor_profile",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Competitor kind: user or team",
+            "in": "path",
+            "name": "competitor_kind",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "User or team ID",
+            "in": "path",
+            "name": "competitor_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompetitorProfileResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "profiles"
+        ]
+      }
+    },
     "/api/v1/events/{event_id}/manual-reviews": {
       "get": {
         "operationId": "manual_review_queue",
@@ -7666,6 +8020,10 @@
     {
       "description": "Ranked event standings",
       "name": "scoreboard"
+    },
+    {
+      "description": "Public competitor identities and event activity",
+      "name": "profiles"
     },
     {
       "description": "Player teams and captain controls",

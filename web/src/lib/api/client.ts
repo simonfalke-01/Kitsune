@@ -28,6 +28,7 @@ export type ScoreboardRow = components['schemas']['ScoreboardRowResponse'];
 export type ScoreHistory = components['schemas']['ScoreHistoryResponse'];
 export type ScoreHistorySeries = components['schemas']['ScoreHistorySeriesResponse'];
 export type ScoreHistoryPoint = components['schemas']['ScoreHistoryPointResponse'];
+export type CompetitorProfile = components['schemas']['CompetitorProfileResponse'];
 export type ChallengeHint = components['schemas']['HintResponse'];
 export type HintUnlockReceipt = components['schemas']['HintUnlockResponse'];
 export type Writeup = components['schemas']['WriteupResponse'];

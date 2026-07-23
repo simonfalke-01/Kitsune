@@ -1,0 +1,48 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT ep.registered_at,\n                   d.id AS \"division_id?\",d.name AS \"division_name?\",\n                   b.id AS \"bracket_id?\",b.name AS \"bracket_name?\"\n            FROM event_participants ep\n            LEFT JOIN divisions d ON d.id = ep.division_id\n            LEFT JOIN brackets b ON b.id = ep.bracket_id\n            WHERE ep.event_id = $1\n              AND ep.user_id IS NOT DISTINCT FROM $2::uuid\n              AND ep.team_id IS NOT DISTINCT FROM $3::uuid\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "registered_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 1,
+        "name": "division_id?",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "division_name?",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "bracket_id?",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "bracket_name?",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "cc04bb40de914ccc978a973406b538f7605da61802785c48b9701b4a06ae2f12"
+}

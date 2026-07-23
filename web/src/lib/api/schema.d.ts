@@ -698,6 +698,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events/{event_id}/competitors/{competitor_kind}/{competitor_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["competitor_profile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{event_id}/manual-reviews": {
         parameters: {
             query?: never;
@@ -1172,6 +1188,35 @@ export interface components {
          * @enum {string}
          */
         ChallengeStateInput: "draft" | "testing" | "scheduled" | "published" | "hidden" | "archived";
+        /** @description Player-safe identity, standing, roster, and recent event activity. */
+        CompetitorProfileResponse: {
+            /**
+             * Format: uuid
+             * @description User or team identifier.
+             */
+            competitor_id: string;
+            /** @description `user` or `team`. */
+            competitor_kind: string;
+            /**
+             * Format: date-time
+             * @description Identity creation time.
+             */
+            created_at: string;
+            /** @description Team roster for a team profile. */
+            members: components["schemas"]["ProfileMemberResponse"][];
+            /** @description Public display name. */
+            name: string;
+            /** @description Recent activity under the same concealment rules as the scoreboard. */
+            recent_solves: components["schemas"]["ProfileSolveResponse"][];
+            registration?: null | components["schemas"]["ProfileRegistrationResponse"];
+            /** @description Post-freeze concealment state. */
+            scoreboard_frozen: boolean;
+            /** @description Public scoreboard concealment state. */
+            scoreboard_hidden: boolean;
+            standing?: null | components["schemas"]["ProfileStandingResponse"];
+            /** @description Team associations for a user profile. */
+            teams: components["schemas"]["ProfileTeamResponse"][];
+        };
         /** @description New API-token request. The cleartext token is returned exactly once. */
         CreateApiTokenRequest: {
             /** @description Optional event allow-list. An empty list is organization-wide. */
@@ -1716,6 +1761,106 @@ export interface components {
              * @description Revocation time.
              */
             revoked_at?: string | null;
+        };
+        /** @description Public team roster member. */
+        ProfileMemberResponse: {
+            /** @description Captain marker. */
+            captain: boolean;
+            /** @description Public display name. */
+            display_name: string;
+            /**
+             * Format: date-time
+             * @description Membership start.
+             */
+            joined_at: string;
+            /**
+             * Format: uuid
+             * @description User identifier.
+             */
+            user_id: string;
+        };
+        /** @description Event registration context. */
+        ProfileRegistrationResponse: {
+            /**
+             * Format: uuid
+             * @description Optional bracket identifier.
+             */
+            bracket_id?: string | null;
+            /** @description Optional bracket name. */
+            bracket_name?: string | null;
+            /**
+             * Format: uuid
+             * @description Optional division identifier.
+             */
+            division_id?: string | null;
+            /** @description Optional division name. */
+            division_name?: string | null;
+            /**
+             * Format: date-time
+             * @description Registration time.
+             */
+            registered_at: string;
+        };
+        /** @description Recent visible solve. */
+        ProfileSolveResponse: {
+            /**
+             * Format: int64
+             * @description Total solve and first-blood points awarded.
+             */
+            awarded_points: number;
+            /** @description Challenge category. */
+            category: string;
+            /**
+             * Format: uuid
+             * @description Solved challenge identifier.
+             */
+            challenge_id: string;
+            /** @description Challenge name. */
+            challenge_name: string;
+            /** @description Whether this was the first accepted solve. */
+            first_blood: boolean;
+            /**
+             * Format: date-time
+             * @description Solve time.
+             */
+            solved_at: string;
+        };
+        /** @description Visible ranked standing for a competitor. */
+        ProfileStandingResponse: {
+            /** @description One-based event rank. */
+            rank: number;
+            /**
+             * Format: date-time
+             * @description Earliest-to-reach tie-break timestamp.
+             */
+            reached_at: string;
+            /**
+             * Format: int64
+             * @description Visible score total.
+             */
+            score: number;
+            /**
+             * Format: int64
+             * @description Visible solve count.
+             */
+            solves: number;
+        };
+        /** @description Public team association on a user profile. */
+        ProfileTeamResponse: {
+            /** @description Captain marker. */
+            captain: boolean;
+            /**
+             * Format: date-time
+             * @description Membership start.
+             */
+            joined_at: string;
+            /**
+             * Format: uuid
+             * @description Team identifier.
+             */
+            team_id: string;
+            /** @description Team name. */
+            team_name: string;
         };
         /** @description Public login-page provider projection. */
         PublicOidcProviderResponse: {
@@ -4582,6 +4727,64 @@ export interface operations {
                 };
             };
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    competitor_profile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+                /** @description Competitor kind: user or team */
+                competitor_kind: string;
+                /** @description User or team ID */
+                competitor_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetitorProfileResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };

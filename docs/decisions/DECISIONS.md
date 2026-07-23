@@ -353,3 +353,12 @@ Format: `YYYY-MM-DD — decision — rationale`.
   750 milliseconds — PostgreSQL remains authoritative and degraded cache or
   queue operation cannot hide current standings for longer than the one-second
   realtime latency budget.
+- 2026-07-23 — Make competitor profiles event-scoped and apply the exact hidden,
+  frozen, and organizer audience boundary used by standings — a direct profile
+  URL cannot reveal concealed score or solve activity.
+- 2026-07-23 — Exclude email and arbitrary identity `custom_fields` from public
+  profiles until custom-field definitions carry explicit visibility policy —
+  unclassified operator data must never become public through inference.
+- 2026-07-23 — Bound profile activity to 12 recent solves and add partial
+  user/team recency indexes — profile reads stay predictable as the append-only
+  event history grows without duplicating the authoritative score ledger.

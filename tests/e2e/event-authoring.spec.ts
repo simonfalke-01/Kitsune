@@ -259,6 +259,24 @@ test('organizer authors a published challenge visible on the player board', asyn
   await expect(standings.getByText('E2E Owner', { exact: true })).toBeVisible();
   await expect(standings.getByText('540 pts', { exact: true })).toBeVisible();
 
+  const profileLoaded = page.waitForResponse((response) =>
+    response.url().includes('/competitors/user/')
+  );
+  await standings.getByRole('link', { name: 'E2E Owner' }).click();
+  await profileLoaded;
+  await expect(page.getByRole('heading', { name: 'E2E Owner' })).toBeVisible();
+  const standing = page.getByLabel('Event standing');
+  await expect(standing.getByText('#1', { exact: true })).toBeVisible();
+  await expect(standing.getByText('540', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Recent solves' })).toBeVisible();
+  await expect(page.getByText(challengeName, { exact: true })).toBeVisible();
+
+  const profileAccessibility = await new AxeBuilder({ page }).analyze();
+  expect(profileAccessibility.violations).toEqual([]);
+
+  await page.getByRole('link', { name: 'Back to scoreboard' }).click();
+  await expect(page.getByLabel('Event standings')).toBeVisible();
+
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations).toEqual([]);
 
@@ -342,6 +360,19 @@ test('organizer authors a published challenge visible on the player board', asyn
   }
   await expect(page.locator('.members').getByText('E2E Owner', { exact: true })).toBeVisible();
   await expect(page.getByText('Captain', { exact: true })).toBeVisible();
+  const currentTeamName = await page.locator('.team-head h2').innerText();
+
+  const rosterProfileLoaded = page.waitForResponse((response) =>
+    response.url().includes('/competitors/user/')
+  );
+  await page.locator('.members').getByRole('link', { name: 'E2E Owner' }).click();
+  await rosterProfileLoaded;
+  await expect(page.getByRole('heading', { name: 'E2E Owner' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Teams' })).toBeVisible();
+  await expect(page.getByText(currentTeamName, { exact: true })).toBeVisible();
+
+  const rosterProfileAccessibility = await new AxeBuilder({ page }).analyze();
+  expect(rosterProfileAccessibility.violations).toEqual([]);
 
   const adminTeamsLoaded = page.waitForResponse((response) =>
     response.url().endsWith('/api/v1/admin/teams')

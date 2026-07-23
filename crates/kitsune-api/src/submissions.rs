@@ -435,6 +435,18 @@ pub(crate) async fn scoreboard(
     let event_id = EventId(event_id);
     let division_id = query.division_id.map(DivisionId);
     let organizer = actor.can("scoreboard_manage");
+    let response =
+        scoreboard_projection(&state, organization_id, event_id, division_id, organizer).await?;
+    Ok(Json(response))
+}
+
+pub(crate) async fn scoreboard_projection(
+    state: &AppState,
+    organization_id: kitsune_core::identity::OrganizationId,
+    event_id: EventId,
+    division_id: Option<DivisionId>,
+    organizer: bool,
+) -> ApiResult<ScoreboardResponse> {
     let audience = if organizer {
         ScoreboardAudience::Organizer
     } else {
@@ -450,7 +462,7 @@ pub(crate) async fn scoreboard(
     )
     .await;
     if let Some(board) = scoreboard_cache::read(&state.cache, &cache_key).await {
-        return Ok(Json(board));
+        return Ok(board);
     }
     let board = SubmissionRepository::new(state.db.pool().clone())
         .scoreboard(organization_id, event_id, division_id, organizer)
@@ -458,7 +470,7 @@ pub(crate) async fn scoreboard(
         .map_err(ApiError::from)?;
     let response = ScoreboardResponse::from(board);
     scoreboard_cache::write(&state.cache, &cache_key, &response).await;
-    Ok(Json(response))
+    Ok(response)
 }
 
 #[utoipa::path(

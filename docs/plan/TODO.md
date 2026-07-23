@@ -106,7 +106,7 @@ or scaffolding alone.
       browser coverage.
 - [x] Append-only historical score REST/OpenAPI projection, responsive graph,
       hidden/freeze/division parity, and bounded browser realtime coalescing.
-- [ ] Dynamic-instance and plugin answer verifiers, server-side cross-node score
+- [x] Dynamic-instance and plugin answer verifiers, server-side cross-node score
       batching/cache, and competitor profile links.
   - [x] Dynamic-instance answers bind to the exact user/team lease, verify only
         digest material in constant time, reject expired/unready leases, and
@@ -117,7 +117,7 @@ or scaffolding alone.
         recheck, idempotent replay, and admin authoring.
   - [x] Revision-scoped ranked/history snapshots with bounded cross-node score
         invalidation, immediate control consistency, and fail-open cache access.
-  - [ ] Competitor profile REST/OpenAPI projections and ranking/roster links.
+  - [x] Competitor profile REST/OpenAPI projections and ranking/roster links.
 - [x] Encrypted manual-verification persistence, RBAC review API, duplicate
       pending protection, and transactional accept/discard scoring.
 - [x] Wire the organizer manual-verification queue and player pending outcome
