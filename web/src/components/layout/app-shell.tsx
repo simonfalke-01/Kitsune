@@ -2,6 +2,7 @@
 
 import { Bell, LogOut, Menu as MenuIcon, Moon, Sun } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 
 import { useEvent } from '@/app/event-context';
@@ -15,6 +16,7 @@ import {
   MenuTrigger,
   NavigationLink,
   Select,
+  showToast,
   StatusIndicator,
   ToastRegion
 } from '@/components/ui';
@@ -92,6 +94,7 @@ function pathIsCurrent(pathname: string, href: string): boolean {
 
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname() ?? '/';
+  const router = useRouter();
   const { can, logout, session } = useSession();
   const { events, selectEvent, selectedEvent } = useEvent();
   const { isConnected } = useRealtime();
@@ -154,7 +157,18 @@ export function AppShell({ children }: AppShellProps) {
           <Button
             aria-label="Sign out"
             onPress={() => {
-              void logout();
+              void logout().then((signedOut) => {
+                if (signedOut) {
+                  router.replace('/login');
+                  router.refresh();
+                  return;
+                }
+
+                showToast({
+                  title: 'Sign out failed',
+                  tone: 'danger'
+                });
+              });
             }}
             size="icon"
             tone="quiet"

@@ -16,6 +16,12 @@ Updated: 2026-07-23 (Asia/Singapore)
   router or non-table TanStack dependency.
 - In progress: compose the shared authenticated shell and domain surfaces while
   continuing the caption, icon, density, and interaction audit.
+- Completed: the first application slice now has a server-authenticated platform
+  layout, request-cookie event selection, SSR event/challenge bootstrap, staged
+  local/MFA sign-in, compact challenge search, and idempotent answer submission.
+- Verified: `/login` and `/_kitchen` return 200 in development, `/` safely sends
+  unauthenticated or API-unavailable requests to sign-in, and the Next route
+  manifest marks `/challenges` as request-time server rendered.
 - Design authority: repository-root `AGENTS.md` and
   `docs/design/INTERFACE_CONTRACT.md` record the locked stack, copy discipline,
   mechanical constraints, quality gate, references, and project task model.
@@ -30,8 +36,8 @@ Updated: 2026-07-23 (Asia/Singapore)
 - Interaction review: toast insertion is browser-verified at zero and
   intermediate frames with a 260 ms translate/opacity transition; rapid queue
   updates retain three visible toasts without runtime errors.
-- Next: add product-level CTF composites, port every application route, and run
-  the full interaction/a11y regression suite.
+- Next: implement scoreboard and team workflows, then organizer tables and
+  dialogs, while expanding interaction and accessibility regression coverage.
 
 ## Verified
 

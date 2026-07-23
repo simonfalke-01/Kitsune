@@ -25,8 +25,18 @@
       verify no horizontal overflow and consistent responsive collapse.
 - [ ] Rebuild the global shell and every player, auth, account, and organizer
       route without retaining Svelte markup.
+  - [x] Add a server-authenticated platform layout and shared responsive shell.
+  - [x] Add the staged local sign-in surface with accessible password reveal and
+        MFA continuation.
+  - [x] Add the SSR-backed challenge board with search, recovery states,
+        challenge details, and idempotent answer submission.
+  - [ ] Complete scoreboard, team, account, setup, and organizer routes.
 - [ ] Port generated OpenAPI access and preserve authenticated realtime
       invalidation without introducing an unapproved dependency.
+  - [x] Bootstrap the authenticated session, event catalog, selected event, and
+        challenge collection on the server without a client data framework.
+  - [ ] Complete server bootstraps and mutation invalidation for remaining
+        routes.
 - [ ] Rebuild scoring charts and the automation DAG from approved primitives;
       stop before adding any dependency outside the locked stack.
 - [ ] Keep the mascot slot visually empty; do not ship generated or placeholder
@@ -34,6 +44,8 @@
 - [ ] Pass token-policy lint, formatting, ESLint, strict typecheck, Vitest,
       production build, keyboard review, desktop/mobile Playwright, screenshots,
       and axe.
+  - [x] First auth/challenge slice passes formatting, ESLint, strict typecheck,
+        Vitest, and the Next production build.
 - [ ] Commit and push the completed frontend rewrite in reviewable atomic units;
       repair every GitHub Actions regression before resuming backend work.
 - [ ] Restore the preserved notification vertical slice only after every
