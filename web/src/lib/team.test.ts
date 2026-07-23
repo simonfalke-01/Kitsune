@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
 import type { TeamSummary } from './api/client';
-import { findUserTeam, isTeamRealtimeEvent, teamCapacity } from './team';
+import {
+  canWithdrawRegistration,
+  findUserTeam,
+  isTeamRealtimeEvent,
+  registrationIsClosed,
+  teamCapacity
+} from './team';
 
 const team: TeamSummary = {
   created_at: '2026-07-23T00:00:00Z',
@@ -41,5 +47,12 @@ describe('team helpers', () => {
   it('recognizes only team-domain realtime events', () => {
     expect(isTeamRealtimeEvent('team_membership_changed')).toBe(true);
     expect(isTeamRealtimeEvent('event_registration_changed')).toBe(false);
+  });
+
+  it('limits registration closure and withdrawal by event phase', () => {
+    expect(registrationIsClosed('ended')).toBe(true);
+    expect(registrationIsClosed('live')).toBe(false);
+    expect(canWithdrawRegistration('scheduled')).toBe(true);
+    expect(canWithdrawRegistration('paused')).toBe(false);
   });
 });

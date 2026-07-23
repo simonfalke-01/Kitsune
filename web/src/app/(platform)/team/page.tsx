@@ -14,7 +14,14 @@ export default async function TeamPage() {
   return (
     <div className="grid gap-8">
       <PageHeader title="Team" />
-      <TeamView initialError={bootstrap.error} initialTeams={bootstrap.teams} />
+      <TeamView
+        initialBrackets={bootstrap.brackets}
+        initialDivisions={bootstrap.divisions}
+        initialError={bootstrap.error}
+        initialEventId={bootstrap.eventId}
+        initialRegistration={bootstrap.registration}
+        initialTeams={bootstrap.teams}
+      />
     </div>
   );
 }

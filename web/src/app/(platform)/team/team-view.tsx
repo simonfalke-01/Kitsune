@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { useEvent } from '../../event-context';
 import { useRealtime } from '../../realtime-context';
 import { useSession } from '../../session-context';
+import { RegistrationPanel } from './registration-panel';
 import {
   Alert,
   AlertDialog,
@@ -28,11 +29,22 @@ import {
   TextField,
   showToast
 } from '@/components/ui';
-import { api, errorMessage, type TeamSummary } from '@/lib/api/client';
+import {
+  api,
+  errorMessage,
+  type BracketSummary,
+  type DivisionSummary,
+  type EventRegistration,
+  type TeamSummary
+} from '@/lib/api/client';
 import { findUserTeam, isTeamRealtimeEvent, teamCapacity } from '@/lib/team';
 
 interface TeamViewProps {
+  initialBrackets: BracketSummary[];
+  initialDivisions: DivisionSummary[];
   initialError: string | null;
+  initialEventId: string | null;
+  initialRegistration: EventRegistration | null;
   initialTeams: TeamSummary[];
 }
 
@@ -405,7 +417,14 @@ function TransferCaptainControl({
   );
 }
 
-export function TeamView({ initialError, initialTeams }: TeamViewProps) {
+export function TeamView({
+  initialBrackets,
+  initialDivisions,
+  initialError,
+  initialEventId,
+  initialRegistration,
+  initialTeams
+}: TeamViewProps) {
   const { selectedEvent } = useEvent();
   const { latest } = useRealtime();
   const { can, session } = useSession();
@@ -881,6 +900,15 @@ export function TeamView({ initialError, initialTeams }: TeamViewProps) {
           ) : null}
         </>
       )}
+
+      <RegistrationPanel
+        initialBrackets={initialBrackets}
+        initialDivisions={initialDivisions}
+        initialEventId={initialEventId}
+        initialRegistration={initialRegistration}
+        key={selectedEvent?.id ?? 'no-event'}
+        team={team}
+      />
     </div>
   );
 }

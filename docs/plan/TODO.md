@@ -36,7 +36,9 @@
         states, realtime refresh, compact metrics, and accessible score history.
   - [x] Add the SSR team membership route with create/join flows, one-time invite
         handling, roster state, captain controls, and realtime refresh.
-  - [ ] Complete event registration, account, and organizer routes.
+  - [x] Add selected-event registration with division/bracket placement,
+        idempotent updates, withdrawal safeguards, and realtime refresh.
+  - [ ] Complete account and organizer routes.
 - [ ] Port generated OpenAPI access and preserve authenticated realtime
       invalidation without introducing an unapproved dependency.
   - [x] Bootstrap the authenticated session, event catalog, selected event, and

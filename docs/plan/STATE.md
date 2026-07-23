@@ -14,9 +14,8 @@ Updated: 2026-07-23 (Asia/Singapore)
   server-rendered route output, Next-native metadata and rewrites, React Aria
   router integration, a development-only `/_kitchen` route excluded from
   production navigation, and no client router or non-table TanStack dependency.
-- In progress: add selected-event registration and build the account routes on
-  the shared authenticated shell while continuing the caption, icon, density,
-  and interaction audit.
+- In progress: build the account routes on the shared authenticated shell while
+  continuing the caption, icon, density, and interaction audit.
 - Completed: the first application slice now has a server-authenticated platform
   layout, request-cookie event selection, SSR event/challenge bootstrap, staged
   local/MFA sign-in, compact challenge search, and idempotent answer submission.
@@ -28,7 +27,8 @@ Updated: 2026-07-23 (Asia/Singapore)
   history, then refreshes from typed score events without a chart dependency.
 - Completed: the team route now server-renders the authenticated roster and
   supports create/join, one-time invite replacement, captain transfer, member
-  removal, member departure, and typed realtime refresh.
+  removal, member departure, selected-event registration, division/bracket
+  placement, guarded withdrawal, and typed realtime refresh.
 - Verified: `/login` and `/_kitchen` return 200 in development, `/` safely sends
   unauthenticated or API-unavailable requests to sign-in, and the Next route
   manifest marks `/challenges` as request-time server rendered.
@@ -46,9 +46,8 @@ Updated: 2026-07-23 (Asia/Singapore)
 - Interaction review: toast insertion is browser-verified at zero and
   intermediate frames with a 260 ms translate/opacity transition; rapid queue
   updates retain three visible toasts without runtime errors.
-- Next: add event registration to the team context, then implement account
-  workflows and organizer tables while expanding interaction and accessibility
-  regression coverage.
+- Next: implement account workflows, then organizer tables and dialogs while
+  expanding interaction and accessibility regression coverage.
 
 ## Verified
 
@@ -65,8 +64,9 @@ Updated: 2026-07-23 (Asia/Singapore)
   assertions, production build, and authenticated SSR smoke are green. The
   production route manifest marks `/scoreboard` as request-time server rendered.
 - The team route passes the token scan, formatter, ESLint, strict TypeScript,
-  eight Vitest assertions, production build, authenticated team creation, and
-  SSR roster smoke. The route manifest marks `/team` as request-time rendered.
+  nine Vitest assertions, production build, authenticated team creation, event
+  registration, and SSR roster/registration smoke. The route manifest marks
+  `/team` as request-time rendered.
 - Core workspace format, 17 domain tests, and strict workspace Clippy pass.
 - PostgreSQL 17 migration applies from empty state; SQLx compile-time query
   metadata is checked in; transactional audit/outbox/idempotency test passes.

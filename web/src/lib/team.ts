@@ -39,3 +39,11 @@ export function isTeamRealtimeEvent(type: string): boolean {
     type === 'team_changed'
   );
 }
+
+export function registrationIsClosed(eventState: string): boolean {
+  return eventState === 'ended' || eventState === 'archived';
+}
+
+export function canWithdrawRegistration(eventState: string): boolean {
+  return eventState === 'draft' || eventState === 'scheduled';
+}

@@ -4,8 +4,10 @@ import { cookies, headers } from 'next/headers';
 import createClient from 'openapi-fetch';
 
 import type {
+  BracketSummary,
   ChallengeSummary,
   DivisionSummary,
+  EventRegistration,
   EventSummary,
   ScoreHistory,
   Scoreboard,
@@ -197,23 +199,79 @@ export async function getServerScoreboardBootstrap(): Promise<ScoreboardBootstra
 }
 
 export interface TeamBootstrap {
+  brackets: BracketSummary[];
+  divisions: DivisionSummary[];
   error: string | null;
+  eventId: string | null;
+  registration: EventRegistration | null;
   teams: TeamSummary[];
 }
 
 export async function getServerTeamBootstrap(): Promise<TeamBootstrap> {
   const client = await getServerClient();
-  const result = await client.GET('/api/v1/teams');
+  const [cookieStore, eventResult, teamResult] = await Promise.all([
+    cookies(),
+    client.GET('/api/v1/events'),
+    client.GET('/api/v1/teams')
+  ]);
 
-  if (!result.data) {
+  if (!eventResult.data || !teamResult.data) {
     return {
+      brackets: [],
+      divisions: [],
       error: 'The team could not be loaded.',
+      eventId: null,
+      registration: null,
       teams: []
     };
   }
 
+  const persistedEventId = cookieStore.get('kitsune.selected-event')?.value;
+  const selectedEvent =
+    eventResult.data.find((event) => event.id === persistedEventId) ??
+    chooseDefaultEvent(eventResult.data);
+
+  if (!selectedEvent) {
+    return {
+      brackets: [],
+      divisions: [],
+      error: null,
+      eventId: null,
+      registration: null,
+      teams: teamResult.data
+    };
+  }
+
+  const [registrationResult, divisionResult, bracketResult] = await Promise.all([
+    client.GET('/api/v1/events/{event_id}/registration', {
+      params: {
+        path: {
+          event_id: selectedEvent.id
+        }
+      }
+    }),
+    client.GET('/api/v1/events/{event_id}/divisions', {
+      params: {
+        path: {
+          event_id: selectedEvent.id
+        }
+      }
+    }),
+    client.GET('/api/v1/events/{event_id}/brackets', {
+      params: {
+        path: {
+          event_id: selectedEvent.id
+        }
+      }
+    })
+  ]);
+
   return {
-    error: null,
-    teams: result.data
+    brackets: bracketResult.data ?? [],
+    divisions: divisionResult.data ?? [],
+    error: registrationResult.data ? null : 'Event registration could not be loaded.',
+    eventId: selectedEvent.id,
+    registration: registrationResult.data?.registration ?? null,
+    teams: teamResult.data
   };
 }
