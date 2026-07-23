@@ -4,6 +4,8 @@ const e2eDatabaseUrl =
   process.env.KITSUNE_E2E_DATABASE_URL ??
   process.env.DATABASE_URL ??
   'postgres://kitsune:kitsune@127.0.0.1:54329/kitsune_e2e';
+const e2eUrl = process.env.KITSUNE_E2E_URL ?? 'http://localhost:4173';
+const e2ePort = Number(new URL(e2eUrl).port || 80);
 
 export default defineConfig({
   testDir: '../tests/e2e',
@@ -14,7 +16,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: process.env.KITSUNE_E2E_URL ?? 'http://localhost:4173',
+    baseURL: e2eUrl,
     trace: 'retain-on-failure'
   },
   projects: [
@@ -38,8 +40,8 @@ export default defineConfig({
       timeout: 120_000
     },
     {
-      command: 'pnpm dev --hostname 127.0.0.1 --port 4173',
-      port: 4173,
+      command: `pnpm dev --hostname 127.0.0.1 --port ${e2ePort}`,
+      url: e2eUrl,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000
     }

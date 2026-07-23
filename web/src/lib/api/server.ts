@@ -38,6 +38,17 @@ export async function getServerSession(): Promise<Session | null> {
   throw new Error('Session service unavailable.');
 }
 
+export async function getServerSetupRequired(): Promise<boolean> {
+  const client = await getServerClient();
+  const result = await client.GET('/api/v1/setup');
+
+  if (result.data) {
+    return result.data.required;
+  }
+
+  throw new Error('Setup service unavailable.');
+}
+
 export interface PlatformBootstrap {
   challenges: ChallengeSummary[];
   events: EventSummary[];

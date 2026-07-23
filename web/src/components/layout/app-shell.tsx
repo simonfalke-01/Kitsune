@@ -198,7 +198,7 @@ export function AppShell({ children }: AppShellProps) {
               />
             ) : null}
             <nav aria-label="Player" className="grid gap-1">
-              <span className="px-3 pb-2 text-xs font-semibold text-text-subtle">Play</span>
+              <span className="px-3 pb-2 text-xs font-semibold text-text-muted">Play</span>
               {playerNavigation.map((item) => (
                 <NavigationLink
                   href={item.href}
@@ -211,7 +211,7 @@ export function AppShell({ children }: AppShellProps) {
             </nav>
             {visibleOperations.length > 0 ? (
               <nav aria-label="Operations" className="grid gap-1">
-                <span className="px-3 pb-2 text-xs font-semibold text-text-subtle">Operate</span>
+                <span className="px-3 pb-2 text-xs font-semibold text-text-muted">Operate</span>
                 {visibleOperations.map((item) => (
                   <NavigationLink
                     href={item.href}

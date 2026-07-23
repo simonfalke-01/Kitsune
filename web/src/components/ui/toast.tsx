@@ -4,6 +4,7 @@ import { CheckCircle2, CircleAlert, Info, TriangleAlert, X } from 'lucide-react'
 import type { CSSProperties, ReactNode } from 'react';
 import {
   Button as ReactAriaButton,
+  Text,
   UNSTABLE_Toast as ReactAriaToast,
   UNSTABLE_ToastContent as ReactAriaToastContent,
   UNSTABLE_ToastQueue,
@@ -111,9 +112,13 @@ export function ToastRegion() {
           >
             <Icon aria-hidden className="mt-1 size-4 shrink-0" />
             <ReactAriaToastContent className="grid min-w-0 flex-1 gap-1">
-              <strong className="text-sm font-semibold">{toast.content.title}</strong>
+              <Text className="text-sm font-semibold" slot="title">
+                {toast.content.title}
+              </Text>
               {toast.content.description ? (
-                <span className="text-sm text-text-muted">{toast.content.description}</span>
+                <Text className="text-sm text-text-muted" slot="description">
+                  {toast.content.description}
+                </Text>
               ) : null}
             </ReactAriaToastContent>
             <ReactAriaButton

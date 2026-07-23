@@ -1,14 +1,21 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Link as ReactAriaLink, type LinkProps as ReactAriaLinkProps } from 'react-aria-components';
 
 import { cx, focusRing } from './styles';
 
-export interface NavigationLinkProps extends ReactAriaLinkProps {
+export interface NavigationLinkProps extends Omit<ReactAriaLinkProps, 'children'> {
+  children: ReactNode;
   isCurrent?: boolean;
 }
 
-export function NavigationLink({ className, isCurrent = false, ...props }: NavigationLinkProps) {
+export function NavigationLink({
+  children,
+  className,
+  isCurrent = false,
+  ...props
+}: NavigationLinkProps) {
   return (
     <ReactAriaLink
       {...props}
@@ -23,7 +30,7 @@ export function NavigationLink({ className, isCurrent = false, ...props }: Navig
         typeof className === 'string' ? className : undefined
       )}
     >
-      {({ defaultChildren }) => <span className="min-w-0 flex-1 truncate">{defaultChildren}</span>}
+      <span className="min-w-0 flex-1 truncate">{children}</span>
     </ReactAriaLink>
   );
 }

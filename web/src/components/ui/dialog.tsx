@@ -57,7 +57,7 @@ export function Dialog({
             typeof className === 'string' ? className : undefined
           )}
         >
-          <header className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-4">
             <div className="grid min-w-0 flex-1 gap-2">
               <Heading className="font-display text-xl font-semibold tracking-tight" slot="title">
                 {title}
@@ -69,9 +69,9 @@ export function Dialog({
             <Button aria-label="Close dialog" size="icon" slot="close" tone="quiet">
               <X aria-hidden className="size-4" />
             </Button>
-          </header>
+          </div>
           <div>{children}</div>
-          {actions ? <footer className="flex flex-wrap justify-end gap-2">{actions}</footer> : null}
+          {actions ? <div className="flex flex-wrap justify-end gap-2">{actions}</div> : null}
         </ReactAriaDialog>
       </Modal>
     </ModalOverlay>

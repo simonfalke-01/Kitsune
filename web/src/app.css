@@ -89,31 +89,31 @@
   --accent-border: var(--a-6);
   --accent: var(--a-9);
   --accent-hover: var(--a-10);
-  --accent-text: var(--a-11);
+  --accent-text: var(--a-12);
 
   --success-subtle: var(--success-3);
   --success-border: var(--success-6);
   --success: var(--success-9);
   --success-hover: var(--success-10);
-  --success-text: var(--success-11);
+  --success-text: var(--success-12);
 
   --warning-subtle: var(--warning-3);
   --warning-border: var(--warning-6);
   --warning: var(--warning-9);
   --warning-hover: var(--warning-10);
-  --warning-text: var(--warning-11);
+  --warning-text: var(--warning-12);
 
   --danger-subtle: var(--danger-3);
   --danger-border: var(--danger-6);
   --danger: var(--danger-9);
   --danger-hover: var(--danger-10);
-  --danger-text: var(--danger-11);
+  --danger-text: var(--danger-12);
 
   --info-subtle: var(--info-3);
   --info-border: var(--info-6);
   --info: var(--info-9);
   --info-hover: var(--info-10);
-  --info-text: var(--info-11);
+  --info-text: var(--info-12);
 
   --focus-ring: var(--a-9);
   --overlay: oklch(14.2% 0.005 260 / 55%);

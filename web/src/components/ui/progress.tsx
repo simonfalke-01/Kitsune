@@ -2,9 +2,7 @@
 
 import {
   Label,
-  Meter as ReactAriaMeter,
   ProgressBar as ReactAriaProgressBar,
-  type MeterProps as ReactAriaMeterProps,
   type ProgressBarProps as ReactAriaProgressBarProps
 } from 'react-aria-components';
 
@@ -58,14 +56,14 @@ export function Progress({ className, label, tone = 'accent', ...props }: Progre
   );
 }
 
-export interface MeterProps extends ReactAriaMeterProps {
+export interface MeterProps extends ReactAriaProgressBarProps {
   label: string;
   tone?: ProgressTone;
 }
 
 export function Meter({ className, label, tone = 'accent', ...props }: MeterProps) {
   return (
-    <ReactAriaMeter
+    <ReactAriaProgressBar
       {...props}
       className={cx('grid gap-2 text-sm', typeof className === 'string' ? className : undefined)}
     >
@@ -89,6 +87,6 @@ export function Meter({ className, label, tone = 'accent', ...props }: MeterProp
           </div>
         </>
       )}
-    </ReactAriaMeter>
+    </ReactAriaProgressBar>
   );
 }

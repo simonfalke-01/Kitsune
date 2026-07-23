@@ -11,7 +11,7 @@ export interface PageHeaderProps {
 
 export function PageHeader({ actions, breadcrumbs, description, title }: PageHeaderProps) {
   return (
-    <header className="grid gap-4 border-b border-border-subtle pb-6">
+    <div className="grid gap-4 border-b border-border-subtle pb-6">
       {breadcrumbs ? <Breadcrumbs items={breadcrumbs} /> : null}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="grid max-w-prose gap-2">
@@ -22,6 +22,6 @@ export function PageHeader({ actions, breadcrumbs, description, title }: PageHea
         </div>
         {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
       </div>
-    </header>
+    </div>
   );
 }
