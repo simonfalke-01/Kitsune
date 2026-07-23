@@ -417,3 +417,18 @@ export async function getServerSettingsBootstrap(): Promise<SettingsBootstrap> {
     samlProviders: samlResult.data ?? []
   };
 }
+
+export interface TeamAdminBootstrap {
+  error: string | null;
+  teams: TeamSummary[];
+}
+
+export async function getServerTeamAdminBootstrap(): Promise<TeamAdminBootstrap> {
+  const client = await getServerClient();
+  const result = await client.GET('/api/v1/admin/teams');
+
+  return {
+    error: result.data ? null : 'Team inventory could not be loaded.',
+    teams: result.data ?? []
+  };
+}

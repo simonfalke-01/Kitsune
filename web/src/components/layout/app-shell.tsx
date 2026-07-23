@@ -67,6 +67,11 @@ const operationsNavigation: readonly NavigationItem[] = [
     permission: 'challenge_manage'
   },
   {
+    href: '/admin/teams',
+    label: 'Teams',
+    permission: 'team_manage'
+  },
+  {
     href: '/admin/automation',
     label: 'Automation',
     permission: 'automation_manage'

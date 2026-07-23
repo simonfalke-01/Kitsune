@@ -52,6 +52,8 @@
   - [x] Add SSR OAuth-client and identity-provider settings.
   - [x] Add the organizer automation graph with local validation, reordering,
         dry-run traces, and JSON review.
+  - [x] Add SSR organizer team inventory with guarded member transfer and team
+        merge workflows.
 - [ ] Port generated OpenAPI access and preserve authenticated realtime
       invalidation without introducing an unapproved dependency.
   - [x] Bootstrap the authenticated session, event catalog, selected event, and

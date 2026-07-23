@@ -51,6 +51,9 @@ Updated: 2026-07-23 (Asia/Singapore)
 - Completed: the organizer automation route now provides a dependency-free typed
   graph draft, sequential edge editor, validation, deterministic dry-run trace,
   and JSON review while clearly holding persistence behind the missing API.
+- Completed: organizer team administration now server-renders every roster with
+  guarded member transfer, captain replacement, and destructive team merge
+  workflows.
 - Verified: `/login` and `/_kitchen` return 200 in development, `/` safely sends
   unauthenticated or API-unavailable requests to sign-in, and the Next route
   manifest marks `/challenges` as request-time server rendered.
@@ -113,6 +116,9 @@ Updated: 2026-07-23 (Asia/Singapore)
   and a disposable OAuth-client creation and revocation lifecycle.
 - Automation passes the token scan, formatter, ESLint, strict TypeScript, eleven
   Vitest assertions, production build, and authenticated SSR empty-state smoke.
+- Organizer team administration passes the token scan, formatter, ESLint, strict
+  TypeScript, eleven Vitest assertions, production build, authenticated SSR
+  inventory smoke, and non-mutating transfer and merge guard verification.
 - Core workspace format, 17 domain tests, and strict workspace Clippy pass.
 - PostgreSQL 17 migration applies from empty state; SQLx compile-time query
   metadata is checked in; transactional audit/outbox/idempotency test passes.
