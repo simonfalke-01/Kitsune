@@ -5,8 +5,8 @@ Updated: 2026-07-23 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: audit and close the remaining versioned REST/OpenAPI resource
-  surface after landing both scaled cache/event adapters.
+- In progress: close the remaining versioned REST/OpenAPI resource surface
+  after landing the searchable immutable audit history.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
 - Next: close uncovered authorization paths, regenerate the contract, and run
@@ -258,6 +258,20 @@ Updated: 2026-07-23 (Asia/Singapore)
   conflict-safe deletion, withdrawal, and all six audit actions. Generated SQLx
   metadata/TypeScript contracts, 18 API tests, the full all-feature workspace,
   strict Clippy, and every frontend check/build are green.
+- Audit history is now exposed through an organization-scoped, RBAC-protected
+  REST/OpenAPI resource with descending keyset pagination and bounded exact
+  event, actor, action, resource, and time filters. PostgreSQL rejects ordinary
+  audit-row updates and deletes through an append-only trigger. The polished
+  organizer timeline uses the generated client, retains filters while paging,
+  and handles empty/loading/error states. API integration covers pagination,
+  filtering, malformed cursors, player denial, and direct SQL mutation rejection;
+  frontend checks, strict Clippy, the production build, and a real Chromium/axe
+  investigation journey are green.
+- Main CI run 29975439643 passed Browser E2E, Web, dependency audit, strict Rust
+  Clippy, OpenAPI drift, and the full all-feature Rust suite. Its Rust job was
+  marked failed only when the cache post-job exhausted runner disk after those
+  gates; the pinned-toolchain, no-debug/incremental, registry-only-cache cleanup
+  fix is staged for the next run.
 - Main CI run 29974725515 exposed GitHub runner storage admission when two test
   JetStreams each reserved the one-gigabyte production limit. Stream retention
   is now an explicit validated adapter configuration; production retains its

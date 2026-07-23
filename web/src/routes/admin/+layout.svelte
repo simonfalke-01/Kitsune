@@ -7,6 +7,7 @@
     Blocks,
     CalendarDays,
     FileCheck2,
+    ScrollText,
     Settings2,
     Sparkles,
     UsersRound
@@ -22,6 +23,7 @@
     { href: '/admin/teams', label: 'Teams', icon: UsersRound },
     { href: '/admin/reviews', label: 'Reviews', icon: FileCheck2 },
     { href: '/admin/automation', label: 'Automation', icon: Sparkles },
+    { href: '/admin/audit', label: 'Audit', icon: ScrollText },
     { href: '/admin/settings', label: 'Settings', icon: Settings2 }
   ];
 
@@ -112,7 +114,7 @@
 
     aside {
       position: static;
-      grid-template-columns: repeat(7, 1fr);
+      grid-template-columns: repeat(8, 1fr);
       overflow-x: auto;
       padding-top: 0.8rem;
     }

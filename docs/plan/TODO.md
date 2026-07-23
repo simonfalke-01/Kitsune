@@ -132,6 +132,9 @@ or scaffolding alone.
       pending protection, and transactional accept/discard scoring.
 - [x] Wire the organizer manual-verification queue and player pending outcome
       through desktop/mobile browser coverage.
+- [x] Immutable audit-history REST/OpenAPI resource with organization RBAC,
+      exact bounded filters, descending keyset pagination, database mutation
+      rejection, generated client, and an axe-covered organizer viewer.
 - [ ] Complete versioned REST resources and OpenAPI contracts.
 
 ## Frontend vertical slice

@@ -498,6 +498,34 @@ test('organizer authors a published challenge visible on the player board', asyn
   expect((await tokenRevoked).status()).toBe(204);
   await expect(tokenCard.getByText('Revoked', { exact: true })).toBeVisible();
 
+  const auditLoaded = page.waitForResponse(
+    (response) => response.request().method() === 'GET' && response.url().includes('/api/v1/audit')
+  );
+  await page.goto('/admin/audit');
+  expect((await auditLoaded).status()).toBe(200);
+  await expect(page.getByRole('heading', { name: 'Every trail leaves a mark.' })).toBeVisible();
+  await expect(page.getByText('Append-only', { exact: true })).toBeVisible();
+
+  await page.getByLabel('Competition').selectOption({ label: eventName });
+  await page.getByLabel('Action key').fill('event.create');
+  const auditFiltered = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return (
+      url.pathname === '/api/v1/audit' &&
+      url.searchParams.get('event_id') === eventId &&
+      url.searchParams.get('action') === 'event.create'
+    );
+  });
+  await page.getByRole('button', { name: 'Apply filters' }).click();
+  expect((await auditFiltered).status()).toBe(200);
+  await expect(
+    page.locator('.timeline code').getByText('event.create', { exact: true })
+  ).toHaveCount(1);
+  await expect(page.getByText('Event · Create', { exact: true })).toBeVisible();
+
+  const auditAccessibility = await new AxeBuilder({ page }).analyze();
+  expect(auditAccessibility.violations).toEqual([]);
+
   await page.getByRole('button', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/\/login$/);
   await page.getByLabel('Organization').fill(OWNER.organization);

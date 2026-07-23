@@ -392,3 +392,9 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-23 — Reject division or bracket deletion while an entrant references
   it — an explicit organizer reassignment/withdrawal must precede removal so a
   convenient API action cannot silently destroy historical classification.
+- 2026-07-23 — Reject audit-log updates and deletes for the ordinary application
+  database role and reserve retention for a separately privileged archival path
+  — immutable evidence must not be erasable through a compromised API command.
+- 2026-07-23 — Page audit history by the descending `(occurred_at, id)` tuple and
+  allow only bounded exact-match filters — investigation results remain stable
+  under concurrent writes and query cost stays predictable as the trail grows.

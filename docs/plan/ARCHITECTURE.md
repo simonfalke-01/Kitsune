@@ -36,6 +36,12 @@ couple to command handlers.
 Commands execute in database transactions, persist state plus an outbox event,
 then publish. Consumers are idempotent by event ID. Scores are derived by pure
 strategies and persisted as append-only score entries for historical graphs.
+The audit projection is append-only at the PostgreSQL boundary: the application
+role may insert records with their commands but a trigger rejects ordinary
+updates and deletes. Organizer reads are organization-scoped and use descending
+`(occurred_at, id)` keyset cursors plus bounded exact filters, avoiding unstable
+or increasingly expensive offset scans as event history grows. Deliberate
+retention or archival requires a separately privileged operational path.
 Challenge submissions lock only their target challenge while deciding solves
 and first blood, and use a PostgreSQL sequence for globally monotonic score IDs
 without an event-wide counter hotspot. Client idempotency keys replay immutable
