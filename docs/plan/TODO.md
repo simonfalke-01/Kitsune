@@ -30,7 +30,9 @@
         MFA continuation.
   - [x] Add the SSR-backed challenge board with search, recovery states,
         challenge details, and idempotent answer submission.
-  - [ ] Complete scoreboard, team, account, setup, and organizer routes.
+  - [x] Add the SSR first-run setup route with organization, owner, password
+        confirmation, completion, and API-unavailable states.
+  - [ ] Complete scoreboard, team, account, and organizer routes.
 - [ ] Port generated OpenAPI access and preserve authenticated realtime
       invalidation without introducing an unapproved dependency.
   - [x] Bootstrap the authenticated session, event catalog, selected event, and
@@ -46,6 +48,9 @@
       and axe.
   - [x] First auth/challenge slice passes formatting, ESLint, strict typecheck,
         Vitest, and the Next production build.
+  - [x] Setup/challenge browser journey and toast-motion checks pass Chromium and
+        mobile Playwright with axe on Linux; Node 26 uses Next's webpack dev mode
+        because Next 16 Turbopack panics while emitting the challenge route.
 - [ ] Commit and push the completed frontend rewrite in reviewable atomic units;
       repair every GitHub Actions regression before resuming backend work.
 - [ ] Restore the preserved notification vertical slice only after every

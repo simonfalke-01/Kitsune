@@ -475,3 +475,7 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-23 — Use icons only when they materially clarify an unlabeled action
   or state — Kitsune does not decorate headings, labels, navigation, or brand
   text with generic Lucide symbols.
+- 2026-07-23 — Run Next development and Playwright servers through webpack while
+  retaining Turbopack production builds — Next 16's development Turbopack panics
+  while emitting the authenticated challenge route on the Linux Node 26 host,
+  whereas webpack passes the same desktop/mobile browser and axe journey.

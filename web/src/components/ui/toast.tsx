@@ -79,7 +79,7 @@ export function ToastRegion() {
     <ReactAriaToastRegion
       className={cx(
         'fixed bottom-4 left-4 right-4 z-overlay flex max-w-toast flex-col gap-2',
-        'sm:left-auto sm:w-full',
+        'sm:right-auto sm:w-full',
         'outline-none'
       )}
       queue={toastQueue}

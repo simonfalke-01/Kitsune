@@ -12,13 +12,16 @@ Updated: 2026-07-23 (Asia/Singapore)
   all pass strict TypeScript and a production build.
 - Completed: the verified React Aria system now runs on Next.js App Router with
   server-rendered route output, Next-native metadata and rewrites, React Aria
-  router integration, a production-visible `/_kitchen` route, and no client
-  router or non-table TanStack dependency.
-- In progress: compose the shared authenticated shell and domain surfaces while
-  continuing the caption, icon, density, and interaction audit.
+  router integration, a development-only `/_kitchen` route excluded from
+  production navigation, and no client router or non-table TanStack dependency.
+- In progress: build the scoreboard and team routes on the shared authenticated
+  shell while continuing the caption, icon, density, and interaction audit.
 - Completed: the first application slice now has a server-authenticated platform
   layout, request-cookie event selection, SSR event/challenge bootstrap, staged
   local/MFA sign-in, compact challenge search, and idempotent answer submission.
+- Completed: first-run setup now has an SSR setup-state boundary, organization
+  and owner creation, password confirmation, setup-complete handoff, and a calm
+  API-unavailable recovery state.
 - Verified: `/login` and `/_kitchen` return 200 in development, `/` safely sends
   unauthenticated or API-unavailable requests to sign-in, and the Next route
   manifest marks `/challenges` as request-time server rendered.
@@ -44,8 +47,12 @@ Updated: 2026-07-23 (Asia/Singapore)
 - `PROMPT.md` read and treated as the source specification.
 - CTFd reference inspected only for externally visible features and schema
   concepts; no source or assets copied.
-- Local toolchain: Rust 1.93.1 default plus Rust 1.97.0 CI-parity
-  validation, Node 24.13.0, Corepack 0.34.5, Docker 29.4.0.
+- Current Linux toolchain: Rust 1.97.0, Node 26.4.0, and pnpm 10.13.1.
+  Next 16 production builds remain on Turbopack; local development and
+  Playwright use the supported webpack dev mode because Turbopack panics while
+  emitting the authenticated challenge route on this host.
+- The setup/challenge and toast-motion Playwright journeys pass in desktop and
+  mobile Chromium with axe against PostgreSQL 17 on the Linux port.
 - Core workspace format, 17 domain tests, and strict workspace Clippy pass.
 - PostgreSQL 17 migration applies from empty state; SQLx compile-time query
   metadata is checked in; transactional audit/outbox/idempotency test passes.
