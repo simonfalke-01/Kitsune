@@ -42,7 +42,10 @@
         inventory, enrollment, and guarded revocation.
   - [x] Add authenticator setup, one-time recovery codes, scoped API-token
         creation, one-time token reveal, and guarded token revocation.
-  - [ ] Complete organizer routes.
+  - [x] Add the SSR live-operations route with platform health, event lifecycle,
+        and scoreboard visibility controls.
+  - [ ] Complete organizer event, challenge, automation, access, audit, and
+        settings routes.
 - [ ] Port generated OpenAPI access and preserve authenticated realtime
       invalidation without introducing an unapproved dependency.
   - [x] Bootstrap the authenticated session, event catalog, selected event, and

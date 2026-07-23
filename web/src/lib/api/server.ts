@@ -10,7 +10,9 @@ import type {
   DivisionSummary,
   EventRegistration,
   EventSummary,
+  HealthSummary,
   PasskeySummary,
+  ReadinessSummary,
   ScoreHistory,
   Scoreboard,
   Session,
@@ -308,5 +310,26 @@ export async function getServerAccountBootstrap(): Promise<AccountBootstrap> {
     passkeys: passkeyResult.data,
     sessions: sessionResult.data,
     tokens: tokenResult.data
+  };
+}
+
+export interface AdminBootstrap {
+  error: string | null;
+  health: HealthSummary | null;
+  readiness: ReadinessSummary | null;
+}
+
+export async function getServerAdminBootstrap(): Promise<AdminBootstrap> {
+  const client = await getServerClient();
+  const [healthResult, readinessResult] = await Promise.all([
+    client.GET('/health'),
+    client.GET('/ready')
+  ]);
+
+  return {
+    error:
+      healthResult.data && readinessResult.data ? null : 'Platform health could not be loaded.',
+    health: healthResult.data ?? null,
+    readiness: readinessResult.data ?? null
   };
 }
