@@ -51,7 +51,9 @@ or scaffolding alone.
       persistence and security boundaries.
 - [x] Local registration and account-owned active-session UI/API.
 - [x] Email-verification and recovery one-time token persistence/API.
-- [ ] Deliver verification and recovery messages through configured SMTP.
+- [x] Deliver verification and recovery messages through configured SMTP with
+      TLS-first transport, bounded retries, escaped multipart templates, secret
+      redaction, canonical action URLs, and enumeration-safe API behavior.
 - [x] TOTP setup, encrypted secret storage, replay protection, recovery codes,
       MFA login challenge, and account security UI.
 - [x] Passkeys/WebAuthn: exact-origin relying party, required user verification,

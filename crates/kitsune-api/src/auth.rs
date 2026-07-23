@@ -1,6 +1,6 @@
 //! Local account bootstrap and opaque encrypted-cookie sessions.
 
-use std::{sync::Arc, time::Duration as StdDuration};
+use std::{collections::BTreeMap, sync::Arc, time::Duration as StdDuration};
 
 use argon2::{
     Algorithm, Argon2, Params, Version,
@@ -25,7 +25,7 @@ use kitsune_core::{
     DomainError, EventEnvelope,
     events::DomainEvent,
     identity::{OrganizationId, UserId},
-    ports::EventBus,
+    ports::{EventBus, Notification},
 };
 use kitsune_db::{
     auth::{AuthRepository, LocalAccount, SessionAccount},
@@ -788,8 +788,16 @@ pub(crate) async fn register(
         )
         .await
         .map_err(ApiError::from)?;
-    // Delivery is routed through the mailer adapter when enabled. Local
-    // accounts remain usable while unverified in zero-config lean mode.
+    deliver_auth_notification(
+        &state,
+        "auth.email_verification",
+        &account.email,
+        &account.display_name,
+        "/verify-email",
+        &verification_token,
+        "in 24 hours",
+    )
+    .await;
     let event = EventEnvelope::new(
         account.organization_id,
         None,
@@ -862,7 +870,7 @@ pub(crate) async fn start_recovery(
     }
     let token = random_token(32);
     let now = Utc::now();
-    let _recipient = state
+    let recipient = state
         .auth_repository
         .begin_account_recovery(
             request.organization.trim(),
@@ -873,9 +881,58 @@ pub(crate) async fn start_recovery(
         )
         .await
         .map_err(ApiError::from)?;
-    // Delivery is intentionally delegated to the optional mailer adapter. The
-    // response is invariant to prevent identity enumeration.
+    if let Some(recipient) = recipient {
+        deliver_auth_notification(
+            &state,
+            "auth.account_recovery",
+            &recipient.email,
+            &recipient.display_name,
+            "/recover",
+            &token,
+            "in 30 minutes",
+        )
+        .await;
+    }
     Ok(StatusCode::ACCEPTED)
+}
+
+async fn deliver_auth_notification(
+    state: &AppState,
+    template: &str,
+    recipient: &str,
+    display_name: &str,
+    path: &str,
+    token: &str,
+    expires: &str,
+) {
+    let Some(notifier) = &state.notifier else {
+        return;
+    };
+    let mut action_url = state.public_origin.clone();
+    action_url.set_path(path);
+    action_url
+        .query_pairs_mut()
+        .clear()
+        .append_pair("token", token);
+    let notification = Notification {
+        template: template.to_owned(),
+        recipient: recipient.to_owned(),
+        data: BTreeMap::from([
+            ("display_name".into(), display_name.to_owned()),
+            ("action_url".into(), action_url.to_string()),
+            ("expires".into(), expires.to_owned()),
+        ]),
+        idempotency_key: Uuid::now_v7(),
+    };
+    let notification_id = notification.idempotency_key;
+    if let Err(error) = notifier.notify(notification).await {
+        tracing::warn!(
+            %notification_id,
+            template,
+            %error,
+            "optional authentication notification delivery failed"
+        );
+    }
 }
 
 #[utoipa::path(

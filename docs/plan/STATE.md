@@ -5,12 +5,11 @@ Updated: 2026-07-23 (Asia/Singapore)
 ## Cursor
 
 - Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: deliver email verification and account-recovery messages through
-  the optional SMTP notifier without weakening lean-mode in-app delivery.
+- In progress: audit deny-by-default RBAC across every versioned REST resource.
 - Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
   organizer navigation, design primitives, and branding plumbing are green.
-- Next: complete the SMTP delivery slice, then audit deny-by-default RBAC across
-  the versioned REST surface before closing milestone 03.
+- Next: close uncovered authorization paths, regenerate the contract, and run
+  the milestone-wide secured-API regression gate.
 
 ## Verified
 
@@ -32,7 +31,15 @@ Updated: 2026-07-23 (Asia/Singapore)
 - Local self-registration, email-verification and recovery token persistence,
   XChaCha20-Poly1305-sealed TOTP secrets, replay-resistant authenticator login,
   single-use recovery codes, and account-owned session revocation pass a second
-  PostgreSQL-backed API journey. Recovery delivery awaits the SMTP adapter.
+  PostgreSQL-backed API journey.
+- Optional SMTP delivery is wired end to end without becoming a lean-mode boot
+  dependency. The TLS-first pooled adapter validates authentication pairs,
+  permits plaintext only on loopback, redacts secrets, bounds retries/timeouts,
+  and renders escaped multipart verification/recovery messages. The API derives
+  action URLs only from the canonical public origin, keeps unknown recovery
+  responses invariant, and treats relay failure as an optional-channel failure.
+  Real local-relay and PostgreSQL-backed recording-notifier tests cover delivery,
+  token consumption, and the no-enumeration boundary.
 - SvelteKit production build passes strict TypeScript/Svelte diagnostics,
   ESLint/Prettier, and 9 Vitest assertions. The generated TypeScript client is
   derived from the code-generated OpenAPI 3.1 document.
@@ -226,9 +233,9 @@ Updated: 2026-07-23 (Asia/Singapore)
   testable vertical slices so claims remain evidence-based.
 - Final mascot artwork must be human-authored: art is deliberately blocked until
   milestone 16 and will carry provenance documentation.
-- Recovery initiation is enumeration-safe and complete at the persistence/API
-  boundary; SMTP delivery remains explicitly open, so recovery is not yet marked
-  complete in the milestone ledger.
+- Recovery initiation and optional SMTP delivery are enumeration-safe end to
+  end; SMTP remains absent by default and a missing full-profile configuration
+  degrades to an explicit warning instead of blocking boot.
 - SAML assertion encryption is intentionally disabled while its RustCrypto RSA
   key-transport backend remains subject to RUSTSEC-2023-0071; signed plaintext
   assertions are the supported profile and the audit exception is documented.

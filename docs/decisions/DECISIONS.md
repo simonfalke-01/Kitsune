@@ -63,6 +63,10 @@ Format: `YYYY-MM-DD — decision — rationale`.
   this prevents account enumeration; the token is persisted for the optional
   mailer to deliver, and the UI clearly says delivery requires a configured
   channel rather than exposing secrets in responses or logs.
+- 2026-07-23 — Treat SMTP as an optional TLS-first `Notifier` adapter, allow
+  plaintext only for loopback development relays, and fail open after bounded
+  delivery retries — external mail cannot break account creation or recovery's
+  enumeration-safe response contract.
 - 2026-07-22 — Make readable formatting a repository contract through Rustfmt,
   Prettier, EditorConfig, and the root `format` task — deterministic tooling plus
   deliberately expanded component markup prevents compressed one-line code from

@@ -83,6 +83,15 @@ pub struct SessionRecord {
     pub expires_at: DateTime<Utc>,
 }
 
+/// Safe delivery projection for an enumeration-resistant recovery request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecoveryRecipient {
+    /// Public display name used by the notification template.
+    pub display_name: String,
+    /// Account mailbox used by the configured notifier.
+    pub email: String,
+}
+
 /// First-run and authentication persistence.
 #[derive(Debug, Clone)]
 pub struct AuthRepository {
@@ -367,20 +376,21 @@ impl AuthRepository {
         token_digest: &[u8],
         expires_at: DateTime<Utc>,
         now: DateTime<Utc>,
-    ) -> DomainResult<Option<UserId>> {
-        let user_id = sqlx::query_scalar!(
+    ) -> DomainResult<Option<RecoveryRecipient>> {
+        let mut tx = self.pool.begin().await.map_err(unavailable)?;
+        let recipient = sqlx::query!(
             r#"
-            SELECT u.id FROM users u
+            SELECT u.id, u.display_name, u.email FROM users u
             JOIN organizations o ON o.id = u.organization_id
             WHERE o.slug = $1 AND u.email_normalized = $2 AND u.disabled = false
             "#,
             organization_slug,
             normalize_email(email),
         )
-        .fetch_optional(&self.pool)
+        .fetch_optional(&mut *tx)
         .await
         .map_err(unavailable)?;
-        if let Some(user_id) = user_id {
+        if let Some(recipient) = &recipient {
             sqlx::query!(
                 r#"
                 INSERT INTO account_recovery_tokens (
@@ -388,16 +398,20 @@ impl AuthRepository {
                 ) VALUES ($1,$2,$3,$4,$5)
                 "#,
                 Uuid::now_v7(),
-                user_id,
+                recipient.id,
                 token_digest,
                 expires_at,
                 now,
             )
-            .execute(&self.pool)
+            .execute(&mut *tx)
             .await
             .map_err(unavailable)?;
         }
-        Ok(user_id.map(UserId))
+        tx.commit().await.map_err(unavailable)?;
+        Ok(recipient.map(|recipient| RecoveryRecipient {
+            display_name: recipient.display_name,
+            email: recipient.email,
+        }))
     }
 
     /// Atomically consumes a recovery token, replaces the password, and revokes

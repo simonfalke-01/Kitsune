@@ -1,0 +1,35 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT u.id, u.display_name, u.email FROM users u\n            JOIN organizations o ON o.id = u.organization_id\n            WHERE o.slug = $1 AND u.email_normalized = $2 AND u.disabled = false\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "email",
+        "type_info": "Text"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4b4fbb98cfa865a193fdaff11416534dcc45288a548fa6e6fb3f33e5aead99e0"
+}

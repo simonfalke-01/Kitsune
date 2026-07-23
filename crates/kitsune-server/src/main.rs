@@ -11,6 +11,7 @@ use kitsune_api::{
 use kitsune_automation::{InProcessCache, InProcessEventBus};
 use kitsune_core::config::{FeatureFlags, RuntimeProfile};
 use kitsune_db::{PostgresStore, auth::AuthRepository};
+use kitsune_integrations::{SmtpConfig, SmtpNotifier};
 use kitsune_plugins::{PluginBudgets, PluginHost, PluginTrustStore};
 use serde::{Deserialize, Serialize};
 use tokio::signal;
@@ -33,6 +34,7 @@ struct ServerConfig {
     public_origin: String,
     oidc_trusted_origins: BTreeSet<String>,
     saml_trusted_origins: BTreeSet<String>,
+    smtp: Option<SmtpConfig>,
 }
 
 impl Default for ServerConfig {
@@ -49,6 +51,7 @@ impl Default for ServerConfig {
             public_origin: "http://localhost:3000".into(),
             oidc_trusted_origins: BTreeSet::new(),
             saml_trusted_origins: BTreeSet::new(),
+            smtp: None,
         }
     }
 }
@@ -143,6 +146,16 @@ async fn main() -> Result<()> {
         let plugins = PluginHost::new(PluginTrustStore::default(), PluginBudgets::default())
             .context("initialize Component Model plugin host")?;
         state = state.with_plugins(Arc::new(plugins));
+    }
+    if features.smtp {
+        if let Some(smtp) = &config.smtp {
+            let notifier = SmtpNotifier::new(smtp).context("SMTP notifier configuration")?;
+            state = state.with_notifier(Arc::new(notifier));
+        } else {
+            warn!("SMTP is enabled without configuration; external email delivery is inactive");
+        }
+    } else if config.smtp.is_some() {
+        warn!("SMTP configuration is present while the feature is disabled; configuration ignored");
     }
     let app = kitsune_api::router(state);
     let listener = tokio::net::TcpListener::bind(config.listen)

@@ -30,7 +30,7 @@ use axum::{
 };
 use axum_extra::extract::cookie::Key;
 use kitsune_automation::ScoreboardInvalidatingEventBus;
-use kitsune_core::ports::{Cache, EventBus};
+use kitsune_core::ports::{Cache, EventBus, Notifier};
 use kitsune_db::{PostgresStore, auth::AuthRepository};
 use kitsune_plugins::PluginHost;
 use serde::Serialize;
@@ -68,6 +68,8 @@ pub struct AppState {
     pub cache: Arc<dyn Cache>,
     /// Typed realtime backbone.
     pub event_bus: Arc<dyn EventBus>,
+    /// Optional external notification channel. Lean mode leaves this absent.
+    pub notifier: Option<Arc<dyn Notifier>>,
     /// Cookie AEAD key.
     pub cookie_key: Key,
     /// Emit Secure cookie attribute.
@@ -116,6 +118,7 @@ impl AppState {
             tokens,
             cache,
             event_bus,
+            notifier: None,
             cookie_key,
             secure_cookies,
             oidc: OidcService::default(),
@@ -157,6 +160,13 @@ impl AppState {
     #[must_use]
     pub fn with_plugins(mut self, plugins: Arc<PluginHost>) -> Self {
         self.plugins = Some(plugins);
+        self
+    }
+
+    /// Installs an optional external notification delivery adapter.
+    #[must_use]
+    pub fn with_notifier(mut self, notifier: Arc<dyn Notifier>) -> Self {
+        self.notifier = Some(notifier);
         self
     }
 }
@@ -679,6 +689,7 @@ pub fn openapi_json() -> serde_json::Value {
 mod tests {
     use std::{collections::BTreeSet, sync::Arc};
 
+    use async_trait::async_trait;
     use axum::{
         body::Body,
         http::{Request, StatusCode, header},
@@ -690,7 +701,9 @@ mod tests {
     use http_body_util::BodyExt;
     use kitsune_automation::{InProcessCache, InProcessEventBus};
     use kitsune_core::{
+        DomainResult,
         identity::{ChallengeId, EventId, InstanceId, OrganizationId, UserId},
+        ports::{Notification, Notifier},
         scoring::CompetitorId,
     };
     use kitsune_db::{
@@ -724,6 +737,19 @@ mod tests {
             Key::generate(),
             false,
         )
+    }
+
+    #[derive(Default)]
+    struct RecordingNotifier {
+        notifications: tokio::sync::Mutex<Vec<Notification>>,
+    }
+
+    #[async_trait]
+    impl Notifier for RecordingNotifier {
+        async fn notify(&self, notification: Notification) -> DomainResult<()> {
+            self.notifications.lock().await.push(notification);
+            Ok(())
+        }
     }
 
     fn test_plugin_host() -> Arc<PluginHost> {
@@ -1038,7 +1064,8 @@ mod tests {
 
     #[sqlx::test(migrator = "MIGRATOR")]
     async fn registration_totp_and_session_management_are_end_to_end(pool: PgPool) {
-        let app = router(test_state(pool));
+        let notifier = Arc::new(RecordingNotifier::default());
+        let app = router(test_state(pool).with_notifier(notifier.clone()));
         let setup = Request::builder()
             .method("POST")
             .uri("/api/v1/setup")
@@ -1081,6 +1108,131 @@ mod tests {
             .expect("request");
         let response = app.clone().oneshot(register).await.expect("register");
         assert_eq!(response.status(), StatusCode::CREATED);
+        let verification_token = {
+            let notifications = notifier.notifications.lock().await;
+            assert_eq!(notifications.len(), 1);
+            assert_eq!(notifications[0].template, "auth.email_verification");
+            assert_eq!(notifications[0].recipient, "player@example.test");
+            notification_token(&notifications[0], "/verify-email")
+        };
+        let verify = Request::builder()
+            .method("POST")
+            .uri("/api/v1/auth/email/verify")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(
+                serde_json::json!({"token": verification_token}).to_string(),
+            ))
+            .expect("verification request");
+        assert_eq!(
+            app.clone()
+                .oneshot(verify)
+                .await
+                .expect("verify email")
+                .status(),
+            StatusCode::NO_CONTENT
+        );
+
+        let recovery = Request::builder()
+            .method("POST")
+            .uri("/api/v1/auth/recovery")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "organization": "foxfire",
+                    "email": "player@example.test"
+                })
+                .to_string(),
+            ))
+            .expect("recovery request");
+        assert_eq!(
+            app.clone()
+                .oneshot(recovery)
+                .await
+                .expect("start recovery")
+                .status(),
+            StatusCode::ACCEPTED
+        );
+        let recovery_token = {
+            let notifications = notifier.notifications.lock().await;
+            assert_eq!(notifications.len(), 2);
+            assert_eq!(notifications[1].template, "auth.account_recovery");
+            assert_eq!(notifications[1].recipient, "player@example.test");
+            notification_token(&notifications[1], "/recover")
+        };
+
+        let complete_recovery = || {
+            Request::builder()
+                .method("POST")
+                .uri("/api/v1/auth/recovery/complete")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(
+                    serde_json::json!({
+                        "token": &recovery_token,
+                        "password": "replacement foxfire account secret"
+                    })
+                    .to_string(),
+                ))
+                .expect("complete recovery request")
+        };
+        assert_eq!(
+            app.clone()
+                .oneshot(complete_recovery())
+                .await
+                .expect("complete recovery")
+                .status(),
+            StatusCode::NO_CONTENT
+        );
+        assert_eq!(
+            app.clone()
+                .oneshot(complete_recovery())
+                .await
+                .expect("replay recovery")
+                .status(),
+            StatusCode::NOT_FOUND
+        );
+        let recovered_login = Request::builder()
+            .method("POST")
+            .uri("/api/v1/auth/login")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "organization": "foxfire",
+                    "email": "player@example.test",
+                    "password": "replacement foxfire account secret"
+                })
+                .to_string(),
+            ))
+            .expect("recovered login request");
+        assert_eq!(
+            app.clone()
+                .oneshot(recovered_login)
+                .await
+                .expect("recovered login")
+                .status(),
+            StatusCode::OK
+        );
+
+        let unknown_recovery = Request::builder()
+            .method("POST")
+            .uri("/api/v1/auth/recovery")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(Body::from(
+                serde_json::json!({
+                    "organization": "foxfire",
+                    "email": "unknown@example.test"
+                })
+                .to_string(),
+            ))
+            .expect("unknown recovery request");
+        assert_eq!(
+            app.clone()
+                .oneshot(unknown_recovery)
+                .await
+                .expect("start unknown recovery")
+                .status(),
+            StatusCode::ACCEPTED
+        );
+        assert_eq!(notifier.notifications.lock().await.len(), 2);
 
         let start = Request::builder()
             .method("POST")
@@ -1177,6 +1329,23 @@ mod tests {
         let sessions: serde_json::Value = serde_json::from_slice(&body).expect("sessions");
         assert_eq!(sessions.as_array().expect("array").len(), 1);
         assert_eq!(sessions[0]["current"], true);
+    }
+
+    fn notification_token(notification: &Notification, expected_path: &str) -> String {
+        let action_url = notification
+            .data
+            .get("action_url")
+            .expect("notification action URL");
+        let action_url = url::Url::parse(action_url).expect("valid notification action URL");
+        assert_eq!(
+            action_url.origin().ascii_serialization(),
+            "http://localhost:3000"
+        );
+        assert_eq!(action_url.path(), expected_path);
+        action_url
+            .query_pairs()
+            .find_map(|(key, value)| (key == "token").then(|| value.into_owned()))
+            .expect("notification token")
     }
 
     #[sqlx::test(migrator = "MIGRATOR")]

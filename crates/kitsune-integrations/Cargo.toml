@@ -7,8 +7,16 @@ rust-version.workspace = true
 license.workspace = true
 
 [dependencies]
+async-trait.workspace = true
 kitsune-core = { path = "../kitsune-core" }
+lettre.workspace = true
+secrecy.workspace = true
+serde.workspace = true
+tokio.workspace = true
+tracing.workspace = true
 
 [lints]
 workspace = true
 
+[dev-dependencies]
+uuid.workspace = true
