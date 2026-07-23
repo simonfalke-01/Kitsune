@@ -1405,7 +1405,7 @@ fn validate_identity_fields(
     Ok(())
 }
 
-fn validate_user_fields(display_name: &str, email: &str) -> ApiResult<()> {
+pub(crate) fn validate_user_fields(display_name: &str, email: &str) -> ApiResult<()> {
     if display_name.trim().is_empty()
         || display_name.chars().count() > 80
         || email.len() > 254

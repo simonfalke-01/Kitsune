@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE api_tokens SET revoked_at = COALESCE(revoked_at,$2) WHERE user_id = $1",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "5c30a4dc550581fead98ab7c1f959323a76e84c27ebe461e8e16314cb382e721"
+}

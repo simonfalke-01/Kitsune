@@ -272,6 +272,19 @@ Updated: 2026-07-23 (Asia/Singapore)
   marked failed only when the cache post-job exhausted runner disk after those
   gates; repository-wide no-debug/non-incremental development and test profiles
   now bound artifact storage without requiring privileged workflow-file access.
+- Main CI run 29976305868 is fully green across Rust, Web, Browser E2E, and
+  dependency audit; the bounded Cargo profiles eliminated the cache post-job
+  disk exhaustion while preserving every substantive gate.
+- Organizer identity administration now exposes tenant-scoped users, the
+  supported permission catalog, custom roles, and organization/event/team role
+  grants through RBAC/CSRF-guarded REST/OpenAPI resources. Custom roles cannot
+  acquire platform authority, built-ins cannot be mutated, assigned roles cannot
+  be deleted, and a uniqueness constraint rejects duplicate scoped grants under
+  races. Disabling an account revokes its sessions and API tokens, while self
+  disable and removal of the final active platform manager fail closed. A real
+  PostgreSQL API journey covers player denial, Argon2id-only account creation,
+  role/grant lifecycle, session revocation, protected invariants, and immutable
+  audit/outbox events; SQLx metadata and strict workspace Clippy are green.
 - Main CI run 29974725515 exposed GitHub runner storage admission when two test
   JetStreams each reserved the one-gigabyte production limit. Stream retention
   is now an explicit validated adapter configuration; production retains its

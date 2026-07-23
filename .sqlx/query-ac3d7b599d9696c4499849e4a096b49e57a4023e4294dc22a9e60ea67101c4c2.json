@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT EXISTS(\n            SELECT 1\n            FROM users u\n            JOIN role_grants g ON g.user_id = u.id AND g.organization_id = u.organization_id\n            JOIN roles r ON r.id = g.role_id\n            WHERE u.organization_id = $1 AND u.id <> $2 AND u.disabled = false\n              AND g.event_id IS NULL AND g.team_id IS NULL\n              AND 'platform_manage' = ANY(r.permissions)\n        ) AS \"exists!\"\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "exists!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "ac3d7b599d9696c4499849e4a096b49e57a4023e4294dc22a9e60ea67101c4c2"
+}

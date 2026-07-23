@@ -135,6 +135,11 @@ or scaffolding alone.
 - [x] Immutable audit-history REST/OpenAPI resource with organization RBAC,
       exact bounded filters, descending keyset pagination, database mutation
       rejection, generated client, and an axe-covered organizer viewer.
+- [x] Tenant user, custom-role, permission-catalog, and scoped-grant REST/OpenAPI
+      resources with built-in/last-admin protection, credential revocation,
+      race-safe uniqueness, audit/outbox events, and PostgreSQL API coverage.
+- [ ] Wire the organizer user, role, and grant administration surface through
+      the generated client and desktop/mobile axe journey.
 - [ ] Complete versioned REST resources and OpenAPI contracts.
 
 ## Frontend vertical slice

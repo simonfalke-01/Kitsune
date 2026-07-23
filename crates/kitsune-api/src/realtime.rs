@@ -132,7 +132,11 @@ impl RealtimeAudience {
         }
         let own_event = envelope.actor_id == Some(self.user_id);
         let required_permission = match &envelope.event {
-            DomainEvent::UserCreated { user_id } if *user_id == self.user_id => return true,
+            DomainEvent::UserCreated { user_id } | DomainEvent::UserChanged { user_id, .. }
+                if *user_id == self.user_id =>
+            {
+                return true;
+            }
             DomainEvent::AuthenticationSucceeded { user_id, .. } if *user_id == self.user_id => {
                 return true;
             }
@@ -144,6 +148,9 @@ impl RealtimeAudience {
                 return true;
             }
             DomainEvent::UserCreated { .. }
+            | DomainEvent::UserChanged { .. }
+            | DomainEvent::RoleChanged { .. }
+            | DomainEvent::RoleGrantChanged { .. }
             | DomainEvent::OidcProviderChanged { .. }
             | DomainEvent::SamlProviderChanged { .. } => "identity_manage",
             DomainEvent::AuthenticationSucceeded { .. }

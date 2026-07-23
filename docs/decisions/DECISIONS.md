@@ -402,3 +402,13 @@ Format: `YYYY-MM-DD — decision — rationale`.
   development/test profiles — the all-feature Wasmtime/SQLx adapter graph
   otherwise exhausts hosted-runner storage after successful quality gates, while
   neither artifact class changes compile checks or test behavior.
+- 2026-07-23 — Keep `platform_manage` out of operator-defined roles and require
+  its built-in grant to remain unscoped — event/team assignments cannot become
+  an accidental cross-tenant privilege bypass.
+- 2026-07-23 — Model role assignments with null-safe set uniqueness and reject
+  deletion of assigned roles — concurrent organizers cannot create duplicate
+  authority, and removing a role never silently cascades away live access.
+- 2026-07-23 — Revoke sessions and API tokens in the same transaction that
+  disables an account, while preventing self-disable and final-platform-manager
+  removal — administrative lifecycle changes close access atomically without
+  permitting an organization lockout.

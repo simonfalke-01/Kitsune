@@ -8,6 +8,7 @@ use std::time::Duration;
 pub mod audit;
 pub mod auth;
 pub mod engagement;
+pub mod identity_admin;
 pub mod instances;
 pub mod oauth;
 pub mod oidc;

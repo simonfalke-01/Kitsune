@@ -86,6 +86,16 @@ impl EventEnvelope {
 pub enum DomainEvent {
     /// User identity created.
     UserCreated { user_id: UserId },
+    /// User identity or account lifecycle changed.
+    UserChanged { user_id: UserId, state: String },
+    /// Reusable authorization role changed.
+    RoleChanged { role_id: Uuid, state: String },
+    /// Scoped role assignment changed.
+    RoleGrantChanged {
+        grant_id: Uuid,
+        user_id: UserId,
+        state: String,
+    },
     /// Successful authentication.
     AuthenticationSucceeded { user_id: UserId, method: String },
     /// Failed authentication, deliberately without credential material.
@@ -207,6 +217,9 @@ impl DomainEvent {
     pub const fn kind(&self) -> &'static str {
         match self {
             Self::UserCreated { .. } => "identity.user.created",
+            Self::UserChanged { .. } => "identity.user.changed",
+            Self::RoleChanged { .. } => "authorization.role.changed",
+            Self::RoleGrantChanged { .. } => "authorization.grant.changed",
             Self::AuthenticationSucceeded { .. } => "auth.succeeded",
             Self::AuthenticationFailed { .. } => "auth.failed",
             Self::ApiTokenChanged { .. } => "auth.api_token.changed",

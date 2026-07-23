@@ -1,0 +1,72 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO users (\n                id,organization_id,email,email_normalized,display_name,password_hash,\n                email_verified,disabled,custom_fields,created_at,updated_at\n            ) VALUES ($1,$2,$3,$4,$5,$6,$7,false,$8,$9,$9)\n            RETURNING id,email,display_name,email_verified,disabled,custom_fields,\n                      created_at,updated_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "display_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "email_verified",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 4,
+        "name": "disabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 5,
+        "name": "custom_fields",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 6,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 7,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Text",
+        "Text",
+        "Text",
+        "Text",
+        "Bool",
+        "Jsonb",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "2b42866078bbba98548ab3d52bf87166814d6d702668f16cd83a9d4a0006fc7d"
+}

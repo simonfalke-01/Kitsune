@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT g.user_id,g.event_id,g.team_id,\n                   ('platform_manage' = ANY(r.permissions)) AS \"platform!\"\n            FROM role_grants g\n            JOIN roles r ON r.id = g.role_id\n            JOIN users u ON u.id = g.user_id\n            WHERE g.id = $1 AND g.organization_id = $2 AND u.organization_id = $2\n            FOR UPDATE OF g\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "event_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "platform!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "307318b659f7f0e304dbc3fe64d38f9b19c7f5c6b2e3251f78aeffafc82570b8"
+}

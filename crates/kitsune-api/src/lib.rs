@@ -4,6 +4,7 @@ mod audit;
 mod auth;
 mod engagement;
 mod error;
+mod identity_admin;
 mod oauth;
 mod oidc;
 mod oidc_routes;
@@ -210,6 +211,17 @@ pub struct ReadinessResponse {
         health,
         readiness,
         audit::list_audit,
+        identity_admin::list_users,
+        identity_admin::create_user,
+        identity_admin::update_user,
+        identity_admin::list_permissions,
+        identity_admin::list_roles,
+        identity_admin::create_role,
+        identity_admin::update_role,
+        identity_admin::delete_role,
+        identity_admin::list_grants,
+        identity_admin::create_grant,
+        identity_admin::revoke_grant,
         auth::setup_status,
         auth::setup,
         auth::register,
@@ -297,6 +309,14 @@ pub struct ReadinessResponse {
         ErrorBody,
         audit::AuditEntryResponse,
         audit::AuditPageResponse,
+        identity_admin::ManagedUserResponse,
+        identity_admin::CreateManagedUserRequest,
+        identity_admin::UpdateManagedUserRequest,
+        identity_admin::ManagedRoleResponse,
+        identity_admin::RoleMutationRequest,
+        identity_admin::PermissionResponse,
+        identity_admin::ManagedGrantResponse,
+        identity_admin::CreateGrantRequest,
         auth::SetupStatusResponse,
         auth::SetupRequest,
         auth::LoginRequest,
@@ -397,6 +417,7 @@ pub struct ReadinessResponse {
     tags(
         (name = "system", description = "Health and diagnostics"),
         (name = "audit", description = "Immutable organizer activity history"),
+        (name = "identity administration", description = "Organizer accounts, roles, and scoped grants"),
         (name = "auth", description = "Setup, sessions, and authentication"),
         (name = "events", description = "Competition and workshop events"),
         (name = "divisions", description = "Event scoreboard classifications"),
@@ -459,6 +480,34 @@ pub fn router(state: AppState) -> Router {
         .route("/health", get(health))
         .route("/ready", get(readiness))
         .route("/api/v1/audit", get(audit::list_audit))
+        .route(
+            "/api/v1/admin/users",
+            get(identity_admin::list_users).post(identity_admin::create_user),
+        )
+        .route(
+            "/api/v1/admin/users/{user_id}",
+            axum::routing::patch(identity_admin::update_user),
+        )
+        .route(
+            "/api/v1/admin/permissions",
+            get(identity_admin::list_permissions),
+        )
+        .route(
+            "/api/v1/admin/roles",
+            get(identity_admin::list_roles).post(identity_admin::create_role),
+        )
+        .route(
+            "/api/v1/admin/roles/{role_id}",
+            axum::routing::put(identity_admin::update_role).delete(identity_admin::delete_role),
+        )
+        .route(
+            "/api/v1/admin/role-grants",
+            get(identity_admin::list_grants).post(identity_admin::create_grant),
+        )
+        .route(
+            "/api/v1/admin/role-grants/{grant_id}",
+            axum::routing::delete(identity_admin::revoke_grant),
+        )
         .route("/api/v1/setup", get(auth::setup_status).post(auth::setup))
         .route("/api/v1/auth/login", post(auth::login))
         .route("/api/v1/auth/register", post(auth::register))
@@ -1237,6 +1286,290 @@ mod tests {
             .execute(&pool)
             .await
             .expect_err("audit deletion must fail");
+    }
+
+    #[sqlx::test(migrator = "MIGRATOR")]
+    async fn identity_roles_and_scoped_grants_preserve_administrator_access(pool: PgPool) {
+        let app = router(test_state(pool.clone()));
+        let admin = setup_test_admin(
+            &app,
+            "Access Shrine",
+            "access-shrine",
+            "Access Keeper",
+            "keeper@access.test",
+        )
+        .await;
+        let player =
+            register_test_player(&app, "access-shrine", "Trail Author", "author@access.test").await;
+        let event = create_test_event(&app, &admin, "Scoped Trail", "scoped-trail").await;
+        let event_id = event["id"].as_str().expect("event ID");
+
+        let forbidden = Request::builder()
+            .uri("/api/v1/admin/users")
+            .header(header::COOKIE, &player.cookies)
+            .body(Body::empty())
+            .expect("player user-list request");
+        assert_eq!(
+            app.clone()
+                .oneshot(forbidden)
+                .await
+                .expect("player user-list response")
+                .status(),
+            StatusCode::FORBIDDEN
+        );
+
+        let users = authorized_json_request(&app, "GET", "/api/v1/admin/users", &admin, None).await;
+        assert_eq!(users.as_array().expect("managed users").len(), 2);
+
+        let role = authorized_json_request(
+            &app,
+            "POST",
+            "/api/v1/admin/roles",
+            &admin,
+            Some(serde_json::json!({
+                "key": "challenge_reviewer",
+                "name": "Challenge Reviewer",
+                "permissions": ["submission_manage", "challenge_read", "submission_manage"]
+            })),
+        )
+        .await;
+        let role_id = role["id"].as_str().expect("custom role ID");
+        assert_eq!(
+            role["permissions"],
+            serde_json::json!(["challenge_read", "submission_manage"])
+        );
+
+        let grant = authorized_json_request(
+            &app,
+            "POST",
+            "/api/v1/admin/role-grants",
+            &admin,
+            Some(serde_json::json!({
+                "user_id": player.user_id,
+                "role_id": role_id,
+                "event_id": event_id,
+                "team_id": null
+            })),
+        )
+        .await;
+        let grant_id = grant["id"].as_str().expect("grant ID");
+        assert_eq!(grant["event_id"], event_id);
+
+        let duplicate_grant = Request::builder()
+            .method("POST")
+            .uri("/api/v1/admin/role-grants")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin.cookies)
+            .header("x-csrf-token", &admin.csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "user_id": player.user_id,
+                    "role_id": role_id,
+                    "event_id": event_id,
+                    "team_id": null
+                })
+                .to_string(),
+            ))
+            .expect("duplicate grant request");
+        assert_eq!(
+            app.clone()
+                .oneshot(duplicate_grant)
+                .await
+                .expect("duplicate grant response")
+                .status(),
+            StatusCode::CONFLICT
+        );
+
+        for (uri, expected) in [
+            (
+                format!("/api/v1/admin/roles/{role_id}"),
+                StatusCode::CONFLICT,
+            ),
+            (
+                format!("/api/v1/admin/role-grants/{grant_id}"),
+                StatusCode::NO_CONTENT,
+            ),
+            (
+                format!("/api/v1/admin/roles/{role_id}"),
+                StatusCode::NO_CONTENT,
+            ),
+        ] {
+            let request = Request::builder()
+                .method("DELETE")
+                .uri(uri)
+                .header(header::COOKIE, &admin.cookies)
+                .header("x-csrf-token", &admin.csrf)
+                .body(Body::empty())
+                .expect("authorization delete request");
+            assert_eq!(
+                app.clone()
+                    .oneshot(request)
+                    .await
+                    .expect("authorization delete response")
+                    .status(),
+                expected
+            );
+        }
+
+        let created_user = authorized_json_request(
+            &app,
+            "POST",
+            "/api/v1/admin/users",
+            &admin,
+            Some(serde_json::json!({
+                "email": "created@access.test",
+                "display_name": "Created Player",
+                "password": "another correct foxfire battery",
+                "email_verified": true,
+                "custom_fields": {"school": "Inari Academy"}
+            })),
+        )
+        .await;
+        assert_eq!(created_user["email_verified"], true);
+        assert!(created_user.get("password").is_none());
+        let created_id = created_user["id"].as_str().expect("created user ID");
+        let password_hash = sqlx::query_scalar!(
+            "SELECT password_hash FROM users WHERE id = $1",
+            Uuid::parse_str(created_id).expect("created user UUID"),
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("created password query")
+        .expect("created password hash");
+        assert!(password_hash.starts_with("$argon2id$"));
+        assert!(!password_hash.contains("another correct foxfire battery"));
+
+        let self_disable = Request::builder()
+            .method("PATCH")
+            .uri(format!("/api/v1/admin/users/{}", admin.user_id))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin.cookies)
+            .header("x-csrf-token", &admin.csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "display_name": "Access Keeper",
+                    "email_verified": true,
+                    "disabled": true,
+                    "custom_fields": {}
+                })
+                .to_string(),
+            ))
+            .expect("self disable request");
+        assert_eq!(
+            app.clone()
+                .oneshot(self_disable)
+                .await
+                .expect("self disable response")
+                .status(),
+            StatusCode::CONFLICT
+        );
+
+        let disabled = authorized_json_request(
+            &app,
+            "PATCH",
+            &format!("/api/v1/admin/users/{}", player.user_id),
+            &admin,
+            Some(serde_json::json!({
+                "display_name": "Trail Author",
+                "email_verified": true,
+                "disabled": true,
+                "custom_fields": {"reviewed": true}
+            })),
+        )
+        .await;
+        assert_eq!(disabled["disabled"], true);
+        let expired_session = Request::builder()
+            .uri("/api/v1/auth/session")
+            .header(header::COOKIE, &player.cookies)
+            .body(Body::empty())
+            .expect("disabled session request");
+        assert_eq!(
+            app.clone()
+                .oneshot(expired_session)
+                .await
+                .expect("disabled session response")
+                .status(),
+            StatusCode::UNAUTHORIZED
+        );
+
+        let roles = authorized_json_request(&app, "GET", "/api/v1/admin/roles", &admin, None).await;
+        let super_role = roles
+            .as_array()
+            .expect("roles")
+            .iter()
+            .find(|role| role["key"] == "super_admin")
+            .expect("super-admin role");
+        let built_in_update = Request::builder()
+            .method("PUT")
+            .uri(format!(
+                "/api/v1/admin/roles/{}",
+                super_role["id"].as_str().expect("super role ID")
+            ))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin.cookies)
+            .header("x-csrf-token", &admin.csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "key": "super_admin",
+                    "name": "Changed",
+                    "permissions": ["audit_read"]
+                })
+                .to_string(),
+            ))
+            .expect("built-in role update request");
+        assert_eq!(
+            app.clone()
+                .oneshot(built_in_update)
+                .await
+                .expect("built-in role update response")
+                .status(),
+            StatusCode::CONFLICT
+        );
+
+        let grants =
+            authorized_json_request(&app, "GET", "/api/v1/admin/role-grants", &admin, None).await;
+        let platform_grant = grants
+            .as_array()
+            .expect("grants")
+            .iter()
+            .find(|grant| grant["role_key"] == "super_admin")
+            .expect("platform grant");
+        let revoke_last_platform = Request::builder()
+            .method("DELETE")
+            .uri(format!(
+                "/api/v1/admin/role-grants/{}",
+                platform_grant["id"].as_str().expect("platform grant ID")
+            ))
+            .header(header::COOKIE, &admin.cookies)
+            .header("x-csrf-token", &admin.csrf)
+            .body(Body::empty())
+            .expect("last platform grant revoke request");
+        assert_eq!(
+            app.clone()
+                .oneshot(revoke_last_platform)
+                .await
+                .expect("last platform grant revoke response")
+                .status(),
+            StatusCode::CONFLICT
+        );
+
+        let actions = sqlx::query_scalar!(
+            r#"
+            SELECT action
+            FROM audit_log
+            WHERE action LIKE 'authorization.%' OR action LIKE 'identity.user.%'
+            ORDER BY action
+            "#,
+        )
+        .fetch_all(&pool)
+        .await
+        .expect("identity administration audit actions");
+        assert!(actions.contains(&"authorization.role.create".to_owned()));
+        assert!(actions.contains(&"authorization.grant.create".to_owned()));
+        assert!(actions.contains(&"authorization.grant.revoke".to_owned()));
+        assert!(actions.contains(&"authorization.role.delete".to_owned()));
+        assert!(actions.contains(&"identity.user.create".to_owned()));
+        assert!(actions.contains(&"identity.user.update".to_owned()));
     }
 
     #[sqlx::test(migrator = "MIGRATOR")]
@@ -3798,6 +4131,37 @@ mod tests {
         cookies: String,
         csrf: String,
         user_id: String,
+    }
+
+    async fn authorized_json_request(
+        app: &Router,
+        method: &str,
+        uri: &str,
+        actor: &TestPlayerSession,
+        body: Option<serde_json::Value>,
+    ) -> serde_json::Value {
+        let mut request = Request::builder()
+            .method(method)
+            .uri(uri)
+            .header(header::COOKIE, &actor.cookies)
+            .header("x-csrf-token", &actor.csrf);
+        if body.is_some() {
+            request = request.header(header::CONTENT_TYPE, "application/json");
+        }
+        let request = request
+            .body(body.map_or_else(Body::empty, |value| Body::from(value.to_string())))
+            .expect("authorized JSON request");
+        let response = app
+            .clone()
+            .oneshot(request)
+            .await
+            .expect("authorized JSON response");
+        assert!(
+            response.status().is_success(),
+            "{method} {uri} returned {}",
+            response.status()
+        );
+        response_json(response).await
     }
 
     async fn setup_test_admin(

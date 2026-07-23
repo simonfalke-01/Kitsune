@@ -42,6 +42,14 @@ updates and deletes. Organizer reads are organization-scoped and use descending
 `(occurred_at, id)` keyset cursors plus bounded exact filters, avoiding unstable
 or increasingly expensive offset scans as event history grows. Deliberate
 retention or archival requires a separately privileged operational path.
+Identity administration treats role grants as a set identified by user, role,
+tenant, event, and team with `NULLS NOT DISTINCT` uniqueness. Custom roles may
+compose documented organization/event permissions but never platform authority;
+the built-in super-admin remains Kitsune-managed. Mutations lock their target,
+validate every scoped resource belongs to the tenant, and preserve at least one
+active unscoped platform manager. Account disablement and session/API-token
+revocation share the command transaction, closing the access window before its
+audit/outbox event becomes visible.
 Challenge submissions lock only their target challenge while deciding solves
 and first blood, and use a PostgreSQL sequence for globally monotonic score IDs
 without an event-wide counter hotspot. Client idempotency keys replay immutable
