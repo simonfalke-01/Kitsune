@@ -1,0 +1,85 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT s.id,s.challenge_id,s.user_id,s.team_id,s.outcome,s.answer_digest,\n               s.awarded_points,\n               s.first_blood,s.attempts_remaining,s.submitted_at,\n               EXISTS(\n                   SELECT 1 FROM team_members tm\n                   WHERE tm.team_id = s.team_id AND tm.user_id = $4\n               ) AS \"team_member!\"\n        FROM submissions s\n        JOIN events e ON e.id = s.event_id\n        WHERE s.event_id = $1 AND s.idempotency_key = $2 AND e.organization_id = $3\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "challenge_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 2,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 3,
+        "name": "team_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 4,
+        "name": "outcome",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 5,
+        "name": "answer_digest",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 6,
+        "name": "awarded_points",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 7,
+        "name": "first_blood",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "attempts_remaining",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 9,
+        "name": "submitted_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "team_member!",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      true,
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      true,
+      false,
+      null
+    ]
+  },
+  "hash": "88b995d6d95deab7c8e6aaa9d75c65bb1a403d3d2ce7dcf82cafac1735d83cc1"
+}

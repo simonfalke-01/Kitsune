@@ -1,0 +1,97 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT c.state,c.kind,c.scoring,c.visibility,c.max_attempts,c.updated_at,\n               e.state AS event_state,e.participation,e.scoreboard_frozen,\n               e.starts_at,e.ends_at,e.team_size_limit,\n               COALESCE((e.config->>'first_blood_bonus')::bigint, $4) AS \"first_blood_bonus!\"\n        FROM challenges c\n        JOIN events e ON e.id = c.event_id\n        WHERE c.id = $1 AND c.event_id = $2 AND e.organization_id = $3\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "state",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "kind",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 2,
+        "name": "scoring",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 3,
+        "name": "visibility",
+        "type_info": "Jsonb"
+      },
+      {
+        "ordinal": 4,
+        "name": "max_attempts",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "updated_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 6,
+        "name": "event_state",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 7,
+        "name": "participation",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 8,
+        "name": "scoreboard_frozen",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "starts_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 10,
+        "name": "ends_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 11,
+        "name": "team_size_limit",
+        "type_info": "Int2"
+      },
+      {
+        "ordinal": 12,
+        "name": "first_blood_bonus!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Uuid",
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      null
+    ]
+  },
+  "hash": "a9739c8178f8ec6ba50359d45c84a4ee2897cbdcb36d59aaf86bb552db362fe3"
+}
