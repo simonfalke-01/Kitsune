@@ -419,3 +419,17 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-23 — Desaturate disabled buttons without reducing whole-control
   opacity — unavailable actions remain visually distinct while their labels
   retain AA contrast during fast asynchronous transitions.
+- 2026-07-23 — Replace SvelteKit and Bits UI with React 19 and React Aria
+  Components at the owner's explicit direction, superseding the original
+  frontend-stack constraint — React Aria cannot be adopted faithfully through a
+  Svelte wrapper, so the application and design system will be rebuilt rather
+  than hybridized.
+- 2026-07-23 — Keep the mascot extension slot semantically present but visually
+  empty until human-authored final artwork exists — generated silhouettes,
+  pseudo-illustrations, and temporary character art are not acceptable product
+  assets.
+- 2026-07-23 — Use one non-overlapping frontend stack: React Router for route
+  boundaries, TanStack Query/Table for server state and data grids, React Flow
+  for automation, Visx for charts, Motion for restrained transitions, and
+  Storybook for the component contract — no second primitive kit will compete
+  with React Aria's interaction and focus model.

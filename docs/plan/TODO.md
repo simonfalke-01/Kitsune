@@ -1,5 +1,26 @@
 # Live Task Ledger
 
+## Immediate frontend reset
+
+- [ ] Replace SvelteKit/Svelte runtime and build tooling with React 19, Vite,
+      React Router 7, and strict TypeScript.
+- [ ] Use React Aria Components as the sole interaction-primitive foundation.
+- [ ] Establish semantic color, typography, spacing, sizing, radius, elevation,
+      motion, focus, density, and responsive tokens.
+- [ ] Build documented Button, Link, Field, Select, ComboBox, Checkbox, Switch,
+      Tabs, Dialog, Popover, Menu, Tooltip, Toast, Table, Badge, Card, Empty,
+      Skeleton, and error-state components.
+- [ ] Add Storybook with axe failures enforced for the design-system catalog.
+- [ ] Rebuild the global shell and every player, auth, account, and organizer
+      route without retaining Svelte markup.
+- [ ] Port generated OpenAPI access through TanStack Query and preserve
+      authenticated realtime invalidation.
+- [ ] Rebuild scoring charts with Visx and the automation DAG with React Flow.
+- [ ] Keep the mascot slot visually empty; do not ship generated or placeholder
+      character artwork.
+- [ ] Pass formatting, ESLint, strict typecheck, Vitest, Storybook build,
+      production build, and desktop/mobile Playwright plus axe.
+
 ## Milestone 01
 
 - [x] Read `PROMPT.md` and establish autonomous goal.

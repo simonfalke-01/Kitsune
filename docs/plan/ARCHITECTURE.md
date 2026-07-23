@@ -187,8 +187,28 @@ by default. Sensitive config uses redacted secret wrappers.
 
 ## Web
 
-SvelteKit 5 renders public and authenticated surfaces with progressive
-enhancement. One generated TypeScript client consumes the OpenAPI document.
-CSS-variable Kitsune tokens support light/dark and theme packs. All visible copy
-comes from tone-aware i18n catalogs. Brand, mascot, and extension-slot
-components centralize operator toggles and entitlement behavior.
+React 19 renders a Vite-built client application. React Router 7 owns nested
+route, error, loading, and authorization boundaries; TanStack Query owns server
+state and consumes one TypeScript client generated from the OpenAPI document.
+WebSocket events invalidate typed query keys rather than synchronizing parallel
+component-local stores.
+
+React Aria Components is the sole interaction-primitive layer for focus,
+keyboard, pointer, overlay, collection, form, and validation behavior. Kitsune
+owns every visual decision through semantic CSS variables and Tailwind 4:
+color, typography, spacing, control sizing, density, radius, elevation, motion,
+focus, and responsive tokens. `tailwind-variants` defines documented component
+recipes without importing a second visual kit. TanStack Table handles organizer
+data grids, Visx renders score/operations charts, React Flow renders the
+keyboard-accessible automation DAG, and Motion is limited to short
+state-preserving transitions.
+
+Storybook is the executable design-system catalog. Component stories cover
+interaction states, both themes, narrow/wide layouts, keyboard behavior, and
+axe with violations configured as failures. Product Playwright journeys remain
+PostgreSQL-backed and validate the integrated desktop/mobile application.
+
+All visible copy comes from tone-aware i18n catalogs. Branding and extension
+slots centralize operator toggles and entitlement behavior, but the mascot slot
+renders no visual placeholder or generated artwork until human-authored assets
+are delivered in the final branding milestone.

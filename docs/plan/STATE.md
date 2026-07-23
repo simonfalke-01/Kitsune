@@ -4,13 +4,15 @@ Updated: 2026-07-23 (Asia/Singapore)
 
 ## Cursor
 
-- Current milestone: 03 — secured API, authentication, and realtime.
-- In progress: close the remaining versioned REST/OpenAPI resource surface
-  after landing complete organizer identity and authorization administration.
-- Parallel vertical slice: Svelte 5 product shell, generated OpenAPI client,
-  organizer navigation, design primitives, and branding plumbing are green.
-- Next: close uncovered authorization paths, regenerate the contract, and run
-  the milestone-wide secured-API regression gate.
+- Current milestone: frontend reset — explicit owner-directed replacement of
+  the Svelte application with React 19 and React Aria Components.
+- In progress: replace the frontend toolchain, establish the complete Kitsune
+  token/component system, and rebuild every route on a coherent application
+  shell.
+- Preserved work: the interrupted notification vertical slice is stored in
+  `stash@{0}` and must not resume until the frontend reset is green.
+- Next: land the React foundation and design-system contract, then port player,
+  authentication, organizer, realtime, chart, and automation surfaces.
 
 ## Verified
 

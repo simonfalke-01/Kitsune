@@ -12,6 +12,8 @@ operational wiring are all present.
    WebSocket, and SSE surfaces.
 4. Complete local/OIDC/passkey/SAML/TOTP authentication, RBAC, sessions, tokens,
    audit, Jeopardy, and the player/admin web experience.
+   The owner-directed frontend reset replaces the original Svelte path with
+   React 19 and React Aria Components before further product surfaces land.
 5. Complete optional integrations, object storage, notifications, imports,
    Grafana-ready observability, demand-aware orchestration, KotH, and
    Attack/Defense.
@@ -26,6 +28,12 @@ operational wiring are all present.
 
 Every cycle follows: read state → select one checkable slice → implement → run
 focused verification → fix red results → update this ledger → continue.
+
+The frontend reset is not a cosmetic reskin. It replaces the runtime, route
+composition, server-state model, interaction primitives, visual tokens, page
+hierarchy, component documentation, and accessibility contracts together.
+Legacy Svelte routes are removed once their React counterparts pass the same
+real API and browser journeys.
 
 The organizer experience is a product surface, not a maintenance afterthought.
 Its live-ops workspace must remain calm and responsive while exposing event,
