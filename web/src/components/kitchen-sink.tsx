@@ -5,6 +5,7 @@ import { type ReactNode, useState } from 'react';
 
 import {
   Alert,
+  AlertDialog,
   Badge,
   Breadcrumbs,
   Button,
@@ -250,6 +251,24 @@ function ThemePreview({ isDark = false, title }: ThemePreviewProps) {
                   </p>
                 </div>
               </Dialog>
+            </DialogTrigger>
+
+            <DialogTrigger>
+              <Button tone="danger">Remove team member</Button>
+              <AlertDialog
+                actions={
+                  <>
+                    <Button slot="close" tone="quiet">
+                      Keep member
+                    </Button>
+                    <Button slot="close" tone="danger">
+                      Remove member
+                    </Button>
+                  </>
+                }
+                description="The member loses access to the team roster and team-owned event progress."
+                title="Remove this team member?"
+              />
             </DialogTrigger>
 
             <DialogTrigger>
