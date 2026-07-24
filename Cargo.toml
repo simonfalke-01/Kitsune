@@ -30,7 +30,7 @@ axum-extra = { version = "0.12.6", features = ["cookie-private", "cookie-key-exp
 base64 = "0.22.1"
 bytes = "1.11.0"
 chrono = { version = "0.4.43", features = ["serde"] }
-chacha20poly1305 = "0.10.1"
+chacha20poly1305 = "0.11.0"
 clap = { version = "4.5.54", features = ["derive", "env"] }
 config = "0.15.19"
 dashmap = "6.1.0"
