@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, ChevronsUpDown, Eye, EyeOff, Trophy } from 'lucide-react';
-import { useMemo, useState, useSyncExternalStore } from 'react';
+import { type RefObject, useMemo, useState, useSyncExternalStore } from 'react';
 
 import {
   categoryTextClasses,
@@ -109,6 +109,7 @@ interface ChallengeCollectionProps {
   getChallengeHref?: (challengeId: string) => string | undefined;
   onSelectChallenge?: (challengeId: string, trigger: HTMLElement) => void;
   selectedChallengeId: string | null;
+  searchInputRef?: RefObject<HTMLInputElement | null>;
   solveContexts: ReadonlyMap<string, ChallengeSolveContext>;
 }
 
@@ -118,6 +119,7 @@ export function ChallengeCollection({
   getChallengeHref,
   onSelectChallenge,
   selectedChallengeId,
+  searchInputRef,
   solveContexts
 }: ChallengeCollectionProps) {
   const preferenceValue = useSyncExternalStore(
@@ -160,6 +162,7 @@ export function ChallengeCollection({
         <SearchField
           className="min-w-0 flex-1"
           label="Search challenges"
+          inputRef={searchInputRef}
           onChange={setQuery}
           placeholder="Name or category"
           value={query}
@@ -261,6 +264,7 @@ export function ChallengeCollection({
                           appearance="challenge"
                           className="kitsune-challenge-row"
                           data-blood={bloodRank ?? undefined}
+                          data-challenge-row
                           data-solved={challenge.solved || undefined}
                           href={getChallengeHref?.(challenge.id)}
                           isSelected={selectedChallengeId === challenge.id}

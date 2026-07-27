@@ -26,7 +26,7 @@ import {
   type ChallengeCompetitorStub
 } from './challenge-solve-stub';
 import type { ChallengeWorkspaceActions } from './challenge-types';
-import { Sheet, SplitWorkspace } from '@/components/ui';
+import { Sheet, SplitWorkspace, type SplitWorkspaceHandle } from '@/components/ui';
 import type { ChallengeExperience } from '@/lib/challenges';
 
 export type { ChallengeWorkspaceActions } from './challenge-types';
@@ -71,6 +71,18 @@ interface ImmediateSelection {
 }
 
 const scrollMemoryDelay = 120;
+const splitShortcutStep = 4;
+
+function isTextEntryTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return (
+    target.isContentEditable ||
+    Boolean(target.closest('input, textarea, select, [contenteditable="true"]'))
+  );
+}
 
 function availableTab(
   challenge: ChallengeExperience | null | undefined,
@@ -128,6 +140,7 @@ export function ChallengeWorkspace({
   const [optimisticSolveTimes, setOptimisticSolveTimes] = useState<ReadonlyMap<string, string>>(
     new Map()
   );
+  const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
   let immediateSelectedChallengeId = immediateSelection.current;
   let immediateSelectedTab = immediateSelection.tab;
 
@@ -146,6 +159,8 @@ export function ChallengeWorkspace({
   }
   const collectionScrollRef = useRef<HTMLDivElement>(null);
   const collectionScrollTimerRef = useRef<number | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const splitWorkspaceRef = useRef<SplitWorkspaceHandle>(null);
   const restoreSelectionFocusRef = useRef(false);
   const selectionTriggerRef = useRef<HTMLElement | null>(null);
   const displayedChallenges = useMemo(() => {
@@ -246,19 +261,22 @@ export function ChallengeWorkspace({
     onSelectChallenge?.(challengeId, tab);
   }
 
-  function selectTab(tab: ChallengeDetailTab) {
-    if (!selectedChallenge) {
-      return;
-    }
+  const selectTab = useCallback(
+    (tab: ChallengeDetailTab) => {
+      if (!selectedChallenge) {
+        return;
+      }
 
-    const resolvedTab = availableTab(selectedChallenge, tab, actions);
-    rememberChallengeTab(eventId, selectedChallenge.id, resolvedTab);
-    setImmediateSelection((current) => ({
-      ...current,
-      tab: resolvedTab
-    }));
-    onSelectTab?.(selectedChallenge.id, resolvedTab);
-  }
+      const resolvedTab = availableTab(selectedChallenge, tab, actions);
+      rememberChallengeTab(eventId, selectedChallenge.id, resolvedTab);
+      setImmediateSelection((current) => ({
+        ...current,
+        tab: resolvedTab
+      }));
+      onSelectTab?.(selectedChallenge.id, resolvedTab);
+    },
+    [actions, eventId, onSelectTab, selectedChallenge]
+  );
 
   function rememberCollectionScroll(scrollTop: number) {
     if (collectionScrollTimerRef.current) {
@@ -270,6 +288,89 @@ export function ChallengeWorkspace({
       collectionScrollTimerRef.current = null;
     }, scrollMemoryDelay);
   }
+
+  useEffect(() => {
+    function focusChallengeRow(direction: 1 | -1) {
+      const rows = Array.from(
+        collectionScrollRef.current?.querySelectorAll<HTMLElement>('[data-challenge-row]') ?? []
+      ).filter((row) => !row.closest('[hidden], [aria-hidden="true"], [inert]'));
+
+      if (rows.length === 0) {
+        return;
+      }
+
+      const activeElement = document.activeElement;
+      const activeIndex = rows.findIndex(
+        (row) => row === activeElement || (activeElement && row.contains(activeElement))
+      );
+      const nextIndex =
+        activeIndex < 0
+          ? direction > 0
+            ? 0
+            : rows.length - 1
+          : Math.min(Math.max(activeIndex + direction, 0), rows.length - 1);
+      const nextRow = rows[nextIndex];
+
+      if (!nextRow) {
+        return;
+      }
+
+      nextRow.focus();
+    }
+
+    function handleWorkspaceShortcut(event: globalThis.KeyboardEvent) {
+      if (
+        event.defaultPrevented ||
+        event.isComposing ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        isTextEntryTarget(event.target) ||
+        document.querySelector('[role="dialog"], [role="alertdialog"]')
+      ) {
+        return;
+      }
+
+      const key = event.key.toLocaleLowerCase();
+
+      if (event.key === '/') {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+        return;
+      }
+
+      if (key === 'j' || key === 'k') {
+        event.preventDefault();
+        focusChallengeRow(key === 'j' ? 1 : -1);
+        return;
+      }
+
+      if (selectedChallenge && (key === 'd' || key === 's' || key === 'h')) {
+        event.preventDefault();
+        selectTab(key === 'd' ? 'details' : key === 's' ? 'solves' : 'hints');
+        return;
+      }
+
+      if (isDesktop && (event.key === '[' || event.key === ']')) {
+        event.preventDefault();
+        splitWorkspaceRef.current?.adjustBy(
+          event.key === '[' ? -splitShortcutStep : splitShortcutStep
+        );
+        return;
+      }
+
+      if (event.key === '?') {
+        event.preventDefault();
+        setIsShortcutHelpOpen(true);
+      }
+    }
+
+    window.addEventListener('keydown', handleWorkspaceShortcut);
+    return () => {
+      window.removeEventListener('keydown', handleWorkspaceShortcut);
+    };
+  }, [isDesktop, selectTab, selectedChallenge]);
 
   function handleSolved(challengeId: string, solvedAt: string) {
     setOptimisticSolveTimes((current) => {
@@ -296,6 +397,7 @@ export function ChallengeWorkspace({
         selectChallenge(challengeId, trigger);
       }}
       selectedChallengeId={immediateSelectedChallengeId}
+      searchInputRef={searchInputRef}
       solveContexts={solveContexts}
     />
   );
@@ -337,6 +439,8 @@ export function ChallengeWorkspace({
       <ChallengeEventTrail
         challenges={displayedChallenges}
         eventName={eventName}
+        isShortcutHelpOpen={isShortcutHelpOpen}
+        onShortcutHelpOpenChange={setIsShortcutHelpOpen}
         selectedChallenge={selectedChallenge}
         standing={standing}
       />
@@ -355,6 +459,7 @@ export function ChallengeWorkspace({
             }}
             persistenceKey="challenge-list"
             right={detail}
+            workspaceHandleRef={splitWorkspaceRef}
           />
         </div>
       ) : (

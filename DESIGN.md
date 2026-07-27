@@ -212,6 +212,12 @@ without losing competition context.
 - Remember the collection scroll position and each challenge's last tab and
   per-tab detail position within the current event. Returning to prior work
   must restore context without moving a different event's workspace.
+- Keyboard accelerators shorten repeat work without replacing visible paths.
+  Slash focuses search; J and K move focus without selecting; Enter follows
+  the focused challenge; D, S, and H choose detail sections; brackets resize
+  the collection. Text entry and open overlays suspend workspace shortcuts.
+- Keep one stable shortcut reference in the event trail. Do not scatter key
+  badges beside controls or make memorized commands a prerequisite.
 - The splitter is a direct-manipulation control. Its hit target is forgiving,
   its affordance is visible without guessing, dragging updates continuously,
   and arrow keys provide an equivalent path.

@@ -169,6 +169,14 @@ reusable failure mode, add the general rule here before closing the issue.
   position plus each challenge's last available tab and per-tab detail scroll
   position. Restoring one value must not reset the others, and malformed or
   unavailable stored values fall back safely.
+- Challenge workspace accelerators are additive: Slash focuses search; J and K
+  move focus through currently visible challenge rows without changing the
+  selection; Enter uses the focused row's normal link behavior; D, S, and H
+  choose detail tabs; brackets resize the desktop split. Editable controls,
+  composition, modifier chords, and open overlays must not trigger them.
+- The event trail owns one concise shortcut reference reachable by pointer and
+  keyboard. Every command retains a visible equivalent, and focus movement is
+  never presented as selection.
 - First blood is an achievement state, not a warning. Its sidebar wash, solved
   confirmation, toast, edge frame, screen imprint, and field wave all consume
   the shared first-blood gold role. Ordinary solves continue to use success

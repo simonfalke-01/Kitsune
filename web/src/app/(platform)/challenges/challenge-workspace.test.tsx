@@ -219,6 +219,68 @@ describe('ChallengeWorkspace', () => {
     });
   });
 
+  it('moves focus through visible challenge rows without changing selection', () => {
+    renderWorkspace(
+      [
+        createChallengeExperience(challenge({ id: 'first', name: 'First trail' })),
+        createChallengeExperience(challenge({ id: 'second', name: 'Second trail', position: 1 }))
+      ],
+      null
+    );
+
+    const challengeList = screen.getByRole('region', { name: 'Challenge list' });
+    const first = within(challengeList).getByRole('link', { name: /First trail/ });
+    const second = within(challengeList).getByRole('link', { name: /Second trail/ });
+
+    fireEvent.keyDown(window, { key: 'j' });
+    expect(first).toHaveFocus();
+    expect(first).not.toHaveAttribute('aria-current');
+
+    fireEvent.keyDown(window, { key: 'j' });
+    expect(second).toHaveFocus();
+    expect(second).not.toHaveAttribute('aria-current');
+
+    fireEvent.keyDown(window, { key: 'k' });
+    expect(first).toHaveFocus();
+    expect(first).toHaveAttribute('href', '/challenges?challenge=first');
+  });
+
+  it('focuses search, switches detail tabs, and ignores shortcuts while typing', () => {
+    renderWorkspace([createChallengeExperience(challenge(), { solveCount: 4 })], 'challenge');
+
+    fireEvent.keyDown(window, { key: '/' });
+    const search = screen.getByRole('searchbox', { name: 'Search challenges' });
+    expect(search).toHaveFocus();
+
+    fireEvent.keyDown(search, { key: 's' });
+    expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true');
+
+    search.blur();
+    fireEvent.keyDown(window, { key: 's' });
+    expect(screen.getByRole('tab', { name: 'Solves 4' })).toHaveAttribute('aria-selected', 'true');
+
+    fireEvent.keyDown(window, { key: 'h' });
+    expect(screen.getByRole('tab', { name: 'Hints' })).toHaveAttribute('aria-selected', 'true');
+
+    fireEvent.keyDown(window, { key: 'd' });
+    expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('resizes the challenge list and exposes a shortcut reference', async () => {
+    renderWorkspace([createChallengeExperience(challenge())], null);
+
+    fireEvent.keyDown(window, { key: ']' });
+
+    expect(screen.getByRole('slider', { name: 'Challenge list width' })).toHaveValue('38');
+    expect(window.localStorage.getItem('kitsune.split-workspace.v1.challenge-list')).toBe('38');
+
+    fireEvent.keyDown(window, { key: '?' });
+
+    const dialog = await screen.findByRole('dialog', { name: 'Keyboard shortcuts' });
+    expect(within(dialog).getByText('Move through challenges')).toBeVisible();
+    expect(within(dialog).getByText('Resize challenge list')).toBeVisible();
+  });
+
   it('changes selection and detail in the activation frame before URL synchronization', () => {
     renderWorkspace(
       [

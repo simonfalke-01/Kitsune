@@ -3,10 +3,13 @@
 import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
+  type Ref,
   type RefObject,
   type ReactNode,
   type UIEventHandler,
   useCallback,
+  useEffect,
+  useImperativeHandle,
   useRef,
   useState,
   useSyncExternalStore
@@ -113,6 +116,11 @@ export interface SplitWorkspaceProps {
   persistenceKey?: string;
   right: ReactNode;
   value?: number;
+  workspaceHandleRef?: Ref<SplitWorkspaceHandle>;
+}
+
+export interface SplitWorkspaceHandle {
+  adjustBy: (amount: number) => void;
 }
 
 export function SplitWorkspace({
@@ -128,7 +136,8 @@ export function SplitWorkspace({
   onValueChange,
   persistenceKey,
   right,
-  value
+  value,
+  workspaceHandleRef
 }: SplitWorkspaceProps) {
   const getPersistenceSnapshot = useCallback(
     () => splitWorkspacePreferenceSnapshot(persistenceKey),
@@ -175,6 +184,10 @@ export function SplitWorkspace({
     '--split-workspace-left': styleValue
   };
 
+  useEffect(() => {
+    latestValueRef.current = resolvedValue;
+  }, [resolvedValue]);
+
   function updateValue(nextValue: number) {
     const boundedValue = clamp(nextValue, minimum, maximum);
     latestValueRef.current = boundedValue;
@@ -207,6 +220,14 @@ export function SplitWorkspace({
       // Resizing remains functional when storage is unavailable.
     }
   }
+
+  useImperativeHandle(workspaceHandleRef, () => ({
+    adjustBy(amount) {
+      const nextValue = clamp(latestValueRef.current + amount, minimum, maximum);
+      updateValue(nextValue);
+      persistValue(nextValue);
+    }
+  }));
 
   function finishPointerDrag(event: ReactPointerEvent<HTMLDivElement>) {
     if (activePointerRef.current !== event.pointerId) {
