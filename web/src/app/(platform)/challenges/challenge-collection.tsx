@@ -8,6 +8,7 @@ import {
   ChallengeCategoryLabel,
   challengeCategoryDefinition
 } from './challenge-category';
+import type { FirstBloodHighlightColor } from './challenge-presentation';
 import { solveCountLabel, type ChallengeSolveContext } from './challenge-solve-stub';
 import {
   Button,
@@ -107,6 +108,7 @@ function writePreferences(eventId: string, preferences: ChallengeCollectionPrefe
 interface ChallengeCollectionProps {
   challenges: ChallengeExperience[];
   eventId: string;
+  firstBloodHighlightColor: FirstBloodHighlightColor;
   getChallengeHref?: (challengeId: string) => string | undefined;
   onCollapseChallengeList?: () => void;
   onExitSearch?: () => void;
@@ -119,6 +121,7 @@ interface ChallengeCollectionProps {
 export function ChallengeCollection({
   challenges,
   eventId,
+  firstBloodHighlightColor,
   getChallengeHref,
   onCollapseChallengeList,
   onExitSearch,
@@ -319,6 +322,9 @@ export function ChallengeCollection({
                           data-blood={bloodRank ?? undefined}
                           data-challenge-id={challenge.id}
                           data-challenge-row
+                          data-first-blood-color={
+                            bloodRank === 1 ? firstBloodHighlightColor : undefined
+                          }
                           data-solved={challenge.solved || undefined}
                           href={getChallengeHref?.(challenge.id)}
                           isSelected={selectedChallengeId === challenge.id}
@@ -343,8 +349,15 @@ export function ChallengeCollection({
                               {challenge.solved ? (
                                 <span
                                   className={`inline-flex items-center gap-1 text-sm font-medium ${
-                                    bloodRank ? bloodTextClasses[bloodRank] : 'text-success-text'
+                                    bloodRank === 1
+                                      ? 'kitsune-first-blood-copy'
+                                      : bloodRank
+                                        ? bloodTextClasses[bloodRank]
+                                        : 'text-success-text'
                                   }`}
+                                  data-first-blood-color={
+                                    bloodRank === 1 ? firstBloodHighlightColor : undefined
+                                  }
                                 >
                                   {bloodRank ? (
                                     <Trophy

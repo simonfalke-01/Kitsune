@@ -11,6 +11,7 @@ interface ChallengeSubmissionProps {
   answerInputRef?: RefObject<HTMLInputElement | null>;
   challenge: ChallengeExperience;
   onCorrectOrigin?: (origin: DOMRect, value: string, isFirstBlood: boolean) => void;
+  onIncorrectOrigin?: (origin: DOMRect) => void;
   onReceipt: (receipt: SubmissionReceipt, submittedValue: string) => Promise<void>;
   submitAnswer: ChallengeWorkspaceActions['submitAnswer'];
 }
@@ -19,6 +20,7 @@ export function ChallengeSubmission({
   answerInputRef,
   challenge,
   onCorrectOrigin,
+  onIncorrectOrigin,
   onReceipt,
   submitAnswer
 }: ChallengeSubmissionProps) {
@@ -53,6 +55,12 @@ export function ChallengeSubmission({
       }
 
       if (receipt.outcome === 'incorrect') {
+        const input = flagFieldRef.current?.querySelector('input');
+
+        if (input) {
+          onIncorrectOrigin?.(input.getBoundingClientRect());
+        }
+
         showToast({
           description:
             typeof receipt.attempts_remaining === 'number'

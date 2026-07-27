@@ -138,6 +138,7 @@
   --danger-subtle: var(--danger-3);
   --danger-border: var(--danger-6);
   --danger: var(--danger-9);
+  --danger-imprint-edge: color-mix(in oklch, var(--danger) 82%, transparent);
   --danger-hover: var(--danger-10);
   --danger-text: var(--danger-12);
 
@@ -194,6 +195,38 @@
   --first-blood-rainbow-amber: var(--category-amber);
   --first-blood-rainbow-lime: var(--category-lime);
   --first-blood-rainbow-teal: var(--category-teal);
+  --first-blood-rainbow-text-blue: oklch(42% 0.15 255);
+  --first-blood-rainbow-text-violet: oklch(43% 0.14 300);
+  --first-blood-rainbow-text-pink: oklch(44% 0.14 345);
+  --first-blood-rainbow-text-orange: oklch(46% 0.12 55);
+  --first-blood-rainbow-copy: linear-gradient(
+    90deg,
+    var(--first-blood-rainbow-text-blue),
+    var(--first-blood-rainbow-text-violet),
+    var(--first-blood-rainbow-text-pink),
+    var(--first-blood-rainbow-text-orange)
+  );
+  --challenge-first-blood-rainbow-wash: linear-gradient(
+    90deg,
+    var(--category-blue-subtle),
+    var(--category-violet-subtle) 18%,
+    var(--category-pink-subtle) 36%,
+    var(--category-orange-subtle) 48%,
+    transparent 62%
+  );
+  --challenge-first-blood-rainbow-marker: linear-gradient(
+    180deg,
+    var(--first-blood-rainbow-blue),
+    var(--first-blood-rainbow-violet),
+    var(--first-blood-rainbow-pink),
+    var(--first-blood-rainbow-orange)
+  );
+  --first-blood-rainbow-toast-surface: linear-gradient(
+    120deg,
+    var(--category-blue-subtle),
+    var(--surface-raised) 48%,
+    var(--category-orange-subtle)
+  );
   --challenge-first-blood-wash: color-mix(
     in oklch,
     var(--first-blood-subtle) 55%,
@@ -257,11 +290,16 @@
   --warning-hover: oklch(79% 0.1 75);
   --warning-text: oklch(78% 0.09 75);
   --first-blood-imprint-edge: color-mix(in oklch, var(--first-blood) 64%, transparent);
+  --first-blood-rainbow-text-blue: oklch(78% 0.12 255);
+  --first-blood-rainbow-text-violet: oklch(80% 0.11 300);
+  --first-blood-rainbow-text-pink: oklch(80% 0.11 345);
+  --first-blood-rainbow-text-orange: oklch(82% 0.1 65);
   --challenge-first-blood-wash: var(--first-blood-subtle);
 
   --danger-subtle: oklch(24% 0.045 25);
   --danger-border: oklch(40% 0.07 25);
   --danger: oklch(70% 0.13 25);
+  --danger-imprint-edge: color-mix(in oklch, var(--danger) 64%, transparent);
   --danger-hover: oklch(75% 0.125 25);
   --danger-text: oklch(77% 0.11 25);
 
@@ -455,6 +493,7 @@
   --spacing-collapsed-rail: 4rem;
   --spacing-effect-frame: 0.25rem;
   --spacing-optical: 0.0625rem;
+  --spacing-rail: 0.125rem;
   --spacing-sparkline: 2.5rem;
   --spacing-sidebar: 15rem;
   --spacing-workspace: calc(100dvh - 4rem);
@@ -699,6 +738,10 @@
     --solve-effect-edge: var(--success-imprint-edge);
   }
 
+  .kitsune-solve-edge-frame[data-edge-color='danger'] {
+    --solve-effect-edge: var(--danger-imprint-edge);
+  }
+
   .kitsune-solve-edge-frame[data-edge-color='rainbow'] {
     background:
       radial-gradient(
@@ -781,10 +824,47 @@
     --solve-effect-wave-fill: var(--first-blood-wave-fill);
   }
 
+  .kitsune-first-blood-copy[data-first-blood-color='achievement'] {
+    color: var(--first-blood-text);
+  }
+
+  .kitsune-first-blood-copy[data-first-blood-color='success'] {
+    color: var(--success-text);
+  }
+
+  .kitsune-first-blood-copy[data-first-blood-color='rainbow'] {
+    background: var(--first-blood-rainbow-copy);
+    background-clip: text;
+    color: transparent;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .kitsune-first-blood-copy[data-first-blood-color='rainbow'] svg {
+    color: var(--first-blood-rainbow-text-orange);
+  }
+
+  .kitsune-first-blood-toast {
+    border-color: transparent;
+    background:
+      var(--first-blood-rainbow-toast-surface) padding-box,
+      var(--first-blood-rainbow-copy) border-box;
+    color: var(--text);
+  }
+
+  .kitsune-first-blood-toast > svg {
+    color: var(--first-blood-rainbow-text-orange);
+  }
+
   .kitsune-challenge-row[data-solved='true'] {
     --challenge-state-wash: var(--challenge-success-wash);
+    --challenge-state-background: linear-gradient(
+      90deg,
+      var(--challenge-state-wash),
+      transparent 48%
+    );
 
-    background: linear-gradient(90deg, var(--challenge-state-wash), transparent 48%);
+    background: var(--challenge-state-background);
   }
 
   .kitsune-challenge-row[data-blood='1'] {
@@ -793,6 +873,24 @@
 
   .kitsune-challenge-row[data-blood='1'] > .kitsune-collection-marker {
     background-color: var(--first-blood);
+  }
+
+  .kitsune-challenge-row[data-blood='1'][data-first-blood-color='success'] {
+    --challenge-state-wash: var(--challenge-success-wash);
+  }
+
+  .kitsune-challenge-row[data-blood='1'][data-first-blood-color='success']
+    > .kitsune-collection-marker {
+    background-color: var(--success);
+  }
+
+  .kitsune-challenge-row[data-blood='1'][data-first-blood-color='rainbow'] {
+    --challenge-state-background: var(--challenge-first-blood-rainbow-wash);
+  }
+
+  .kitsune-challenge-row[data-blood='1'][data-first-blood-color='rainbow']
+    > .kitsune-collection-marker {
+    background: var(--challenge-first-blood-rainbow-marker);
   }
 
   .kitsune-challenge-row[data-blood='2'] {
@@ -812,7 +910,7 @@
   }
 
   .kitsune-challenge-row[aria-current='true'][data-solved='true'] {
-    background: linear-gradient(90deg, var(--challenge-state-wash), transparent 48%);
+    background: var(--challenge-state-background);
   }
 
   .kitsune-scroll-region {
@@ -913,6 +1011,18 @@
 
 .kitsune-fixed-workspace:has(.kitsune-merged-header) > .kitsune-global-header {
   display: none;
+}
+
+@media (forced-colors: active) {
+  .kitsune-first-blood-copy[data-first-blood-color='rainbow'] {
+    background: none;
+    color: CanvasText;
+    -webkit-text-fill-color: currentColor;
+  }
+
+  .kitsune-first-blood-copy[data-first-blood-color='rainbow'] svg {
+    color: currentColor;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

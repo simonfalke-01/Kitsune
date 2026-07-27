@@ -6,7 +6,7 @@ import { Link as ReactAriaLink, type LinkProps as ReactAriaLinkProps } from 'rea
 import { cx, focusRing } from './styles';
 
 const collectionLinkAppearances = {
-  challenge: 'kitsune-optical-py-3 min-h-control rounded-none px-3',
+  challenge: 'kitsune-optical-py-3 min-h-control rounded-none pr-3 pl-4',
   row: 'kitsune-optical-py-3 min-h-control rounded-md px-3',
   tile: 'h-full min-h-control rounded-lg border border-border-subtle bg-surface-raised p-4 shadow-sm hover:border-border'
 } as const;
@@ -60,12 +60,12 @@ export function CollectionLink({
       <span
         aria-hidden
         className={cx(
-          'kitsune-collection-marker absolute rounded-sm bg-transparent',
+          'kitsune-collection-marker absolute bg-transparent',
           appearance === 'tile'
-            ? 'inset-x-4 top-0 h-1'
+            ? 'inset-x-4 top-0 h-1 rounded-sm'
             : appearance === 'challenge'
-              ? 'inset-y-0 left-0 w-1 rounded-none'
-              : 'inset-y-3 left-0 w-1',
+              ? 'inset-y-0 left-0 w-rail rounded-none'
+              : 'inset-y-3 left-0 w-1 rounded-sm',
           'transition-colors duration-fast ease-out-quart',
           (appearance === 'tile' || isSelected) &&
             collectionLinkMarkers[appearance === 'challenge' ? 'accent' : tone]

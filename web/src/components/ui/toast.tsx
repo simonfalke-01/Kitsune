@@ -19,6 +19,14 @@ const toastTones = {
     icon: Trophy,
     style: 'border-first-blood-border bg-first-blood-subtle text-first-blood-text'
   },
+  firstBloodRainbow: {
+    icon: Trophy,
+    style: 'kitsune-first-blood-toast'
+  },
+  firstBloodSuccess: {
+    icon: Trophy,
+    style: 'border-success-border bg-success-subtle text-success-text'
+  },
   info: {
     icon: Info,
     style: 'border-info-border bg-info-subtle text-info-text'
@@ -105,6 +113,8 @@ export function ToastRegion() {
                 {
                   danger: toastTones.danger.style,
                   firstBlood: toastTones.firstBlood.style,
+                  firstBloodRainbow: toastTones.firstBloodRainbow.style,
+                  firstBloodSuccess: toastTones.firstBloodSuccess.style,
                   info: toastTones.info.style,
                   success: toastTones.success.style,
                   warning: toastTones.warning.style

@@ -1,5 +1,6 @@
 import { Check, Trophy } from 'lucide-react';
 
+import type { FirstBloodHighlightColor } from './challenge-presentation';
 import {
   formatSolveDelta,
   formatSolveElapsedTime,
@@ -225,11 +226,13 @@ export function ChallengeSolveStrip({ context }: ChallengeSolveStripProps) {
 }
 
 interface ChallengeSolvedSummaryProps {
+  firstBloodHighlightColor: FirstBloodHighlightColor;
   isFirstBlood?: boolean;
   label: string;
 }
 
 export function ChallengeSolvedSummary({
+  firstBloodHighlightColor,
   isFirstBlood = false,
   label
 }: ChallengeSolvedSummaryProps) {
@@ -237,9 +240,10 @@ export function ChallengeSolvedSummary({
     <div className="grid gap-2" data-first-blood={isFirstBlood || undefined}>
       <span className="text-sm font-medium text-text">{label}</span>
       <span
+        data-first-blood-color={isFirstBlood ? firstBloodHighlightColor : undefined}
         className={cx(
           'flex h-control items-center rounded-md border border-transparent px-3',
-          isFirstBlood ? 'text-first-blood-text' : 'text-success-text'
+          isFirstBlood ? 'kitsune-first-blood-copy' : 'text-success-text'
         )}
       >
         <span className="kitsune-optical-center inline-flex items-center gap-2 text-base font-medium">

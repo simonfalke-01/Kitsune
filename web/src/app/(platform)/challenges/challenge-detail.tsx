@@ -7,13 +7,18 @@ import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'rea
 import { ChallengeCategoryLabel } from './challenge-category';
 import { ChallengeHints } from './challenge-hints';
 import { ChallengeInstance } from './challenge-instance';
-import type { FirstBloodEdgeColor, FlagSubmitSuccessEffect } from './challenge-presentation';
+import {
+  firstBloodToastTone,
+  type FirstBloodEdgeColor,
+  type FirstBloodHighlightColor,
+  type FlagSubmitSuccessEffect
+} from './challenge-presentation';
 import type { ChallengeSolveContext } from './challenge-solve-stub';
 import { ChallengeSolvedSummary, ChallengeSolves, ChallengeSolveStrip } from './challenge-solves';
 import { ChallengeSubmission } from './challenge-submission';
 import {
-  ChallengeSuccessEffect,
-  type ChallengeSuccessEffectOrigin
+  ChallengeFeedbackEffect,
+  type ChallengeFeedbackEffectOrigin
 } from './challenge-success-effect';
 import { ChallengeSurvey } from './challenge-survey';
 import type { ChallengeWorkspaceActions } from './challenge-types';
@@ -49,6 +54,7 @@ interface ChallengeDetailProps {
   challenge: ChallengeExperience;
   eventId: string;
   firstBloodEdgeColor: FirstBloodEdgeColor;
+  firstBloodHighlightColor: FirstBloodHighlightColor;
   flagSubmitSuccessEffect: FlagSubmitSuccessEffect;
   onChallengeChanged?: () => Promise<void>;
   onSolved?: (challengeId: string, solvedAt: string) => void;
@@ -117,6 +123,7 @@ export function ChallengeDetail({
   challenge,
   eventId,
   firstBloodEdgeColor,
+  firstBloodHighlightColor,
   flagSubmitSuccessEffect,
   onChallengeChanged,
   onSolved,
@@ -133,8 +140,8 @@ export function ChallengeDetail({
   );
   const [isSolved, setIsSolved] = useState(challenge.solved);
   const [postSolveSurveyComplete, setPostSolveSurveyComplete] = useState(false);
-  const [successEffectOrigin, setSuccessEffectOrigin] =
-    useState<ChallengeSuccessEffectOrigin | null>(null);
+  const [feedbackEffectOrigin, setFeedbackEffectOrigin] =
+    useState<ChallengeFeedbackEffectOrigin | null>(null);
   const shouldReduceMotion = useReducedMotion();
   const connection = challengeConnection(challenge);
   const resolvedChallenge: ChallengeExperience = {
@@ -158,7 +165,7 @@ export function ChallengeDetail({
           ? `First blood and ${receipt.awarded_points} points.`
           : `${receipt.awarded_points} points awarded.`,
         title: 'Challenge solved',
-        tone: receipt.first_blood ? 'firstBlood' : 'success'
+        tone: receipt.first_blood ? firstBloodToastTone(firstBloodHighlightColor) : 'success'
       });
       await onChallengeChanged?.();
       return;
@@ -189,12 +196,27 @@ export function ChallengeDetail({
       return;
     }
 
-    setSuccessEffectOrigin({
+    setFeedbackEffectOrigin({
       height: origin.height,
-      isFirstBlood: firstBlood,
       left: origin.left,
+      outcome: firstBlood ? 'first-blood' : 'correct',
       top: origin.top,
       value,
+      width: origin.width
+    });
+  }
+
+  function startIncorrectEffect(origin: DOMRect) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+
+    setFeedbackEffectOrigin({
+      height: origin.height,
+      left: origin.left,
+      outcome: 'incorrect',
+      top: origin.top,
+      value: '',
       width: origin.width
     });
   }
@@ -204,12 +226,12 @@ export function ChallengeDetail({
       className="kitsune-challenge-detail flex h-full min-h-0 flex-col overflow-hidden bg-surface-raised"
       key={challenge.id}
     >
-      {successEffectOrigin ? (
-        <ChallengeSuccessEffect
+      {feedbackEffectOrigin ? (
+        <ChallengeFeedbackEffect
           effect={flagSubmitSuccessEffect}
           firstBloodEdgeColor={firstBloodEdgeColor}
-          onComplete={() => setSuccessEffectOrigin(null)}
-          origin={successEffectOrigin}
+          onComplete={() => setFeedbackEffectOrigin(null)}
+          origin={feedbackEffectOrigin}
         />
       ) : null}
       <header className="shrink-0 px-6 py-6">
@@ -233,8 +255,9 @@ export function ChallengeDetail({
               </span>
               {isSolved ? (
                 <span
+                  data-first-blood-color={isFirstBlood ? firstBloodHighlightColor : undefined}
                   className={`inline-flex items-center gap-1 font-medium ${
-                    isFirstBlood ? 'text-first-blood-text' : 'text-success-text'
+                    isFirstBlood ? 'kitsune-first-blood-copy' : 'text-success-text'
                   }`}
                 >
                   {isFirstBlood ? (
@@ -438,6 +461,7 @@ export function ChallengeDetail({
             </AnimatePresence>
             {isSolved ? (
               <ChallengeSolvedSummary
+                firstBloodHighlightColor={firstBloodHighlightColor}
                 isFirstBlood={isFirstBlood}
                 label={challenge.kind.type === 'manual_verification' ? 'Answer' : 'Flag'}
               />
@@ -446,6 +470,7 @@ export function ChallengeDetail({
                 answerInputRef={answerInputRef}
                 challenge={resolvedChallenge}
                 onCorrectOrigin={startSuccessEffect}
+                onIncorrectOrigin={startIncorrectEffect}
                 onReceipt={handleReceipt}
                 submitAnswer={actions.submitAnswer}
               />

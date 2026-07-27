@@ -3,7 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SessionProvider } from '@/app/session-context';
 import { ThemeProvider } from '@/app/theme-context';
-import type { FlagSubmitSuccessEffect } from './challenge-presentation';
+import type {
+  FirstBloodEdgeColor,
+  FirstBloodHighlightColor,
+  FlagSubmitSuccessEffect
+} from './challenge-presentation';
 import {
   rememberChallengeListScroll,
   rememberChallengeScroll,
@@ -75,7 +79,9 @@ function renderWorkspace(
   selectedChallengeId: string | null,
   workspaceActions = actions(),
   flagSubmitSuccessEffect?: FlagSubmitSuccessEffect,
-  selectedChallengeTab: ChallengeDetailTab = 'details'
+  selectedChallengeTab: ChallengeDetailTab = 'details',
+  firstBloodHighlightColor?: FirstBloodHighlightColor,
+  firstBloodEdgeColor?: FirstBloodEdgeColor
 ) {
   render(
     <ThemeProvider>
@@ -86,6 +92,8 @@ function renderWorkspace(
           currentCompetitor={{ id: 'foxden', name: 'Foxden' }}
           eventId="event"
           eventName="Foxden Invitational"
+          firstBloodEdgeColor={firstBloodEdgeColor}
+          firstBloodHighlightColor={firstBloodHighlightColor}
           flagSubmitSuccessEffect={flagSubmitSuccessEffect}
           getChallengeHref={(challengeId) => `/challenges?challenge=${challengeId}`}
           onClearSelection={vi.fn()}
@@ -681,8 +689,15 @@ describe('ChallengeWorkspace', () => {
     expect(selectedChallenge).toHaveAttribute('aria-current', 'true');
     expect(selectedChallenge).toHaveAttribute('data-solved', 'true');
     expect(selectedChallenge).toHaveAttribute('data-blood', '1');
+    expect(selectedChallenge).toHaveClass('pl-4', 'pr-3');
     expect(selectedChallenge).toHaveClass('ring-1', 'ring-accent-border');
-    expect(selectedChallenge.querySelector('.kitsune-collection-marker')).toBeInTheDocument();
+    expect(selectedChallenge.querySelector('.kitsune-collection-marker')).toHaveClass(
+      'w-rail',
+      'rounded-none'
+    );
+    expect(selectedChallenge.querySelector('.kitsune-collection-marker')).not.toHaveClass(
+      'rounded-sm'
+    );
     expect(firstBlood.querySelector('svg')).toHaveClass('-translate-y-optical');
 
     fireEvent.click(screen.getByRole('tab', { name: '18 Solves' }));
@@ -968,11 +983,56 @@ describe('ChallengeWorkspace', () => {
         );
       }
       expect(solvedSummary).toHaveAttribute('data-first-blood', 'true');
-      expect(solvedMessage.parentElement).toHaveClass('text-first-blood-text');
+      expect(solvedMessage.parentElement).toHaveClass('kitsune-first-blood-copy');
+      expect(solvedMessage.parentElement).toHaveAttribute('data-first-blood-color', 'rainbow');
       expect(selectedChallenge).toHaveAttribute('data-blood', '1');
+      expect(selectedChallenge).toHaveAttribute('data-first-blood-color', 'rainbow');
       expect(screen.getAllByText('First blood').length).toBeGreaterThan(0);
     }
   );
+
+  it('keeps first-blood highlight and edge colors independently configurable', async () => {
+    const workspaceActions = actions();
+    workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
+      attempts_remaining: 4,
+      awarded_points: 300,
+      challenge_id: 'challenge',
+      first_blood: true,
+      id: 'submission',
+      outcome: 'correct',
+      replayed: false,
+      submitted_at: '2026-07-23T12:00:00Z'
+    });
+    renderWorkspace(
+      [createChallengeExperience(challenge(), { solveCount: 0 })],
+      'challenge',
+      workspaceActions,
+      'edge-border',
+      'details',
+      'success',
+      'achievement'
+    );
+
+    fireEvent.change(screen.getByLabelText('Flag'), {
+      target: {
+        value: 'kit{first}'
+      }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit flag' }));
+
+    await waitFor(() => {
+      expect(workspaceActions.submitAnswer).toHaveBeenCalledWith('challenge', 'kit{first}');
+    });
+
+    const solvedMessage = screen.getByText('Challenge solved');
+    const selectedChallenge = screen.getByRole('link', { name: /Shrine gate/ });
+    expect(document.querySelector('.kitsune-solve-edge-frame')).toHaveAttribute(
+      'data-edge-color',
+      'achievement'
+    );
+    expect(solvedMessage.parentElement).toHaveAttribute('data-first-blood-color', 'success');
+    expect(selectedChallenge).toHaveAttribute('data-first-blood-color', 'success');
+  });
 
   it('supports disabling the flag success effect', async () => {
     const workspaceActions = actions();
@@ -1007,7 +1067,7 @@ describe('ChallengeWorkspace', () => {
     expect(document.querySelector('.kitsune-solve-effect')).not.toBeInTheDocument();
   });
 
-  it('does not emit a success effect for an incorrect flag', async () => {
+  it('emits a red edge border for an incorrect flag', async () => {
     const workspaceActions = actions();
     workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
       attempts_remaining: 3,
@@ -1042,6 +1102,14 @@ describe('ChallengeWorkspace', () => {
     expect(screen.queryByText(/Incorrect/)).not.toBeInTheDocument();
     expect(flagField).toHaveValue('kit{incorrect}');
     expect(screen.queryByRole('button', { name: 'View attempts' })).not.toBeInTheDocument();
-    expect(document.querySelector('.kitsune-solve-effect')).not.toBeInTheDocument();
+    expect(document.querySelector('.kitsune-solve-effect')).toHaveAttribute(
+      'data-incorrect',
+      'true'
+    );
+    expect(document.querySelector('.kitsune-solve-edge-frame')).toHaveAttribute(
+      'data-edge-color',
+      'danger'
+    );
+    expect(document.querySelector('.kitsune-solve-edge-wash')).not.toBeInTheDocument();
   });
 });

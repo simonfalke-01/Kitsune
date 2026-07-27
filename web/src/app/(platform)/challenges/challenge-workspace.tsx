@@ -10,6 +10,7 @@ import { ChallengeOverview } from './challenge-overview';
 import {
   challengePresentationSettingsStub,
   type FirstBloodEdgeColor,
+  type FirstBloodHighlightColor,
   type FlagSubmitSuccessEffect
 } from './challenge-presentation';
 import {
@@ -55,6 +56,7 @@ export interface ChallengeWorkspaceProps {
   eventName: string;
   eventStartedAt?: string | null;
   firstBloodEdgeColor?: FirstBloodEdgeColor;
+  firstBloodHighlightColor?: FirstBloodHighlightColor;
   flagSubmitSuccessEffect?: FlagSubmitSuccessEffect;
   getChallengeHref?: (challengeId: string, tab: ChallengeDetailTab) => string;
   onChallengeChanged?: () => Promise<void>;
@@ -112,6 +114,7 @@ export function ChallengeWorkspace({
   eventName,
   eventStartedAt,
   firstBloodEdgeColor = challengePresentationSettingsStub.firstBloodEdgeColor,
+  firstBloodHighlightColor = challengePresentationSettingsStub.firstBloodHighlightColor,
   flagSubmitSuccessEffect = challengePresentationSettingsStub.flagSubmitSuccessEffect,
   getChallengeHref,
   onChallengeChanged,
@@ -477,6 +480,7 @@ export function ChallengeWorkspace({
     <ChallengeCollection
       challenges={displayedChallenges}
       eventId={eventId}
+      firstBloodHighlightColor={firstBloodHighlightColor}
       getChallengeHref={(challengeId) => {
         return getChallengeHref?.(challengeId, 'details');
       }}
@@ -497,6 +501,7 @@ export function ChallengeWorkspace({
       challenge={selectedChallenge}
       eventId={eventId}
       firstBloodEdgeColor={firstBloodEdgeColor}
+      firstBloodHighlightColor={firstBloodHighlightColor}
       flagSubmitSuccessEffect={flagSubmitSuccessEffect}
       key={selectedChallenge.id}
       onChallengeChanged={onChallengeChanged}
@@ -583,6 +588,7 @@ export function ChallengeWorkspace({
             challenge={selectedChallenge}
             eventId={eventId}
             firstBloodEdgeColor={firstBloodEdgeColor}
+            firstBloodHighlightColor={firstBloodHighlightColor}
             flagSubmitSuccessEffect={flagSubmitSuccessEffect}
             key={selectedChallenge.id}
             onChallengeChanged={onChallengeChanged}

@@ -297,6 +297,9 @@ without losing competition context.
   edge.
 - First blood reports elapsed competition time in compact units, omitting empty
   units: `8h`, `1h 17min`, or `17min`.
+- First-blood list and solved-copy color share one typed presentation setting;
+  the viewport effect color is independent. Achievement, success, and a static
+  restrained rainbow are supported without adding configuration UI here.
 - First-three-plus-self context supports the Details solving flow, entering
   above the stable flag action as one connected drawer and retracting on Solves
   where the full timeline already supplies that context. It orders 1st then 2nd

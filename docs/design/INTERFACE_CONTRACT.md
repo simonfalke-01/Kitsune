@@ -206,11 +206,21 @@ reusable failure mode, add the general rule here before closing the issue.
 - The flag field reserves a flexible validation line before submission so
   ordinary one-line feedback never changes sticky-dock height; text enlargement
   and long localized errors remain free to reflow.
-- First blood is an achievement state, not a warning. Its sidebar wash, solved
-  confirmation, toast, screen imprint, and field wave consume the shared
-  first-blood gold role. Its viewport edge color is an independent typed
-  presentation setting: first-blood color, another approved semantic color, or
-  rainbow. Ordinary solves continue to use success green.
+- First blood is an achievement state, not a warning. Its sidebar wash and
+  solved confirmation consume one typed highlight setting: achievement,
+  success, or a static rainbow. Its viewport edge color is a separate typed
+  presentation setting with the same choices; changing either setting must not
+  mutate the other. Toast, screen imprint, and field wave retain their own
+  semantic achievement treatment. Ordinary solves continue to use success
+  green.
+- The rainbow first-blood highlight is one restrained, static accent shared by
+  the challenge-row wash, achievement rail, header state, solved text, and
+  confirmation toast. It uses theme-owned contrast-safe text stops, has a
+  forced-colors fallback, and adds no hue animation, glow, or full-card
+  saturation. The achievement rail shares the category rail's exact
+  square-ended thickness; changing color must not change structural weight.
+  Challenge-row content keeps one full spacing step between that rail and its
+  first glyph so the accent never crowds text.
 - The first-blood rainbow edge uses the shared category-color roles as one
   static perimeter. It adds no glow, page wash, hue motion, or saturated panel,
   and it retains the same edge geometry, timing, and reduced-motion behavior as
@@ -438,6 +448,9 @@ reusable failure mode, add the general rule here before closing the issue.
 - The default edge border draws only one crisp semantic-green viewport
   perimeter at the screen boundary. It applies no page tint, glow, blur,
   gradient, content movement, or layout animation.
+- An incorrect flag draws the same geometry once in semantic red, independent
+  of the configured success variant. It adds no wash, does not clear the typed
+  flag, and does not replace the adjacent recovery feedback.
 - The optional screen imprint reuses that perimeter and briefly applies a
   low-opacity flat green wash over the page. The weaker wash recedes before the
   perimeter so it reads as a page imprint rather than replacing the border.
