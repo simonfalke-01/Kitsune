@@ -100,6 +100,7 @@ describe('ChallengeWorkspace', () => {
     expect(screen.getByRole('heading', { name: 'Foxden Invitational' })).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Your run' })).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Around your rank' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Chart data' })).not.toBeInTheDocument();
     const challengeFieldHeading = screen.getByRole('heading', { name: 'Challenge field' });
     const challengeField = screen.getByRole('region', { name: 'Challenge field' });
     expect(challengeFieldHeading).toBeVisible();

@@ -46,7 +46,7 @@ describe('LineChart', () => {
   });
 
   it('exposes chart semantics, keyboard exploration and a data disclosure', () => {
-    render(
+    const { container } = render(
       <LineChart
         description="Running score totals."
         eventStart={Date.parse('2026-07-23T10:00:00Z')}
@@ -63,6 +63,7 @@ describe('LineChart', () => {
       key: 'ArrowRight'
     });
     expect(screen.getByText(/Foxden, 100/)).toBeVisible();
+    expect(container.querySelector('foreignObject')).toHaveAttribute('height', '96');
 
     fireEvent.keyDown(chart, {
       key: 'End'

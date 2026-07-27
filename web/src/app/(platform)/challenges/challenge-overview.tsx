@@ -129,6 +129,7 @@ export function ChallengeOverview({
             interpolation="step"
             legendPlacement="side"
             series={standing.nearbySeries}
+            showDataTable={false}
             title="Scores around your rank"
           />
         </section>
