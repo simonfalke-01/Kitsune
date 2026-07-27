@@ -13,13 +13,18 @@ import {
 
 import { cx, focusRing } from './styles';
 
-export type TabsProps = ReactAriaTabsProps;
+export interface TabsProps extends ReactAriaTabsProps {
+  layout?: 'content' | 'workspace';
+}
 
-export function Tabs({ className, ...props }: TabsProps) {
+export function Tabs({ className, layout = 'content', ...props }: TabsProps) {
   return (
     <ReactAriaTabs
       {...props}
-      className={cx('grid gap-4', typeof className === 'string' ? className : undefined)}
+      className={cx(
+        layout === 'content' ? 'grid gap-4' : 'flex min-h-0 flex-1 flex-col gap-0',
+        typeof className === 'string' ? className : undefined
+      )}
     />
   );
 }
@@ -41,10 +46,10 @@ export function TabsTab({ className, ...props }: TabProps) {
     <Tab
       {...props}
       className={cx(
-        'shrink-0 rounded-t-md border-b-2 border-transparent',
-        'px-3 py-2 text-sm font-medium text-text-muted outline-none',
+        'shrink-0 border-b-2 border-transparent',
+        'px-3 py-3 text-sm font-medium text-text-muted outline-none',
         'transition-colors duration-fast ease-out-quart',
-        'hover:bg-surface-hover hover:text-text',
+        'hover:text-text',
         'selected:border-accent selected:text-text',
         'disabled:text-text-subtle',
         focusRing,
@@ -59,7 +64,7 @@ export function TabsPanel({ className, ...props }: TabPanelProps) {
     <TabPanel
       {...props}
       className={cx(
-        'rounded-md outline-none',
+        'rounded-md outline-none inert:hidden',
         focusRing,
         typeof className === 'string' ? className : undefined
       )}

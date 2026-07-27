@@ -3,7 +3,9 @@
 import { LoaderCircle } from 'lucide-react';
 import {
   Button as ReactAriaButton,
-  type ButtonProps as ReactAriaButtonProps
+  type ButtonProps as ReactAriaButtonProps,
+  Link as ReactAriaLink,
+  type LinkProps as ReactAriaLinkProps
 } from 'react-aria-components';
 
 import { cx, focusRing, variantClass } from './styles';
@@ -45,6 +47,23 @@ export interface ButtonProps extends ReactAriaButtonProps {
   tone?: ButtonTone;
 }
 
+function buttonClassName(
+  className: string | undefined,
+  size: ButtonSize,
+  tone: ButtonTone
+): string {
+  return cx(
+    'inline-flex items-center justify-center rounded-md border font-medium no-underline',
+    'outline-none transition-colors duration-fast ease-out-quart',
+    'disabled:cursor-not-allowed disabled:border-border-subtle',
+    'disabled:bg-surface-active disabled:text-text-subtle',
+    focusRing,
+    variantClass(buttonTones, tone),
+    variantClass(buttonSizes, size),
+    className
+  );
+}
+
 export function Button({
   children,
   className,
@@ -57,16 +76,7 @@ export function Button({
   return (
     <ReactAriaButton
       {...props}
-      className={cx(
-        'inline-flex items-center justify-center rounded-md border font-medium',
-        'outline-none transition-colors duration-fast ease-out-quart',
-        'disabled:cursor-not-allowed disabled:border-border-subtle',
-        'disabled:bg-surface-active disabled:text-text-subtle',
-        focusRing,
-        variantClass(buttonTones, tone),
-        variantClass(buttonSizes, size),
-        typeof className === 'string' ? className : undefined
-      )}
+      className={buttonClassName(typeof className === 'string' ? className : undefined, size, tone)}
       aria-busy={isLoading || undefined}
       isDisabled={isDisabled || isLoading}
     >
@@ -83,5 +93,24 @@ export function Button({
         );
       }}
     </ReactAriaButton>
+  );
+}
+
+export interface ButtonLinkProps extends ReactAriaLinkProps {
+  size?: ButtonSize;
+  tone?: ButtonTone;
+}
+
+export function ButtonLink({
+  className,
+  size = 'medium',
+  tone = 'primary',
+  ...props
+}: ButtonLinkProps) {
+  return (
+    <ReactAriaLink
+      {...props}
+      className={buttonClassName(typeof className === 'string' ? className : undefined, size, tone)}
+    />
   );
 }

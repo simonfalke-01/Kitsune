@@ -45,7 +45,8 @@ export function Alert({
     <div
       {...props}
       className={cx(
-        'flex items-start gap-3 rounded-lg border p-4',
+        'flex gap-3 rounded-lg border p-4',
+        description ? 'items-start' : 'items-center',
         variantClass(
           {
             danger: alertTones.danger.style,
@@ -59,7 +60,7 @@ export function Alert({
       )}
       role={tone === 'danger' ? 'alert' : 'status'}
     >
-      <Icon aria-hidden className="mt-1 size-4 shrink-0" />
+      <Icon aria-hidden className={cx('size-4 shrink-0', description ? 'mt-1' : null)} />
       <div className="grid min-w-0 flex-1 gap-1">
         <strong className="text-sm font-semibold">{title}</strong>
         {description ? <div className="text-sm text-text-muted">{description}</div> : null}

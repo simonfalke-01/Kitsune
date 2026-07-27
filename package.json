@@ -3,6 +3,9 @@
   "private": true,
   "license": "SEE LICENSE IN LICENSE",
   "packageManager": "pnpm@10.13.1",
+  "devDependencies": {
+    "@axe-core/playwright": "4.12.1"
+  },
   "scripts": {
     "build": "pnpm --recursive build",
     "check": "pnpm --recursive check",

@@ -44,7 +44,10 @@ export function NumberField({
         >
           <Minus aria-hidden className="size-4" />
         </Button>
-        <Input className={cx(fieldControl, 'rounded-none border-x-0 text-center tabular-nums')} />
+        <Input
+          className={cx(fieldControl, 'rounded-none border-x-0 text-center tabular-nums')}
+          suppressHydrationWarning
+        />
         <Button
           aria-label="Increase value"
           className="min-h-control rounded-l-none"

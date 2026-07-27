@@ -4,7 +4,7 @@ import { cx } from './styles';
 
 export interface EmptyStateProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
   action?: ReactNode;
-  description: ReactNode;
+  description?: ReactNode;
   title: ReactNode;
 }
 
@@ -20,7 +20,7 @@ export function EmptyState({ action, className, description, title, ...props }: 
     >
       <div className="grid max-w-prose gap-2">
         <h3 className="m-0 font-display text-lg font-semibold text-text">{title}</h3>
-        <p className="m-0 text-sm text-text-muted">{description}</p>
+        {description ? <p className="m-0 text-sm text-text-muted">{description}</p> : null}
       </div>
       {action}
     </div>

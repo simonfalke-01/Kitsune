@@ -12,17 +12,44 @@ import {
   type DisclosureProps as ReactAriaDisclosureProps
 } from 'react-aria-components';
 
-import { cx, focusRing } from './styles';
+import { cx, focusRing, variantClass } from './styles';
 
-export type DisclosureGroupProps = ReactAriaDisclosureGroupProps;
+const disclosureGroupAppearances = {
+  card: 'divide-y divide-border-subtle rounded-lg border border-border-subtle bg-surface-raised',
+  plain: 'grid gap-0'
+} as const;
 
-export function DisclosureGroup({ className, ...props }: DisclosureGroupProps) {
+const disclosureDensities = {
+  compact: {
+    panel: 'p-0',
+    trigger: 'px-3 py-2 text-sm'
+  },
+  standard: {
+    panel: 'px-4 pb-4 pr-12',
+    trigger: 'px-4 py-4 text-sm'
+  },
+  spacious: {
+    panel: 'px-6 pb-6 pr-12',
+    trigger: 'px-6 py-6 text-base'
+  }
+} as const;
+
+export type DisclosureDensity = keyof typeof disclosureDensities;
+
+export interface DisclosureGroupProps extends ReactAriaDisclosureGroupProps {
+  appearance?: keyof typeof disclosureGroupAppearances;
+}
+
+export function DisclosureGroup({
+  appearance = 'card',
+  className,
+  ...props
+}: DisclosureGroupProps) {
   return (
     <ReactAriaDisclosureGroup
       {...props}
       className={cx(
-        'divide-y divide-border-subtle rounded-lg border border-border-subtle',
-        'bg-surface-raised',
+        variantClass(disclosureGroupAppearances, appearance),
         typeof className === 'string' ? className : undefined
       )}
     />
@@ -31,31 +58,84 @@ export function DisclosureGroup({ className, ...props }: DisclosureGroupProps) {
 
 export interface DisclosureProps extends Omit<ReactAriaDisclosureProps, 'children' | 'title'> {
   children: ReactNode;
+  density?: DisclosureDensity;
   description?: ReactNode;
+  headingClassName?: string;
+  headingLevel?: 2 | 3 | 4;
+  meta?: ReactNode;
   title: ReactNode;
+  tone?: 'default' | 'inherit';
+  triggerClassName?: string;
 }
 
-export function Disclosure({ children, className, description, title, ...props }: DisclosureProps) {
+export function Disclosure({
+  children,
+  className,
+  density = 'standard',
+  description,
+  headingClassName,
+  headingLevel = 3,
+  meta,
+  title,
+  tone = 'default',
+  triggerClassName,
+  ...props
+}: DisclosureProps) {
   return (
     <ReactAriaDisclosure
       {...props}
       className={cx('group w-full', typeof className === 'string' ? className : undefined)}
     >
-      <Heading className="m-0 flex w-full">
+      <Heading className={cx('m-0 flex w-full', headingClassName)} level={headingLevel}>
         <ReactAriaButton
           className={cx(
-            'flex w-full flex-1 items-start justify-between gap-4 px-4 py-4 text-left',
-            'text-sm text-text outline-none',
+            'flex w-full flex-1 items-start justify-between gap-4 text-left',
+            tone === 'inherit' ? 'text-inherit' : 'text-text',
+            'outline-none',
+            variantClass(
+              {
+                compact: disclosureDensities.compact.trigger,
+                spacious: disclosureDensities.spacious.trigger,
+                standard: disclosureDensities.standard.trigger
+              },
+              density
+            ),
             'transition-colors duration-fast ease-out-quart',
-            'hover:text-accent-text pressed:text-accent-text',
-            focusRing
+            tone === 'inherit'
+              ? 'hover:bg-surface-hover hover:text-inherit pressed:bg-surface-active pressed:text-inherit'
+              : 'hover:text-accent-text pressed:text-accent-text',
+            focusRing,
+            triggerClassName
           )}
           slot="trigger"
         >
-          <span className="grid min-w-0 flex-1 gap-1">
-            <span className="font-medium text-text">{title}</span>
-            {description ? (
-              <span className="text-sm font-normal text-text-muted">{description}</span>
+          <span className="flex min-w-0 flex-1 items-center justify-between gap-4">
+            <span className="grid min-w-0 gap-1">
+              <span
+                className={cx('font-medium', tone === 'inherit' ? 'text-inherit' : 'text-text')}
+              >
+                {title}
+              </span>
+              {description ? (
+                <span
+                  className={cx(
+                    'text-sm font-normal',
+                    tone === 'inherit' ? 'text-inherit' : 'text-text-muted'
+                  )}
+                >
+                  {description}
+                </span>
+              ) : null}
+            </span>
+            {meta ? (
+              <span
+                className={cx(
+                  'shrink-0 text-sm font-normal tabular-nums',
+                  tone === 'inherit' ? 'text-inherit' : 'text-text-muted'
+                )}
+              >
+                {meta}
+              </span>
             ) : null}
           </span>
           <ChevronRight
@@ -64,8 +144,19 @@ export function Disclosure({ children, className, description, title, ...props }
           />
         </ReactAriaButton>
       </Heading>
-      <ReactAriaDisclosurePanel className="kitsune-disclosure-panel text-sm text-text-muted">
-        <div className="px-4 pb-4 pr-12">{children}</div>
+      <ReactAriaDisclosurePanel className="kitsune-disclosure-panel text-base text-text-muted">
+        <div
+          className={variantClass(
+            {
+              compact: disclosureDensities.compact.panel,
+              spacious: disclosureDensities.spacious.panel,
+              standard: disclosureDensities.standard.panel
+            },
+            density
+          )}
+        >
+          {children}
+        </div>
       </ReactAriaDisclosurePanel>
     </ReactAriaDisclosure>
   );

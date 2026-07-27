@@ -1,7 +1,7 @@
 'use client';
 
 import { Search, X } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import {
   Button as ReactAriaButton,
   FieldError,
@@ -28,7 +28,9 @@ export interface SearchFieldProps extends Omit<
 > {
   description?: ReactNode;
   errorMessage?: ReactNode;
+  inputRef?: RefObject<HTMLInputElement | null>;
   label: ReactNode;
+  labelHidden?: boolean;
   placeholder?: string;
 }
 
@@ -36,7 +38,9 @@ export function SearchField({
   className,
   description,
   errorMessage,
+  inputRef,
   label,
+  labelHidden = false,
   placeholder,
   ...props
 }: SearchFieldProps) {
@@ -45,13 +49,13 @@ export function SearchField({
       {...props}
       className={cx(fieldGroup, typeof className === 'string' ? className : undefined)}
     >
-      <Label className={fieldLabel}>{label}</Label>
+      <Label className={labelHidden ? 'sr-only' : fieldLabel}>{label}</Label>
       <div className="relative flex items-center">
         <Search
           aria-hidden
           className="pointer-events-none absolute left-3 size-4 text-text-subtle"
         />
-        <Input className={cx(fieldControl, 'pl-8 pr-8')} placeholder={placeholder} />
+        <Input className={cx(fieldControl, 'pl-8 pr-8')} placeholder={placeholder} ref={inputRef} />
         <ReactAriaButton
           aria-label="Clear search"
           className={cx(

@@ -23,12 +23,17 @@ const overlayClass = cx(
 );
 
 const modalClass = cx(
-  'w-full max-w-prose rounded-lg border border-border-subtle',
+  'w-full rounded-lg border border-border-subtle',
   'bg-surface-raised p-6 shadow-lg outline-none',
   'entering:translate-y-1 entering:opacity-0',
   'exiting:translate-y-1 exiting:opacity-0',
   'transition duration-normal ease-out-quart'
 );
+
+const modalSizes = {
+  standard: 'max-w-prose',
+  wide: 'max-w-detail'
+} as const;
 
 const dialogClass = 'grid gap-6 outline-none';
 
@@ -36,6 +41,7 @@ export interface DialogProps extends Omit<ReactAriaDialogProps, 'children' | 'ar
   actions?: ReactNode;
   children: ReactNode;
   description?: ReactNode;
+  size?: keyof typeof modalSizes;
   title: string;
 }
 
@@ -44,6 +50,7 @@ export function Dialog({
   children,
   className,
   description,
+  size = 'standard',
   title,
   ...props
 }: DialogProps) {
@@ -51,7 +58,7 @@ export function Dialog({
 
   return (
     <ModalOverlay className={overlayClass} isDismissable>
-      <Modal className={modalClass}>
+      <Modal className={cx(modalClass, modalSizes[size])}>
         <ReactAriaDialog
           {...props}
           aria-describedby={description ? descriptionId : undefined}
@@ -103,7 +110,7 @@ export function AlertDialog({
 
   return (
     <ModalOverlay className={overlayClass}>
-      <Modal className={modalClass}>
+      <Modal className={cx(modalClass, modalSizes.standard)}>
         <ReactAriaDialog
           {...props}
           aria-describedby={descriptionId}

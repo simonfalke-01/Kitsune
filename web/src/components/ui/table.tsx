@@ -110,14 +110,22 @@ export function TableBody<T extends object>({
   );
 }
 
-export function TableRow<T extends object>({ className, ...props }: RowProps<T>) {
+export interface TableRowProps<T extends object> extends RowProps<T> {
+  appearance?: 'interactive' | 'static';
+}
+
+export function TableRow<T extends object>({
+  appearance = 'interactive',
+  className,
+  ...props
+}: TableRowProps<T>) {
   return (
     <ReactAriaRow
       {...props}
       className={composeRenderProps(className, (resolvedClassName) =>
         cx(
           'outline-none transition-colors duration-fast ease-out-quart',
-          'hover:bg-surface-hover selected:bg-accent-subtle',
+          appearance === 'interactive' && 'hover:bg-surface-hover selected:bg-accent-subtle',
           focusRing,
           resolvedClassName
         )

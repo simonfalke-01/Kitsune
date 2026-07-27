@@ -18,12 +18,27 @@ export { DialogTrigger as SheetTrigger };
 
 export interface SheetProps extends Omit<ReactAriaDialogProps, 'children' | 'aria-label'> {
   children: ReactNode;
+  contentClassName?: string;
   description?: ReactNode;
   footer?: ReactNode;
+  isDismissable?: boolean;
+  isOpen?: boolean;
+  onOpenChange?: (isOpen: boolean) => void;
   title: string;
 }
 
-export function Sheet({ children, className, description, footer, title, ...props }: SheetProps) {
+export function Sheet({
+  children,
+  className,
+  contentClassName,
+  description,
+  footer,
+  isDismissable = true,
+  isOpen,
+  onOpenChange,
+  title,
+  ...props
+}: SheetProps) {
   return (
     <ModalOverlay
       className={cx(
@@ -31,7 +46,9 @@ export function Sheet({ children, className, description, footer, title, ...prop
         'entering:opacity-0 exiting:opacity-0',
         'transition-opacity duration-normal ease-out-quart'
       )}
-      isDismissable
+      isDismissable={isDismissable}
+      isOpen={isOpen}
+      onOpenChange={onOpenChange}
     >
       <Modal
         className={cx(
@@ -49,7 +66,7 @@ export function Sheet({ children, className, description, footer, title, ...prop
             typeof className === 'string' ? className : undefined
           )}
         >
-          <header
+          <div
             className={cx(
               'sticky top-0 flex items-start justify-between gap-4',
               'border-b border-border-subtle bg-surface-raised p-6'
@@ -67,17 +84,17 @@ export function Sheet({ children, className, description, footer, title, ...prop
             <Button aria-label="Close panel" size="icon" slot="close" tone="quiet">
               <X aria-hidden className="size-4" />
             </Button>
-          </header>
-          <div className="flex-1 p-6">{children}</div>
+          </div>
+          <div className={cx('flex-1 p-6', contentClassName)}>{children}</div>
           {footer ? (
-            <footer
+            <div
               className={cx(
                 'sticky bottom-0 flex flex-wrap justify-end gap-2',
                 'border-t border-border-subtle bg-surface-raised p-4'
               )}
             >
               {footer}
-            </footer>
+            </div>
           ) : null}
         </ReactAriaDialog>
       </Modal>

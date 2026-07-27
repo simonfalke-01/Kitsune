@@ -30,6 +30,7 @@ export interface SelectProps extends Omit<
   description?: ReactNode;
   errorMessage?: ReactNode;
   label: ReactNode;
+  labelVisibility?: 'hidden' | 'visible';
   options: readonly SelectOption[];
 }
 
@@ -38,6 +39,7 @@ export function Select({
   description,
   errorMessage,
   label,
+  labelVisibility = 'visible',
   options,
   ...props
 }: SelectProps) {
@@ -46,7 +48,7 @@ export function Select({
       {...props}
       className={cx(fieldGroup, typeof className === 'string' ? className : undefined)}
     >
-      <Label className={fieldLabel}>{label}</Label>
+      <Label className={labelVisibility === 'hidden' ? 'sr-only' : fieldLabel}>{label}</Label>
       <Button className="min-h-control w-full justify-between" tone="secondary">
         <SelectValue className="truncate text-left" />
         <ChevronDown aria-hidden className="size-4 shrink-0" />

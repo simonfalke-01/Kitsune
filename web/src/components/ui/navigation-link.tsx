@@ -25,7 +25,7 @@ export function NavigationLink({
         'text-sm font-medium text-text-muted no-underline outline-none',
         'transition-colors duration-fast ease-out-quart',
         'hover:bg-surface-hover hover:text-text',
-        isCurrent && 'border-border-subtle bg-surface-raised text-text',
+        isCurrent && 'border-accent-border bg-accent-subtle text-accent-text',
         focusRing,
         typeof className === 'string' ? className : undefined
       )}

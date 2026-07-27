@@ -116,7 +116,7 @@ export function ToastRegion() {
                 {toast.content.title}
               </Text>
               {toast.content.description ? (
-                <Text className="text-sm text-text-muted" slot="description">
+                <Text className="text-sm" slot="description">
                   {toast.content.description}
                 </Text>
               ) : null}
