@@ -391,7 +391,7 @@
   --shadow-lg: 0 4px 8px oklch(0% 0 0 / 4%), 0 12px 24px oklch(0% 0 0 / 6%);
 
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
-  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-in-out-sine: cubic-bezier(0.37, 0, 0.63, 1);
   --duration-fast: 120ms;
   --duration-normal: 180ms;
   --duration-slow: 260ms;
@@ -464,7 +464,6 @@
 
   75% {
     opacity: 1;
-    transform: translate3d(-50%, -50%, 0) scale(0.875);
   }
 
   to {
@@ -490,7 +489,7 @@
     top: var(--solve-wave-y);
     left: var(--solve-wave-x);
     width: var(--solve-wave-diameter);
-    animation: kitsune-solve-wave var(--duration-celebration) var(--ease-in-out-quart) both;
+    animation: kitsune-solve-wave var(--duration-celebration) var(--ease-in-out-sine) both;
     will-change: opacity, transform;
   }
 
