@@ -100,7 +100,9 @@
   --surface-sunken: var(--n-3);
   --surface-hover: var(--n-4);
   --surface-active: var(--n-5);
-  --motion-split-bounce: 0.12;
+  --motion-split-damping: 26;
+  --motion-split-mass: 0.8;
+  --motion-split-stiffness: 320;
 
   --border-subtle: var(--n-6);
   --border: var(--n-8);

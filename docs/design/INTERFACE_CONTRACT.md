@@ -195,11 +195,12 @@ reusable failure mode, add the general rule here before closing the issue.
   it; Escape exits only when no overlay owns Escape. Focus mode is intentionally
   session-local and never restored on reload.
 - Focus-mode collapse and expansion use one restrained Motion spring on the
-  pane track. Its low-bounce response reads the shared slow visual-duration and
-  split-bounce tokens; it does not replace React Aria semantics. Mounted
-  collection and rail content cross over with the shared fast transform and
-  opacity transition. Pointer resizing bypasses Motion, and reduced motion
-  resolves the state change instantly.
+  pane track. It reads the split stiffness, damping, and mass tokens so movement
+  has physical acceleration and decisive settling rather than duration-based
+  interpolation; it does not replace React Aria semantics. Mounted collection
+  and rail content cross over with the shared fast transform and opacity
+  transition. Pointer resizing bypasses Motion, and reduced motion resolves the
+  state change instantly.
 - The flag field reserves a flexible validation line before submission so
   ordinary one-line feedback never changes sticky-dock height; text enlargement
   and long localized errors remain free to reflow.

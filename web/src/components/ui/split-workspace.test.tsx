@@ -99,8 +99,9 @@ describe('SplitWorkspace', () => {
     const workspace = screen
       .getByText('Detail remains mounted')
       .closest<HTMLElement>('.kitsune-split-workspace')!;
-    workspace.style.setProperty('--duration-slow', '260ms');
-    workspace.style.setProperty('--motion-split-bounce', '0.12');
+    workspace.style.setProperty('--motion-split-damping', '26');
+    workspace.style.setProperty('--motion-split-mass', '0.8');
+    workspace.style.setProperty('--motion-split-stiffness', '320');
     const leftPane = workspace.firstElementChild as HTMLElement;
     vi.spyOn(leftPane, 'getBoundingClientRect').mockImplementation(() => {
       const track = workspace.style.getPropertyValue('--split-workspace-left');
@@ -139,9 +140,10 @@ describe('SplitWorkspace', () => {
       400,
       64,
       expect.objectContaining({
-        bounce: 0.12,
-        type: 'spring',
-        visualDuration: 0.26
+        damping: 26,
+        mass: 0.8,
+        stiffness: 320,
+        type: 'spring'
       })
     );
 

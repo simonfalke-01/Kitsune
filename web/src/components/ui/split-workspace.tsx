@@ -32,20 +32,15 @@ interface SplitWorkspaceStyle extends CSSProperties {
 
 function splitWorkspaceMotion(element: HTMLElement) {
   const computed = window.getComputedStyle(element);
-  const durationValue = computed.getPropertyValue('--duration-slow').trim();
-  const durationNumber = Number.parseFloat(durationValue);
-  const duration = Number.isFinite(durationNumber)
-    ? durationValue.endsWith('ms')
-      ? durationNumber / 1000
-      : durationNumber
-    : 0;
-  const bounceValue = Number.parseFloat(computed.getPropertyValue('--motion-split-bounce'));
-  const bounce = Number.isFinite(bounceValue) ? clamp(bounceValue, 0, 1) : 0;
+  const damping = Number.parseFloat(computed.getPropertyValue('--motion-split-damping'));
+  const mass = Number.parseFloat(computed.getPropertyValue('--motion-split-mass'));
+  const stiffness = Number.parseFloat(computed.getPropertyValue('--motion-split-stiffness'));
 
   return {
-    bounce,
-    type: 'spring' as const,
-    visualDuration: duration
+    ...(Number.isFinite(damping) ? { damping } : {}),
+    ...(Number.isFinite(mass) ? { mass } : {}),
+    ...(Number.isFinite(stiffness) ? { stiffness } : {}),
+    type: 'spring' as const
   };
 }
 
