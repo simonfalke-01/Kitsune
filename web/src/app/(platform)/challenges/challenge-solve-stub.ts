@@ -1,5 +1,5 @@
 import type { ChartSeries } from '@/lib/visualization/types';
-import { challengeProgress, type ChallengeExperience } from '@/lib/challenges';
+import { challengePointValue, challengeProgress, type ChallengeExperience } from '@/lib/challenges';
 
 export interface ChallengeCompetitorStub {
   avatarUrl?: string | null;
@@ -83,6 +83,7 @@ const teamNouns = [
 
 const fallbackEventStart = '2026-07-25T08:00:00.000Z';
 const minute = 60_000;
+const scoreWindow = 8 * 60 * minute;
 
 function stableHash(value: string): number {
   let hash = 2_166_136_261;
@@ -116,6 +117,17 @@ function solveTotal(challenge: ChallengeExperience): number {
 
   const generated = stableHash(`${challenge.event_id}:${challenge.id}:solves`) % 32;
   return Math.max(challenge.solved ? 1 : 0, generated);
+}
+
+function distributeScore(total: number, count: number): number[] {
+  if (total <= 0 || count <= 0) {
+    return [];
+  }
+
+  const base = Math.floor(total / count);
+  const remainder = total % count;
+
+  return Array.from({ length: count }, (_, index) => base + (index < remainder ? 1 : 0));
 }
 
 export function createChallengeSolveContextStub(input: {
@@ -263,32 +275,71 @@ export function createChallengeEventStandingStub(input: {
     id: string,
     label: string,
     finalScore: number,
+    increments: readonly number[],
     tone: number,
     isEmphasized = false
   ): ChartSeries<null> {
+    const intervalWeights = increments.map(
+      (_, index) => 2 + (stableHash(`${id}:score-interval:${index}`) % 7)
+    );
+    const trailingWeight = 2 + (stableHash(`${id}:score-tail`) % 7);
+    const totalWeight = intervalWeights.reduce((total, weight) => total + weight, trailingWeight);
+    let elapsedWeight = 0;
+    let cumulativeScore = 0;
+    const scorePoints = increments.map((increment, index) => {
+      elapsedWeight += intervalWeights[index] ?? 0;
+      cumulativeScore += increment;
+
+      return {
+        id: `${id}:score:${index + 1}`,
+        label: `Solve ${index + 1}`,
+        metadata: null,
+        x: eventStartMs + Math.round((elapsedWeight / totalWeight) * scoreWindow),
+        y: cumulativeScore
+      };
+    });
+
     return {
       id,
       isEmphasized,
       label,
-      points: Array.from({ length: 8 }, (_, index) => {
-        const ratio = index / 7;
-        return {
-          id: `${id}:score:${index}`,
-          label: `Score ${index + 1}`,
+      points: [
+        {
+          id: `${id}:score:start`,
+          label: 'Start',
           metadata: null,
-          x: eventStartMs + index * 75 * minute,
-          y: Math.round(finalScore * ratio ** (1.15 + tone * 0.08))
-        };
-      }),
+          x: eventStartMs,
+          y: 0
+        },
+        ...scorePoints,
+        {
+          id: `${id}:score:current`,
+          label: 'Current score',
+          metadata: null,
+          x: eventStartMs + scoreWindow,
+          y: finalScore
+        }
+      ],
       tone
     };
   }
 
+  const currentScoreIncrements = input.challenges
+    .filter((challenge) => challenge.solved)
+    .map(challengePointValue);
   const nearbySeries = nearbyStandings.map((standing, index) => {
+    const scoreIncrements = standing.isSelf
+      ? currentScoreIncrements
+      : distributeScore(
+          standing.points,
+          Math.min(7, Math.max(1, Math.round(standing.points / 75)))
+        );
+
     return scoreSeries(
       standing.isSelf ? `${input.eventId}:self-score` : `${standing.id}:score`,
       standing.name,
       standing.points,
+      scoreIncrements,
       standing.isSelf ? 0 : index + 1,
       standing.isSelf
     );

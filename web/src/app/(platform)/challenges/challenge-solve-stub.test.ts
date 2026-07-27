@@ -131,7 +131,25 @@ describe('challenge solve frontend adapter', () => {
     expect(standing.nearbySeries.find((series) => series.isEmphasized)).toEqual(
       standing.scoreSeries
     );
-    expect(standing.nearbySeries.every((series) => series.points.length === 8)).toBe(true);
+    const currentScoreChanges = standing.scoreSeries.points.filter((point, index, points) => {
+      return index > 0 && point.y > points[index - 1]!.y;
+    });
+    const solveTimePatterns = standing.nearbySeries.map((series) =>
+      series.points
+        .filter((point, index, points) => index > 0 && point.y > points[index - 1]!.y)
+        .map((point) => point.x)
+        .join(',')
+    );
+    expect(currentScoreChanges).toHaveLength(1);
+    expect(new Set(solveTimePatterns).size).toBeGreaterThan(1);
+    expect(
+      standing.nearbySeries.every((series) =>
+        series.points.every((point, index, points) => index === 0 || point.x > points[index - 1]!.x)
+      )
+    ).toBe(true);
+    expect(
+      standing.nearbySeries.map((series) => series.points.at(-1)?.y).sort((a, b) => a! - b!)
+    ).toEqual(standing.nearbyStandings.map((entry) => entry.points).sort((a, b) => a - b));
   });
 
   it('keeps five consecutive nearby places at the first and final rank', () => {

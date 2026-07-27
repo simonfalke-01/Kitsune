@@ -480,6 +480,10 @@ reusable failure mode, add the general rule here before closing the issue.
   API, one typed feature-local frontend adapter supplies deterministic data to
   every consuming challenge component. Do not widen the API, OpenAPI schema,
   database, or server merely to complete frontend visual iteration.
+- Demo score trajectories never fabricate synchronized periodic solves. The
+  current team's score changes once per challenge actually marked solved;
+  neighboring demo teams use distinct deterministic event times so simultaneous
+  jumps appear only when source data eventually reports them.
 - Do not show tags merely because challenges have tags. Tags remain searchable
   metadata unless they change discovery or a solve decision.
 - Scoreboard controls sit with scoreboard state. Frozen, hidden, delayed, and
