@@ -146,7 +146,7 @@ export function ChallengeOverview({
           <WeightedSegmentBar
             ariaLabel={`${progress.solved} of ${progress.total} challenges solved`}
             className="px-3"
-            items={segmentItems(orderChallengeSegments(challenges), pointWeights)}
+            items={segmentItems(challenges, pointWeights)}
           />
 
           <div className="hidden grid-cols-12 gap-4 px-3 text-xs text-text-subtle xl:grid">

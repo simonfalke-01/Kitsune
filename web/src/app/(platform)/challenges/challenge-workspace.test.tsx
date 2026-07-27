@@ -186,9 +186,13 @@ describe('ChallengeWorkspace', () => {
       null
     );
 
+    const overallProgress = screen.getByLabelText('1 of 2 challenges solved');
     const categoryProgress = screen.getByLabelText('1 of 2 Web challenges solved');
+    const overallSegments = within(overallProgress).getAllByRole('link');
     const segments = within(categoryProgress).getAllByRole('link');
 
+    expect(overallSegments[0]).toHaveAccessibleName(/Open Open first/);
+    expect(overallSegments[1]).toHaveAccessibleName(/Open Solved second/);
     expect(segments[0]).toHaveAccessibleName(/Open Solved second/);
     expect(segments[1]).toHaveAccessibleName(/Open Open first/);
   });
