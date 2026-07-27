@@ -259,7 +259,7 @@ export function ChallengeDetail({
         }}
         selectedKey={selectedTab}
       >
-        <TabsList aria-label="Challenge sections" className="shrink-0 border-b-0 px-3">
+        <TabsList aria-label="Challenge sections" className="shrink-0 border-b-0 px-6">
           <TabsTab id="details">Details</TabsTab>
           <TabsTab id="solves">
             <strong className="font-semibold tabular-nums">

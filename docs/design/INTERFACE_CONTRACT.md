@@ -391,6 +391,9 @@ reusable failure mode, add the general rule here before closing the issue.
 - The no-selection overview title and selected challenge title share the same
   top and left pane inset. Switching state changes the content, not the primary
   reading origin.
+- In challenge detail, the tab selection edge, challenge title, and first
+  content surface share one left pane inset. A tab's internal hit-area padding
+  must not pull its selection underline outside that alignment rule.
 - Challenge categories are independent disclosures, all expanded by default.
   Category headings remain sticky inside the challenge-list scroll owner and
   retain their Lucide category icon, pastel index colour, solved ratio, and

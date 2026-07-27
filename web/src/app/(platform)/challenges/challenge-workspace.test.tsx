@@ -471,7 +471,7 @@ describe('ChallengeWorkspace', () => {
     expect(titleLine).toHaveClass('items-baseline', 'gap-x-2');
     expect(author).toHaveClass('text-sm', 'text-text-muted');
     expect(collectionAuthor).toHaveClass('text-xs', 'text-text-subtle', 'truncate');
-    expect(tabList).toHaveClass('px-3');
+    expect(tabList).toHaveClass('px-6');
     expect(detailsTab).toHaveClass('px-3');
     expect(detailsTab).not.toHaveClass('first:pl-0');
   });
