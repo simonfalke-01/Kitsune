@@ -2,7 +2,6 @@ export type ChallengeDetailTab = 'details' | 'hints' | 'solves' | 'writeup';
 
 interface ChallengeMemory {
   scrollTop: Partial<Record<ChallengeDetailTab, number>>;
-  tab: ChallengeDetailTab;
 }
 
 export interface ChallengeWorkspaceMemory {
@@ -67,7 +66,6 @@ export function parseChallengeWorkspaceMemory(snapshot: string): ChallengeWorksp
 
         const candidate = value as {
           scrollTop?: unknown;
-          tab?: unknown;
         };
         const scrollTop: Partial<Record<ChallengeDetailTab, number>> = {};
 
@@ -84,8 +82,7 @@ export function parseChallengeWorkspaceMemory(snapshot: string): ChallengeWorksp
         }
 
         challenges[challengeId] = {
-          scrollTop,
-          tab: challengeDetailTab(candidate.tab)
+          scrollTop
         };
       }
     }
@@ -141,23 +138,6 @@ function updateMemory(
   writeMemory(eventId, update(current));
 }
 
-export function rememberChallengeTab(
-  eventId: string,
-  challengeId: string,
-  tab: ChallengeDetailTab
-) {
-  updateMemory(eventId, (current) => ({
-    ...current,
-    challenges: {
-      ...current.challenges,
-      [challengeId]: {
-        scrollTop: current.challenges[challengeId]?.scrollTop ?? {},
-        tab
-      }
-    }
-  }));
-}
-
 export function rememberChallengeScroll(
   eventId: string,
   challengeId: string,
@@ -172,8 +152,7 @@ export function rememberChallengeScroll(
         scrollTop: {
           ...current.challenges[challengeId]?.scrollTop,
           [tab]: finiteScrollPosition(scrollTop)
-        },
-        tab: current.challenges[challengeId]?.tab ?? tab
+        }
       }
     }
   }));

@@ -166,9 +166,10 @@ reusable failure mode, add the general rule here before closing the issue.
   tab; clearing selection removes both parameters without disturbing unrelated
   query state.
 - Challenge workspace memory is event-scoped. It preserves the collection
-  position plus each challenge's last available tab and per-tab detail scroll
-  position. Restoring one value must not reset the others, and malformed or
-  unavailable stored values fall back safely.
+  position and per-tab detail scroll positions, but never the selected detail
+  tab. Selecting a different challenge always opens Details; only an explicit
+  URL tab restores another section. Restoring one value must not reset the
+  others, and malformed or unavailable stored values fall back safely.
 - Challenge workspace accelerators are additive: Slash focuses search; J and K
   move the actual selection through currently visible challenge rows and update
   detail in the same frame; Enter uses the focused row's normal link behavior;

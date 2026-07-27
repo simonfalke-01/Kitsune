@@ -212,9 +212,10 @@ without losing competition context.
 - Challenge selection and the active detail tab are URL state. Browser Back,
   forward, refresh, and copied links must restore the same visible object and
   section without making URL synchronization delay immediate selection.
-- Remember the collection scroll position and each challenge's last tab and
-  per-tab detail position within the current event. Returning to prior work
-  must restore context without moving a different event's workspace.
+- Remember the collection scroll position and per-tab detail positions within
+  the current event, but not tab selection. Selecting a different challenge
+  always begins on Details; an explicit tab URL still restores that requested
+  section without moving a different event's workspace.
 - Keyboard accelerators shorten repeat work without replacing visible paths.
   Slash focuses search; J and K move the actual challenge selection and detail
   together; Enter follows the focused challenge; D, S, and H choose detail

@@ -7,7 +7,6 @@ import type { FlagSubmitSuccessEffect } from './challenge-presentation';
 import {
   rememberChallengeListScroll,
   rememberChallengeScroll,
-  rememberChallengeTab,
   type ChallengeDetailTab
 } from './challenge-workspace-memory';
 import { ChallengeWorkspace, type ChallengeWorkspaceActions } from './challenge-workspace';
@@ -241,9 +240,8 @@ describe('ChallengeWorkspace', () => {
     expect(within(challengeList).getByRole('link', { name: /Crypto trail/ })).toBeVisible();
   });
 
-  it('restores the challenge list, selected tab, and detail scroll positions', async () => {
+  it('restores the challenge list, URL-selected tab, and detail scroll positions', async () => {
     rememberChallengeListScroll('event', 84);
-    rememberChallengeTab('event', 'challenge', 'solves');
     rememberChallengeScroll('event', 'challenge', 'solves', 220);
 
     renderWorkspace(
@@ -296,6 +294,26 @@ describe('ChallengeWorkspace', () => {
     expect(first).toHaveFocus();
     expect(first).toHaveAttribute('aria-current', 'true');
     expect(first).toHaveAttribute('href', '/challenges?challenge=first');
+  });
+
+  it('opens Details when a different challenge is selected', () => {
+    renderWorkspace(
+      [
+        createChallengeExperience(challenge({ id: 'first', name: 'First trail' }), {
+          solveCount: 4
+        }),
+        createChallengeExperience(challenge({ id: 'second', name: 'Second trail', position: 1 }))
+      ],
+      'first'
+    );
+
+    fireEvent.click(screen.getByRole('tab', { name: '4 Solves' }));
+    expect(screen.getByRole('tab', { name: '4 Solves' })).toHaveAttribute('aria-selected', 'true');
+
+    fireEvent.click(screen.getByRole('link', { name: /Second trail/ }));
+
+    expect(screen.getByRole('heading', { name: 'Second trail' })).toBeVisible();
+    expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('focuses search, switches detail tabs, and ignores shortcuts while typing', () => {
@@ -637,9 +655,7 @@ describe('ChallengeWorkspace', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: '18 Solves' }));
 
-    expect(window.localStorage.getItem('kitsune.challenge-workspace.v1.event')).toContain(
-      '"tab":"solves"'
-    );
+    expect(window.localStorage.getItem('kitsune.challenge-workspace.v1.event')).toBeNull();
 
     const standings = screen.getByRole('list', { name: 'Solve standings' });
     expect(within(standings).getAllByRole('listitem').length).toBeGreaterThanOrEqual(18);

@@ -5,8 +5,7 @@ import {
   challengeWorkspacePath,
   parseChallengeWorkspaceMemory,
   rememberChallengeListScroll,
-  rememberChallengeScroll,
-  rememberChallengeTab
+  rememberChallengeScroll
 } from './challenge-workspace-memory';
 
 beforeEach(() => {
@@ -31,9 +30,8 @@ describe('challenge workspace memory', () => {
     ).toBe('/challenges');
   });
 
-  it('preserves list position, per-challenge tabs, and per-tab detail positions', () => {
+  it('preserves list position and per-tab detail positions without saving tab selection', () => {
     rememberChallengeListScroll('event', 184);
-    rememberChallengeTab('event', 'challenge', 'solves');
     rememberChallengeScroll('event', 'challenge', 'solves', 420);
 
     expect(parseChallengeWorkspaceMemory(challengeWorkspaceMemorySnapshot('event'))).toEqual({
@@ -41,8 +39,7 @@ describe('challenge workspace memory', () => {
         challenge: {
           scrollTop: {
             solves: 420
-          },
-          tab: 'solves'
+          }
         }
       },
       listScrollTop: 184
@@ -70,8 +67,7 @@ describe('challenge workspace memory', () => {
         challenge: {
           scrollTop: {
             hints: 64
-          },
-          tab: 'details'
+          }
         }
       },
       listScrollTop: 0

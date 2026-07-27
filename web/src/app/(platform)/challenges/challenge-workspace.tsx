@@ -17,7 +17,6 @@ import {
   getServerChallengeWorkspaceMemorySnapshot,
   parseChallengeWorkspaceMemory,
   rememberChallengeListScroll,
-  rememberChallengeTab,
   subscribeToChallengeWorkspaceMemory,
   type ChallengeDetailTab
 } from './challenge-workspace-memory';
@@ -289,29 +288,16 @@ export function ChallengeWorkspace({
 
   const selectChallenge = useCallback(
     (challengeId: string, trigger: HTMLElement) => {
-      const challenge = displayedChallenges.find((candidate) => candidate.id === challengeId);
-      const tab = availableTab(
-        challenge,
-        workspaceMemory.challenges[challengeId]?.tab ?? 'details',
-        actions
-      );
       selectionTriggerRef.current = trigger;
       setImmediateSelection({
         current: challengeId,
         source: selectedChallengeId,
         sourceTab: selectedChallengeTab,
-        tab
+        tab: 'details'
       });
-      onSelectChallenge?.(challengeId, tab);
+      onSelectChallenge?.(challengeId, 'details');
     },
-    [
-      actions,
-      displayedChallenges,
-      onSelectChallenge,
-      selectedChallengeId,
-      selectedChallengeTab,
-      workspaceMemory.challenges
-    ]
+    [onSelectChallenge, selectedChallengeId, selectedChallengeTab]
   );
 
   const selectTab = useCallback(
@@ -321,14 +307,13 @@ export function ChallengeWorkspace({
       }
 
       const resolvedTab = availableTab(selectedChallenge, tab, actions);
-      rememberChallengeTab(eventId, selectedChallenge.id, resolvedTab);
       setImmediateSelection((current) => ({
         ...current,
         tab: resolvedTab
       }));
       onSelectTab?.(selectedChallenge.id, resolvedTab);
     },
-    [actions, eventId, onSelectTab, selectedChallenge]
+    [actions, onSelectTab, selectedChallenge]
   );
 
   function rememberCollectionScroll(scrollTop: number) {
@@ -481,13 +466,7 @@ export function ChallengeWorkspace({
       challenges={displayedChallenges}
       eventId={eventId}
       getChallengeHref={(challengeId) => {
-        const challenge = displayedChallenges.find((candidate) => candidate.id === challengeId);
-        const tab = availableTab(
-          challenge,
-          workspaceMemory.challenges[challengeId]?.tab ?? 'details',
-          actions
-        );
-        return getChallengeHref?.(challengeId, tab);
+        return getChallengeHref?.(challengeId, 'details');
       }}
       onCollapseChallengeList={isDesktop && selectedChallenge ? collapseChallengeList : undefined}
       onExitSearch={exitChallengeSearch}
@@ -517,13 +496,7 @@ export function ChallengeWorkspace({
     <ChallengeOverview
       challenges={displayedChallenges}
       getChallengeHref={(challengeId) => {
-        const challenge = displayedChallenges.find((candidate) => candidate.id === challengeId);
-        const tab = availableTab(
-          challenge,
-          workspaceMemory.challenges[challengeId]?.tab ?? 'details',
-          actions
-        );
-        return getChallengeHref?.(challengeId, tab);
+        return getChallengeHref?.(challengeId, 'details');
       }}
       onSelectChallenge={(challengeId, trigger) => {
         selectChallenge(challengeId, trigger);
