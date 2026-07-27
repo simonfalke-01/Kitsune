@@ -7,6 +7,10 @@ import { ChallengeDetail } from './challenge-detail';
 import { ChallengeEventTrail } from './challenge-event-trail';
 import { ChallengeOverview } from './challenge-overview';
 import {
+  challengePresentationSettingsStub,
+  type FlagSubmitSuccessEffect
+} from './challenge-presentation';
+import {
   appendCurrentCompetitorSolve,
   createChallengeEventStandingStub,
   createChallengeSolveContextMap,
@@ -40,6 +44,7 @@ export interface ChallengeWorkspaceProps {
   eventId: string;
   eventName: string;
   eventStartedAt?: string | null;
+  flagSubmitSuccessEffect?: FlagSubmitSuccessEffect;
   getChallengeHref?: (challengeId: string) => string;
   onChallengeChanged?: () => Promise<void>;
   onClearSelection: () => void;
@@ -54,6 +59,7 @@ export function ChallengeWorkspace({
   eventId,
   eventName,
   eventStartedAt,
+  flagSubmitSuccessEffect = challengePresentationSettingsStub.flagSubmitSuccessEffect,
   getChallengeHref,
   onChallengeChanged,
   onClearSelection,
@@ -143,6 +149,7 @@ export function ChallengeWorkspace({
     <ChallengeDetail
       actions={actions}
       challenge={selectedChallenge}
+      flagSubmitSuccessEffect={flagSubmitSuccessEffect}
       key={selectedChallenge.id}
       onChallengeChanged={onChallengeChanged}
       onSolved={handleSolved}
@@ -200,6 +207,7 @@ export function ChallengeWorkspace({
           <ChallengeDetail
             actions={actions}
             challenge={selectedChallenge}
+            flagSubmitSuccessEffect={flagSubmitSuccessEffect}
             key={selectedChallenge.id}
             onChallengeChanged={onChallengeChanged}
             onSolved={handleSolved}

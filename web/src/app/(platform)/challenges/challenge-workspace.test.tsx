@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { FlagSubmitSuccessEffect } from './challenge-presentation';
 import { ChallengeWorkspace, type ChallengeWorkspaceActions } from './challenge-workspace';
 import type { ChallengeSummary } from '@/lib/api/client';
 import { createChallengeExperience, type ChallengeExperience } from '@/lib/challenges';
@@ -57,7 +58,8 @@ function actions(): ChallengeWorkspaceActions {
 function renderWorkspace(
   challenges: ChallengeExperience[],
   selectedChallengeId: string | null,
-  workspaceActions = actions()
+  workspaceActions = actions(),
+  flagSubmitSuccessEffect?: FlagSubmitSuccessEffect
 ) {
   render(
     <ChallengeWorkspace
@@ -66,6 +68,7 @@ function renderWorkspace(
       currentCompetitor={{ id: 'foxden', name: 'Foxden' }}
       eventId="event"
       eventName="Foxden Invitational"
+      flagSubmitSuccessEffect={flagSubmitSuccessEffect}
       getChallengeHref={(challengeId) => `/challenges?challenge=${challengeId}`}
       onClearSelection={vi.fn()}
       onSelectChallenge={vi.fn()}
@@ -312,7 +315,7 @@ describe('ChallengeWorkspace', () => {
     expect(within(standings).getAllByText('Foxden').length).toBeGreaterThan(0);
   });
 
-  it('replaces the full-width submission action with an in-place solved status', async () => {
+  it('preserves the solved dock and emits the default edge imprint', async () => {
     const workspaceActions = actions();
     workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
       attempts_remaining: 4,
@@ -361,6 +364,50 @@ describe('ChallengeWorkspace', () => {
     expect(selectedChallenge).toHaveClass('ring-1', 'ring-accent-border');
     expect(selectedChallenge).not.toHaveAttribute('data-newly-solved');
     const solveEffect = document.querySelector('.kitsune-solve-effect');
+    const edgeFrame = document.querySelector('.kitsune-solve-edge-frame');
+    const edgeWash = document.querySelector('.kitsune-solve-edge-wash');
+    expect(solveEffect?.parentElement).toBe(document.body);
+    expect(solveEffect).toHaveClass('fixed', 'inset-0', 'z-celebration');
+    expect(edgeFrame).toHaveClass('border', 'border-success-imprint-edge');
+    expect(edgeFrame?.parentElement).toBe(solveEffect);
+    expect(edgeWash?.parentElement).toBe(solveEffect);
+    expect(document.querySelector('.kitsune-solve-origin')).not.toBeInTheDocument();
+    expect(document.querySelector('.kitsune-solve-wave')).not.toBeInTheDocument();
+  });
+
+  it('keeps the field wave available as a presentation setting', async () => {
+    const workspaceActions = actions();
+    workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
+      attempts_remaining: 4,
+      awarded_points: 300,
+      challenge_id: 'challenge',
+      first_blood: false,
+      id: 'submission',
+      outcome: 'correct',
+      replayed: false,
+      submitted_at: '2026-07-23T12:00:00Z'
+    });
+    renderWorkspace(
+      [createChallengeExperience(challenge(), { solveCount: 4 })],
+      'challenge',
+      workspaceActions,
+      'field-wave'
+    );
+    const flagField = screen.getByLabelText('Flag');
+    const origin = new DOMRect(120, 600, 400, 44);
+    vi.spyOn(flagField, 'getBoundingClientRect').mockReturnValue(origin);
+    fireEvent.change(flagField, {
+      target: {
+        value: 'kit{correct}'
+      }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit flag' }));
+
+    await waitFor(() => {
+      expect(workspaceActions.submitAnswer).toHaveBeenCalledWith('challenge', 'kit{correct}');
+    });
+
+    const solveEffect = document.querySelector('.kitsune-solve-effect');
     const solveOrigin = document.querySelector('.kitsune-solve-origin');
     const solveWave = document.querySelector('.kitsune-solve-wave');
     const x = origin.left + origin.width / 2;
@@ -395,7 +442,40 @@ describe('ChallengeWorkspace', () => {
     });
   });
 
-  it('does not emit the solve wave for an incorrect flag', async () => {
+  it('supports disabling the flag success effect', async () => {
+    const workspaceActions = actions();
+    workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
+      attempts_remaining: 4,
+      awarded_points: 300,
+      challenge_id: 'challenge',
+      first_blood: false,
+      id: 'submission',
+      outcome: 'correct',
+      replayed: false,
+      submitted_at: '2026-07-23T12:00:00Z'
+    });
+    renderWorkspace(
+      [createChallengeExperience(challenge(), { solveCount: 4 })],
+      'challenge',
+      workspaceActions,
+      'none'
+    );
+    fireEvent.change(screen.getByLabelText('Flag'), {
+      target: {
+        value: 'kit{correct}'
+      }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit flag' }));
+
+    await waitFor(() => {
+      expect(workspaceActions.submitAnswer).toHaveBeenCalledWith('challenge', 'kit{correct}');
+    });
+
+    expect(screen.getAllByText('Challenge solved').length).toBeGreaterThan(0);
+    expect(document.querySelector('.kitsune-solve-effect')).not.toBeInTheDocument();
+  });
+
+  it('does not emit a success effect for an incorrect flag', async () => {
     const workspaceActions = actions();
     workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
       attempts_remaining: 3,
@@ -422,6 +502,6 @@ describe('ChallengeWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Submit flag' }));
 
     expect(await screen.findByText('Incorrect. 3 attempts remain.')).toBeVisible();
-    expect(document.querySelector('.kitsune-solve-wave')).not.toBeInTheDocument();
+    expect(document.querySelector('.kitsune-solve-effect')).not.toBeInTheDocument();
   });
 });

@@ -287,17 +287,24 @@ reusable failure mode, add the general rule here before closing the issue.
   are not.
 - A flag submission updates in place, preserves the challenge position, and
   gives an immediate pending state followed by exact feedback.
-- A confirmed correct flag emits one restrained success wave from the measured
-  flag-field bounds across the viewport above product chrome. The wave uses
-  a true rounded-rectangle imprint at the measured field and a concurrent
-  circular front from its centre. The imprint preserves the textbox bounds,
-  shared field radius, edge, and submitted value; it never substitutes an
-  approximate ellipse. Only transform and opacity animate; the effect never
-  delays the solved state, never intercepts input, cleans itself up after
-  completion, and disappears under reduced motion. Linear motion is permitted
-  only for this physical propagation because acceleration would falsify its
-  travel. The dedicated 1.2-second duration is permitted only for this rare,
-  non-blocking viewport-scale confirmation.
+- Confirmed-flag feedback uses a typed presentation slot with `edge-imprint`,
+  `field-wave`, and `none` variants. Until the admin API supplies the setting,
+  one feature-local frontend adapter selects the default; screens do not branch
+  on ad hoc booleans.
+- The default edge imprint draws one crisp semantic-green viewport perimeter
+  at the screen boundary and briefly applies a low-opacity flat green wash over
+  the page. The perimeter registers without hidden off-screen travel, and the
+  weaker wash recedes before it. It uses no glow, blur, gradient, content
+  movement, or layout animation.
+- The optional field wave begins at the measured flag-field bounds and expands
+  across the viewport above product chrome. Its imprint preserves the textbox
+  bounds, shared field radius, edge, and submitted value; it never substitutes
+  an approximate ellipse. Linear motion is permitted only for this physical
+  propagation because acceleration would falsify its travel.
+- Every success effect uses only transform and opacity, never delays the solved
+  state, never intercepts input, cleans itself up after completion, and
+  disappears under reduced motion. The dedicated 1.2-second duration is
+  permitted only for these rare, non-blocking viewport confirmations.
 - The challenge list, selected detail, resources, hints, and flag input remain
   in one task flow. Selecting a challenge updates the detail in place and may
   update the URL without reloading the document.

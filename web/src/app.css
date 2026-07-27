@@ -119,6 +119,8 @@
   --success-subtle: var(--success-3);
   --success-border: var(--success-6);
   --success: var(--success-9);
+  --success-imprint-edge: color-mix(in oklch, var(--success) 52%, transparent);
+  --success-imprint-fill: color-mix(in oklch, var(--success) 7%, transparent);
   --success-wave-fill: color-mix(in oklch, var(--success) 18%, transparent);
   --success-hover: var(--success-10);
   --success-text: var(--success-12);
@@ -289,6 +291,7 @@
   --color-accent-text: var(--accent-text);
   --color-success-subtle: var(--success-subtle);
   --color-success-border: var(--success-border);
+  --color-success-imprint-edge: var(--success-imprint-edge);
   --color-success: var(--success);
   --color-success-hover: var(--success-hover);
   --color-success-text: var(--success-text);
@@ -476,6 +479,38 @@
   }
 }
 
+@keyframes kitsune-solve-edge-frame {
+  from {
+    opacity: 0;
+  }
+
+  12%,
+  36% {
+    opacity: 1;
+  }
+
+  75%,
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes kitsune-solve-edge-wash {
+  from {
+    opacity: 0;
+  }
+
+  12%,
+  28% {
+    opacity: 1;
+  }
+
+  68%,
+  to {
+    opacity: 0;
+  }
+}
+
 @layer components {
   .kitsune-split-workspace {
     grid-template-columns: var(--split-workspace-left) minmax(0, 1fr);
@@ -504,6 +539,17 @@
       kitsune-solve-wave-dissolve var(--duration-celebration) linear both;
     contain: strict;
     will-change: opacity, transform;
+  }
+
+  .kitsune-solve-edge-frame {
+    animation: kitsune-solve-edge-frame var(--duration-celebration) linear both;
+    will-change: opacity;
+  }
+
+  .kitsune-solve-edge-wash {
+    background-color: var(--success-imprint-fill);
+    animation: kitsune-solve-edge-wash var(--duration-celebration) linear both;
+    will-change: opacity;
   }
 
   .kitsune-challenge-row[data-solved='true'] {

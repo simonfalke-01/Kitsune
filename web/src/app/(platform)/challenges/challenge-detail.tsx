@@ -1,15 +1,19 @@
 'use client';
 
 import { Check } from 'lucide-react';
-import { type CSSProperties, useState } from 'react';
-import { createPortal } from 'react-dom';
+import { useState } from 'react';
 
 import { ChallengeCategoryLabel } from './challenge-category';
 import { ChallengeHints } from './challenge-hints';
 import { ChallengeInstance } from './challenge-instance';
+import type { FlagSubmitSuccessEffect } from './challenge-presentation';
 import type { ChallengeSolveContext } from './challenge-solve-stub';
 import { ChallengeSolvedSummary, ChallengeSolves, ChallengeSolveStrip } from './challenge-solves';
 import { ChallengeSubmission } from './challenge-submission';
+import {
+  ChallengeSuccessEffect,
+  type ChallengeSuccessEffectOrigin
+} from './challenge-success-effect';
 import { ChallengeSurvey } from './challenge-survey';
 import type { ChallengeWorkspaceActions } from './challenge-types';
 import { ChallengeWriteup } from './challenge-writeup';
@@ -34,38 +38,17 @@ import {
 interface ChallengeDetailProps {
   actions: ChallengeWorkspaceActions;
   challenge: ChallengeExperience;
+  flagSubmitSuccessEffect: FlagSubmitSuccessEffect;
   onChallengeChanged?: () => Promise<void>;
   onSolved?: (challengeId: string, solvedAt: string) => void;
   showTitle?: boolean;
   solveContext: ChallengeSolveContext;
 }
 
-interface SolveWaveGeometry {
-  diameter: number;
-  originHeight: number;
-  originLeft: number;
-  originTop: number;
-  originValue: string;
-  originWidth: number;
-  startScale: number;
-  x: number;
-  y: number;
-}
-
-interface SolveWaveStyle extends CSSProperties {
-  '--solve-origin-height'?: string;
-  '--solve-origin-left'?: string;
-  '--solve-origin-top'?: string;
-  '--solve-origin-width'?: string;
-  '--solve-wave-diameter'?: string;
-  '--solve-wave-start-scale'?: string;
-  '--solve-wave-x'?: string;
-  '--solve-wave-y'?: string;
-}
-
 export function ChallengeDetail({
   actions,
   challenge,
+  flagSubmitSuccessEffect,
   onChallengeChanged,
   onSolved,
   showTitle = true,
@@ -76,7 +59,8 @@ export function ChallengeDetail({
   const [isPendingReview, setIsPendingReview] = useState(false);
   const [isSolved, setIsSolved] = useState(challenge.solved);
   const [postSolveSurveyComplete, setPostSolveSurveyComplete] = useState(false);
-  const [solveWave, setSolveWave] = useState<SolveWaveGeometry | null>(null);
+  const [successEffectOrigin, setSuccessEffectOrigin] =
+    useState<ChallengeSuccessEffectOrigin | null>(null);
   const connection = challengeConnection(challenge);
   const resolvedChallenge: ChallengeExperience = {
     ...challenge,
@@ -121,44 +105,20 @@ export function ChallengeDetail({
   const showPostSolveSurvey =
     challenge.surveyMode === 'post_solve' && challenge.survey.length > 0 && isSolved;
   const hasResources = Boolean(connection) || challenge.attachments.length > 0;
-  const solveWaveStyle: SolveWaveStyle | undefined = solveWave
-    ? {
-        '--solve-origin-height': `${solveWave.originHeight}px`,
-        '--solve-origin-left': `${solveWave.originLeft}px`,
-        '--solve-origin-top': `${solveWave.originTop}px`,
-        '--solve-origin-width': `${solveWave.originWidth}px`,
-        '--solve-wave-diameter': `${solveWave.diameter}px`,
-        '--solve-wave-start-scale': String(solveWave.startScale),
-        '--solve-wave-x': `${solveWave.x}px`,
-        '--solve-wave-y': `${solveWave.y}px`
-      }
-    : undefined;
-
-  function startSolveWave(origin: DOMRect, originValue: string) {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  function startSuccessEffect(origin: DOMRect, value: string) {
+    if (
+      flagSubmitSuccessEffect === 'none' ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
       return;
     }
 
-    const x = origin.left + origin.width / 2;
-    const y = origin.top + origin.height / 2;
-    const farthestCorner = Math.max(
-      Math.hypot(x, y),
-      Math.hypot(window.innerWidth - x, y),
-      Math.hypot(x, window.innerHeight - y),
-      Math.hypot(window.innerWidth - x, window.innerHeight - y)
-    );
-    const diameter = Math.max(1, farthestCorner * 2);
-
-    setSolveWave({
-      diameter,
-      originHeight: origin.height,
-      originLeft: origin.left,
-      originTop: origin.top,
-      originValue,
-      originWidth: origin.width,
-      startScale: Math.max(1, Math.min(origin.width, origin.height)) / diameter,
-      x,
-      y
+    setSuccessEffectOrigin({
+      height: origin.height,
+      left: origin.left,
+      top: origin.top,
+      value,
+      width: origin.width
     });
   }
 
@@ -167,24 +127,13 @@ export function ChallengeDetail({
       className="kitsune-challenge-detail flex h-full min-h-0 flex-col overflow-hidden bg-surface-raised"
       key={challenge.id}
     >
-      {solveWave
-        ? createPortal(
-            <div
-              aria-hidden
-              className="kitsune-solve-effect pointer-events-none fixed inset-0 z-celebration"
-              style={solveWaveStyle}
-            >
-              <span className="kitsune-solve-origin absolute flex items-center overflow-hidden whitespace-nowrap rounded-md border border-success-border bg-success-subtle px-3 font-mono text-base text-success-text">
-                {solveWave.originValue}
-              </span>
-              <span
-                className="kitsune-solve-wave absolute aspect-square rounded-full"
-                onAnimationEnd={() => setSolveWave(null)}
-              />
-            </div>,
-            document.body
-          )
-        : null}
+      {successEffectOrigin ? (
+        <ChallengeSuccessEffect
+          effect={flagSubmitSuccessEffect}
+          onComplete={() => setSuccessEffectOrigin(null)}
+          origin={successEffectOrigin}
+        />
+      ) : null}
       <header className="shrink-0 px-6 py-6">
         <div className="flex w-full items-start justify-between gap-6">
           <div className="grid min-w-0 gap-2">
@@ -391,7 +340,7 @@ export function ChallengeDetail({
             ) : (
               <ChallengeSubmission
                 challenge={resolvedChallenge}
-                onCorrectOrigin={startSolveWave}
+                onCorrectOrigin={startSuccessEffect}
                 onReceipt={handleReceipt}
                 submitAnswer={actions.submitAnswer}
               />
