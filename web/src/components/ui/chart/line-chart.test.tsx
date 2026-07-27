@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { LineChart } from './line-chart';
+import { formatChartTimestamp, LineChart } from './line-chart';
 import type { ChartSeries } from '@/lib/visualization/types';
 
 const series: ChartSeries<{ score: number }>[] = [
@@ -41,6 +41,10 @@ beforeEach(() => {
 });
 
 describe('LineChart', () => {
+  it('formats timestamps identically without a runtime locale dependency', () => {
+    expect(formatChartTimestamp(Date.parse('2026-07-23T10:00:00Z'))).toBe('23 Jul 2026, 10:00 UTC');
+  });
+
   it('exposes chart semantics, keyboard exploration and a data disclosure', () => {
     render(
       <LineChart

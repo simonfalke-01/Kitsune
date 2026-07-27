@@ -51,6 +51,38 @@ function toneClass(tone: number): (typeof lineToneClasses)[number] {
   return lineToneClasses[tone % lineToneClasses.length] ?? lineToneClasses[0];
 }
 
+const chartMonths = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec'
+] as const;
+const chartNumberFormatter = new Intl.NumberFormat('en-US');
+
+export function formatChartTimestamp(value: number): string {
+  const timestamp = new Date(value);
+
+  if (!Number.isFinite(timestamp.getTime())) {
+    return 'Unavailable';
+  }
+
+  const day = String(timestamp.getUTCDate()).padStart(2, '0');
+  const month = chartMonths[timestamp.getUTCMonth()] ?? 'Jan';
+  const year = timestamp.getUTCFullYear();
+  const hour = String(timestamp.getUTCHours()).padStart(2, '0');
+  const minute = String(timestamp.getUTCMinutes()).padStart(2, '0');
+
+  return `${day} ${month} ${year}, ${hour}:${minute} UTC`;
+}
+
 function subscribeToWideViewport(change: () => void): () => void {
   if (typeof window.matchMedia !== 'function') {
     return () => undefined;
@@ -99,8 +131,8 @@ export function LineChart<Metadata>({
   emptyTitle = 'No chart data',
   eventStart,
   formatTooltip,
-  formatXValue = (value) => new Date(value).toLocaleString(),
-  formatYValue = (value) => new Intl.NumberFormat().format(value),
+  formatXValue = formatChartTimestamp,
+  formatYValue = (value) => chartNumberFormatter.format(value),
   height = 'standard',
   interpolation = 'monotone',
   onActiveSeriesChange,
