@@ -111,7 +111,7 @@ describe('ChallengeWorkspace', () => {
     expect(screen.getByLabelText('0 of 1 Web challenges solved').parentElement).toHaveClass(
       'xl:col-span-7'
     );
-    expect(screen.getByLabelText('0 of 1 Web challenges solved').closest('li')).toHaveClass('py-1');
+    expect(screen.getByLabelText('0 of 1 Web challenges solved').closest('li')).toHaveClass('py-0');
     expect(
       within(screen.getByRole('region', { name: 'Your run' })).getAllByRole('link', {
         name: 'Open Shrine gate, 300 pts, 18 solves, Unsolved'
