@@ -47,7 +47,7 @@ export function TabsTab({ className, ...props }: TabProps) {
       {...props}
       className={cx(
         'shrink-0 border-b-2 border-transparent',
-        'px-3 py-3 text-sm font-medium text-text-muted outline-none',
+        'kitsune-optical-py-3 px-3 text-sm font-medium text-text-muted outline-none',
         'transition-colors duration-fast ease-out-quart',
         'hover:text-text',
         'selected:border-accent selected:text-text',

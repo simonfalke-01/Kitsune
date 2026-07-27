@@ -14,7 +14,14 @@ import {
 } from 'react-aria-components';
 
 import { Button } from './button';
-import { cx, fieldControl, fieldDescription, fieldError, fieldGroup, fieldLabel } from './styles';
+import {
+  cx,
+  fieldDescription,
+  fieldError,
+  fieldGroup,
+  fieldInputControl,
+  fieldLabel
+} from './styles';
 
 export interface PasswordFieldProps extends Omit<ReactAriaTextFieldProps, 'children' | 'type'> {
   description?: ReactNode;
@@ -41,7 +48,7 @@ export function PasswordField({
       <Label className={fieldLabel}>{label}</Label>
       <Group className="flex">
         <Input
-          className={cx(fieldControl, 'rounded-r-none')}
+          className={cx(fieldInputControl, 'rounded-r-none')}
           placeholder={placeholder}
           type={isVisible ? 'text' : 'password'}
         />

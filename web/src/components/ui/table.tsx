@@ -58,7 +58,7 @@ export function TableColumn({ className, ...props }: ColumnProps) {
       {...props}
       className={composeRenderProps(className, (resolvedClassName) =>
         cx(
-          'px-3 py-2 text-xs font-semibold tracking-wide text-text-muted',
+          'kitsune-optical-py-2 px-3 text-xs font-semibold tracking-wide text-text-muted',
           'outline-none',
           focusRing,
           resolvedClassName
@@ -139,7 +139,11 @@ export function TableCell({ className, ...props }: CellProps) {
     <ReactAriaCell
       {...props}
       className={composeRenderProps(className, (resolvedClassName) =>
-        cx('px-3 py-3 text-text tabular-nums outline-none', focusRing, resolvedClassName)
+        cx(
+          'kitsune-optical-py-3 px-3 text-text tabular-nums outline-none',
+          focusRing,
+          resolvedClassName
+        )
       )}
     />
   );

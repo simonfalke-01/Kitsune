@@ -38,7 +38,7 @@ export function TextArea({
     >
       <Label className={fieldLabel}>{label}</Label>
       <ReactAriaTextArea
-        className={cx(fieldControl, 'resize-y', textAreaClassName)}
+        className={cx(fieldControl, 'resize-y py-2', textAreaClassName)}
         placeholder={placeholder}
         rows={rows}
       />

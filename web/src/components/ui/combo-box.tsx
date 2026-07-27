@@ -19,10 +19,10 @@ import { Popover } from './popover';
 import {
   collectionItem,
   cx,
-  fieldControl,
   fieldDescription,
   fieldError,
   fieldGroup,
+  fieldInputControl,
   fieldLabel
 } from './styles';
 
@@ -61,7 +61,7 @@ export function ComboBox({
     >
       <Label className={fieldLabel}>{label}</Label>
       <Group className="flex">
-        <Input className={cx(fieldControl, 'rounded-r-none')} placeholder={placeholder} />
+        <Input className={cx(fieldInputControl, 'rounded-r-none')} placeholder={placeholder} />
         <Button
           aria-label="Open options"
           className="min-h-control rounded-l-none border-l-0"
@@ -82,7 +82,7 @@ export function ComboBox({
           className="grid gap-1 outline-none"
           items={options}
           renderEmptyState={() => (
-            <div className="px-3 py-2 text-sm text-text-muted">{emptyMessage}</div>
+            <div className="kitsune-optical-py-2 px-3 text-sm text-text-muted">{emptyMessage}</div>
           )}
         >
           {(option) => (

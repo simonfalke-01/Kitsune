@@ -14,10 +14,10 @@ import {
 
 import {
   cx,
-  fieldControl,
   fieldDescription,
   fieldError,
   fieldGroup,
+  fieldInputControl,
   fieldLabel,
   focusRing
 } from './styles';
@@ -55,7 +55,11 @@ export function SearchField({
           aria-hidden
           className="pointer-events-none absolute left-3 size-4 text-text-subtle"
         />
-        <Input className={cx(fieldControl, 'pl-8 pr-8')} placeholder={placeholder} ref={inputRef} />
+        <Input
+          className={cx(fieldInputControl, 'pl-8 pr-8')}
+          placeholder={placeholder}
+          ref={inputRef}
+        />
         <ReactAriaButton
           aria-label="Clear search"
           className={cx(

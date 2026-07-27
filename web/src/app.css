@@ -537,6 +537,36 @@
 }
 
 @layer components {
+  .kitsune-optical-center {
+    position: relative;
+    inset-block-start: var(--spacing-optical);
+  }
+
+  .kitsune-optical-py-1 {
+    padding-block-start: calc(var(--spacing) + var(--spacing-optical));
+    padding-block-end: calc(var(--spacing) - var(--spacing-optical));
+  }
+
+  .kitsune-optical-py-2 {
+    padding-block-start: calc(var(--spacing) * 2 + var(--spacing-optical));
+    padding-block-end: calc(var(--spacing) * 2 - var(--spacing-optical));
+  }
+
+  .kitsune-optical-py-3 {
+    padding-block-start: calc(var(--spacing) * 3 + var(--spacing-optical));
+    padding-block-end: calc(var(--spacing) * 3 - var(--spacing-optical));
+  }
+
+  .kitsune-optical-py-4 {
+    padding-block-start: calc(var(--spacing) * 4 + var(--spacing-optical));
+    padding-block-end: calc(var(--spacing) * 4 - var(--spacing-optical));
+  }
+
+  .kitsune-optical-py-6 {
+    padding-block-start: calc(var(--spacing) * 6 + var(--spacing-optical));
+    padding-block-end: calc(var(--spacing) * 6 - var(--spacing-optical));
+  }
+
   .kitsune-split-workspace {
     grid-template-columns: var(--split-workspace-left) minmax(0, 1fr);
   }

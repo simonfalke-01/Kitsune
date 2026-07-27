@@ -64,7 +64,9 @@ export function Select({
           className="grid gap-1 outline-none"
           items={options}
           renderEmptyState={() => (
-            <div className="px-3 py-2 text-sm text-text-muted">No options available</div>
+            <div className="kitsune-optical-py-2 px-3 text-sm text-text-muted">
+              No options available
+            </div>
           )}
         >
           {(option) => (

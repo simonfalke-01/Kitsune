@@ -22,7 +22,7 @@ export function Pagination({
 
   return (
     <nav aria-label={label} className="flex flex-wrap items-center justify-between gap-4 text-sm">
-      <span className="text-xs text-text-muted tabular-nums">
+      <span className="kitsune-optical-center text-xs text-text-muted tabular-nums">
         Page {currentPage} of {Math.max(1, totalPages)}
       </span>
       <div className="flex items-center gap-2">

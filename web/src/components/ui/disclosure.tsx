@@ -22,15 +22,15 @@ const disclosureGroupAppearances = {
 const disclosureDensities = {
   compact: {
     panel: 'p-0',
-    trigger: 'px-3 py-2 text-sm'
+    trigger: 'kitsune-optical-py-2 px-3 text-sm'
   },
   standard: {
     panel: 'px-4 pb-4 pr-12',
-    trigger: 'px-4 py-4 text-sm'
+    trigger: 'kitsune-optical-py-4 px-4 text-sm'
   },
   spacious: {
     panel: 'px-6 pb-6 pr-12',
-    trigger: 'px-6 py-6 text-base'
+    trigger: 'kitsune-optical-py-6 px-6 text-base'
   }
 } as const;
 

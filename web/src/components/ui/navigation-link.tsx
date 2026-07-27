@@ -30,7 +30,7 @@ export function NavigationLink({
         typeof className === 'string' ? className : undefined
       )}
     >
-      <span className="min-w-0 flex-1 truncate">{children}</span>
+      <span className="kitsune-optical-center min-w-0 flex-1 truncate">{children}</span>
     </ReactAriaLink>
   );
 }

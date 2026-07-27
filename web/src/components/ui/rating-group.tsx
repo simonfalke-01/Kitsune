@@ -66,7 +66,7 @@ export function RatingGroup({
             id={option}
             key={option}
           >
-            {option}
+            <span className="kitsune-optical-center">{option}</span>
           </ToggleButton>
         ))}
       </ToggleButtonGroup>

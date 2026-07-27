@@ -32,9 +32,9 @@ const buttonTones = {
 } as const;
 
 const buttonSizes = {
-  small: 'gap-1 px-3 py-1 text-sm',
-  medium: 'gap-2 px-4 py-2 text-sm',
-  large: 'gap-2 px-6 py-3 text-base',
+  small: 'kitsune-optical-py-1 gap-1 px-3 text-sm',
+  medium: 'kitsune-optical-py-2 gap-2 px-4 text-sm',
+  large: 'kitsune-optical-py-3 gap-2 px-6 text-base',
   icon: 'p-2'
 } as const;
 

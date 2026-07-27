@@ -310,13 +310,13 @@ export function LineChart<Metadata>({
             />
           </svg>
           <span
-            className={`min-w-0 flex-1 truncate ${
+            className={`kitsune-optical-center min-w-0 flex-1 truncate ${
               entry.isEmphasized ? 'font-semibold text-text' : 'text-text-muted'
             }`}
           >
             {entry.label}
           </span>
-          <span className="shrink-0 tabular-nums text-text-muted">
+          <span className="kitsune-optical-center shrink-0 tabular-nums text-text-muted">
             {formatYValue(entry.points.at(-1)?.y ?? 0)}
           </span>
         </li>
@@ -465,7 +465,7 @@ export function LineChart<Metadata>({
               x={tooltipPosition.x}
               y={tooltipPosition.y}
             >
-              <div className="grid h-full content-center gap-1 rounded-md border border-chart-tooltip-border bg-chart-tooltip px-3 py-1 text-sm text-text shadow-md">
+              <div className="kitsune-optical-py-1 grid h-full content-center gap-1 rounded-md border border-chart-tooltip-border bg-chart-tooltip px-3 text-sm text-text shadow-md">
                 {formatTooltip ? (
                   formatTooltip(selectedPoint)
                 ) : (

@@ -26,7 +26,7 @@ export const fieldDescription = 'text-sm text-text-muted';
 export const fieldError = 'text-sm font-medium text-danger-text';
 
 export const fieldControl = cx(
-  'min-h-control w-full rounded-md border border-border-subtle bg-surface-raised px-3 py-2',
+  'min-h-control w-full rounded-md border border-border-subtle bg-surface-raised px-3',
   'text-base text-text outline-none',
   'transition-colors duration-fast ease-out-quart',
   'hover:border-border',
@@ -37,6 +37,8 @@ export const fieldControl = cx(
   'disabled:text-text-subtle'
 );
 
+export const fieldInputControl = cx(fieldControl, 'kitsune-optical-py-2');
+
 export const overlaySurface = cx(
   'rounded-lg border border-border-subtle bg-surface-raised p-1 shadow-lg',
   'entering:translate-y-1 entering:opacity-0',
@@ -45,7 +47,7 @@ export const overlaySurface = cx(
 );
 
 export const collectionItem = cx(
-  'flex cursor-default items-center gap-2 rounded-md px-3 py-2',
+  'kitsune-optical-py-2 flex cursor-default items-center gap-2 rounded-md px-3',
   'text-sm text-text outline-none',
   'transition-colors duration-fast ease-out-quart',
   'hover:bg-surface-hover focused:bg-surface-hover',

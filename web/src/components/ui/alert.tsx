@@ -61,7 +61,9 @@ export function Alert({
       role={tone === 'danger' ? 'alert' : 'status'}
     >
       <Icon aria-hidden className={cx('size-4 shrink-0', description ? 'mt-1' : null)} />
-      <div className="grid min-w-0 flex-1 gap-1">
+      <div
+        className={cx('grid min-w-0 flex-1 gap-1', description ? null : 'kitsune-optical-center')}
+      >
         <strong className="text-sm font-semibold">{title}</strong>
         {description ? <div className="text-sm text-text-muted">{description}</div> : null}
       </div>

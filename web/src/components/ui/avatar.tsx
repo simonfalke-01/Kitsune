@@ -48,7 +48,7 @@ export function Avatar({ className, name, size = 'medium', tone = 'blue' }: Avat
 
   return (
     <span aria-hidden className={classes}>
-      {initials(name)}
+      <span className="kitsune-optical-center">{initials(name)}</span>
     </span>
   );
 }

@@ -65,7 +65,7 @@ function FieldWave({
       style={style}
     >
       <span className="kitsune-solve-origin absolute flex items-center overflow-hidden whitespace-nowrap rounded-md border px-3 font-mono text-base">
-        {origin.value}
+        <span className="kitsune-optical-center">{origin.value}</span>
       </span>
       <span
         className="kitsune-solve-wave absolute aspect-square rounded-full"

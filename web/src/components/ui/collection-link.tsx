@@ -6,8 +6,8 @@ import { Link as ReactAriaLink, type LinkProps as ReactAriaLinkProps } from 'rea
 import { cx, focusRing } from './styles';
 
 const collectionLinkAppearances = {
-  challenge: 'min-h-control rounded-none px-3 py-3',
-  row: 'min-h-control rounded-md px-3 py-3',
+  challenge: 'kitsune-optical-py-3 min-h-control rounded-none px-3',
+  row: 'kitsune-optical-py-3 min-h-control rounded-md px-3',
   tile: 'h-full min-h-control rounded-lg border border-border-subtle bg-surface-raised p-4 shadow-sm hover:border-border'
 } as const;
 

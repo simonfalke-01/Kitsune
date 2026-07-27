@@ -25,12 +25,12 @@ export function Breadcrumbs({ items, label = 'Breadcrumbs' }: BreadcrumbsProps) 
               {index > 0 ? <ChevronRight aria-hidden className="size-3 text-text-subtle" /> : null}
               {item.href && !isCurrent ? (
                 <Link href={item.href} tone="muted">
-                  {item.label}
+                  <span className="kitsune-optical-center">{item.label}</span>
                 </Link>
               ) : (
                 <span
                   aria-current={isCurrent ? 'page' : undefined}
-                  className="font-medium text-text"
+                  className="kitsune-optical-center font-medium text-text"
                 >
                   {item.label}
                 </span>

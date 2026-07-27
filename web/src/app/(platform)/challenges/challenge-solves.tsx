@@ -71,7 +71,7 @@ function SolveRow({ entry, isPinned = false }: SolveRowProps) {
       <span className="flex shrink-0 items-center gap-4">
         <strong
           className={cx(
-            'w-8 text-right text-sm font-semibold tabular-nums text-text-muted',
+            'kitsune-optical-center w-8 text-right text-sm font-semibold tabular-nums text-text-muted',
             entryPlacement ? placementTextClasses[entryPlacement] : null,
             entry.isSelf ? 'text-accent-text' : null
           )}
@@ -80,7 +80,7 @@ function SolveRow({ entry, isPinned = false }: SolveRowProps) {
         </strong>
         <Avatar name={entry.competitorName} size="small" tone={avatarTone(entry.competitorId)} />
       </span>
-      <div className="grid min-w-0 flex-1 gap-1">
+      <div className="kitsune-optical-center grid min-w-0 flex-1 gap-1">
         <strong
           className={cx(
             'truncate text-base font-medium text-text',
@@ -94,7 +94,7 @@ function SolveRow({ entry, isPinned = false }: SolveRowProps) {
           {entry.isSelf ? 'You' : `#${entry.globalRank} overall`}
         </span>
       </div>
-      <div className="grid shrink-0 justify-items-end gap-1 text-right tabular-nums">
+      <div className="kitsune-optical-center grid shrink-0 justify-items-end gap-1 text-right tabular-nums">
         <strong className="text-sm font-medium text-text">{formatSolveDelta(entry.deltaMs)}</strong>
         <span className="text-xs text-text-muted">{formatSolveTimestamp(entry.solvedAt)}</span>
       </div>
@@ -173,7 +173,7 @@ export function ChallengeSolveStrip({ context }: ChallengeSolveStripProps) {
             >
               <span
                 className={cx(
-                  'flex shrink-0 items-center gap-1 text-xs font-semibold',
+                  'kitsune-optical-center flex shrink-0 items-center gap-1 text-xs font-semibold',
                   placementTextClasses[entryPlacement]
                 )}
               >
@@ -192,18 +192,18 @@ export function ChallengeSolveStrip({ context }: ChallengeSolveStripProps) {
                 ) : (
                   <span aria-hidden className="size-8 shrink-0" />
                 )}
-                <strong className="truncate text-sm font-medium text-text">
+                <strong className="kitsune-optical-center truncate text-sm font-medium text-text">
                   {entry?.competitorName ?? 'Open'}
                 </strong>
               </span>
-              <span className="shrink-0 text-right text-xs tabular-nums text-text-muted">
+              <span className="kitsune-optical-center shrink-0 text-right text-xs tabular-nums text-text-muted">
                 {entry ? formatSolveDelta(entry.deltaMs) : 'No solve'}
               </span>
             </li>
           );
         })}
         <li className="flex min-h-control min-w-0 items-center gap-3 border-l-2 border-accent bg-accent-subtle px-3 py-2 text-accent-text">
-          <span className="flex shrink-0 items-center gap-1 text-xs font-semibold">
+          <span className="kitsune-optical-center flex shrink-0 items-center gap-1 text-xs font-semibold">
             {context.selfEntry ? <Check aria-hidden className="size-3" /> : null}
             {context.selfEntry ? ordinal(context.selfEntry.rank) : 'You'}
           </span>
@@ -213,11 +213,11 @@ export function ChallengeSolveStrip({ context }: ChallengeSolveStripProps) {
               size="small"
               tone={avatarTone(context.currentCompetitor.id)}
             />
-            <strong className="truncate text-sm font-medium">
+            <strong className="kitsune-optical-center truncate text-sm font-medium">
               {context.currentCompetitor.name}
             </strong>
           </span>
-          <span className="shrink-0 text-right text-xs tabular-nums">
+          <span className="kitsune-optical-center shrink-0 text-right text-xs tabular-nums">
             {context.selfEntry ? formatSolveDelta(context.selfEntry.deltaMs) : 'Unsolved'}
           </span>
         </li>
@@ -244,7 +244,7 @@ export function ChallengeSolvedSummary({
           isFirstBlood ? 'text-first-blood-text' : 'text-success-text'
         )}
       >
-        <span className="inline-flex items-center gap-2 text-base font-medium">
+        <span className="kitsune-optical-center inline-flex items-center gap-2 text-base font-medium">
           Challenge solved
           {isFirstBlood ? (
             <Trophy aria-hidden className="size-4 -translate-y-optical" />

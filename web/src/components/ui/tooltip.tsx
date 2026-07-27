@@ -18,7 +18,7 @@ export function Tooltip({ className, ...props }: TooltipProps) {
       {...props}
       className={cx(
         'max-w-prose rounded-md border border-border-subtle',
-        'bg-surface-raised px-3 py-2 text-sm text-text shadow-md',
+        'kitsune-optical-py-2 bg-surface-raised px-3 text-sm text-text shadow-md',
         'entering:translate-y-1 entering:opacity-0',
         'exiting:translate-y-1 exiting:opacity-0',
         'transition duration-fast ease-out-quart',

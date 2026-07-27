@@ -42,7 +42,7 @@ export function Menu({
         )}
         items={options}
         renderEmptyState={() => (
-          <div className="px-3 py-2 text-sm text-text-muted">{emptyMessage}</div>
+          <div className="kitsune-optical-py-2 px-3 text-sm text-text-muted">{emptyMessage}</div>
         )}
       >
         {(option) => (

@@ -10,7 +10,14 @@ import {
   type TextFieldProps as ReactAriaTextFieldProps
 } from 'react-aria-components';
 
-import { cx, fieldControl, fieldDescription, fieldError, fieldGroup, fieldLabel } from './styles';
+import {
+  cx,
+  fieldDescription,
+  fieldError,
+  fieldGroup,
+  fieldInputControl,
+  fieldLabel
+} from './styles';
 
 export interface TextFieldProps extends Omit<ReactAriaTextFieldProps, 'children'> {
   description?: ReactNode;
@@ -37,7 +44,7 @@ export function TextField({
       className={cx(fieldGroup, typeof className === 'string' ? className : undefined)}
     >
       <Label className={labelHidden ? 'sr-only' : fieldLabel}>{label}</Label>
-      <Input className={cx(fieldControl, inputClassName)} placeholder={placeholder} />
+      <Input className={cx(fieldInputControl, inputClassName)} placeholder={placeholder} />
       {description ? (
         <Text className={fieldDescription} slot="description">
           {description}

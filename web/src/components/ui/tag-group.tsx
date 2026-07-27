@@ -55,7 +55,7 @@ export function TagGroup({
           <Tag
             className={cx(
               'inline-flex items-center gap-1 rounded-md border border-border-subtle',
-              'bg-surface-sunken px-2 py-1 text-sm text-text outline-none',
+              'kitsune-optical-py-1 bg-surface-sunken px-2 text-sm text-text outline-none',
               'selected:border-accent-border selected:bg-accent-subtle',
               focusRing
             )}

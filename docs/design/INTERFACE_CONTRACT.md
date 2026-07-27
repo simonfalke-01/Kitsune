@@ -118,6 +118,10 @@ reusable failure mode, add the general rule here before closing the issue.
 - Related information sits horizontally when space allows.
 - Parallel siblings align and use equal height. Unrelated or intrinsically
   sized states must not stretch merely because they share a grid row.
+- Vertically centered interface text uses the shared optical-offset token, not
+  mathematically symmetric padding. Preserve the component's total height by
+  adding the offset above the line and subtracting it below; prose and
+  multi-line reading surfaces retain symmetric leading and padding.
 - Put status, totals, freshness, filters, and actions beside the object or
   collection they describe.
 - Compact cards keep short status or category tags on the title row with

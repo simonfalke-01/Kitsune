@@ -84,7 +84,7 @@ export function AppShell({ children }: AppShellProps) {
             href="/event"
             tone="current"
           >
-            Kitsune
+            <span className="kitsune-optical-center">Kitsune</span>
           </Link>
           <nav aria-label="Player" className="hidden items-center gap-1 md:flex">
             {playerNavigation.map((item) => (

@@ -29,7 +29,7 @@ export function StatusIndicator({
         aria-hidden
         className={cx('size-2 shrink-0 rounded-full', variantClass(statusTones, tone))}
       />
-      <span>{label}</span>
+      <span className="kitsune-optical-center">{label}</span>
     </span>
   );
 }

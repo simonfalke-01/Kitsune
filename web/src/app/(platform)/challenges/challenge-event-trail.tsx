@@ -24,7 +24,7 @@ export function ChallengeEventTrail({
       className="shrink-0 overflow-hidden rounded-md bg-surface-raised"
     >
       <div className="flex min-h-16 items-center gap-6 px-4">
-        <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-6 gap-y-1">
+        <div className="kitsune-optical-center flex min-w-0 flex-1 flex-wrap items-baseline gap-x-6 gap-y-1">
           <h1 className="m-0 shrink-0 truncate font-display text-lg font-semibold tracking-tight text-text">
             {eventName}
           </h1>
@@ -49,7 +49,7 @@ export function ChallengeEventTrail({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-3">
-          <span className="hidden text-right text-sm tabular-nums text-text-muted sm:block">
+          <span className="kitsune-optical-center hidden text-right text-sm tabular-nums text-text-muted sm:block">
             Rank <strong className="font-semibold text-text">{standing.rank}</strong> /{' '}
             {standing.totalCompetitors}
           </span>

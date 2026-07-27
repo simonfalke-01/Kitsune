@@ -13,7 +13,14 @@ import {
 } from 'react-aria-components';
 
 import { Button } from './button';
-import { cx, fieldControl, fieldDescription, fieldError, fieldGroup, fieldLabel } from './styles';
+import {
+  cx,
+  fieldDescription,
+  fieldError,
+  fieldGroup,
+  fieldInputControl,
+  fieldLabel
+} from './styles';
 
 export interface NumberFieldProps extends Omit<ReactAriaNumberFieldProps, 'children'> {
   description?: ReactNode;
@@ -45,7 +52,7 @@ export function NumberField({
           <Minus aria-hidden className="size-4" />
         </Button>
         <Input
-          className={cx(fieldControl, 'rounded-none border-x-0 text-center tabular-nums')}
+          className={cx(fieldInputControl, 'rounded-none border-x-0 text-center tabular-nums')}
           suppressHydrationWarning
         />
         <Button

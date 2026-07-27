@@ -22,7 +22,7 @@ export function Badge({ className, tone = 'neutral', ...props }: BadgeProps) {
     <span
       {...props}
       className={cx(
-        'inline-flex w-fit items-center gap-1 rounded-sm border px-2 py-1',
+        'kitsune-optical-py-1 inline-flex w-fit items-center gap-1 rounded-sm border px-2',
         'text-xs font-medium',
         variantClass(badgeTones, tone),
         className
