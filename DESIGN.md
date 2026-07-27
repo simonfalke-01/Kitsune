@@ -242,8 +242,9 @@ without losing competition context.
 
 ## 9. Typography and copy
 
-- Suisse Intl carries interface, body, and restrained display hierarchy.
-  Suisse Intl Mono is reserved for flags, code, commands, and logs.
+- Instrument Sans carries interface and body text. Archivo carries restrained
+  display hierarchy. JetBrains Mono is reserved for flags, code, commands, and
+  logs.
 - Use no more than four type sizes and three weights on one screen.
 - Tabular figures are mandatory for aligned and changing numbers.
 - Body copy is left aligned and held to a readable measure.

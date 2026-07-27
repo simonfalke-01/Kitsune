@@ -27,20 +27,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link
-          as="font"
-          crossOrigin="anonymous"
-          href="/fonts/suisse-intl-regular.otf"
-          rel="preload"
-          type="font/otf"
-        />
-        <link
-          as="font"
-          crossOrigin="anonymous"
-          href="/fonts/suisse-intl-semibold.otf"
-          rel="preload"
-          type="font/otf"
-        />
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
         <script dangerouslySetInnerHTML={{ __html: splitWorkspaceBootstrapScript }} />
       </head>
