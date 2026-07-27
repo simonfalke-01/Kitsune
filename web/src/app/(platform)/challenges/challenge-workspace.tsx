@@ -8,6 +8,7 @@ import {
   type ChallengeAttemptActorStub,
   type ChallengeAttemptHistory
 } from './challenge-attempt-stub';
+import { ChallengeCollapsedRail } from './challenge-collapsed-rail';
 import { ChallengeCollection } from './challenge-collection';
 import { ChallengeDetail } from './challenge-detail';
 import { ChallengeEventTrail } from './challenge-event-trail';
@@ -174,6 +175,7 @@ export function ChallengeWorkspace({
   }
   const collectionScrollRef = useRef<HTMLDivElement>(null);
   const collectionScrollTimerRef = useRef<number | null>(null);
+  const collapsedRailRef = useRef<HTMLElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const splitWorkspaceRef = useRef<SplitWorkspaceHandle>(null);
   const restoreSelectionFocusRef = useRef(false);
@@ -231,6 +233,37 @@ export function ChallengeWorkspace({
       searchInputRef.current?.blur();
     }
   }, [selectedChallenge?.id, visibleChallengeRows]);
+  const restoreChallengeList = useCallback(
+    (category?: string) => {
+      setFocusedChallengeId(null);
+      window.requestAnimationFrame(() => {
+        if (!category) {
+          const selectedRow = visibleChallengeRows().find(
+            (row) => row.dataset.challengeId === selectedChallenge?.id
+          );
+          selectedRow?.focus();
+          return;
+        }
+
+        const categoryDisclosure = Array.from(
+          collectionScrollRef.current?.querySelectorAll<HTMLElement>('[data-challenge-category]') ??
+            []
+        ).find((candidate) => candidate.dataset.challengeCategory === category);
+        categoryDisclosure?.querySelector<HTMLElement>('button')?.focus();
+      });
+    },
+    [selectedChallenge?.id, visibleChallengeRows]
+  );
+  const collapseChallengeList = useCallback(() => {
+    if (!selectedChallenge) {
+      return;
+    }
+
+    setFocusedChallengeId(selectedChallenge.id);
+    window.requestAnimationFrame(() => {
+      collapsedRailRef.current?.querySelector<HTMLElement>('button')?.focus();
+    });
+  }, [selectedChallenge]);
 
   useEffect(() => {
     const scrollOwner = collectionScrollRef.current;
@@ -277,22 +310,32 @@ export function ChallengeWorkspace({
     onClearSelection();
   }
 
-  function selectChallenge(challengeId: string, trigger: HTMLElement) {
-    const challenge = displayedChallenges.find((candidate) => candidate.id === challengeId);
-    const tab = availableTab(
-      challenge,
-      workspaceMemory.challenges[challengeId]?.tab ?? 'details',
-      actions
-    );
-    selectionTriggerRef.current = trigger;
-    setImmediateSelection({
-      current: challengeId,
-      source: selectedChallengeId,
-      sourceTab: selectedChallengeTab,
-      tab
-    });
-    onSelectChallenge?.(challengeId, tab);
-  }
+  const selectChallenge = useCallback(
+    (challengeId: string, trigger: HTMLElement) => {
+      const challenge = displayedChallenges.find((candidate) => candidate.id === challengeId);
+      const tab = availableTab(
+        challenge,
+        workspaceMemory.challenges[challengeId]?.tab ?? 'details',
+        actions
+      );
+      selectionTriggerRef.current = trigger;
+      setImmediateSelection({
+        current: challengeId,
+        source: selectedChallengeId,
+        sourceTab: selectedChallengeTab,
+        tab
+      });
+      onSelectChallenge?.(challengeId, tab);
+    },
+    [
+      actions,
+      displayedChallenges,
+      onSelectChallenge,
+      selectedChallengeId,
+      selectedChallengeTab,
+      workspaceMemory.challenges
+    ]
+  );
 
   const selectTab = useCallback(
     (tab: ChallengeDetailTab) => {
@@ -323,7 +366,7 @@ export function ChallengeWorkspace({
   }
 
   useEffect(() => {
-    function focusChallengeRow(direction: 1 | -1) {
+    function moveChallengeSelection(direction: 1 | -1) {
       const rows = visibleChallengeRows();
 
       if (rows.length === 0) {
@@ -334,19 +377,28 @@ export function ChallengeWorkspace({
       const activeIndex = rows.findIndex(
         (row) => row === activeElement || (activeElement && row.contains(activeElement))
       );
+      const selectedIndex = rows.findIndex(
+        (row) => row.dataset.challengeId === selectedChallenge?.id
+      );
+      const currentIndex = activeIndex >= 0 ? activeIndex : selectedIndex;
       const nextIndex =
-        activeIndex < 0
+        currentIndex < 0
           ? direction > 0
             ? 0
             : rows.length - 1
-          : Math.min(Math.max(activeIndex + direction, 0), rows.length - 1);
+          : Math.min(Math.max(currentIndex + direction, 0), rows.length - 1);
       const nextRow = rows[nextIndex];
+      const nextChallengeId = nextRow?.dataset.challengeId;
 
-      if (!nextRow) {
+      if (!nextRow || !nextChallengeId) {
         return;
       }
 
       nextRow.focus();
+
+      if (nextChallengeId !== selectedChallenge?.id) {
+        selectChallenge(nextChallengeId, nextRow);
+      }
     }
 
     function handleWorkspaceShortcut(event: globalThis.KeyboardEvent) {
@@ -362,7 +414,7 @@ export function ChallengeWorkspace({
 
       if (event.key === 'Escape' && isFocusModeActive && !hasOpenOverlay) {
         event.preventDefault();
-        setFocusedChallengeId(null);
+        restoreChallengeList();
         return;
       }
 
@@ -389,7 +441,7 @@ export function ChallengeWorkspace({
 
       if (!isFocusModeActive && (key === 'j' || key === 'k')) {
         event.preventDefault();
-        focusChallengeRow(key === 'j' ? 1 : -1);
+        moveChallengeSelection(key === 'j' ? 1 : -1);
         return;
       }
 
@@ -401,9 +453,11 @@ export function ChallengeWorkspace({
 
       if (isDesktop && selectedChallenge && key === 'f') {
         event.preventDefault();
-        setFocusedChallengeId((current) =>
-          current === selectedChallenge.id ? null : selectedChallenge.id
-        );
+        if (isFocusModeActive) {
+          restoreChallengeList();
+        } else {
+          collapseChallengeList();
+        }
         return;
       }
 
@@ -427,8 +481,11 @@ export function ChallengeWorkspace({
     };
   }, [
     exitChallengeSearch,
+    collapseChallengeList,
     isDesktop,
     isFocusModeActive,
+    restoreChallengeList,
+    selectChallenge,
     selectTab,
     selectedChallenge,
     visibleChallengeRows
@@ -467,13 +524,7 @@ export function ChallengeWorkspace({
         );
         return getChallengeHref?.(challengeId, tab);
       }}
-      onCollapseChallengeList={
-        isDesktop && selectedChallenge
-          ? () => {
-              setFocusedChallengeId(selectedChallenge.id);
-            }
-          : undefined
-      }
+      onCollapseChallengeList={isDesktop && selectedChallenge ? collapseChallengeList : undefined}
       onExitSearch={exitChallengeSearch}
       onSelectChallenge={(challengeId, trigger) => {
         selectChallenge(challengeId, trigger);
@@ -525,13 +576,8 @@ export function ChallengeWorkspace({
       <ChallengeEventTrail
         challenges={displayedChallenges}
         eventName={eventName}
-        isChallengeListCollapsed={isFocusModeActive}
         isShortcutHelpOpen={isShortcutHelpOpen}
-        onExpandChallengeList={() => {
-          setFocusedChallengeId(null);
-        }}
         onShortcutHelpOpenChange={setIsShortcutHelpOpen}
-        selectedChallenge={selectedChallenge}
         standing={standing}
       />
       {isDesktop ? (
@@ -539,6 +585,19 @@ export function ChallengeWorkspace({
           <SplitWorkspace
             appearance="workspace"
             ariaLabel="Challenge list width"
+            collapsedLeft={
+              <ChallengeCollapsedRail
+                challenges={displayedChallenges}
+                onOpenCategory={(category) => {
+                  restoreChallengeList(category);
+                }}
+                onShowChallengeList={() => {
+                  restoreChallengeList();
+                }}
+                railRef={collapsedRailRef}
+                selectedChallengeId={selectedChallenge?.id ?? null}
+              />
+            }
             defaultValue={34}
             left={collection}
             isLeftCollapsed={isFocusModeActive}

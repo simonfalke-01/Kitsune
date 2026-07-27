@@ -199,6 +199,9 @@ without losing competition context.
   placement.
 - Category colour appears as an index: icon, label, narrow rail, or progress
   segment. It does not become a saturated full-width challenge slab.
+- One compact solved-and-points line sits above search. It reports collection
+  progress without repeating the selected category or challenge name already
+  visible in the list and detail.
 - Search is immediate and local. Filtering never loses the selected challenge
   without explaining the state.
 
@@ -213,23 +216,30 @@ without losing competition context.
   per-tab detail position within the current event. Returning to prior work
   must restore context without moving a different event's workspace.
 - Keyboard accelerators shorten repeat work without replacing visible paths.
-  Slash focuses search; J and K move focus without selecting; Enter follows
-  the focused challenge; D, S, and H choose detail sections; brackets resize
-  the collection. Text entry and open overlays suspend workspace shortcuts.
+  Slash focuses search; J and K move the actual challenge selection and detail
+  together; Enter follows the focused challenge; D, S, and H choose detail
+  sections; brackets resize the collection. Text entry and open overlays
+  suspend workspace shortcuts.
 - Escape leaves challenge search and returns focus to the selected visible row
-  when one exists. J and K then continue from that row without selecting it;
-  trapped search focus is a keyboard-navigation defect.
+  when one exists. J and K then continue selection from that row; trapped
+  search focus or focus-only movement is a keyboard-navigation defect.
 - Keep one stable shortcut reference in the event trail. Do not scatter key
   badges beside controls or make memorized commands a prerequisite.
 - On the challenge route, global navigation and event state share one header.
   The event progress rail forms that header's lower edge; do not stack a
   second navigation bar above the event trail or duplicate either context.
-- Focus mode temporarily removes the collection from the visual field while
+- Focus mode reduces the collection to one narrow navigation rail while
   preserving its mounted state, split preference, scroll position, selected
-  tab, and in-progress answer. It is never restored after a reload. A visible
-  collection-toolbar control collapses it; the merged header exposes the
-  inverse control while collapsed. F and overlay-aware Escape remain
-  accelerators, never the only way back.
+  tab, and in-progress answer. The rail keeps the restore action, category
+  identity, solved ratios, and current category visible without competing with
+  the detail. It is never restored after a reload. A visible collection-toolbar
+  control collapses it; the rail owns the inverse control. F and overlay-aware
+  Escape remain accelerators, never the only way back.
+- Collapsing and restoring the collection use one short spatial transition.
+  The pane track moves continuously while mounted list and rail content trade
+  places through restrained opacity and position changes. The transition is
+  interruptible, never runs during pointer resizing, and resolves immediately
+  under reduced motion.
 - Shared attempt history stays beside flag entry as one compact team summary.
   Its detail view is an aligned ledger of submitted value, teammate, outcome,
   and absolute time. It remains available after a solve, adds each receipt in

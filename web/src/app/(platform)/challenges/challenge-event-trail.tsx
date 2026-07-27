@@ -1,6 +1,5 @@
-import { Keyboard, PanelLeftOpen } from 'lucide-react';
+import { Keyboard } from 'lucide-react';
 
-import { ChallengeCategoryLabel } from './challenge-category';
 import type { ChallengeEventStandingStub } from './challenge-solve-stub';
 import { AppHeader } from '@/components/layout/app-shell';
 import {
@@ -17,17 +16,14 @@ import { challengeProgress, type ChallengeExperience } from '@/lib/challenges';
 interface ChallengeEventTrailProps {
   challenges: ChallengeExperience[];
   eventName: string;
-  isChallengeListCollapsed: boolean;
   isShortcutHelpOpen: boolean;
-  onExpandChallengeList: () => void;
   onShortcutHelpOpenChange: (open: boolean) => void;
-  selectedChallenge?: ChallengeExperience | null;
   standing: ChallengeEventStandingStub;
 }
 
 const challengeShortcuts = [
   { keys: ['/'], label: 'Search challenges' },
-  { keys: ['J', 'K'], label: 'Move through challenges' },
+  { keys: ['J', 'K'], label: 'Move challenge selection' },
   { keys: ['Enter'], label: 'Open focused challenge' },
   { keys: ['D'], label: 'Open details' },
   { keys: ['S'], label: 'Open solves' },
@@ -40,11 +36,8 @@ const challengeShortcuts = [
 export function ChallengeEventTrail({
   challenges,
   eventName,
-  isChallengeListCollapsed,
   isShortcutHelpOpen,
-  onExpandChallengeList,
   onShortcutHelpOpenChange,
-  selectedChallenge,
   standing
 }: ChallengeEventTrailProps) {
   const progress = challengeProgress(challenges);
@@ -62,42 +55,7 @@ export function ChallengeEventTrail({
         />
       }
     >
-      <section aria-label="Event progress" className="flex min-w-0 items-center gap-6">
-        {isChallengeListCollapsed ? (
-          <TooltipTrigger>
-            <Button
-              aria-label="Show challenge list"
-              className="size-control shrink-0"
-              onPress={onExpandChallengeList}
-              size="icon"
-              tone="quiet"
-            >
-              <PanelLeftOpen aria-hidden className="size-4" />
-            </Button>
-            <Tooltip>Show challenge list</Tooltip>
-          </TooltipTrigger>
-        ) : null}
-        <div className="kitsune-optical-center flex min-w-0 flex-1 items-baseline gap-6">
-          {selectedChallenge ? (
-            <div className="hidden min-w-0 items-baseline gap-2 text-sm 2xl:flex">
-              <ChallengeCategoryLabel category={selectedChallenge.category} showIcon={false} />
-              <span className="text-text-subtle">/</span>
-              <strong className="truncate font-medium text-text">{selectedChallenge.name}</strong>
-            </div>
-          ) : null}
-          <div className="hidden shrink-0 items-baseline gap-6 text-sm tabular-nums text-text-muted lg:flex">
-            <span>
-              <strong className="font-semibold text-text">{progress.solved}</strong> /{' '}
-              {progress.total} solved
-            </span>
-            <span>
-              <strong className="font-semibold text-text">
-                {progress.earnedPoints.toLocaleString()}
-              </strong>{' '}
-              / {progress.availablePoints.toLocaleString()} pts
-            </span>
-          </div>
-        </div>
+      <section aria-label="Event progress" className="flex min-w-0 items-center justify-end gap-6">
         <div className="flex shrink-0 items-center gap-6">
           <div className="hidden items-center gap-3 xl:flex">
             <span className="kitsune-optical-center hidden text-right text-sm tabular-nums text-text-muted 2xl:block">

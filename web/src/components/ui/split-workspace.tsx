@@ -83,15 +83,23 @@ interface UncontrolledSplitState {
 interface ScrollPaneProps {
   children: ReactNode;
   className?: string;
+  isScrollable?: boolean;
   onScroll?: UIEventHandler<HTMLDivElement>;
   scrollRef?: RefObject<HTMLDivElement | null>;
 }
 
-function ScrollPane({ children, className, onScroll, scrollRef }: ScrollPaneProps) {
+function ScrollPane({
+  children,
+  className,
+  isScrollable = true,
+  onScroll,
+  scrollRef
+}: ScrollPaneProps) {
   return (
     <div
       className={cx(
-        'kitsune-scroll-region min-h-0 min-w-0 overflow-y-auto overscroll-contain',
+        'kitsune-scroll-region relative min-h-0 min-w-0',
+        isScrollable ? 'overflow-y-auto overscroll-contain' : 'overflow-hidden',
         className
       )}
       onScroll={onScroll}
@@ -106,6 +114,7 @@ export interface SplitWorkspaceProps {
   appearance?: keyof typeof splitWorkspaceAppearances;
   ariaLabel: string;
   className?: string;
+  collapsedLeft?: ReactNode;
   defaultValue?: number;
   isLeftCollapsed?: boolean;
   left: ReactNode;
@@ -128,6 +137,7 @@ export function SplitWorkspace({
   appearance = 'contained',
   ariaLabel,
   className,
+  collapsedLeft,
   defaultValue = 40,
   isLeftCollapsed = false,
   left,
@@ -183,7 +193,7 @@ export function SplitWorkspace({
       ? `clamp(${minimum}%, var(${preferenceProperty}, ${initialUncontrolledValue}%), ${maximum}%)`
       : `${resolvedValue}%`;
   const style: SplitWorkspaceStyle = {
-    '--split-workspace-left': isLeftCollapsed ? '0%' : styleValue
+    '--split-workspace-left': isLeftCollapsed ? 'var(--spacing-collapsed-rail)' : styleValue
   };
 
   useEffect(() => {
@@ -256,11 +266,28 @@ export function SplitWorkspace({
         splitWorkspaceAppearances[appearance],
         className
       )}
+      data-collapsed={isLeftCollapsed ? 'true' : 'false'}
+      data-resizing={isDragging || undefined}
       ref={workspaceRef}
       style={style}
     >
-      <ScrollPane onScroll={onLeftScroll} scrollRef={leftScrollRef}>
-        {left}
+      <ScrollPane isScrollable={!isLeftCollapsed} onScroll={onLeftScroll} scrollRef={leftScrollRef}>
+        <div
+          aria-hidden={isLeftCollapsed || undefined}
+          className="kitsune-split-expanded-pane min-h-full"
+          inert={isLeftCollapsed || undefined}
+        >
+          {left}
+        </div>
+        {collapsedLeft ? (
+          <div
+            aria-hidden={!isLeftCollapsed || undefined}
+            className="kitsune-split-collapsed-pane absolute inset-0"
+            inert={!isLeftCollapsed || undefined}
+          >
+            {collapsedLeft}
+          </div>
+        ) : null}
       </ScrollPane>
       <div className="min-h-0 min-w-0 overflow-hidden">{right}</div>
       {!isLeftCollapsed ? (

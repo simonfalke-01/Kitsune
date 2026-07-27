@@ -264,10 +264,8 @@ export function ChallengeDetail({
         }}
         selectedKey={selectedTab}
       >
-        <TabsList aria-label="Challenge sections" className="shrink-0 border-b-0 px-6">
-          <TabsTab className="first:pl-0" id="details">
-            Details
-          </TabsTab>
+        <TabsList aria-label="Challenge sections" className="shrink-0 border-b-0 px-3">
+          <TabsTab id="details">Details</TabsTab>
           <TabsTab id="solves">Solves {solveContext.totalSolves.toLocaleString()}</TabsTab>
           <TabsTab id="hints">Hints</TabsTab>
           {isSolved && challenge.writeups_enabled && actions.loadWriteup && actions.saveWriteup ? (

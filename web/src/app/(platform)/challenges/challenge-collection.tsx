@@ -21,6 +21,7 @@ import {
 } from '@/components/ui';
 import {
   challengePoints,
+  challengeProgress,
   filterChallenges,
   groupChallenges,
   type ChallengeCategoryTone,
@@ -134,6 +135,7 @@ export function ChallengeCollection({
   const preferences = useMemo(() => parsePreferences(preferenceValue), [preferenceValue]);
   const [query, setQuery] = useState('');
   const hideSolved = preferences.hideSolved;
+  const progress = useMemo(() => challengeProgress(challenges), [challenges]);
   const allCategories = useMemo(
     () => groupChallenges(challenges).map((group) => group.category),
     [challenges]
@@ -162,75 +164,100 @@ export function ChallengeCollection({
 
   return (
     <section aria-label="Challenge list" className="flex min-h-full flex-col bg-surface-raised">
-      <div className="sticky top-0 z-20 flex min-h-16 items-center gap-2 bg-surface-raised px-3">
-        <SearchField
-          className="min-w-0 flex-1"
-          label="Search challenges"
-          labelHidden
-          inputRef={searchInputRef}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') {
-              event.preventDefault();
-              event.stopPropagation();
-              onExitSearch?.();
-            }
-          }}
-          onChange={setQuery}
-          placeholder="Name or category"
-          value={query}
-        />
-        <TooltipTrigger>
-          <Button
-            aria-label={hideSolved ? 'Show solved challenges' : 'Hide solved challenges'}
-            aria-pressed={hideSolved}
-            className="size-control"
-            onPress={() => {
-              savePreferences(!hideSolved, expandedKeys);
-            }}
-            size="icon"
-            tone="quiet"
+      <div className="sticky top-0 z-20 bg-surface-raised">
+        <div className="flex min-h-12 items-center justify-start px-3">
+          <dl
+            aria-label="Challenge progress"
+            className="kitsune-optical-center m-0 flex gap-6 text-sm tabular-nums text-text-muted"
           >
-            {hideSolved ? (
-              <EyeOff aria-hidden className="size-4" />
-            ) : (
-              <Eye aria-hidden className="size-4" />
-            )}
-          </Button>
-          <Tooltip>{hideSolved ? 'Show solved' : 'Hide solved'}</Tooltip>
-        </TooltipTrigger>
-        <TooltipTrigger>
-          <Button
-            aria-label={
-              expandedKeys.size === 0 ? 'Expand all categories' : 'Collapse all categories'
-            }
-            className="size-control"
-            onPress={() => {
-              const visibleCategories = groups.map((group) => group.category);
-              const next =
-                expandedKeys.size === 0 ? new Set<string>(visibleCategories) : new Set<string>();
-              savePreferences(hideSolved, next);
+            <div>
+              <dt className="sr-only">Challenges solved</dt>
+              <dd className="m-0">
+                <strong className="font-semibold text-text">{progress.solved}</strong> /{' '}
+                {progress.total} solved
+              </dd>
+            </div>
+            <div>
+              <dt className="sr-only">Points earned</dt>
+              <dd className="m-0">
+                <strong className="font-semibold text-text">
+                  {progress.earnedPoints.toLocaleString()}
+                </strong>{' '}
+                / {progress.availablePoints.toLocaleString()} pts
+              </dd>
+            </div>
+          </dl>
+        </div>
+        <div className="flex min-h-16 items-center gap-2 px-3">
+          <SearchField
+            className="min-w-0 flex-1"
+            label="Search challenges"
+            labelHidden
+            inputRef={searchInputRef}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                event.preventDefault();
+                event.stopPropagation();
+                onExitSearch?.();
+              }
             }}
-            size="icon"
-            tone="quiet"
-          >
-            <ChevronsUpDown aria-hidden className="size-4" />
-          </Button>
-          <Tooltip>{expandedKeys.size === 0 ? 'Expand all' : 'Collapse all'}</Tooltip>
-        </TooltipTrigger>
-        {onCollapseChallengeList ? (
+            onChange={setQuery}
+            placeholder="Name or category"
+            value={query}
+          />
           <TooltipTrigger>
             <Button
-              aria-label="Collapse challenge list"
+              aria-label={hideSolved ? 'Show solved challenges' : 'Hide solved challenges'}
+              aria-pressed={hideSolved}
               className="size-control"
-              onPress={onCollapseChallengeList}
+              onPress={() => {
+                savePreferences(!hideSolved, expandedKeys);
+              }}
               size="icon"
               tone="quiet"
             >
-              <PanelLeftClose aria-hidden className="size-4" />
+              {hideSolved ? (
+                <EyeOff aria-hidden className="size-4" />
+              ) : (
+                <Eye aria-hidden className="size-4" />
+              )}
             </Button>
-            <Tooltip>Collapse challenge list</Tooltip>
+            <Tooltip>{hideSolved ? 'Show solved' : 'Hide solved'}</Tooltip>
           </TooltipTrigger>
-        ) : null}
+          <TooltipTrigger>
+            <Button
+              aria-label={
+                expandedKeys.size === 0 ? 'Expand all categories' : 'Collapse all categories'
+              }
+              className="size-control"
+              onPress={() => {
+                const visibleCategories = groups.map((group) => group.category);
+                const next =
+                  expandedKeys.size === 0 ? new Set<string>(visibleCategories) : new Set<string>();
+                savePreferences(hideSolved, next);
+              }}
+              size="icon"
+              tone="quiet"
+            >
+              <ChevronsUpDown aria-hidden className="size-4" />
+            </Button>
+            <Tooltip>{expandedKeys.size === 0 ? 'Expand all' : 'Collapse all'}</Tooltip>
+          </TooltipTrigger>
+          {onCollapseChallengeList ? (
+            <TooltipTrigger>
+              <Button
+                aria-label="Collapse challenge list"
+                className="size-control"
+                onPress={onCollapseChallengeList}
+                size="icon"
+                tone="quiet"
+              >
+                <PanelLeftClose aria-hidden className="size-4" />
+              </Button>
+              <Tooltip>Collapse challenge list</Tooltip>
+            </TooltipTrigger>
+          ) : null}
+        </div>
       </div>
 
       {groups.length === 0 ? (
@@ -267,8 +294,9 @@ export function ChallengeCollection({
             return (
               <Disclosure
                 className={`${categoryTextClasses[tone]} bg-surface-raised`}
+                data-challenge-category={group.category}
                 density="compact"
-                headingClassName="sticky top-16 z-10 bg-surface-sunken"
+                headingClassName="sticky top-challenge-list-header z-10 bg-surface-sunken"
                 headingLevel={2}
                 id={group.category}
                 key={group.category}

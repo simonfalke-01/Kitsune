@@ -64,6 +64,7 @@ describe('SplitWorkspace', () => {
     const { rerender } = render(
       <SplitWorkspace
         ariaLabel="Collapsible panel"
+        collapsedLeft={<div>Collapsed navigation remains available</div>}
         defaultValue={40}
         left={<div>List remains mounted</div>}
         right={<div>Detail remains mounted</div>}
@@ -73,6 +74,7 @@ describe('SplitWorkspace', () => {
     rerender(
       <SplitWorkspace
         ariaLabel="Collapsible panel"
+        collapsedLeft={<div>Collapsed navigation remains available</div>}
         defaultValue={40}
         isLeftCollapsed
         left={<div>List remains mounted</div>}
@@ -82,14 +84,16 @@ describe('SplitWorkspace', () => {
 
     expect(screen.getByText('List remains mounted')).toBeInTheDocument();
     expect(screen.getByText('Detail remains mounted')).toBeVisible();
+    expect(screen.getByText('Collapsed navigation remains available')).toBeVisible();
     expect(screen.queryByRole('slider', { name: 'Collapsible panel' })).not.toBeInTheDocument();
     expect(
       screen.getByText('Detail remains mounted').closest('.kitsune-split-workspace')
-    ).toHaveStyle({ '--split-workspace-left': '0%' });
+    ).toHaveStyle({ '--split-workspace-left': 'var(--spacing-collapsed-rail)' });
 
     rerender(
       <SplitWorkspace
         ariaLabel="Collapsible panel"
+        collapsedLeft={<div>Collapsed navigation remains available</div>}
         defaultValue={40}
         left={<div>List remains mounted</div>}
         right={<div>Detail remains mounted</div>}

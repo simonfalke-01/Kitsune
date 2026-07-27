@@ -170,28 +170,35 @@ reusable failure mode, add the general rule here before closing the issue.
   position. Restoring one value must not reset the others, and malformed or
   unavailable stored values fall back safely.
 - Challenge workspace accelerators are additive: Slash focuses search; J and K
-  move focus through currently visible challenge rows without changing the
-  selection; Enter uses the focused row's normal link behavior; D, S, and H
-  choose detail tabs; brackets resize the desktop split. Editable controls,
-  composition, modifier chords, and open overlays must not trigger them.
+  move the actual selection through currently visible challenge rows and update
+  detail in the same frame; Enter uses the focused row's normal link behavior;
+  D, S, and H choose detail tabs; brackets resize the desktop split. Editable
+  controls, composition, modifier chords, and open overlays must not trigger
+  them.
 - Escape exits challenge search and restores focus to the selected rendered
   challenge row when available. The next J or K movement continues from that
-  row while selection remains unchanged.
+  row and advances selection.
 - The event trail owns one concise shortcut reference reachable by pointer and
   keyboard. Every command retains a visible equivalent, and focus movement is
-  never presented as selection.
+  visually agrees with selection when J or K changes the active challenge.
 - The challenge route composes global navigation, event identity, live
   progress, standing, and global actions into one persistent header. Its solve
   progress rail is the header's lower edge. A separate global bar is hidden
   only while this merged header exists, so loading and error states retain an
   escape path.
-- Desktop focus mode collapses the collection to zero without unmounting either
-  pane or overwriting the persisted split. The detail's tab, scroll position,
-  form state, and submission feedback survive entry and exit. The collection
-  toolbar owns the collapse control beside its other view controls; the merged
-  header exposes Show challenge list while collapsed. F toggles it; Escape
-  exits only when no overlay owns Escape. Focus mode is intentionally
-  session-local and never restored on reload.
+- Desktop focus mode reduces the collection to the shared collapsed-rail width
+  without unmounting either pane or overwriting the persisted split. The rail
+  owns Show challenge list plus compact category identity, solved ratios, and
+  current-category state; it does not duplicate challenge titles or event
+  metrics. The detail's tab, scroll position, form state, and submission
+  feedback survive entry and exit. The collection toolbar owns the collapse
+  control beside its other view controls. F toggles it; Escape exits only when
+  no overlay owns Escape. Focus mode is intentionally session-local and never
+  restored on reload.
+- Focus-mode collapse and expansion use the shared slow duration and spatial
+  easing on one pane track. Mounted collection and rail content cross over with
+  the shared fast transform and opacity transition. Pointer resizing disables
+  the pane transition, and reduced motion resolves the state change instantly.
 - Shared challenge attempts use one compact dock summary and one aligned detail
   ledger. Each entry exposes the normalized submitted value, teammate identity,
   textual outcome, and absolute timestamp. New receipts prepend without
@@ -243,6 +250,9 @@ reusable failure mode, add the general rule here before closing the issue.
   ToggleGroup for compact modes, Select for long lists, and ComboBox for
   searchable lists.
 - Search sits with the collection it filters and updates as the user types.
+- Challenge progress occupies one compact line directly above search. It shows
+  solved/total and earned/available points without repeating the selected
+  category or challenge title already visible in the collection and detail.
 - Challenge search is immediate and local when data is already loaded. It does
   not need an Apply button, a visible label that repeats its placeholder, or a
   separate results explanation.

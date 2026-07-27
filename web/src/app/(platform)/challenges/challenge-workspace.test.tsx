@@ -173,7 +173,14 @@ describe('ChallengeWorkspace', () => {
     );
     expect(screen.getByRole('button', { name: /Web/ }).closest('h2')).toHaveClass(
       'sticky',
-      'top-16'
+      'top-challenge-list-header'
+    );
+    const progressSummary = screen.getByLabelText('Challenge progress');
+    const challengeSearch = screen.getByRole('searchbox', { name: 'Search challenges' });
+    expect(progressSummary).toHaveClass('kitsune-optical-center', 'gap-6');
+    expect(progressSummary.parentElement).toHaveClass('min-h-12', 'justify-start', 'px-3');
+    expect(progressSummary.compareDocumentPosition(challengeSearch)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
     );
   });
 
@@ -229,7 +236,7 @@ describe('ChallengeWorkspace', () => {
     );
 
     const challengeList = screen.getByRole('region', { name: 'Challenge list' });
-    const listScrollOwner = challengeList.parentElement;
+    const listScrollOwner = challengeList.closest('.kitsune-scroll-region');
     const selectedPanel = screen.getByRole('tabpanel');
 
     await waitFor(() => {
@@ -242,7 +249,7 @@ describe('ChallengeWorkspace', () => {
     });
   });
 
-  it('moves focus through visible challenge rows without changing selection', () => {
+  it('moves selection through visible challenge rows with J and K', () => {
     renderWorkspace(
       [
         createChallengeExperience(challenge({ id: 'first', name: 'First trail' })),
@@ -257,14 +264,18 @@ describe('ChallengeWorkspace', () => {
 
     fireEvent.keyDown(window, { key: 'j' });
     expect(first).toHaveFocus();
-    expect(first).not.toHaveAttribute('aria-current');
+    expect(first).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('heading', { name: 'First trail' })).toBeVisible();
 
     fireEvent.keyDown(window, { key: 'j' });
     expect(second).toHaveFocus();
-    expect(second).not.toHaveAttribute('aria-current');
+    expect(second).toHaveAttribute('aria-current', 'true');
+    expect(first).not.toHaveAttribute('aria-current');
+    expect(screen.getByRole('heading', { name: 'Second trail' })).toBeVisible();
 
     fireEvent.keyDown(window, { key: 'k' });
     expect(first).toHaveFocus();
+    expect(first).toHaveAttribute('aria-current', 'true');
     expect(first).toHaveAttribute('href', '/challenges?challenge=first');
   });
 
@@ -312,8 +323,8 @@ describe('ChallengeWorkspace', () => {
 
     fireEvent.keyDown(window, { key: 'j' });
     expect(second).toHaveFocus();
-    expect(first).toHaveAttribute('aria-current', 'true');
-    expect(second).not.toHaveAttribute('aria-current');
+    expect(second).toHaveAttribute('aria-current', 'true');
+    expect(first).not.toHaveAttribute('aria-current');
   });
 
   it('resizes the challenge list and exposes a shortcut reference', async () => {
@@ -327,7 +338,7 @@ describe('ChallengeWorkspace', () => {
     fireEvent.keyDown(window, { key: '?' });
 
     const dialog = await screen.findByRole('dialog', { name: 'Keyboard shortcuts' });
-    expect(within(dialog).getByText('Move through challenges')).toBeVisible();
+    expect(within(dialog).getByText('Move challenge selection')).toBeVisible();
     expect(within(dialog).getByText('Resize challenge list')).toBeVisible();
     expect(within(dialog).getByText('Toggle challenge list')).toBeVisible();
   });
@@ -342,7 +353,12 @@ describe('ChallengeWorkspace', () => {
     fireEvent.change(flag, { target: { value: 'kit{draft}' } });
     fireEvent.click(screen.getByRole('button', { name: 'Collapse challenge list' }));
 
-    expect(workspace).toHaveStyle({ '--split-workspace-left': '0%' });
+    expect(workspace).toHaveStyle({
+      '--split-workspace-left': 'var(--spacing-collapsed-rail)'
+    });
+    expect(workspace).toHaveAttribute('data-collapsed', 'true');
+    expect(screen.getByRole('complementary', { name: 'Collapsed challenge list' })).toBeVisible();
+    expect(screen.getByRole('button', { name: /Open Web, 0 of 1 solved/ })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Show challenge list' })).toBeVisible();
     expect(screen.queryByRole('slider', { name: 'Challenge list width' })).not.toBeInTheDocument();
     expect(screen.getByLabelText('Flag')).toBe(flag);
@@ -356,6 +372,27 @@ describe('ChallengeWorkspace', () => {
 
     fireEvent.keyDown(window, { key: 'f' });
     expect(screen.getByRole('button', { name: 'Show challenge list' })).toBeVisible();
+  });
+
+  it('restores the challenge list from a collapsed category shortcut', async () => {
+    renderWorkspace(
+      [
+        createChallengeExperience(challenge({ id: 'web', name: 'Web trail' })),
+        createChallengeExperience(
+          challenge({ category: 'Crypto', id: 'crypto', name: 'Crypto trail', position: 1 })
+        )
+      ],
+      'web'
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse challenge list' }));
+    fireEvent.click(screen.getByRole('button', { name: /Open Crypto, 0 of 1 solved/ }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('slider', { name: 'Challenge list width' })).toBeVisible();
+      expect(screen.getByRole('button', { name: /Crypto/ })).toHaveFocus();
+    });
+    expect(screen.getByRole('link', { name: /Web trail/ })).toHaveAttribute('aria-current', 'true');
   });
 
   it('shows seeded team attempts as a compact summary and an aligned ledger', async () => {
@@ -396,6 +433,8 @@ describe('ChallengeWorkspace', () => {
 
     const dialog = await screen.findByRole('dialog', { name: 'Team attempts' });
     expect(dialog.closest('.max-w-detail')).toBeInTheDocument();
+    expect(dialog).toHaveClass('w-full', 'max-w-detail');
+    expect(screen.getByText('Trace the request through the shrine.')).toBeVisible();
     const ledger = within(dialog).getByRole('list', { name: 'Shared attempt history' });
     expect(within(ledger).getAllByRole('listitem')).toHaveLength(2);
     expect(within(ledger).getByText('kit{second_guess}')).toBeVisible();
@@ -448,11 +487,16 @@ describe('ChallengeWorkspace', () => {
     const collectionAuthor = within(
       screen.getByRole('region', { name: 'Challenge list' })
     ).getByText('by simonfalke');
+    const tabList = screen.getByRole('tablist', { name: 'Challenge sections' });
+    const detailsTab = within(tabList).getByRole('tab', { name: 'Details' });
 
     expect(detailHeader).toHaveClass('px-6', 'py-6');
     expect(titleLine).toHaveClass('items-baseline', 'gap-x-2');
     expect(author).toHaveClass('text-sm', 'text-text-muted');
     expect(collectionAuthor).toHaveClass('text-xs', 'text-text-subtle', 'truncate');
+    expect(tabList).toHaveClass('px-3');
+    expect(detailsTab).toHaveClass('px-3');
+    expect(detailsTab).not.toHaveClass('first:pl-0');
   });
 
   it('packs solved progress segments before unsolved segments', () => {

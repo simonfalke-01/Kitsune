@@ -63,8 +63,8 @@ export function ChallengeAttemptHistory({ attempts }: ChallengeAttemptHistoryPro
         <Button className="shrink-0" size="small" tone="secondary">
           View attempts
         </Button>
-        <Popover placement="top end" size="wide">
-          <PopoverDialog aria-label="Team attempts" className="grid gap-4">
+        <Popover isNonModal placement="top end" size="wide">
+          <PopoverDialog aria-label="Team attempts" className="grid gap-4" size="wide">
             <h2 className="m-0 font-display text-lg font-semibold tracking-tight text-text">
               Team attempts
             </h2>
