@@ -453,8 +453,9 @@ reusable failure mode, add the general rule here before closing the issue.
   label and separate mini-profile cards are prohibited.
 - An untaken top-three place preserves the occupied slot's exact footprint but
   contains no fabricated avatar, team, or solve time. Its placement remains
-  visible while a quiet neutral diagonal pattern marks the open area; assistive
-  text names the state without adding visible filler copy.
+  visible in neutral text outside the placeholder while fine neutral diagonal
+  linework marks only the empty identity area. The placeholder contains no
+  visible copy or icon; assistive text names its state.
 - Avatar slots render the real team profile image when the solve model supplies
   one and retain initials as the load-failure fallback. Frontend demo state does
   not fabricate profile art when no human-authored asset exists.

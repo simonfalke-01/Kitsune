@@ -187,16 +187,13 @@ export function ChallengeSolveStrip({ context }: ChallengeSolveStripProps) {
 
           return (
             <li
-              className={cx(
-                'flex min-h-16 min-w-0 items-center gap-3 px-3 py-2',
-                entry ? null : 'kitsune-open-podium-slot border-l-2 border-border'
-              )}
+              className={cx('flex min-h-16 min-w-0 items-center gap-3 px-3', entry ? 'py-2' : null)}
               key={entryPlacement}
             >
               <span
                 className={cx(
                   'kitsune-optical-center flex w-8 shrink-0 items-center justify-end gap-1 text-xs font-semibold',
-                  placementTextClasses[entryPlacement]
+                  entry ? placementTextClasses[entryPlacement] : 'text-text-muted'
                 )}
               >
                 {entryPlacement === 1 ? (
@@ -216,7 +213,13 @@ export function ChallengeSolveStrip({ context }: ChallengeSolveStripProps) {
                   competitorName={entry.competitorName}
                 />
               ) : (
-                <span className="sr-only">Open, no solve yet</span>
+                <>
+                  <span
+                    aria-hidden
+                    className="kitsune-open-podium-slot min-w-0 flex-1 self-stretch border-l-2 border-border"
+                  />
+                  <span className="sr-only">Open, no solve yet</span>
+                </>
               )}
             </li>
           );

@@ -176,7 +176,7 @@
   --podium-third-subtle: var(--category-orange-subtle);
   --podium-third: var(--category-orange);
   --podium-open-surface: var(--surface-hover);
-  --podium-open-stripe: var(--surface-active);
+  --podium-open-stripe: color-mix(in oklch, var(--border) 55%, var(--podium-open-surface));
 
   --first-blood-subtle: var(--podium-first-subtle);
   --first-blood-border: var(--warning-border);
@@ -454,6 +454,7 @@
   --spacing-collapsed-rail: 4rem;
   --spacing-effect-frame: 0.25rem;
   --spacing-optical: 0.0625rem;
+  --spacing-podium-hatch-line: 0.125rem;
   --spacing-sparkline: 2.5rem;
   --spacing-sidebar: 15rem;
   --spacing-workspace: calc(100dvh - 4rem);
@@ -818,9 +819,9 @@
     background-image: repeating-linear-gradient(
       -45deg,
       var(--podium-open-surface),
-      var(--podium-open-surface) calc(var(--spacing) * 2),
-      var(--podium-open-stripe) calc(var(--spacing) * 2),
-      var(--podium-open-stripe) calc(var(--spacing) * 4)
+      var(--podium-open-surface) calc(var(--spacing) * 3 - var(--spacing-podium-hatch-line)),
+      var(--podium-open-stripe) calc(var(--spacing) * 3 - var(--spacing-podium-hatch-line)),
+      var(--podium-open-stripe) calc(var(--spacing) * 3)
     );
   }
 

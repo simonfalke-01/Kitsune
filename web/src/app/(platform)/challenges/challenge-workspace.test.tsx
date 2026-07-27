@@ -658,13 +658,12 @@ describe('ChallengeWorkspace', () => {
     expect(openStatuses).toHaveLength(3);
     for (const status of openStatuses) {
       const slot = status.closest('li');
+      const placeholder = slot?.querySelector('.kitsune-open-podium-slot');
       expect(status).toHaveClass('sr-only');
-      expect(slot).toHaveClass(
-        'kitsune-open-podium-slot',
-        'min-h-16',
-        'border-l-2',
-        'border-border'
-      );
+      expect(slot).toHaveClass('min-h-16');
+      expect(slot).not.toHaveClass('kitsune-open-podium-slot');
+      expect(placeholder).toHaveClass('flex-1', 'self-stretch', 'border-l-2', 'border-border');
+      expect(slot?.firstElementChild).toHaveClass('text-text-muted');
       expect(within(slot!).queryByRole('img')).not.toBeInTheDocument();
     }
     expect(within(solveStrip).queryByText('No solve')).not.toBeInTheDocument();
