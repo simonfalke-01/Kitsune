@@ -141,6 +141,7 @@ export function ChallengeWorkspace({
     new Map()
   );
   const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
+  const [focusedChallengeId, setFocusedChallengeId] = useState<string | null>(null);
   let immediateSelectedChallengeId = immediateSelection.current;
   let immediateSelectedTab = immediateSelection.tab;
 
@@ -198,6 +199,7 @@ export function ChallengeWorkspace({
   }, [currentCompetitor, displayedChallenges, eventId, eventStartedAt]);
   const selectedChallenge =
     displayedChallenges.find((challenge) => challenge.id === immediateSelectedChallengeId) ?? null;
+  const isFocusModeActive = focusedChallengeId === selectedChallenge?.id;
   immediateSelectedTab = availableTab(selectedChallenge, immediateSelectedTab, actions);
 
   useEffect(() => {
@@ -235,6 +237,7 @@ export function ChallengeWorkspace({
 
   function closeDetail() {
     restoreSelectionFocusRef.current = true;
+    setFocusedChallengeId(null);
     setImmediateSelection({
       current: null,
       source: selectedChallengeId,
@@ -319,6 +322,16 @@ export function ChallengeWorkspace({
     }
 
     function handleWorkspaceShortcut(event: globalThis.KeyboardEvent) {
+      const hasOpenOverlay = Boolean(
+        document.querySelector('[role="dialog"], [role="alertdialog"]')
+      );
+
+      if (event.key === 'Escape' && isFocusModeActive && !hasOpenOverlay) {
+        event.preventDefault();
+        setFocusedChallengeId(null);
+        return;
+      }
+
       if (
         event.defaultPrevented ||
         event.isComposing ||
@@ -326,7 +339,7 @@ export function ChallengeWorkspace({
         event.ctrlKey ||
         event.altKey ||
         isTextEntryTarget(event.target) ||
-        document.querySelector('[role="dialog"], [role="alertdialog"]')
+        hasOpenOverlay
       ) {
         return;
       }
@@ -340,7 +353,7 @@ export function ChallengeWorkspace({
         return;
       }
 
-      if (key === 'j' || key === 'k') {
+      if (!isFocusModeActive && (key === 'j' || key === 'k')) {
         event.preventDefault();
         focusChallengeRow(key === 'j' ? 1 : -1);
         return;
@@ -352,7 +365,15 @@ export function ChallengeWorkspace({
         return;
       }
 
-      if (isDesktop && (event.key === '[' || event.key === ']')) {
+      if (isDesktop && selectedChallenge && key === 'f') {
+        event.preventDefault();
+        setFocusedChallengeId((current) =>
+          current === selectedChallenge.id ? null : selectedChallenge.id
+        );
+        return;
+      }
+
+      if (!isFocusModeActive && isDesktop && (event.key === '[' || event.key === ']')) {
         event.preventDefault();
         splitWorkspaceRef.current?.adjustBy(
           event.key === '[' ? -splitShortcutStep : splitShortcutStep
@@ -370,7 +391,7 @@ export function ChallengeWorkspace({
     return () => {
       window.removeEventListener('keydown', handleWorkspaceShortcut);
     };
-  }, [isDesktop, selectTab, selectedChallenge]);
+  }, [isDesktop, isFocusModeActive, selectTab, selectedChallenge]);
 
   function handleSolved(challengeId: string, solvedAt: string) {
     setOptimisticSolveTimes((current) => {
@@ -407,9 +428,13 @@ export function ChallengeWorkspace({
       challenge={selectedChallenge}
       eventId={eventId}
       flagSubmitSuccessEffect={flagSubmitSuccessEffect}
+      isFocusMode={isFocusModeActive}
       key={selectedChallenge.id}
       onChallengeChanged={onChallengeChanged}
       onSolved={handleSolved}
+      onFocusModeChange={(focused) => {
+        setFocusedChallengeId(focused ? selectedChallenge.id : null);
+      }}
       onTabChange={selectTab}
       selectedTab={immediateSelectedTab}
       solveContext={solveContexts.get(selectedChallenge.id)!}
@@ -451,6 +476,7 @@ export function ChallengeWorkspace({
             ariaLabel="Challenge list width"
             defaultValue={34}
             left={collection}
+            isLeftCollapsed={isFocusModeActive}
             maximum={48}
             minimum={24}
             leftScrollRef={collectionScrollRef}

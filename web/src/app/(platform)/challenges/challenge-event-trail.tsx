@@ -30,6 +30,7 @@ const challengeShortcuts = [
   { keys: ['D'], label: 'Open details' },
   { keys: ['S'], label: 'Open solves' },
   { keys: ['H'], label: 'Open hints' },
+  { keys: ['F'], label: 'Toggle focus mode' },
   { keys: ['[', ']'], label: 'Resize challenge list' },
   { keys: ['?'], label: 'Show shortcuts' }
 ] as const;

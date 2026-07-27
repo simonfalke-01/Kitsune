@@ -221,6 +221,11 @@ without losing competition context.
 - On the challenge route, global navigation and event state share one header.
   The event progress rail forms that header's lower edge; do not stack a
   second navigation bar above the event trail or duplicate either context.
+- Focus mode temporarily removes the collection from the visual field while
+  preserving its mounted state, split preference, scroll position, selected
+  tab, and in-progress answer. It is never restored after a reload. A visible
+  control, F shortcut, and overlay-aware Escape path keep the mode explicit
+  and trivially reversible.
 - The splitter is a direct-manipulation control. Its hit target is forgiving,
   its affordance is visible without guessing, dragging updates continuously,
   and arrow keys provide an equivalent path.

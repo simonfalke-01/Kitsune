@@ -60,6 +60,45 @@ describe('SplitWorkspace', () => {
     expect(window.localStorage.getItem('kitsune.split-workspace.v1.keyboard-panel')).toBe('39');
   });
 
+  it('collapses the left pane without discarding its split value or content', () => {
+    const { rerender } = render(
+      <SplitWorkspace
+        ariaLabel="Collapsible panel"
+        defaultValue={40}
+        left={<div>List remains mounted</div>}
+        right={<div>Detail remains mounted</div>}
+      />
+    );
+
+    rerender(
+      <SplitWorkspace
+        ariaLabel="Collapsible panel"
+        defaultValue={40}
+        isLeftCollapsed
+        left={<div>List remains mounted</div>}
+        right={<div>Detail remains mounted</div>}
+      />
+    );
+
+    expect(screen.getByText('List remains mounted')).toBeInTheDocument();
+    expect(screen.getByText('Detail remains mounted')).toBeVisible();
+    expect(screen.queryByRole('slider', { name: 'Collapsible panel' })).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Detail remains mounted').closest('.kitsune-split-workspace')
+    ).toHaveStyle({ '--split-workspace-left': '0%' });
+
+    rerender(
+      <SplitWorkspace
+        ariaLabel="Collapsible panel"
+        defaultValue={40}
+        left={<div>List remains mounted</div>}
+        right={<div>Detail remains mounted</div>}
+      />
+    );
+
+    expect(screen.getByRole('slider', { name: 'Collapsible panel' })).toHaveValue('40');
+  });
+
   it('updates pane width continuously during a pointer drag', () => {
     render(
       <SplitWorkspace

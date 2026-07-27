@@ -299,6 +299,32 @@ describe('ChallengeWorkspace', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Keyboard shortcuts' });
     expect(within(dialog).getByText('Move through challenges')).toBeVisible();
     expect(within(dialog).getByText('Resize challenge list')).toBeVisible();
+    expect(within(dialog).getByText('Toggle focus mode')).toBeVisible();
+  });
+
+  it('enters focus mode without remounting challenge state and restores the split on exit', () => {
+    renderWorkspace([createChallengeExperience(challenge())], 'challenge');
+
+    const flag = screen.getByLabelText('Flag');
+    fireEvent.change(flag, { target: { value: 'kit{draft}' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enter focus mode' }));
+
+    const workspace = screen
+      .getByRole('button', { name: 'Exit focus mode' })
+      .closest('.kitsune-split-workspace');
+    expect(workspace).toHaveStyle({ '--split-workspace-left': '0%' });
+    expect(screen.queryByRole('slider', { name: 'Challenge list width' })).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Flag')).toBe(flag);
+    expect(screen.getByLabelText('Flag')).toHaveValue('kit{draft}');
+
+    fireEvent.keyDown(window, { key: 'Escape' });
+
+    expect(screen.getByRole('button', { name: 'Enter focus mode' })).toBeVisible();
+    expect(screen.getByRole('slider', { name: 'Challenge list width' })).toHaveValue('34');
+    expect(screen.getByLabelText('Flag')).toBe(flag);
+
+    fireEvent.keyDown(window, { key: 'f' });
+    expect(screen.getByRole('button', { name: 'Exit focus mode' })).toBeVisible();
   });
 
   it('changes selection and detail in the activation frame before URL synchronization', () => {

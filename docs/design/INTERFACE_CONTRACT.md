@@ -182,6 +182,12 @@ reusable failure mode, add the general rule here before closing the issue.
   progress rail is the header's lower edge. A separate global bar is hidden
   only while this merged header exists, so loading and error states retain an
   escape path.
+- Desktop focus mode collapses the collection to zero without unmounting either
+  pane or overwriting the persisted split. The detail's tab, scroll position,
+  form state, and submission feedback survive entry and exit. The points row
+  owns a labelled control; F toggles it; Escape exits only when no overlay owns
+  Escape. Focus mode is intentionally session-local and never restored on
+  reload.
 - First blood is an achievement state, not a warning. Its sidebar wash, solved
   confirmation, toast, edge frame, screen imprint, and field wave all consume
   the shared first-blood gold role. Ordinary solves continue to use success
