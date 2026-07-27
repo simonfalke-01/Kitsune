@@ -1,14 +1,20 @@
 # Kitsune interface contract
 
 This contract is a release requirement for every Kitsune surface. It adapts
-the project-wide interface review rules to Kitsune's React, React Aria, and
-Next.js architecture. When review exposes a reusable failure mode, add the
-general rule here before closing the issue.
+the project-wide interface review rules to Kitsune's Next.js, React Aria,
+Tailwind, and CTF architecture. Generic shadcn, Svelte, commerce, and payment
+examples are not implementation instructions for this repository. Their
+underlying interaction rules apply only after translation into Kitsune's
+locked stack and real competitor or operator task. When review exposes a
+reusable failure mode, add the general rule here before closing the issue.
 
 ## 1. Model the real task
 
 - Competitors need to find a challenge, understand it, submit a flag, and see
   the result without losing their place.
+- A Kitsune deployment presents one active competition to competitors. Resolve
+  it in platform state. Do not make players select an event before they can
+  compete.
 - Captains need to manage a roster, registration, and team instances without
   leaving the current event context.
 - Authors need to draft, validate, preview, publish, and revise a challenge.
@@ -22,6 +28,9 @@ general rule here before closing the issue.
   advanced policy, orchestration, and integration controls.
 - Keep the current event, object status, and relevant action beside the
   decision they affect.
+- Do not display state merely because the backend exposes it. A label such as
+  `Live now` is useless when the entire surface already represents the active
+  live event and the label changes no action.
 - Preserve values, filters, scroll position, and open context during in-place
   changes. Repeated actions must work repeatedly.
 
@@ -33,6 +42,9 @@ general rule here before closing the issue.
 - Subtitles may report live state. They must not explain the page, narrate the
   architecture, advertise a feature, repeat the heading, or describe visible
   controls.
+- Delete implied-state labels, redundant totals, and repeated metadata. If the
+  route, section, control, or surrounding state already communicates a fact,
+  do not print the fact again.
 - Do not use eyebrow labels unless they are actual breadcrumbs or necessary
   taxonomy.
 - Label a section once. Add an explanation only when the user cannot make the
@@ -41,6 +53,8 @@ general rule here before closing the issue.
   centered dots, ornamental arrows, filler, and unnecessary periods.
 - Do not manufacture symmetrical marketing copy. Use the shortest natural
   label for each datum.
+- Test project names, browser names, timestamps, random suffixes, database IDs,
+  and fixture keys never appear as user-facing event or challenge copy.
 - Buttons state the exact action and retain that name through dialog, busy
   state, result, and toast.
 - Errors say what happened and what the user can do. Never expose raw status
@@ -80,6 +94,11 @@ general rule here before closing the issue.
 - `web/src/app.css` is the source of truth for visual tokens. Theme packs,
   white-label configuration, plugins, and first-party screens share the same
   semantic contract.
+- Use color to encode real structure: interactive blue for event context,
+  focus, and selection; restrained category color for challenge grouping;
+  green only for a confirmed solve; warning and danger only for states that
+  require attention. A screen must not become an undifferentiated gray field,
+  but color may not be sprayed across decorative chips and cards.
 
 ## 4. Structure and density
 
@@ -104,6 +123,22 @@ general rule here before closing the issue.
   do not repeat shell width, top padding, or title styling.
 - Fixed workspaces own an explicit viewport-relative height and use internal
   scroll regions. Never suppress document scrolling without owning that height.
+- A fixed challenge workspace has exactly two desktop scroll owners: the
+  challenge collection and the selected challenge detail. The document, page
+  shell, event trail, split root, and nested sections do not scroll.
+- The desktop splitter owns its value when a screen does not control it. Drag,
+  touch, and arrow-key resizing update the pane immediately without changing
+  the selected challenge or either pane's scroll position.
+- The desktop splitter is visible as a functional divider and owns a forgiving
+  pointer target. A keyboard-only value change does not prove the pointer
+  interaction works. Pointer dragging must be tested against the rendered
+  target and update pane geometry continuously.
+- Scrollbar tracks stay transparent. A pane may reveal its thumb while the user
+  scrolls, then hide it after scrolling stops. Do not reserve a permanent gray
+  track at the viewport edge.
+- Use the split workspace at tablet widths and above. Do not open a desktop-
+  sized sheet merely because the viewport is narrower than an arbitrary large
+  breakpoint. Sheets are for genuinely narrow layouts.
 
 ## 5. Forms and selection
 
@@ -113,6 +148,9 @@ general rule here before closing the issue.
   ToggleGroup for compact modes, Select for long lists, and ComboBox for
   searchable lists.
 - Search sits with the collection it filters and updates as the user types.
+- Challenge search is immediate and local when data is already loaded. It does
+  not need an Apply button, a visible label that repeats its placeholder, or a
+  separate results explanation.
 - Password creation requires password and confirmation fields plus an
   accessible show or hide control.
 - Temporary credentials must be replaced after first authentication and before
@@ -142,11 +180,30 @@ general rule here before closing the issue.
   and matching right alignment.
 - Default states are plain text or omitted. Colored badges are reserved for
   exceptions, warnings, failures, and time-sensitive states.
+- Category and solve state in the challenge browser are not pill collections.
+  Categories are section structure. Solved state is plain text or a compact
+  confirmation beside the challenge it affects.
+- Category color indexes the challenge ledger through its category icon,
+  label, and narrow header rail. Blue alone communicates focus and selection;
+  green communicates a confirmed solve; podium tones communicate first,
+  second, and third blood. Full-width chromatic category bands reproduce
+  rCTF's skin instead of expressing Kitsune's event-trail system.
+- Category headers remain sticky inside the collection scroll owner and fully
+  occlude rows moving underneath them.
+- Every challenge row has one invariant two-line anatomy and hit height: name
+  and points on the first line, solve status and solve count on the second.
+  Changing state never changes row height or shifts adjacent targets.
 - Static status does not use hover styling.
+- Repeated standings, metrics, and category summaries use aligned ledgers or
+  lists. They do not become grids of individually rounded cards. A common
+  region is reserved for one coherent object, not applied once per datum.
 - Detail and sensitive-value actions open a Dialog or Sheet. Sensitive values
   have explicit copy actions.
 - Map backend lifecycle states to the few user-facing states needed for the
   decision. Do not expose accessor keys or database field names.
+- Automated browser fixtures use credible stable visible names and unique
+  opaque slugs. Tests remove or isolate created events so repeated runs cannot
+  turn the product collection into a test log.
 
 ## 7. Feedback and state changes
 
@@ -202,10 +259,46 @@ general rule here before closing the issue.
 
 - Challenge discovery keeps search, categories, solve state, points, and the
   submission action in one task flow.
+- When no challenge is selected, the detail pane presents one composed model
+  of the competitor's position and the remaining challenge field. It does not
+  repeat event-trail facts as KPI tiles or wrap each category in a card.
+- Challenge categories are independent disclosures, all expanded by default.
+  Category headings remain sticky inside the challenge-list scroll owner and
+  retain their Lucide category icon, pastel index colour, solved ratio, and
+  collapse state while the list moves beneath them.
+- Every challenge row shows its solve count. Unsolved, solved, first-through-
+  third blood, hovered, focused, and selected states remain distinguishable
+  without relying on colour alone. Selected state uses the single interactive
+  blue; solved and blood states use a restrained lateral wash rather than a
+  full chromatic card.
 - Flag input is monospaced. Challenge prose, metadata, categories, and scoring
   are not.
 - A flag submission updates in place, preserves the challenge position, and
   gives an immediate pending state followed by exact feedback.
+- The challenge list, selected detail, resources, hints, and flag input remain
+  in one task flow. Selecting a challenge updates the detail in place and may
+  update the URL without reloading the document.
+- The challenge detail begins with the name, points, minimal decision-relevant
+  metadata, description, resources when present, and the submission action.
+  Hints and writeups use progressive disclosure.
+- Challenge detail provides a solve timeline sourced from the same model as
+  the compact first-three-plus-self context. Each solve shows rank, competitor,
+  elapsed time from first solve, and absolute solve time. The current
+  competitor stays identifiable and receives a pinned row when outside the
+  leading results.
+- The first-three-plus-self context and flag action form one sticky detail
+  dock. The dock spans the pane; the text action remains content-width on wide
+  layouts and expands only when the controls stack on narrow layouts.
+- A solved challenge removes the completed flag field. A compact status row may
+  replace it to preserve solve rank and timing context; do not retain an empty
+  footer, expand the result into a large success banner, or permanently open a
+  blank writeup editor.
+- While solve timelines, standings, and team context are absent from the player
+  API, one typed feature-local frontend adapter supplies deterministic data to
+  every consuming challenge component. Do not widen the API, OpenAPI schema,
+  database, or server merely to complete frontend visual iteration.
+- Do not show tags merely because challenges have tags. Tags remain searchable
+  metadata unless they change discovery or a solve decision.
 - Scoreboard controls sit with scoreboard state. Frozen, hidden, delayed, and
   public states use factual user-facing language.
 - Team-instance controls show ownership, readiness, expiry, capacity, and
@@ -231,6 +324,9 @@ general rule here before closing the issue.
 - The mascot slot stays empty until approved human-authored artwork exists.
   Never invent placeholder character art.
 - Do not render navigation for a single destination.
+- During the current rewrite, the authenticated product exposes only Overview
+  and Challenges. Other authenticated routes render no product view and do not
+  appear in navigation until they pass this contract.
 - Adjacent navigation targets have a visible gap. Hover and selected surfaces
   do not touch.
 - Mobile multi-route navigation uses the shared React Aria Sheet.
@@ -253,7 +349,38 @@ general rule here before closing the issue.
 - Light and dark themes preserve hierarchy, contrast, affordance, and comfort.
   Dark mode is near-achromatic charcoal, not pure black or blue-tinted chrome.
 
-## 13. Route audit
+## 13. Reference synthesis
+
+- rCTF v2 supplies the challenge interaction baseline: persistent grouped list,
+  in-place detail selection, a resizable desktop split, narrow-screen drawer,
+  direct URL selection, preserved list position, and a submission action that
+  does not discard context. Reproduce the task quality, not its source or
+  category-heavy visual treatment.
+- Stripe supplies operational hierarchy: strong object title, terse metadata,
+  tabular numerics, compact controls, and a clear primary action. Do not import
+  its marketing mesh, thin marketing display type, or pill CTA grammar.
+- Linear supplies a disciplined surface ladder, keyboard-first behavior, held
+  density, and scarce accent use. Kitsune retains light mode and does not copy
+  Linear's dark-only near-black canvas.
+- Apple supplies receding chrome, a single interactive blue, and decisive
+  removal of redundant interface. Kitsune does not inherit marketing
+  whitespace, product-photography layouts, or pill-shaped actions.
+- Vercel supplies hairline precision, technical alignment, restrained display
+  weight, and mono only where content is actually technical. Its marketing
+  gradient and oversized page rhythm do not belong in the product.
+- Framer supplies confident display typography and decisive surface changes.
+  Gradients, giant poster type, dark-only presentation, and spotlight cards are
+  excluded.
+- Figma supplies controlled category color as a structural block. In Kitsune,
+  category color is reduced to section rails and restrained header tint. It
+  never becomes a page-sized pastel panel or decorative tag field.
+- GitHub supplies dense developer-tool scanning and clear code surfaces. Avoid
+  gamer-console styling, pure-black bands, green glow, and marketing
+  atmospherics.
+- Claude's warm cream, serif display, and coral identity are explicitly outside
+  Kitsune's tone and remain prohibited by the project anti-pattern list.
+
+## 14. Route audit
 
 Before a user-facing route is complete:
 
@@ -272,6 +399,10 @@ Before a user-facing route is complete:
    reimplementations of UI primitives.
 8. Verify async work preserves scroll and updates content without a document
    refresh.
-9. Run format, lint, strict typecheck, tests, production build, keyboard review,
-   Playwright screenshots, and axe.
-10. Record any new reusable failure mode in this contract.
+9. Verify the document does not scroll in a fixed workspace, only designated
+   panes scroll, and idle scrollbar tracks are not visible.
+10. Inspect visible fixture copy and the local database for generated browser
+    names, timestamps, or run suffixes.
+11. Run format, lint, strict typecheck, tests, production build, keyboard
+    review, Playwright screenshots, and axe.
+12. Record any new reusable failure mode in this contract.

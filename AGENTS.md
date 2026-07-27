@@ -1,7 +1,8 @@
 # Frontend Design System — Agent Operating Rules
 
-`docs/design/INTERFACE_CONTRACT.md` is the binding product-interface contract.
-It applies to every route and component and takes precedence when a generic
+`DESIGN.md` is the binding product-design constitution.
+`docs/design/INTERFACE_CONTRACT.md` is its binding implementation contract.
+Both apply to every route and component and take precedence when a generic
 design-system example conflicts with Kitsune's task, density, or copy rules.
 
 ## 0. Your role
@@ -180,7 +181,7 @@ or component files.
 
   --font-display: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Instrument Sans Variable", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
 
   --tracking-tight: -0.02em;
   --tracking-wide: 0.04em;
