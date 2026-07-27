@@ -136,6 +136,19 @@ export function createChallengeDemoActions(
       return Promise.resolve(writeup);
     },
     submitAnswer(challengeId) {
+      if (challengeNames.get(challengeId) === 'Cache Rules Everything') {
+        return Promise.resolve({
+          attempts_remaining: 4,
+          awarded_points: 0,
+          challenge_id: challengeId,
+          first_blood: false,
+          id: crypto.randomUUID(),
+          outcome: 'incorrect',
+          replayed: false,
+          submitted_at: new Date().toISOString()
+        });
+      }
+
       const firstBlood =
         !solvedChallengeIds.has(challengeId) && (solveCounts.get(challengeId) ?? 0) === 0;
       solvedChallengeIds.add(challengeId);
