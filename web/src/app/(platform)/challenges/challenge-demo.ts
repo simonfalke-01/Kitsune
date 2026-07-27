@@ -10,6 +10,7 @@ const demoDefinitions = [
   ['Welcome', 'Read the Rules', 50, 126, true],
   ['Web', 'Cache Rules Everything', 350, 13, false],
   ['Web', 'Origin Story', 200, 3, false],
+  ['Web', 'Unclaimed Route', 450, 0, false],
   ['Pwn', 'After Hours', 500, 15, false],
   ['Pwn', 'Small Change', 300, 26, false],
   ['Reverse Engineering', 'Paper Trail', 400, 8, false],
@@ -34,7 +35,9 @@ const descriptions: Readonly<Record<string, string>> = {
   'Paper Trail': 'Reconstruct the validation path from a stripped desktop utility.',
   'Read the Rules': 'Read the competition rules and submit the browser-tested flag.',
   'Side Channel': 'The implementation leaks one bit of the key on every comparison.',
-  'Small Change': 'A tiny allocator change leaves one useful primitive behind.'
+  'Small Change': 'A tiny allocator change leaves one useful primitive behind.',
+  'Unclaimed Route':
+    'No team has reached this route. Submit a flag to claim the event’s first blood.'
 };
 
 function demoId(name: string): string {
@@ -84,6 +87,12 @@ export function createChallengeDemoActions(
   const points = new Map(
     challenges.map((challenge) => [challenge.id, challengePointValue(challenge)])
   );
+  const solveCounts = new Map(
+    challenges.map((challenge) => [challenge.id, challenge.solveCount ?? 0])
+  );
+  const solvedChallengeIds = new Set(
+    challenges.filter((challenge) => challenge.solved).map((challenge) => challenge.id)
+  );
   const challengeNames = new Map(challenges.map((challenge) => [challenge.id, challenge.name]));
   const writeups = new Map<
     string,
@@ -126,11 +135,16 @@ export function createChallengeDemoActions(
       return Promise.resolve(writeup);
     },
     submitAnswer(challengeId) {
+      const firstBlood =
+        !solvedChallengeIds.has(challengeId) && (solveCounts.get(challengeId) ?? 0) === 0;
+      solvedChallengeIds.add(challengeId);
+      solveCounts.set(challengeId, (solveCounts.get(challengeId) ?? 0) + 1);
+
       return Promise.resolve({
         attempts_remaining: 4,
         awarded_points: points.get(challengeId) ?? 0,
         challenge_id: challengeId,
-        first_blood: false,
+        first_blood: firstBlood,
         id: crypto.randomUUID(),
         outcome: 'correct',
         replayed: false,
