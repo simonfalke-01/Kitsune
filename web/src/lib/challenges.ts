@@ -15,6 +15,7 @@ export interface ChallengeAttachment {
 export interface ChallengeExperience extends ChallengeSummary {
   attachments: ChallengeAttachment[];
   attemptsRemaining: number | null;
+  authorName: string | null;
   solveCount: number | null;
   surveyMode: ChallengeSurveyMode | null;
   surveyRewardFlag: string | null;
@@ -66,7 +67,12 @@ export function createChallengeExperience(
   overrides: Partial<
     Pick<
       ChallengeExperience,
-      'attachments' | 'attemptsRemaining' | 'solveCount' | 'surveyMode' | 'surveyRewardFlag'
+      | 'attachments'
+      | 'attemptsRemaining'
+      | 'authorName'
+      | 'solveCount'
+      | 'surveyMode'
+      | 'surveyRewardFlag'
     >
   > = {}
 ): ChallengeExperience {
@@ -74,6 +80,7 @@ export function createChallengeExperience(
     ...challenge,
     attachments: overrides.attachments ?? [],
     attemptsRemaining: overrides.attemptsRemaining ?? null,
+    authorName: overrides.authorName?.trim() || null,
     solveCount: overrides.solveCount ?? null,
     surveyMode: overrides.surveyMode ?? (challenge.survey.length > 0 ? 'post_solve' : null),
     surveyRewardFlag: overrides.surveyRewardFlag ?? null

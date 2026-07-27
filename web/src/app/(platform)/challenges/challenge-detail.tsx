@@ -143,9 +143,14 @@ export function ChallengeDetail({
         <div className="flex w-full items-start justify-between gap-6">
           <div className="grid min-w-0 gap-2">
             {showTitle ? (
-              <h2 className="m-0 font-display text-xl font-semibold tracking-tight text-text">
-                {challenge.name}
-              </h2>
+              <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+                <h2 className="m-0 font-display text-xl font-semibold tracking-tight text-text">
+                  {challenge.name}
+                </h2>
+                {challenge.authorName ? (
+                  <span className="text-sm text-text-muted">by {challenge.authorName}</span>
+                ) : null}
+              </div>
             ) : null}
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-text-muted">
               <ChallengeCategoryLabel category={challenge.category} />

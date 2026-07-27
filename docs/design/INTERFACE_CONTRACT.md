@@ -331,6 +331,9 @@ reusable failure mode, add the general rule here before closing the issue.
   no-selection overview consumes the available pane width with one compact
   lateral inset; it must not reapply the global page-shell maximum and create
   large automatic side margins around charts or ledgers.
+- The no-selection overview title and selected challenge title share the same
+  top and left pane inset. Switching state changes the content, not the primary
+  reading origin.
 - Challenge categories are independent disclosures, all expanded by default.
   Category headings remain sticky inside the challenge-list scroll owner and
   retain their Lucide category icon, pastel index colour, solved ratio, and
@@ -368,6 +371,9 @@ reusable failure mode, add the general rule here before closing the issue.
   update the URL without reloading the document.
 - The challenge detail begins with the name, points, minimal decision-relevant
   metadata, description, resources when present, and the submission action.
+- A trusted challenge author appears beside the name as muted `by <name>` text.
+  Omit the line when author data is absent; never invent an author outside the
+  explicitly typed demo adapter or render authorship as a badge.
   Hints and writeups use progressive disclosure.
 - Challenge detail provides a solve timeline sourced from the same model as
   the compact first-three-plus-self context. Each solve shows rank, competitor,

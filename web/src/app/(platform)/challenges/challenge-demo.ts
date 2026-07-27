@@ -76,6 +76,7 @@ export function createChallengeDemo(eventId: string): ChallengeExperience[] {
 
     return createChallengeExperience(challenge, {
       attemptsRemaining: challenge.max_attempts,
+      authorName: 'simonfalke',
       solveCount
     });
   });

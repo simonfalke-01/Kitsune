@@ -113,7 +113,7 @@ describe('ChallengeWorkspace', () => {
     expect(challengeFieldHeading).toBeVisible();
     expect(challengeFieldHeading.parentElement).toHaveClass('px-3');
     expect(overview).toHaveClass('overflow-hidden');
-    expect(overviewLayout).toHaveClass('w-full', 'px-6');
+    expect(overviewLayout).toHaveClass('w-full', 'px-6', 'py-6');
     expect(overviewLayout).not.toHaveClass('mx-auto', 'max-w-shell');
     expect(challengeField).toHaveClass('min-h-0', 'flex-1');
     expect(categoryScrollOwner).toHaveClass('min-h-0', 'flex-1', 'overflow-y-auto');
@@ -215,6 +215,22 @@ describe('ChallengeWorkspace', () => {
     expect(second).toHaveClass('ring-1', 'ring-accent-border');
     expect(first).not.toHaveAttribute('aria-current');
     expect(screen.getByRole('heading', { name: 'Second trail' })).toBeVisible();
+  });
+
+  it('aligns trusted author metadata beside the challenge title', () => {
+    renderWorkspace(
+      [createChallengeExperience(challenge(), { authorName: 'simonfalke' })],
+      'challenge'
+    );
+
+    const title = screen.getByRole('heading', { name: 'Shrine gate' });
+    const titleLine = title.parentElement;
+    const detailHeader = title.closest('header');
+    const author = within(titleLine as HTMLElement).getByText('by simonfalke');
+
+    expect(detailHeader).toHaveClass('px-6', 'py-6');
+    expect(titleLine).toHaveClass('items-baseline', 'gap-x-2');
+    expect(author).toHaveClass('text-sm', 'text-text-muted');
   });
 
   it('packs solved progress segments before unsolved segments', () => {

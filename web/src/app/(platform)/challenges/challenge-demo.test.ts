@@ -8,6 +8,7 @@ describe('challenge demo', () => {
     const unclaimed = challenges.find((challenge) => challenge.name === 'Unclaimed Route');
 
     expect(unclaimed).toMatchObject({
+      authorName: 'simonfalke',
       solveCount: 0,
       solved: false
     });

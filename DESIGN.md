@@ -213,6 +213,9 @@ without losing competition context.
 ### 8.4 Unselected competition view
 
 - Do not use a KPI-card row.
+- The overview title shares the selected challenge title's exact top and left
+  anchor. Selecting a challenge changes the object, not the primary reading
+  origin.
 - Do not use one rounded card per category.
 - Do not repeat event-trail facts unless a comparison gives them new meaning.
 - Use one score/standing focal relationship and one compact aligned category
@@ -229,6 +232,9 @@ without losing competition context.
 ### 8.5 Challenge detail
 
 - Header contains name, points, minimal state, and decision-relevant metadata.
+- When trusted author data exists, show `by <name>` as quiet text beside the
+  challenge name. It is metadata, not a badge, chip, or second heading. Demo
+  authors remain explicitly isolated in the frontend demo adapter.
 - Details, solves, hints, and writeup occupy stable tabs; switching tabs does
   not flash or move fixed chrome.
 - The description may use one bounded region because it is a discrete authored
