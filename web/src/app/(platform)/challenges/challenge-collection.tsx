@@ -272,8 +272,15 @@ export function ChallengeCollection({
                         >
                           <span className="flex items-center justify-between gap-4">
                             <span className="grid min-w-0 gap-1">
-                              <span className="truncate text-base font-semibold text-text">
-                                {challenge.name}
+                              <span className="flex min-w-0 items-baseline gap-2">
+                                <span className="min-w-0 flex-1 truncate text-base font-semibold text-text">
+                                  {challenge.name}
+                                </span>
+                                {challenge.authorName ? (
+                                  <span className="max-w-menu shrink truncate text-xs font-normal text-text-subtle">
+                                    by {challenge.authorName}
+                                  </span>
+                                ) : null}
                               </span>
                               {challenge.solved ? (
                                 <span

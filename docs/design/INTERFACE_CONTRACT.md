@@ -246,6 +246,9 @@ reusable failure mode, add the general rule here before closing the issue.
 - Every challenge row has one invariant two-line anatomy and hit height: name
   and points on the first line, solve status and solve count on the second.
   Changing state never changes row height or shifts adjacent targets.
+- Trusted author metadata may follow the challenge name on its first-line
+  baseline as truncated, muted `by <name>` text. It never creates a third row,
+  displaces points, or changes the invariant hit height.
 - Static status does not use hover styling.
 - Repeated standings, metrics, and category summaries use aligned ledgers or
   lists. They do not become grids of individually rounded cards. A common

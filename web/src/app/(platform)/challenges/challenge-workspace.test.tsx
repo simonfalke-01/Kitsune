@@ -227,10 +227,14 @@ describe('ChallengeWorkspace', () => {
     const titleLine = title.parentElement;
     const detailHeader = title.closest('header');
     const author = within(titleLine as HTMLElement).getByText('by simonfalke');
+    const collectionAuthor = within(
+      screen.getByRole('region', { name: 'Challenge list' })
+    ).getByText('by simonfalke');
 
     expect(detailHeader).toHaveClass('px-6', 'py-6');
     expect(titleLine).toHaveClass('items-baseline', 'gap-x-2');
     expect(author).toHaveClass('text-sm', 'text-text-muted');
+    expect(collectionAuthor).toHaveClass('text-xs', 'text-text-subtle', 'truncate');
   });
 
   it('packs solved progress segments before unsolved segments', () => {

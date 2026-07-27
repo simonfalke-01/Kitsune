@@ -192,6 +192,8 @@ without losing competition context.
 - Category headers remain sticky within the collection scroll owner.
 - Every row keeps one invariant two-line geometry: challenge and points first;
   state and solve count second.
+- Trusted author metadata may share the challenge-name baseline as smaller,
+  muted `by <name>` text. It never creates a third line or changes row height.
 - Hover, focus, selected, solved, and podium states remain distinguishable.
   Blue alone means interaction/selection; green means solved; podium tones mean
   placement.
