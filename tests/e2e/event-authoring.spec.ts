@@ -17,6 +17,10 @@ interface EventResponse {
   id: string;
 }
 
+interface ChallengeResponse {
+  id: string;
+}
+
 function projectKey(testInfo: TestInfo): string {
   return testInfo.project.name.replace(/[^a-z0-9]+/gi, '-').toLowerCase();
 }
@@ -63,12 +67,12 @@ async function createLiveChallenge(page: Page, testInfo: TestInfo) {
   };
   const key = projectKey(testInfo);
   const run = Date.now().toString(36);
-  const eventName = `Foxfire ${key} ${run}`;
-  const challengeName = `Trailhead ${key} ${run}`;
+  const eventName = 'Foxfire Invitational';
+  const challengeName = key === 'chromium' ? 'Echo Chamber' : 'Pocket Relay';
   const flag = `kit{${key}-${run}}`;
   const eventResponse = await page.request.post('/api/v1/events', {
     data: {
-      description: 'Browser regression event.',
+      description: 'A compact live Jeopardy event.',
       ends_at: null,
       modes: ['jeopardy'],
       name: eventName,
@@ -99,7 +103,8 @@ async function createLiveChallenge(page: Page, testInfo: TestInfo) {
         }
       ],
       category: 'Web',
-      description: 'Submit the browser-tested flag.',
+      description:
+        'A forgotten relay is repeating more than it should. Recover the flag from its response.',
       hints: [],
       kind: {
         type: 'static_flag'
@@ -113,7 +118,7 @@ async function createLiveChallenge(page: Page, testInfo: TestInfo) {
       },
       state: 'published',
       survey: [],
-      tags: ['browser'],
+      tags: [],
       visibility: {
         division_ids: [],
         prerequisites: [],
@@ -125,8 +130,10 @@ async function createLiveChallenge(page: Page, testInfo: TestInfo) {
     headers: requestHeaders
   });
   expect(challengeResponse.status()).toBe(201);
+  const challenge = (await challengeResponse.json()) as ChallengeResponse;
 
   return {
+    challengeId: challenge.id,
     challengeName,
     eventId: event.id,
     flag
@@ -146,24 +153,70 @@ test('operator setup and competitor challenge submission work end to end', async
       value: created.eventId
     }
   ]);
+  await page.evaluate(() => {
+    window.localStorage.setItem('kitsune.theme', 'light');
+  });
   await page.goto('/challenges');
 
-  const challengeCard = page
-    .locator('article')
-    .filter({ has: page.getByRole('heading', { name: created.challengeName }) });
-  await expect(challengeCard).toBeVisible();
-  await expect(challengeCard.getByText('500 points')).toBeVisible();
-  await challengeCard.getByRole('button', { name: 'Open' }).click();
-  await expect(page.getByRole('dialog', { name: created.challengeName })).toBeVisible();
-  await page.getByLabel('Flag').fill(created.flag);
-  await page.getByRole('button', { name: 'Submit flag' }).click();
+  const challengeRow = page.getByRole('link', {
+    name: new RegExp(created.challengeName)
+  });
+  await expect(challengeRow).toBeVisible();
+  await expect(challengeRow.getByText('500 pts')).toBeVisible();
+  await challengeRow.click();
+  await expect(page).toHaveURL(new RegExp(`challenge=${created.challengeId}`));
+
+  if (testInfo.project.name === 'chromium') {
+    const splitter = page.getByRole('slider', {
+      name: 'Challenge list width'
+    });
+    await expect(splitter).toHaveValue('38');
+    const splitterThumb = page.locator('.kitsune-split-thumb');
+    const splitterBox = await splitterThumb.boundingBox();
+    expect(splitterBox).not.toBeNull();
+    await page.mouse.move(
+      splitterBox!.x + splitterBox!.width / 2,
+      splitterBox!.y + splitterBox!.height / 2
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      splitterBox!.x + splitterBox!.width,
+      splitterBox!.y + splitterBox!.height / 2
+    );
+    await page.mouse.up();
+    await expect.poll(async () => Number(await splitter.inputValue())).toBeGreaterThan(38);
+    await splitter.press('ArrowRight');
+    await expect(page.getByRole('heading', { name: created.challengeName })).toBeVisible();
+  } else {
+    await expect(page.getByRole('dialog', { name: created.challengeName })).toBeVisible();
+  }
+
+  const detailSurface = page.locator('article.kitsune-challenge-detail:visible');
+  await detailSurface.getByLabel('Flag').fill(created.flag);
+  await detailSurface.getByRole('button', { name: 'Submit flag' }).click();
 
   await expect(page.getByText('Challenge solved')).toBeVisible();
-  await expect(challengeCard.getByText('Solved')).toBeVisible();
-  await expect(page.getByRole('dialog', { name: created.challengeName })).toBeHidden();
+  await expect(challengeRow.getByText('Solved')).toBeVisible();
+  await expect(detailSurface.getByText('Solved', { exact: true }).first()).toBeVisible();
 
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations).toEqual([]);
+
+  if (testInfo.project.name !== 'chromium') {
+    const mobileDialog = page.getByRole('dialog', { name: created.challengeName });
+    await mobileDialog.focus();
+    await page.keyboard.press('Escape');
+    await expect(mobileDialog).toBeHidden();
+    await expect(page).not.toHaveURL(/challenge=/);
+    await expect(challengeRow).toBeFocused();
+  }
+
+  await page.getByRole('button', { name: 'Use dark theme' }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.waitForTimeout(300);
+
+  const darkAccessibility = await new AxeBuilder({ page }).analyze();
+  expect(darkAccessibility.violations).toEqual([]);
 });
 
 test('toast feedback enters with motion and remains accessible', async ({ page }) => {

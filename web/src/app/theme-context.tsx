@@ -30,7 +30,7 @@ function isThemePreference(value: string | null): value is ThemePreference {
   return value === 'dark' || value === 'light' || value === 'system';
 }
 
-function resolveDark(preference: ThemePreference): boolean {
+function resolveDark(preference: ThemePreference, systemIsDark: boolean): boolean {
   if (preference === 'dark') {
     return true;
   }
@@ -39,9 +39,7 @@ function resolveDark(preference: ThemePreference): boolean {
     return false;
   }
 
-  return typeof window !== 'undefined'
-    ? window.matchMedia('(prefers-color-scheme: dark)').matches
-    : false;
+  return systemIsDark;
 }
 
 function getThemePreference(): ThemePreference {
@@ -54,7 +52,6 @@ function getThemePreference(): ThemePreference {
 }
 
 function subscribeToTheme(onStoreChange: () => void): () => void {
-  const media = window.matchMedia('(prefers-color-scheme: dark)');
   const handleStorage = (event: StorageEvent) => {
     if (event.key === themePreferenceKey) {
       onStoreChange();
@@ -63,11 +60,22 @@ function subscribeToTheme(onStoreChange: () => void): () => void {
 
   window.addEventListener('storage', handleStorage);
   window.addEventListener(themePreferenceEvent, onStoreChange);
-  media.addEventListener('change', onStoreChange);
 
   return () => {
     window.removeEventListener('storage', handleStorage);
     window.removeEventListener(themePreferenceEvent, onStoreChange);
+  };
+}
+
+function getSystemIsDark(): boolean {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+function subscribeToSystemTheme(onStoreChange: () => void): () => void {
+  const media = window.matchMedia('(prefers-color-scheme: dark)');
+  media.addEventListener('change', onStoreChange);
+
+  return () => {
     media.removeEventListener('change', onStoreChange);
   };
 }
@@ -78,7 +86,8 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     getThemePreference,
     () => 'system'
   );
-  const isDark = resolveDark(preference);
+  const systemIsDark = useSyncExternalStore(subscribeToSystemTheme, getSystemIsDark, () => false);
+  const isDark = resolveDark(preference, systemIsDark);
 
   useEffect(() => {
     document.documentElement.dataset.theme = isDark ? 'dark' : 'light';

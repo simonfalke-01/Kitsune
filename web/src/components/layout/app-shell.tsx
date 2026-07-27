@@ -1,12 +1,10 @@
 'use client';
 
-import { Bell, LogOut, Menu as MenuIcon, Moon, Sun } from 'lucide-react';
+import { LogOut, Menu as MenuIcon, Moon, Sun } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 
-import { useEvent } from '@/app/event-context';
-import { useRealtime } from '@/app/realtime-context';
 import { useSession } from '@/app/session-context';
 import { useTheme } from '@/app/theme-context';
 import {
@@ -15,9 +13,7 @@ import {
   Menu,
   MenuTrigger,
   NavigationLink,
-  Select,
   showToast,
-  StatusIndicator,
   ToastRegion
 } from '@/components/ui';
 
@@ -28,100 +24,54 @@ interface AppShellProps {
 interface NavigationItem {
   href: string;
   label: string;
-  permission?: string;
 }
 
 const playerNavigation: readonly NavigationItem[] = [
   {
+    href: '/event',
+    label: 'Overview'
+  },
+  {
     href: '/challenges',
     label: 'Challenges'
-  },
-  {
-    href: '/scoreboard',
-    label: 'Scoreboard'
-  },
-  {
-    href: '/team',
-    label: 'Team'
-  },
-  {
-    href: '/account',
-    label: 'Account'
-  }
-];
-
-const operationsNavigation: readonly NavigationItem[] = [
-  {
-    href: '/admin',
-    label: 'Live operations',
-    permission: 'event_manage'
-  },
-  {
-    href: '/admin/events',
-    label: 'Events',
-    permission: 'event_manage'
-  },
-  {
-    href: '/admin/challenges',
-    label: 'Challenges',
-    permission: 'challenge_manage'
-  },
-  {
-    href: '/admin/teams',
-    label: 'Teams',
-    permission: 'team_manage'
-  },
-  {
-    href: '/admin/automation',
-    label: 'Automation',
-    permission: 'automation_manage'
-  },
-  {
-    href: '/admin/access',
-    label: 'Access',
-    permission: 'identity_manage'
-  },
-  {
-    href: '/admin/audit',
-    label: 'Audit trail',
-    permission: 'audit_read'
-  },
-  {
-    href: '/admin/settings',
-    label: 'Settings',
-    permission: 'platform_manage'
   }
 ];
 
 function pathIsCurrent(pathname: string, href: string): boolean {
-  if (href === '/admin') {
-    return pathname === href;
-  }
-
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname() ?? '/';
   const router = useRouter();
-  const { can, logout, session } = useSession();
-  const { events, selectEvent, selectedEvent } = useEvent();
-  const { isConnected } = useRealtime();
+  const { logout } = useSession();
   const { isDark, setPreference } = useTheme();
-  const visibleOperations = operationsNavigation.filter((item) => {
-    return item.permission ? can(item.permission) : true;
-  });
-  const mobileOptions = [...playerNavigation, ...visibleOperations].map((item) => ({
+  const mobileOptions = playerNavigation.map((item) => ({
     href: item.href,
     id: item.href,
     label: item.label
   }));
+  const rendersContent = pathname === '/event' || pathname === '/challenges';
+  const isChallengeWorkspace = pathname === '/challenges';
 
   return (
-    <div className="min-h-screen bg-surface text-text">
-      <header className="sticky top-0 z-40 border-b border-border-subtle bg-surface">
-        <div className="mx-auto flex min-h-16 max-w-shell items-center gap-3 px-4 sm:px-6">
-          <div className="lg:hidden">
+    <div
+      className={
+        isChallengeWorkspace
+          ? 'kitsune-fixed-workspace fixed inset-0 flex flex-col overflow-hidden overscroll-none bg-surface text-text'
+          : 'min-h-screen bg-surface text-text'
+      }
+    >
+      <Link
+        className="fixed left-2 top-2 z-overlay -translate-y-16 bg-surface-raised px-3 py-2 no-underline shadow-md transition-transform focus-visible:translate-y-0"
+        href="#main-content"
+        tone="current"
+      >
+        Skip to content
+      </Link>
+      <header className="sticky top-0 z-40 shrink-0 border-b border-border-subtle bg-surface-raised">
+        <div className="flex min-h-16 w-full items-center gap-3 px-4 sm:px-6 lg:px-8">
+          <div className="md:hidden">
             <MenuTrigger>
               <Button aria-label="Open navigation" size="icon" tone="quiet">
                 <MenuIcon aria-hidden className="size-5" />
@@ -130,22 +80,25 @@ export function AppShell({ children }: AppShellProps) {
             </MenuTrigger>
           </div>
           <Link
-            className="font-display text-lg font-semibold tracking-tight text-text no-underline"
-            href="/challenges"
+            className="font-display text-lg font-semibold tracking-tight text-accent-text no-underline"
+            href="/event"
             tone="current"
           >
             Kitsune
           </Link>
-          <div aria-hidden className="h-6 w-px bg-border-subtle" />
-          <div className="min-w-0 flex-1">
-            <span className="block truncate text-sm text-text-muted">
-              {selectedEvent?.name ?? 'No event selected'}
-            </span>
-          </div>
-          <StatusIndicator
-            label={isConnected ? 'Live' : 'Offline'}
-            tone={isConnected ? 'success' : 'neutral'}
-          />
+          <nav aria-label="Player" className="hidden items-center gap-1 md:flex">
+            {playerNavigation.map((item) => (
+              <NavigationLink
+                className="px-3"
+                href={item.href}
+                isCurrent={pathIsCurrent(pathname, item.href)}
+                key={item.href}
+              >
+                {item.label}
+              </NavigationLink>
+            ))}
+          </nav>
+          <div className="min-w-0 flex-1" />
           <Button
             aria-label={isDark ? 'Use light theme' : 'Use dark theme'}
             onPress={() => {
@@ -159,9 +112,6 @@ export function AppShell({ children }: AppShellProps) {
             ) : (
               <Moon aria-hidden className="size-4" />
             )}
-          </Button>
-          <Button aria-label="Notifications" size="icon" tone="quiet">
-            <Bell aria-hidden className="size-4" />
           </Button>
           <Button
             aria-label="Sign out"
@@ -186,63 +136,17 @@ export function AppShell({ children }: AppShellProps) {
           </Button>
         </div>
       </header>
-
-      <div className="mx-auto max-w-shell lg:flex">
-        <aside
-          aria-label="Primary navigation"
-          className="hidden w-sidebar shrink-0 border-r border-border-subtle p-4 lg:block"
-        >
-          <div className="sticky top-20 grid gap-6">
-            {events.length > 0 ? (
-              <Select
-                label="Current event"
-                onSelectionChange={(key) => {
-                  void selectEvent(String(key));
-                }}
-                options={events.map((event) => ({
-                  id: event.id,
-                  label: event.name
-                }))}
-                selectedKey={selectedEvent?.id}
-              />
-            ) : null}
-            <nav aria-label="Player" className="grid gap-1">
-              <span className="px-3 pb-2 text-xs font-semibold text-text-muted">Play</span>
-              {playerNavigation.map((item) => (
-                <NavigationLink
-                  href={item.href}
-                  isCurrent={pathIsCurrent(pathname, item.href)}
-                  key={item.href}
-                >
-                  {item.label}
-                </NavigationLink>
-              ))}
-            </nav>
-            {visibleOperations.length > 0 ? (
-              <nav aria-label="Operations" className="grid gap-1">
-                <span className="px-3 pb-2 text-xs font-semibold text-text-muted">Operate</span>
-                {visibleOperations.map((item) => (
-                  <NavigationLink
-                    href={item.href}
-                    isCurrent={pathIsCurrent(pathname, item.href)}
-                    key={item.href}
-                  >
-                    {item.label}
-                  </NavigationLink>
-                ))}
-              </nav>
-            ) : null}
-            <div className="border-t border-border-subtle px-3 pt-4">
-              <p className="m-0 truncate text-sm font-medium text-text">
-                {session?.user.display_name ?? session?.user.email}
-              </p>
-              <p className="m-0 truncate text-xs text-text-muted">{session?.user.email}</p>
-            </div>
-          </div>
-        </aside>
-
-        <main className="min-w-0 flex-1 px-4 py-8 sm:px-6 lg:px-8">{children}</main>
-      </div>
+      <main
+        id="main-content"
+        className={
+          isChallengeWorkspace
+            ? 'min-h-0 w-full flex-1 overflow-hidden p-3'
+            : 'w-full px-4 py-6 sm:px-6 lg:px-8'
+        }
+        tabIndex={-1}
+      >
+        {rendersContent ? children : null}
+      </main>
       <ToastRegion />
     </div>
   );
