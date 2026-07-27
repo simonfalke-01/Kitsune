@@ -46,7 +46,7 @@ const lineDashPatterns = {
   dotted: '2 6',
   solid: undefined
 } as const;
-const chartTooltipHeight = 96;
+const chartTooltipHeight = 80;
 const chartTooltipWidth = 224;
 
 function toneClass(tone: number): (typeof lineToneClasses)[number] {
@@ -465,7 +465,7 @@ export function LineChart<Metadata>({
               x={tooltipPosition.x}
               y={tooltipPosition.y}
             >
-              <div className="grid h-full content-center gap-1 rounded-md border border-chart-tooltip-border bg-chart-tooltip px-3 py-2 text-sm text-text shadow-md">
+              <div className="grid h-full content-center gap-1 rounded-md border border-chart-tooltip-border bg-chart-tooltip px-3 py-1 text-sm text-text shadow-md">
                 {formatTooltip ? (
                   formatTooltip(selectedPoint)
                 ) : (

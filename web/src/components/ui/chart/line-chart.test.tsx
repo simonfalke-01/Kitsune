@@ -63,7 +63,7 @@ describe('LineChart', () => {
       key: 'ArrowRight'
     });
     expect(screen.getByText(/Foxden, 100/)).toBeVisible();
-    expect(container.querySelector('foreignObject')).toHaveAttribute('height', '96');
+    expect(container.querySelector('foreignObject')).toHaveAttribute('height', '80');
 
     fireEvent.keyDown(chart, {
       key: 'End'
