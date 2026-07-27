@@ -163,6 +163,9 @@ reusable failure mode, add the general rule here before closing the issue.
   outer fill is rectangular and lets host-window clipping define the true outer
   curve; only the transparent inner cutout uses Kitsune's larger viewport
   radius. This fills the corner wedge from the native edge to the inner curve.
+- Keep masked viewport geometry static during solve feedback. Animate opacity on
+  a plain wrapper rather than on the SVG mask itself, avoiding Safari layer
+  reconstruction flicker.
 - Scrollbar tracks stay transparent. A pane may reveal its thumb while the user
   scrolls, then hide it after scrolling stops. Do not reserve a permanent gray
   track at the viewport edge.

@@ -83,36 +83,34 @@ function ViewportFrame({ onComplete }: Pick<EffectFrameProps, 'onComplete'>) {
   const maskId = `solve-edge-${useId().replaceAll(':', '')}`;
 
   return (
-    <svg
-      className="kitsune-solve-edge-frame absolute inset-0 size-full"
-      focusable="false"
-      onAnimationEnd={onComplete}
-    >
-      <defs>
-        <mask
-          height="100%"
-          id={maskId}
-          maskUnits="userSpaceOnUse"
-          mask-type="luminance"
-          width="100%"
-          x="0"
-          y="0"
-        >
-          <rect className="kitsune-solve-mask-include" height="100%" width="100%" />
-          <rect
-            className="kitsune-solve-edge-cutout kitsune-solve-mask-exclude"
+    <span className="kitsune-solve-edge-frame absolute inset-0" onAnimationEnd={onComplete}>
+      <svg className="kitsune-solve-edge-svg block size-full" focusable="false">
+        <defs>
+          <mask
             height="100%"
+            id={maskId}
+            maskUnits="userSpaceOnUse"
+            mask-type="luminance"
             width="100%"
-          />
-        </mask>
-      </defs>
-      <rect
-        className="kitsune-solve-edge-fill"
-        height="100%"
-        mask={`url(#${maskId})`}
-        width="100%"
-      />
-    </svg>
+            x="0"
+            y="0"
+          >
+            <rect className="kitsune-solve-mask-include" height="100%" width="100%" />
+            <rect
+              className="kitsune-solve-edge-cutout kitsune-solve-mask-exclude"
+              height="100%"
+              width="100%"
+            />
+          </mask>
+        </defs>
+        <rect
+          className="kitsune-solve-edge-fill"
+          height="100%"
+          mask={`url(#${maskId})`}
+          width="100%"
+        />
+      </svg>
+    </span>
   );
 }
 

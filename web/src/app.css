@@ -577,7 +577,6 @@
 
   .kitsune-solve-edge-frame {
     animation: kitsune-solve-edge-frame var(--duration-celebration) linear both;
-    will-change: opacity;
   }
 
   .kitsune-solve-edge-fill {
