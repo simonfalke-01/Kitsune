@@ -439,6 +439,7 @@
   --spacing-control: 2.75rem;
   --spacing-chart: 20rem;
   --spacing-chart-compact: 11rem;
+  --spacing-effect-frame: 0.25rem;
   --spacing-optical: 0.0625rem;
   --spacing-sparkline: 2.5rem;
   --spacing-sidebar: 15rem;
@@ -575,9 +576,29 @@
   }
 
   .kitsune-solve-edge-frame {
-    border-color: var(--solve-effect-edge);
     animation: kitsune-solve-edge-frame var(--duration-celebration) linear both;
     will-change: opacity;
+  }
+
+  .kitsune-solve-edge-fill {
+    fill: var(--solve-effect-edge);
+  }
+
+  .kitsune-solve-edge-cutout {
+    x: var(--spacing-effect-frame);
+    y: var(--spacing-effect-frame);
+    width: calc(100% - var(--spacing-effect-frame) - var(--spacing-effect-frame));
+    height: calc(100% - var(--spacing-effect-frame) - var(--spacing-effect-frame));
+    rx: calc(var(--radius-viewport) - var(--spacing-effect-frame));
+  }
+
+  /* Functional luminance values for the SVG mask, not interface colors. */
+  .kitsune-solve-mask-include {
+    fill: white;
+  }
+
+  .kitsune-solve-mask-exclude {
+    fill: black;
   }
 
   .kitsune-solve-edge-wash {

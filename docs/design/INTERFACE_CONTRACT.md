@@ -160,9 +160,9 @@ reusable failure mode, add the general rule here before closing the issue.
   paint. Hydration must not be the first point at which the root theme class is
   applied, and it must not temporarily overwrite the pre-paint result.
 - Full-screen effect frames remain flush to every viewport edge. Their dedicated
-  larger viewport radius curves the corner inward early enough to remain visible
-  through rounded host-window clipping; do not solve corner clipping by
-  detaching the frame from the edge.
+  outer fill is rectangular and lets host-window clipping define the true outer
+  curve; only the transparent inner cutout uses Kitsune's larger viewport
+  radius. This fills the corner wedge from the native edge to the inner curve.
 - Scrollbar tracks stay transparent. A pane may reveal its thumb while the user
   scrolls, then hide it after scrolling stops. Do not reserve a permanent gray
   track at the viewport edge.

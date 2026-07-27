@@ -1,6 +1,6 @@
 'use client';
 
-import { type CSSProperties } from 'react';
+import { type CSSProperties, useId } from 'react';
 import { createPortal } from 'react-dom';
 
 import type { FlagSubmitSuccessEffect } from './challenge-presentation';
@@ -79,6 +79,43 @@ interface EffectFrameProps extends Pick<ChallengeSuccessEffectProps, 'onComplete
   isFirstBlood: boolean;
 }
 
+function ViewportFrame({ onComplete }: Pick<EffectFrameProps, 'onComplete'>) {
+  const maskId = `solve-edge-${useId().replaceAll(':', '')}`;
+
+  return (
+    <svg
+      className="kitsune-solve-edge-frame absolute inset-0 size-full"
+      focusable="false"
+      onAnimationEnd={onComplete}
+    >
+      <defs>
+        <mask
+          height="100%"
+          id={maskId}
+          maskUnits="userSpaceOnUse"
+          mask-type="luminance"
+          width="100%"
+          x="0"
+          y="0"
+        >
+          <rect className="kitsune-solve-mask-include" height="100%" width="100%" />
+          <rect
+            className="kitsune-solve-edge-cutout kitsune-solve-mask-exclude"
+            height="100%"
+            width="100%"
+          />
+        </mask>
+      </defs>
+      <rect
+        className="kitsune-solve-edge-fill"
+        height="100%"
+        mask={`url(#${maskId})`}
+        width="100%"
+      />
+    </svg>
+  );
+}
+
 function EdgeBorder({ isFirstBlood, onComplete }: EffectFrameProps) {
   return (
     <div
@@ -86,10 +123,7 @@ function EdgeBorder({ isFirstBlood, onComplete }: EffectFrameProps) {
       className="kitsune-solve-effect pointer-events-none fixed inset-0 z-celebration"
       data-first-blood={isFirstBlood || undefined}
     >
-      <span
-        className="kitsune-solve-edge-frame absolute inset-0 rounded-viewport border-4"
-        onAnimationEnd={onComplete}
-      />
+      <ViewportFrame onComplete={onComplete} />
     </div>
   );
 }
@@ -102,10 +136,7 @@ function ScreenImprint({ isFirstBlood, onComplete }: EffectFrameProps) {
       data-first-blood={isFirstBlood || undefined}
     >
       <span className="kitsune-solve-edge-wash absolute inset-0" />
-      <span
-        className="kitsune-solve-edge-frame absolute inset-0 rounded-viewport border-4"
-        onAnimationEnd={onComplete}
-      />
+      <ViewportFrame onComplete={onComplete} />
     </div>
   );
 }
