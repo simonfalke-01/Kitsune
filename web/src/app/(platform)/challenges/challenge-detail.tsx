@@ -1,6 +1,7 @@
 'use client';
 
 import { Check, Trophy } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
 
 import { ChallengeCategoryLabel } from './challenge-category';
@@ -134,6 +135,7 @@ export function ChallengeDetail({
   const [postSolveSurveyComplete, setPostSolveSurveyComplete] = useState(false);
   const [successEffectOrigin, setSuccessEffectOrigin] =
     useState<ChallengeSuccessEffectOrigin | null>(null);
+  const shouldReduceMotion = useReducedMotion();
   const connection = challengeConnection(challenge);
   const resolvedChallenge: ChallengeExperience = {
     ...challenge,
@@ -413,8 +415,27 @@ export function ChallengeDetail({
 
       {showGate && !gateComplete ? null : !isPendingReview ? (
         <footer className="z-20 shrink-0 bg-surface-sunken px-6 py-4">
-          <div className="grid w-full gap-4">
-            <ChallengeSolveStrip context={solveContext} />
+          <div className="grid w-full">
+            <AnimatePresence initial={false}>
+              {selectedTab === 'solves' ? (
+                <motion.div
+                  animate={{ height: 'auto', opacity: 1 }}
+                  className="overflow-hidden"
+                  exit={{ height: 0, opacity: 0 }}
+                  initial={shouldReduceMotion ? false : { height: 0, opacity: 0 }}
+                  key="solve-context-drawer"
+                  transition={
+                    shouldReduceMotion
+                      ? { duration: 0 }
+                      : { duration: 0.18, ease: [0.25, 1, 0.5, 1] }
+                  }
+                >
+                  <div className="pb-4">
+                    <ChallengeSolveStrip context={solveContext} />
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
             {isSolved ? (
               <ChallengeSolvedSummary
                 isFirstBlood={isFirstBlood}

@@ -180,8 +180,8 @@ export function ChallengeSolveStrip({ context }: ChallengeSolveStripProps) {
   );
 
   return (
-    <section aria-label="Challenge solve context">
-      <ul className="m-0 grid list-none grid-cols-1 gap-x-4 gap-y-2 p-0 sm:grid-cols-2 3xl:grid-cols-4">
+    <section aria-label="Challenge solve context" className="@container">
+      <ul className="m-0 grid list-none grid-cols-1 gap-x-4 gap-y-2 p-0 @xl:grid-flow-col @xl:grid-cols-2 @xl:grid-rows-2 @5xl:grid-flow-row @5xl:grid-cols-4 @5xl:grid-rows-1">
         {leaders.map((entry, index) => {
           const entryPlacement = (index + 1) as 1 | 2 | 3;
 

@@ -630,7 +630,7 @@ describe('ChallengeWorkspace', () => {
     );
   });
 
-  it('shows podium context and a complete solve timeline with the current competitor', () => {
+  it('shows podium context and a complete solve timeline with the current competitor', async () => {
     const solved = createChallengeExperience(
       challenge({
         id: 'blood-5',
@@ -644,10 +644,29 @@ describe('ChallengeWorkspace', () => {
 
     renderWorkspace([solved], solved.id);
 
-    const solveStrip = screen.getByLabelText('Challenge solve context');
+    expect(screen.queryByLabelText('Challenge solve context')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: '18 Solves' }));
+
+    const solveStrip = await screen.findByLabelText('Challenge solve context');
+    const solveStripList = within(solveStrip).getByRole('list');
     const solveStripRows = within(solveStrip).getAllByRole('listitem');
-    expect(solveStrip).toBeVisible();
+    await waitFor(() => {
+      expect(solveStrip).toBeVisible();
+    });
+    expect(solveStripList).toHaveClass(
+      '@xl:grid-flow-col',
+      '@xl:grid-cols-2',
+      '@xl:grid-rows-2',
+      '@5xl:grid-flow-row',
+      '@5xl:grid-cols-4',
+      '@5xl:grid-rows-1'
+    );
     expect(solveStripRows).toHaveLength(4);
+    expect(solveStripRows[0]).toHaveTextContent('1st');
+    expect(solveStripRows[1]).toHaveTextContent('2nd');
+    expect(solveStripRows[2]).toHaveTextContent('3rd');
+    expect(solveStripRows[3]).toHaveClass('border-accent', 'bg-accent-subtle');
     for (const row of solveStripRows) {
       expect(row).toHaveClass('flex', 'min-h-16', 'items-center');
       expect(row).not.toHaveClass('grid');
@@ -670,8 +689,6 @@ describe('ChallengeWorkspace', () => {
     expect(selectedChallenge.querySelector('.kitsune-collection-marker')).toBeInTheDocument();
     expect(firstBlood.querySelector('svg')).toHaveClass('-translate-y-optical');
 
-    fireEvent.click(screen.getByRole('tab', { name: '18 Solves' }));
-
     expect(window.localStorage.getItem('kitsune.challenge-workspace.v1.event')).toBeNull();
 
     const standings = screen.getByRole('list', { name: 'Solve standings' });
@@ -681,12 +698,16 @@ describe('ChallengeWorkspace', () => {
     expect(within(standings).getAllByText('Foxden').length).toBeGreaterThan(0);
   });
 
-  it('keeps unsolved podium places quiet and explicit', () => {
+  it('keeps unsolved podium places quiet and explicit', async () => {
     const open = createChallengeExperience(challenge({ id: 'open-podium' }), {
       solveCount: 0
     });
 
     renderWorkspace([open], open.id);
+
+    expect(screen.queryByLabelText('Challenge solve context')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: '0 Solves' }));
 
     const solveStrip = screen.getByLabelText('Challenge solve context');
     const openStatuses = within(solveStrip).getAllByText('Open');
@@ -700,6 +721,12 @@ describe('ChallengeWorkspace', () => {
       expect(within(slot!).queryByRole('img')).not.toBeInTheDocument();
     }
     expect(within(solveStrip).queryByText('No solve')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Details' }));
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Challenge solve context')).not.toBeInTheDocument();
+    });
   });
 
   it('preserves the solved dock and emits the default edge border', async () => {
