@@ -107,11 +107,14 @@ describe('ChallengeWorkspace', () => {
     const challengeFieldHeading = screen.getByRole('heading', { name: 'Challenge field' });
     const challengeField = screen.getByRole('region', { name: 'Challenge field' });
     const overview = screen.getByRole('heading', { name: 'Your run' }).closest('section');
+    const overviewLayout = overview?.firstElementChild;
     const categoryBreakdown = screen.getByRole('list', { name: 'Category breakdown' });
     const categoryScrollOwner = categoryBreakdown.parentElement;
     expect(challengeFieldHeading).toBeVisible();
     expect(challengeFieldHeading.parentElement).toHaveClass('px-3');
     expect(overview).toHaveClass('overflow-hidden');
+    expect(overviewLayout).toHaveClass('w-full', 'px-6');
+    expect(overviewLayout).not.toHaveClass('mx-auto', 'max-w-shell');
     expect(challengeField).toHaveClass('min-h-0', 'flex-1');
     expect(categoryScrollOwner).toHaveClass('min-h-0', 'flex-1', 'overflow-y-auto');
     expect(categoryScrollOwner).not.toContainElement(screen.getByText('Progress'));

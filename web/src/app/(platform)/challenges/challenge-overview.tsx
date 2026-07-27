@@ -94,7 +94,7 @@ export function ChallengeOverview({
       aria-labelledby="competition-overview-title"
       className="h-full min-h-0 overflow-hidden bg-surface-raised"
     >
-      <div className="mx-auto flex h-full min-h-0 w-full max-w-shell flex-col gap-8 px-8 py-8">
+      <div className="flex h-full min-h-0 w-full flex-col gap-8 px-6 py-8">
         <header className="flex shrink-0 flex-wrap items-end justify-between gap-6">
           <div className="grid gap-2">
             <h2

@@ -327,6 +327,10 @@ reusable failure mode, add the general rule here before closing the issue.
   heading, overall challenge bar, and category column headings remain fixed.
   Only the category rows own vertical overflow when they exceed the remaining
   pane height; the overview pane and document do not become scroll owners.
+- A split pane already constrains the overview's reading context. The
+  no-selection overview consumes the available pane width with one compact
+  lateral inset; it must not reapply the global page-shell maximum and create
+  large automatic side margins around charts or ledgers.
 - Challenge categories are independent disclosures, all expanded by default.
   Category headings remain sticky inside the challenge-list scroll owner and
   retain their Lucide category icon, pastel index colour, solved ratio, and
