@@ -296,7 +296,14 @@ describe('ChallengeWorkspace', () => {
 
     renderWorkspace([solved], solved.id);
 
-    expect(screen.getByLabelText('Challenge solve context')).toBeVisible();
+    const solveStrip = screen.getByLabelText('Challenge solve context');
+    const solveStripRows = within(solveStrip).getAllByRole('listitem');
+    expect(solveStrip).toBeVisible();
+    expect(solveStripRows).toHaveLength(4);
+    for (const row of solveStripRows) {
+      expect(row).toHaveClass('flex', 'min-h-control', 'items-center');
+      expect(row).not.toHaveClass('grid');
+    }
     expect(screen.getAllByText('Foxden').length).toBeGreaterThan(0);
     const selectedChallenge = screen.getByRole('link', { name: /Solved timeline/ });
     const firstBlood = within(selectedChallenge).getByText('First blood');

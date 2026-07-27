@@ -162,15 +162,18 @@ export function ChallengeSolveStrip({ context }: ChallengeSolveStripProps) {
 
   return (
     <section aria-label="Challenge solve context">
-      <ul className="m-0 grid list-none grid-cols-2 gap-x-4 gap-y-2 p-0 lg:grid-cols-4">
+      <ul className="m-0 grid list-none grid-cols-1 gap-x-4 gap-y-2 p-0 sm:grid-cols-2 3xl:grid-cols-4">
         {leaders.map((entry, index) => {
           const entryPlacement = (index + 1) as 1 | 2 | 3;
 
           return (
-            <li className="grid min-w-0 gap-1 px-3 py-2" key={entryPlacement}>
+            <li
+              className="flex min-h-control min-w-0 items-center gap-3 px-3 py-2"
+              key={entryPlacement}
+            >
               <span
                 className={cx(
-                  'flex items-center gap-1 text-xs font-semibold',
+                  'flex shrink-0 items-center gap-1 text-xs font-semibold',
                   placementTextClasses[entryPlacement]
                 )}
               >
@@ -179,30 +182,32 @@ export function ChallengeSolveStrip({ context }: ChallengeSolveStripProps) {
                 ) : null}
                 {ordinal(entryPlacement)}
               </span>
-              <span className="flex min-w-0 items-center gap-2">
+              <span className="flex min-w-0 flex-1 items-center gap-2">
                 {entry ? (
                   <Avatar
                     name={entry.competitorName}
                     size="small"
                     tone={avatarTone(entry.competitorId)}
                   />
-                ) : null}
+                ) : (
+                  <span aria-hidden className="size-8 shrink-0" />
+                )}
                 <strong className="truncate text-sm font-medium text-text">
                   {entry?.competitorName ?? 'Open'}
                 </strong>
               </span>
-              <span className="text-xs tabular-nums text-text-muted">
+              <span className="shrink-0 text-right text-xs tabular-nums text-text-muted">
                 {entry ? formatSolveDelta(entry.deltaMs) : 'No solve'}
               </span>
             </li>
           );
         })}
-        <li className="grid min-w-0 gap-1 border-l-2 border-accent bg-accent-subtle px-3 py-2 text-accent-text">
-          <span className="flex items-center gap-1 text-xs font-semibold">
+        <li className="flex min-h-control min-w-0 items-center gap-3 border-l-2 border-accent bg-accent-subtle px-3 py-2 text-accent-text">
+          <span className="flex shrink-0 items-center gap-1 text-xs font-semibold">
             {context.selfEntry ? <Check aria-hidden className="size-3" /> : null}
             {context.selfEntry ? ordinal(context.selfEntry.rank) : 'You'}
           </span>
-          <span className="flex min-w-0 items-center gap-2">
+          <span className="flex min-w-0 flex-1 items-center gap-2">
             <Avatar
               name={context.currentCompetitor.name}
               size="small"
@@ -212,7 +217,7 @@ export function ChallengeSolveStrip({ context }: ChallengeSolveStripProps) {
               {context.currentCompetitor.name}
             </strong>
           </span>
-          <span className="text-xs tabular-nums">
+          <span className="shrink-0 text-right text-xs tabular-nums">
             {context.selfEntry ? formatSolveDelta(context.selfEntry.deltaMs) : 'Unsolved'}
           </span>
         </li>

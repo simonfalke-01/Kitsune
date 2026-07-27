@@ -321,6 +321,9 @@ reusable failure mode, add the general rule here before closing the issue.
   elapsed time from first solve, and absolute solve time. The current
   competitor stays identifiable and receives a pinned row when outside the
   leading results.
+- The compact first-three-plus-self context uses one horizontal ledger anatomy
+  per competitor: rank, avatar, name, then elapsed state on one line. Stacked
+  mini-profile cards with separate rank, identity, and time rows are prohibited.
 - The first-three-plus-self context and flag action form one sticky detail
   dock. The dock spans the pane; the text action remains content-width on wide
   layouts and expands only when the controls stack on narrow layouts.
