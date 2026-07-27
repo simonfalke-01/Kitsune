@@ -451,6 +451,18 @@
   }
 }
 
+@keyframes kitsune-solve-wave {
+  from {
+    opacity: 1;
+    transform: translate3d(-50%, -50%, 0) scale(0);
+  }
+
+  to {
+    opacity: 0;
+    transform: translate3d(-50%, -50%, 0) scale(1);
+  }
+}
+
 @layer components {
   .kitsune-split-workspace {
     grid-template-columns: var(--split-workspace-left) minmax(0, 1fr);
@@ -462,6 +474,15 @@
 
   .kitsune-challenge-tile[data-newly-solved='true'] {
     animation: kitsune-solve-spark var(--duration-slow) var(--ease-out-quart);
+  }
+
+  .kitsune-solve-wave {
+    top: var(--solve-wave-y);
+    left: var(--solve-wave-x);
+    width: var(--solve-wave-diameter);
+    background-color: var(--success-subtle);
+    animation: kitsune-solve-wave var(--duration-slow) var(--ease-out-quart) both;
+    will-change: opacity, transform;
   }
 
   .kitsune-challenge-row[data-solved='true'] {
@@ -589,5 +610,10 @@
     --duration-fast: 0ms;
     --duration-normal: 0ms;
     --duration-slow: 0ms;
+  }
+
+  .kitsune-solve-wave {
+    animation: none;
+    opacity: 0;
   }
 }

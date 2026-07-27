@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 import type { ChallengeWorkspaceActions } from './challenge-types';
 import { Alert, Button, Form, RadioGroup, TextField } from '@/components/ui';
@@ -27,12 +27,14 @@ function submissionMessage(receipt: SubmissionReceipt): string {
 
 interface ChallengeSubmissionProps {
   challenge: ChallengeExperience;
+  onCorrectOrigin?: (origin: DOMRect) => void;
   onReceipt: (receipt: SubmissionReceipt) => Promise<void>;
   submitAnswer: ChallengeWorkspaceActions['submitAnswer'];
 }
 
 export function ChallengeSubmission({
   challenge,
+  onCorrectOrigin,
   onReceipt,
   submitAnswer
 }: ChallengeSubmissionProps) {
@@ -40,6 +42,7 @@ export function ChallengeSubmission({
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [receiptMessage, setReceiptMessage] = useState<string | null>(null);
+  const flagFieldRef = useRef<HTMLDivElement>(null);
   const choices = challenge.kind.type === 'multiple_choice' ? challenge.kind.choices : null;
 
   async function submit() {
@@ -57,6 +60,14 @@ export function ChallengeSubmission({
     try {
       const receipt = await submitAnswer(challenge.id, normalizedAnswer);
       const message = submissionMessage(receipt);
+
+      if (receipt.outcome === 'correct') {
+        const input = flagFieldRef.current?.querySelector('input');
+
+        if (input) {
+          onCorrectOrigin?.(input.getBoundingClientRect());
+        }
+      }
 
       if (receipt.outcome === 'incorrect') {
         setError(message);
@@ -107,15 +118,17 @@ export function ChallengeSubmission({
         </>
       ) : (
         <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-end">
-          <TextField
-            className="min-w-0 flex-1"
-            errorMessage={error}
-            inputClassName="h-control bg-surface-sunken font-mono"
-            isInvalid={Boolean(error)}
-            label={challenge.kind.type === 'manual_verification' ? 'Answer' : 'Flag'}
-            onChange={setAnswer}
-            value={answer}
-          />
+          <div className="min-w-0 flex-1" ref={flagFieldRef}>
+            <TextField
+              className="min-w-0"
+              errorMessage={error}
+              inputClassName="h-control bg-surface-sunken font-mono"
+              isInvalid={Boolean(error)}
+              label={challenge.kind.type === 'manual_verification' ? 'Answer' : 'Flag'}
+              onChange={setAnswer}
+              value={answer}
+            />
+          </div>
           <Button className="h-control w-full sm:w-auto" isLoading={isSubmitting} type="submit">
             {challenge.kind.type === 'manual_verification' ? 'Submit for review' : 'Submit flag'}
           </Button>

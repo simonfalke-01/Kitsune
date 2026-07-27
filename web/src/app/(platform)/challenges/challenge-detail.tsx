@@ -1,7 +1,7 @@
 'use client';
 
 import { Check } from 'lucide-react';
-import { useState } from 'react';
+import { type CSSProperties, useRef, useState } from 'react';
 
 import { ChallengeCategoryLabel } from './challenge-category';
 import { ChallengeHints } from './challenge-hints';
@@ -39,6 +39,18 @@ interface ChallengeDetailProps {
   solveContext: ChallengeSolveContext;
 }
 
+interface SolveWaveGeometry {
+  diameter: number;
+  x: number;
+  y: number;
+}
+
+interface SolveWaveStyle extends CSSProperties {
+  '--solve-wave-diameter'?: string;
+  '--solve-wave-x'?: string;
+  '--solve-wave-y'?: string;
+}
+
 export function ChallengeDetail({
   actions,
   challenge,
@@ -52,6 +64,8 @@ export function ChallengeDetail({
   const [isPendingReview, setIsPendingReview] = useState(false);
   const [isSolved, setIsSolved] = useState(challenge.solved);
   const [postSolveSurveyComplete, setPostSolveSurveyComplete] = useState(false);
+  const [solveWave, setSolveWave] = useState<SolveWaveGeometry | null>(null);
+  const detailRef = useRef<HTMLElement>(null);
   const connection = challengeConnection(challenge);
   const resolvedChallenge: ChallengeExperience = {
     ...challenge,
@@ -96,12 +110,50 @@ export function ChallengeDetail({
   const showPostSolveSurvey =
     challenge.surveyMode === 'post_solve' && challenge.survey.length > 0 && isSolved;
   const hasResources = Boolean(connection) || challenge.attachments.length > 0;
+  const solveWaveStyle: SolveWaveStyle | undefined = solveWave
+    ? {
+        '--solve-wave-diameter': `${solveWave.diameter}px`,
+        '--solve-wave-x': `${solveWave.x}px`,
+        '--solve-wave-y': `${solveWave.y}px`
+      }
+    : undefined;
+
+  function startSolveWave(origin: DOMRect) {
+    const detailBounds = detailRef.current?.getBoundingClientRect();
+
+    if (!detailBounds) {
+      return;
+    }
+
+    const x = origin.left - detailBounds.left + origin.width / 2;
+    const y = origin.top - detailBounds.top + origin.height / 2;
+    const farthestCorner = Math.max(
+      Math.hypot(x, y),
+      Math.hypot(detailBounds.width - x, y),
+      Math.hypot(x, detailBounds.height - y),
+      Math.hypot(detailBounds.width - x, detailBounds.height - y)
+    );
+
+    setSolveWave({
+      diameter: Math.max(1, farthestCorner * 2),
+      x,
+      y
+    });
+  }
 
   return (
     <article
-      className="kitsune-challenge-detail flex h-full min-h-0 flex-col overflow-hidden bg-surface-raised"
+      className="kitsune-challenge-detail relative isolate flex h-full min-h-0 flex-col overflow-hidden bg-surface-raised"
       key={challenge.id}
+      ref={detailRef}
     >
+      {solveWave ? (
+        <span
+          aria-hidden
+          className="kitsune-solve-wave pointer-events-none absolute z-30 aspect-square rounded-full"
+          style={solveWaveStyle}
+        />
+      ) : null}
       <header className="shrink-0 px-6 py-6">
         <div className="flex w-full items-start justify-between gap-6">
           <div className="grid min-w-0 gap-2">
@@ -306,6 +358,7 @@ export function ChallengeDetail({
             ) : (
               <ChallengeSubmission
                 challenge={resolvedChallenge}
+                onCorrectOrigin={startSolveWave}
                 onReceipt={handleReceipt}
                 submitAnswer={actions.submitAnswer}
               />

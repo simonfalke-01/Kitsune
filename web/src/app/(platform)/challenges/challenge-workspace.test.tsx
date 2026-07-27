@@ -330,5 +330,40 @@ describe('ChallengeWorkspace', () => {
     });
     expect(screen.queryByRole('button', { name: 'Submit flag' })).not.toBeInTheDocument();
     expect(screen.getAllByText('Challenge solved').length).toBeGreaterThan(0);
+    expect(document.querySelector('.kitsune-solve-wave')).toHaveStyle({
+      '--solve-wave-diameter': '1px',
+      '--solve-wave-x': '0px',
+      '--solve-wave-y': '0px'
+    });
+  });
+
+  it('does not emit the solve wave for an incorrect flag', async () => {
+    const workspaceActions = actions();
+    workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
+      attempts_remaining: 3,
+      awarded_points: 0,
+      challenge_id: 'challenge',
+      first_blood: false,
+      id: 'submission',
+      outcome: 'incorrect',
+      replayed: false,
+      submitted_at: '2026-07-23T12:00:00Z'
+    });
+
+    renderWorkspace(
+      [createChallengeExperience(challenge(), { solveCount: 4 })],
+      'challenge',
+      workspaceActions
+    );
+
+    fireEvent.change(screen.getByLabelText('Flag'), {
+      target: {
+        value: 'kit{incorrect}'
+      }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit flag' }));
+
+    expect(await screen.findByText('Incorrect. 3 attempts remain.')).toBeVisible();
+    expect(document.querySelector('.kitsune-solve-wave')).not.toBeInTheDocument();
   });
 });

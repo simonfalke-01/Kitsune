@@ -283,6 +283,9 @@ reusable failure mode, add the general rule here before closing the issue.
   are not.
 - A flag submission updates in place, preserves the challenge position, and
   gives an immediate pending state followed by exact feedback.
+- A confirmed correct flag emits one restrained success wave from the measured
+  flag-field bounds. The wave uses transform and opacity only, never delays the
+  solved state, never intercepts input, and disappears under reduced motion.
 - The challenge list, selected detail, resources, hints, and flag input remain
   in one task flow. Selecting a challenge updates the detail in place and may
   update the URL without reloading the document.
