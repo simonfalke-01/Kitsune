@@ -135,6 +135,7 @@ export function LineChart<Metadata>({
   const chartRef = useRef<SVGSVGElement>(null);
   const [chartSize, setChartSize] = useState({
     height: chartViewHeight,
+    isMeasured: false,
     width: chartViewWidth
   });
   const isWide = chartSize.width >= 640;
@@ -158,12 +159,13 @@ export function LineChart<Metadata>({
       }
 
       setChartSize((current) => {
-        if (current.width === rect.width && current.height === rect.height) {
+        if (current.width === rect.width && current.height === rect.height && current.isMeasured) {
           return current;
         }
 
         return {
           height: rect.height,
+          isMeasured: true,
           width: rect.width
         };
       });
@@ -405,7 +407,7 @@ export function LineChart<Metadata>({
             }
           }}
           onPointerMove={handlePointerMove}
-          preserveAspectRatio="xMinYMin meet"
+          preserveAspectRatio={chartSize.isMeasured ? 'xMinYMin meet' : 'none'}
           ref={chartRef}
           role="img"
           tabIndex={0}

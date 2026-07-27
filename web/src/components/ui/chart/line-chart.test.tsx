@@ -70,7 +70,7 @@ describe('LineChart', () => {
 
     const chart = screen.getByRole('img', { name: 'Score history' });
     expect(chart).toBeVisible();
-    expect(chart).toHaveAttribute('preserveAspectRatio', 'xMinYMin meet');
+    expect(chart).toHaveAttribute('preserveAspectRatio', 'none');
     expect(screen.getByRole('button', { name: 'Chart data' })).toBeVisible();
 
     vi.spyOn(chart, 'getBoundingClientRect').mockReturnValue({
@@ -88,6 +88,7 @@ describe('LineChart', () => {
       resizeChart([], {} as ResizeObserver);
     });
     expect(chart).toHaveAttribute('viewBox', '0 0 480 320');
+    expect(chart).toHaveAttribute('preserveAspectRatio', 'xMinYMin meet');
 
     fireEvent.keyDown(chart, {
       key: 'ArrowRight'

@@ -392,6 +392,10 @@ reusable failure mode, add the general rule here before closing the issue.
   pointer coordinates, ticks, and overlays from that box. They must not apply
   `preserveAspectRatio="none"` to a fixed coordinate system, which visibly
   distorts both data geometry and typography as a pane narrows.
+- Before that first client measurement, the server-rendered chart fallback may
+  fill the already-reserved chart box so it does not appear to grow during
+  hydration. The measured render replaces the fallback with matching plot and
+  CSS dimensions before enabling exact pointer geometry.
 - A split pane already constrains the overview's reading context. The
   no-selection overview consumes the available pane width with one compact
   lateral inset; it must not reapply the global page-shell maximum and create
