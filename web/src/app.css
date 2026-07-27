@@ -516,6 +516,11 @@
     grid-template-columns: var(--split-workspace-left) minmax(0, 1fr);
   }
 
+  .kitsune-split-track {
+    right: var(--split-workspace-maximum-inset);
+    left: var(--split-workspace-minimum);
+  }
+
   .kitsune-split-thumb[data-dragging] .kitsune-split-grip {
     background-color: var(--accent);
   }

@@ -65,18 +65,26 @@ describe('SplitWorkspace', () => {
     const slider = screen.getByRole('slider', { name: 'Pointer-resizable panel' });
     const thumb = slider.closest('.kitsune-split-thumb')!;
     const track = thumb.parentElement!;
+    const workspace = track.closest('.kitsune-split-workspace')!;
+
+    expect(track).toHaveClass('kitsune-split-track', 'absolute', 'inset-y-0');
+    expect(workspace).toHaveStyle({
+      '--split-workspace-left': '40%',
+      '--split-workspace-maximum-inset': '48%',
+      '--split-workspace-minimum': '32%'
+    });
 
     Object.defineProperty(track, 'getBoundingClientRect', {
       configurable: true,
       value: () => ({
         bottom: 600,
         height: 600,
-        left: 0,
-        right: 1_000,
+        left: 320,
+        right: 520,
         toJSON: () => undefined,
         top: 0,
-        width: 1_000,
-        x: 0,
+        width: 200,
+        x: 320,
         y: 0
       })
     });
@@ -99,18 +107,19 @@ describe('SplitWorkspace', () => {
     });
     fireEvent.pointerMove(document, {
       buttons: 1,
-      clientX: 600,
+      clientX: 440,
       clientY: 300,
       pointerId: 1,
       pointerType: 'mouse'
     });
 
     expect(slider).toHaveValue('44');
+    expect(workspace).toHaveStyle({ '--split-workspace-left': '44%' });
 
     fireEvent.pointerUp(document, {
       button: 0,
       buttons: 0,
-      clientX: 600,
+      clientX: 440,
       clientY: 300,
       pointerId: 1,
       pointerType: 'mouse'

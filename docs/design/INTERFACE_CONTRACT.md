@@ -133,6 +133,10 @@ reusable failure mode, add the general rule here before closing the issue.
   pointer target. A keyboard-only value change does not prove the pointer
   interaction works. Pointer dragging must be tested against the rendered
   target and update pane geometry continuously.
+- The splitter's physical track spans the same minimum-to-maximum percentage
+  interval used by the pane grid. Pointer position, thumb position, and pane
+  width remain one-to-one throughout a drag; mapping a constrained value range
+  across the full workspace is a functional defect.
 - Scrollbar tracks stay transparent. A pane may reveal its thumb while the user
   scrolls, then hide it after scrolling stops. Do not reserve a permanent gray
   track at the viewport edge.

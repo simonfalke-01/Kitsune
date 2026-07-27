@@ -13,6 +13,8 @@ const splitWorkspaceAppearances = {
 
 interface SplitWorkspaceStyle extends CSSProperties {
   '--split-workspace-left'?: string;
+  '--split-workspace-maximum-inset'?: string;
+  '--split-workspace-minimum'?: string;
 }
 
 interface ScrollPaneProps {
@@ -61,7 +63,9 @@ export function SplitWorkspace({
   const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
   const resolvedValue = value ?? uncontrolledValue;
   const style: SplitWorkspaceStyle = {
-    '--split-workspace-left': `${resolvedValue}%`
+    '--split-workspace-left': `${resolvedValue}%`,
+    '--split-workspace-maximum-inset': `${100 - maximum}%`,
+    '--split-workspace-minimum': `${minimum}%`
   };
 
   return (
@@ -96,7 +100,7 @@ export function SplitWorkspace({
         <SliderOutput className="sr-only">
           {({ state }) => `${state.getThumbValue(0)} percent`}
         </SliderOutput>
-        <SliderTrack className="relative h-full w-full touch-none">
+        <SliderTrack className="kitsune-split-track absolute inset-y-0 touch-none">
           <SliderThumb
             className={cx(
               'kitsune-split-thumb group pointer-events-auto top-0 flex h-full w-12 -translate-x-6',
