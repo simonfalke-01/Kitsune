@@ -389,10 +389,11 @@
   --shadow-lg: 0 4px 8px oklch(0% 0 0 / 4%), 0 12px 24px oklch(0% 0 0 / 6%);
 
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
   --duration-fast: 120ms;
   --duration-normal: 180ms;
   --duration-slow: 260ms;
-  --duration-celebration: 600ms;
+  --duration-celebration: 1200ms;
   --animate-toast-in: kitsune-toast-in var(--duration-normal) var(--ease-out-quart) both;
   --animate-toast-out: kitsune-toast-out var(--duration-fast) var(--ease-out-quart) both;
 
@@ -416,6 +417,7 @@
   --spacing-workspace: calc(100dvh - 4rem);
 
   --z-index-overlay: 50;
+  --z-index-celebration: 60;
 }
 
 @keyframes kitsune-toast-in {
@@ -458,6 +460,11 @@
     transform: translate3d(-50%, -50%, 0) scale(0);
   }
 
+  75% {
+    opacity: 1;
+    transform: translate3d(-50%, -50%, 0) scale(0.875);
+  }
+
   to {
     opacity: 0;
     transform: translate3d(-50%, -50%, 0) scale(1);
@@ -481,8 +488,7 @@
     top: var(--solve-wave-y);
     left: var(--solve-wave-x);
     width: var(--solve-wave-diameter);
-    background-color: var(--success-subtle);
-    animation: kitsune-solve-wave var(--duration-celebration) var(--ease-out-quart) both;
+    animation: kitsune-solve-wave var(--duration-celebration) var(--ease-in-out-quart) both;
     will-change: opacity, transform;
   }
 

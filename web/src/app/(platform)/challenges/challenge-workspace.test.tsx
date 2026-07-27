@@ -331,9 +331,10 @@ describe('ChallengeWorkspace', () => {
     expect(screen.queryByRole('button', { name: 'Submit flag' })).not.toBeInTheDocument();
     expect(screen.getAllByText('Challenge solved').length).toBeGreaterThan(0);
     const solveWave = document.querySelector('.kitsune-solve-wave');
-    expect(solveWave).toHaveClass('ring-2', 'ring-success-border');
+    expect(solveWave?.parentElement).toBe(document.body);
+    expect(solveWave).toHaveClass('fixed', 'z-celebration', 'ring-2', 'ring-success-border');
     expect(solveWave).toHaveStyle({
-      '--solve-wave-diameter': '1px',
+      '--solve-wave-diameter': `${Math.hypot(window.innerWidth, window.innerHeight) * 2}px`,
       '--solve-wave-x': '0px',
       '--solve-wave-y': '0px'
     });
