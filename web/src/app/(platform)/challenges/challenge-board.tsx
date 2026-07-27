@@ -33,7 +33,7 @@ export function ChallengeBoard() {
         name: 'Kitsune Labs'
       }}
       eventId="demo-event"
-      eventName="Kitsune Open 2026"
+      eventName="Kitsune Open"
       eventStartedAt="2026-07-26T04:00:00Z"
       getChallengeHref={(challengeId, tab) => {
         return challengeWorkspacePath(

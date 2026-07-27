@@ -23,6 +23,7 @@ interface AppShellProps {
 
 interface AppHeaderProps {
   appearance?: 'global' | 'workspace';
+  brandLabel?: string;
   children?: ReactNode;
   footer?: ReactNode;
 }
@@ -47,7 +48,12 @@ function pathIsCurrent(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AppHeader({ appearance = 'global', children, footer }: AppHeaderProps) {
+export function AppHeader({
+  appearance = 'global',
+  brandLabel = 'Kitsune',
+  children,
+  footer
+}: AppHeaderProps) {
   const pathname = usePathname() ?? '/';
   const router = useRouter();
   const { isAuthenticated, logout } = useSession();
@@ -82,11 +88,19 @@ export function AppHeader({ appearance = 'global', children, footer }: AppHeader
           </MenuTrigger>
         </div>
         <Link
-          className="font-display text-lg font-semibold tracking-tight text-accent-text no-underline"
+          className={
+            appearance === 'workspace'
+              ? 'min-w-0 truncate font-display text-lg font-semibold tracking-tight text-text no-underline'
+              : 'font-display text-lg font-semibold tracking-tight text-accent-text no-underline'
+          }
           href="/event"
           tone="current"
         >
-          <span className="kitsune-optical-center">Kitsune</span>
+          {appearance === 'workspace' ? (
+            <h1 className="kitsune-optical-center m-0 truncate text-lg">{brandLabel}</h1>
+          ) : (
+            <span className="kitsune-optical-center">{brandLabel}</span>
+          )}
         </Link>
         <nav aria-label="Player" className="hidden items-center gap-1 md:flex">
           {playerNavigation.map((item) => (

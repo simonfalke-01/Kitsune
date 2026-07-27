@@ -47,6 +47,7 @@ export function ChallengeEventTrail({
   return (
     <AppHeader
       appearance="workspace"
+      brandLabel={eventName}
       footer={
         <Progress
           appearance="trail"
@@ -58,9 +59,6 @@ export function ChallengeEventTrail({
     >
       <section aria-label="Event progress" className="flex min-w-0 items-center gap-6">
         <div className="kitsune-optical-center flex min-w-0 flex-1 items-baseline gap-6">
-          <h1 className="m-0 shrink-0 truncate font-display text-lg font-semibold tracking-tight text-text">
-            {eventName}
-          </h1>
           {selectedChallenge ? (
             <div className="hidden min-w-0 items-baseline gap-2 text-sm 2xl:flex">
               <ChallengeCategoryLabel category={selectedChallenge.category} showIcon={false} />
@@ -68,7 +66,7 @@ export function ChallengeEventTrail({
               <strong className="truncate font-medium text-text">{selectedChallenge.name}</strong>
             </div>
           ) : null}
-          <div className="hidden shrink-0 items-baseline gap-6 text-sm tabular-nums text-text-muted xl:flex">
+          <div className="hidden shrink-0 items-baseline gap-6 text-sm tabular-nums text-text-muted lg:flex">
             <span>
               <strong className="font-semibold text-text">{progress.solved}</strong> /{' '}
               {progress.total} solved
