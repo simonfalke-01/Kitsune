@@ -10,10 +10,12 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore
 } from 'react';
+import { animate, useReducedMotion } from 'motion/react';
 import { Slider, SliderOutput, SliderThumb, SliderTrack } from 'react-aria-components';
 
 import { cx } from './styles';
@@ -26,6 +28,29 @@ const splitWorkspaceAppearances = {
 
 interface SplitWorkspaceStyle extends CSSProperties {
   '--split-workspace-left'?: string;
+}
+
+function splitWorkspaceMotion(element: HTMLElement) {
+  const computed = window.getComputedStyle(element);
+  const durationValue = computed.getPropertyValue('--duration-slow').trim();
+  const durationNumber = Number.parseFloat(durationValue);
+  const duration = Number.isFinite(durationNumber)
+    ? durationValue.endsWith('ms')
+      ? durationNumber / 1000
+      : durationNumber
+    : 0;
+  const easingValue = computed.getPropertyValue('--ease-out-spatial').trim();
+  const easingMatch = easingValue.match(/cubic-bezier\(([^)]+)\)/);
+  const easingNumbers = easingMatch?.[1]?.split(',').map((value) => Number(value.trim()));
+  const ease =
+    easingNumbers?.length === 4 && easingNumbers.every(Number.isFinite)
+      ? (easingNumbers as [number, number, number, number])
+      : ('easeOut' as const);
+
+  return {
+    duration,
+    ease
+  };
 }
 
 function clamp(value: number, minimum: number, maximum: number): number {
@@ -165,9 +190,14 @@ export function SplitWorkspace({
     value: defaultValue
   });
   const [isDragging, setIsDragging] = useState(false);
+  const [renderedCollapsed, setRenderedCollapsed] = useState(isLeftCollapsed);
+  const shouldReduceMotion = useReducedMotion();
   const activePointerRef = useRef<number | null>(null);
+  const collapseAnimationRef = useRef<ReturnType<typeof animate> | null>(null);
+  const collapseWidthRef = useRef<number | null>(null);
   const dragOffsetRef = useRef(0);
   const latestValueRef = useRef(defaultValue);
+  const previousCollapsedRef = useRef(isLeftCollapsed);
   const sliderRef = useRef<HTMLDivElement>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
   let uncontrolledValue = uncontrolledState.value;
@@ -193,12 +223,61 @@ export function SplitWorkspace({
       ? `clamp(${minimum}%, var(${preferenceProperty}, ${initialUncontrolledValue}%), ${maximum}%)`
       : `${resolvedValue}%`;
   const style: SplitWorkspaceStyle = {
-    '--split-workspace-left': isLeftCollapsed ? 'var(--spacing-collapsed-rail)' : styleValue
+    '--split-workspace-left': renderedCollapsed ? 'var(--spacing-collapsed-rail)' : styleValue
   };
 
   useEffect(() => {
     latestValueRef.current = resolvedValue;
   }, [resolvedValue]);
+
+  useLayoutEffect(() => {
+    const workspace = workspaceRef.current;
+    const wasCollapsed = previousCollapsedRef.current;
+
+    if (!workspace || wasCollapsed === isLeftCollapsed) {
+      return;
+    }
+
+    previousCollapsedRef.current = isLeftCollapsed;
+    collapseAnimationRef.current?.stop();
+
+    const leftPane = workspace.firstElementChild as HTMLElement | null;
+    const targetTrack = isLeftCollapsed ? 'var(--spacing-collapsed-rail)' : styleValue;
+    const measuredStart = leftPane?.getBoundingClientRect().width ?? 0;
+    const startWidth = collapseWidthRef.current ?? measuredStart;
+
+    workspace.style.setProperty('--split-workspace-left', targetTrack);
+    const targetWidth = leftPane?.getBoundingClientRect().width ?? 0;
+
+    if (
+      shouldReduceMotion ||
+      isDragging ||
+      startWidth <= 0 ||
+      targetWidth <= 0 ||
+      startWidth === targetWidth
+    ) {
+      collapseWidthRef.current = null;
+      workspace.style.setProperty('--split-workspace-left', targetTrack);
+      setRenderedCollapsed(isLeftCollapsed);
+      return;
+    }
+
+    workspace.style.setProperty('--split-workspace-left', `${startWidth}px`);
+    collapseAnimationRef.current = animate(startWidth, targetWidth, {
+      ...splitWorkspaceMotion(workspace),
+      onComplete() {
+        collapseWidthRef.current = null;
+        workspace.style.setProperty('--split-workspace-left', targetTrack);
+        setRenderedCollapsed(isLeftCollapsed);
+      },
+      onUpdate(nextWidth) {
+        collapseWidthRef.current = nextWidth;
+        workspace.style.setProperty('--split-workspace-left', `${nextWidth}px`);
+      }
+    });
+
+    return () => collapseAnimationRef.current?.stop();
+  }, [isDragging, isLeftCollapsed, shouldReduceMotion, styleValue]);
 
   function updateValue(nextValue: number) {
     const boundedValue = clamp(nextValue, minimum, maximum);

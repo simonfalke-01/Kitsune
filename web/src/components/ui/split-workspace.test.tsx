@@ -1,12 +1,38 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { renderToString } from 'react-dom/server';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const motionMocks = vi.hoisted(() => ({
+  animate: vi.fn()
+}));
+
+vi.mock('motion/react', () => ({
+  animate: motionMocks.animate,
+  useReducedMotion: () => false
+}));
 
 import { SplitWorkspace } from './split-workspace';
 
 beforeEach(() => {
   window.localStorage.clear();
+  motionMocks.animate.mockReset();
+  motionMocks.animate.mockImplementation(
+    (
+      _from: number,
+      to: number,
+      options: {
+        onComplete?: () => void;
+        onUpdate?: (value: number) => void;
+      }
+    ) => {
+      options.onUpdate?.(to);
+      options.onComplete?.();
+      return {
+        stop: vi.fn()
+      };
+    }
+  );
 });
 
 function ControlledSplitWorkspace() {
@@ -70,6 +96,26 @@ describe('SplitWorkspace', () => {
         right={<div>Detail remains mounted</div>}
       />
     );
+    const workspace = screen
+      .getByText('Detail remains mounted')
+      .closest<HTMLElement>('.kitsune-split-workspace')!;
+    const leftPane = workspace.firstElementChild as HTMLElement;
+    vi.spyOn(leftPane, 'getBoundingClientRect').mockImplementation(() => {
+      const track = workspace.style.getPropertyValue('--split-workspace-left');
+      const width = track.includes('collapsed-rail') ? 64 : 400;
+
+      return {
+        bottom: 600,
+        height: 600,
+        left: 0,
+        right: width,
+        toJSON: () => ({}),
+        top: 0,
+        width,
+        x: 0,
+        y: 0
+      };
+    });
 
     rerender(
       <SplitWorkspace
@@ -86,9 +132,8 @@ describe('SplitWorkspace', () => {
     expect(screen.getByText('Detail remains mounted')).toBeVisible();
     expect(screen.getByText('Collapsed navigation remains available')).toBeVisible();
     expect(screen.queryByRole('slider', { name: 'Collapsible panel' })).not.toBeInTheDocument();
-    expect(
-      screen.getByText('Detail remains mounted').closest('.kitsune-split-workspace')
-    ).toHaveStyle({ '--split-workspace-left': 'var(--spacing-collapsed-rail)' });
+    expect(workspace).toHaveStyle({ '--split-workspace-left': 'var(--spacing-collapsed-rail)' });
+    expect(motionMocks.animate).toHaveBeenCalledWith(400, 64, expect.any(Object));
 
     rerender(
       <SplitWorkspace
@@ -101,6 +146,7 @@ describe('SplitWorkspace', () => {
     );
 
     expect(screen.getByRole('slider', { name: 'Collapsible panel' })).toHaveValue('40');
+    expect(motionMocks.animate).toHaveBeenLastCalledWith(64, 400, expect.any(Object));
   });
 
   it('updates pane width continuously during a pointer drag', () => {
