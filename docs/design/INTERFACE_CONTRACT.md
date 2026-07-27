@@ -177,6 +177,11 @@ reusable failure mode, add the general rule here before closing the issue.
 - The event trail owns one concise shortcut reference reachable by pointer and
   keyboard. Every command retains a visible equivalent, and focus movement is
   never presented as selection.
+- The challenge route composes global navigation, event identity, live
+  progress, standing, and global actions into one persistent header. Its solve
+  progress rail is the header's lower edge. A separate global bar is hidden
+  only while this merged header exists, so loading and error states retain an
+  escape path.
 - First blood is an achievement state, not a warning. Its sidebar wash, solved
   confirmation, toast, edge frame, screen imprint, and field wave all consume
   the shared first-blood gold role. Ordinary solves continue to use success

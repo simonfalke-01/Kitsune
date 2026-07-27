@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { SessionProvider } from '@/app/session-context';
+import { ThemeProvider } from '@/app/theme-context';
 import type { FlagSubmitSuccessEffect } from './challenge-presentation';
 import {
   rememberChallengeListScroll,
@@ -11,6 +13,14 @@ import {
 import { ChallengeWorkspace, type ChallengeWorkspaceActions } from './challenge-workspace';
 import type { ChallengeSummary } from '@/lib/api/client';
 import { createChallengeExperience, type ChallengeExperience } from '@/lib/challenges';
+
+vi.mock('next/navigation', () => ({
+  usePathname: () => '/challenges',
+  useRouter: () => ({
+    refresh: vi.fn(),
+    replace: vi.fn()
+  })
+}));
 
 function challenge(overrides: Partial<ChallengeSummary> = {}): ChallengeSummary {
   return {
@@ -69,19 +79,23 @@ function renderWorkspace(
   selectedChallengeTab: ChallengeDetailTab = 'details'
 ) {
   render(
-    <ChallengeWorkspace
-      actions={workspaceActions}
-      challenges={challenges}
-      currentCompetitor={{ id: 'foxden', name: 'Foxden' }}
-      eventId="event"
-      eventName="Foxden Invitational"
-      flagSubmitSuccessEffect={flagSubmitSuccessEffect}
-      getChallengeHref={(challengeId) => `/challenges?challenge=${challengeId}`}
-      onClearSelection={vi.fn()}
-      onSelectChallenge={vi.fn()}
-      selectedChallengeId={selectedChallengeId}
-      selectedChallengeTab={selectedChallengeTab}
-    />
+    <ThemeProvider>
+      <SessionProvider initialSession={null}>
+        <ChallengeWorkspace
+          actions={workspaceActions}
+          challenges={challenges}
+          currentCompetitor={{ id: 'foxden', name: 'Foxden' }}
+          eventId="event"
+          eventName="Foxden Invitational"
+          flagSubmitSuccessEffect={flagSubmitSuccessEffect}
+          getChallengeHref={(challengeId) => `/challenges?challenge=${challengeId}`}
+          onClearSelection={vi.fn()}
+          onSelectChallenge={vi.fn()}
+          selectedChallengeId={selectedChallengeId}
+          selectedChallengeTab={selectedChallengeTab}
+        />
+      </SessionProvider>
+    </ThemeProvider>
   );
 
   return workspaceActions;
@@ -109,6 +123,12 @@ describe('ChallengeWorkspace', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Foxden Invitational' })).toBeVisible();
+    expect(
+      screen.getByRole('heading', { name: 'Foxden Invitational' }).closest('header')
+    ).toHaveClass('kitsune-merged-header');
+    expect(screen.getByRole('navigation', { name: 'Player' })).toContainElement(
+      screen.getByRole('link', { name: 'Challenges' })
+    );
     expect(screen.getByRole('heading', { name: 'Your run' })).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Around your rank' })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Chart data' })).not.toBeInTheDocument();

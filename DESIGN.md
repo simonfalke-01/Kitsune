@@ -218,6 +218,9 @@ without losing competition context.
   the collection. Text entry and open overlays suspend workspace shortcuts.
 - Keep one stable shortcut reference in the event trail. Do not scatter key
   badges beside controls or make memorized commands a prerequisite.
+- On the challenge route, global navigation and event state share one header.
+  The event progress rail forms that header's lower edge; do not stack a
+  second navigation bar above the event trail or duplicate either context.
 - The splitter is a direct-manipulation control. Its hit target is forgiving,
   its affordance is visible without guessing, dragging updates continuously,
   and arrow keys provide an equivalent path.

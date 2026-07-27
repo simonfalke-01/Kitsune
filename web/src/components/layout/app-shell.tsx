@@ -21,6 +21,12 @@ interface AppShellProps {
   children: ReactNode;
 }
 
+interface AppHeaderProps {
+  appearance?: 'global' | 'workspace';
+  children?: ReactNode;
+  footer?: ReactNode;
+}
+
 interface NavigationItem {
   href: string;
   label: string;
@@ -41,7 +47,7 @@ function pathIsCurrent(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function AppShell({ children }: AppShellProps) {
+export function AppHeader({ appearance = 'global', children, footer }: AppHeaderProps) {
   const pathname = usePathname() ?? '/';
   const router = useRouter();
   const { isAuthenticated, logout } = useSession();
@@ -51,6 +57,95 @@ export function AppShell({ children }: AppShellProps) {
     id: item.href,
     label: item.label
   }));
+
+  return (
+    <header
+      className={
+        appearance === 'workspace'
+          ? 'kitsune-merged-header shrink-0 overflow-hidden rounded-md bg-surface-raised'
+          : 'kitsune-global-header sticky top-0 z-40 shrink-0 border-b border-border-subtle bg-surface-raised'
+      }
+    >
+      <div
+        className={
+          appearance === 'workspace'
+            ? 'flex min-h-16 w-full items-center gap-3 px-4'
+            : 'flex min-h-16 w-full items-center gap-3 px-4 sm:px-6 lg:px-8'
+        }
+      >
+        <div className="md:hidden">
+          <MenuTrigger>
+            <Button aria-label="Open navigation" size="icon" tone="quiet">
+              <MenuIcon aria-hidden className="size-5" />
+            </Button>
+            <Menu aria-label="Navigation" options={mobileOptions} />
+          </MenuTrigger>
+        </div>
+        <Link
+          className="font-display text-lg font-semibold tracking-tight text-accent-text no-underline"
+          href="/event"
+          tone="current"
+        >
+          <span className="kitsune-optical-center">Kitsune</span>
+        </Link>
+        <nav aria-label="Player" className="hidden items-center gap-1 md:flex">
+          {playerNavigation.map((item) => (
+            <NavigationLink
+              className="px-3"
+              href={item.href}
+              isCurrent={pathIsCurrent(pathname, item.href)}
+              key={item.href}
+            >
+              {item.label}
+            </NavigationLink>
+          ))}
+        </nav>
+        {children ? <div className="min-w-0 flex-1">{children}</div> : <div className="flex-1" />}
+        <Button
+          aria-label={isDark ? 'Use light theme' : 'Use dark theme'}
+          onPress={() => {
+            setPreference(isDark ? 'light' : 'dark');
+          }}
+          size="icon"
+          tone="quiet"
+        >
+          {isDark ? (
+            <Sun aria-hidden className="size-4" />
+          ) : (
+            <Moon aria-hidden className="size-4" />
+          )}
+        </Button>
+        {isAuthenticated ? (
+          <Button
+            aria-label="Sign out"
+            onPress={() => {
+              void logout().then((signedOut) => {
+                if (signedOut) {
+                  router.replace('/login');
+                  router.refresh();
+                  return;
+                }
+
+                showToast({
+                  title: 'Sign out failed',
+                  tone: 'danger'
+                });
+              });
+            }}
+            size="icon"
+            tone="quiet"
+          >
+            <LogOut aria-hidden className="size-4" />
+          </Button>
+        ) : null}
+      </div>
+      {footer}
+    </header>
+  );
+}
+
+export function AppShell({ children }: AppShellProps) {
+  const pathname = usePathname() ?? '/';
   const rendersContent = pathname === '/event' || pathname === '/challenges';
   const isChallengeWorkspace = pathname === '/challenges';
 
@@ -69,75 +164,7 @@ export function AppShell({ children }: AppShellProps) {
       >
         Skip to content
       </Link>
-      <header className="sticky top-0 z-40 shrink-0 border-b border-border-subtle bg-surface-raised">
-        <div className="flex min-h-16 w-full items-center gap-3 px-4 sm:px-6 lg:px-8">
-          <div className="md:hidden">
-            <MenuTrigger>
-              <Button aria-label="Open navigation" size="icon" tone="quiet">
-                <MenuIcon aria-hidden className="size-5" />
-              </Button>
-              <Menu aria-label="Navigation" options={mobileOptions} />
-            </MenuTrigger>
-          </div>
-          <Link
-            className="font-display text-lg font-semibold tracking-tight text-accent-text no-underline"
-            href="/event"
-            tone="current"
-          >
-            <span className="kitsune-optical-center">Kitsune</span>
-          </Link>
-          <nav aria-label="Player" className="hidden items-center gap-1 md:flex">
-            {playerNavigation.map((item) => (
-              <NavigationLink
-                className="px-3"
-                href={item.href}
-                isCurrent={pathIsCurrent(pathname, item.href)}
-                key={item.href}
-              >
-                {item.label}
-              </NavigationLink>
-            ))}
-          </nav>
-          <div className="min-w-0 flex-1" />
-          <Button
-            aria-label={isDark ? 'Use light theme' : 'Use dark theme'}
-            onPress={() => {
-              setPreference(isDark ? 'light' : 'dark');
-            }}
-            size="icon"
-            tone="quiet"
-          >
-            {isDark ? (
-              <Sun aria-hidden className="size-4" />
-            ) : (
-              <Moon aria-hidden className="size-4" />
-            )}
-          </Button>
-          {isAuthenticated ? (
-            <Button
-              aria-label="Sign out"
-              onPress={() => {
-                void logout().then((signedOut) => {
-                  if (signedOut) {
-                    router.replace('/login');
-                    router.refresh();
-                    return;
-                  }
-
-                  showToast({
-                    title: 'Sign out failed',
-                    tone: 'danger'
-                  });
-                });
-              }}
-              size="icon"
-              tone="quiet"
-            >
-              <LogOut aria-hidden className="size-4" />
-            </Button>
-          ) : null}
-        </div>
-      </header>
+      <AppHeader />
       <main
         id="main-content"
         className={

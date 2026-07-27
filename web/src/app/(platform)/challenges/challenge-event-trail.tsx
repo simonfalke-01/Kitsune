@@ -2,6 +2,7 @@ import { Keyboard } from 'lucide-react';
 
 import { ChallengeCategoryLabel } from './challenge-category';
 import type { ChallengeEventStandingStub } from './challenge-solve-stub';
+import { AppHeader } from '@/components/layout/app-shell';
 import {
   Button,
   Dialog,
@@ -44,23 +45,30 @@ export function ChallengeEventTrail({
   const progress = challengeProgress(challenges);
 
   return (
-    <section
-      aria-label="Event progress"
-      className="shrink-0 overflow-hidden rounded-md bg-surface-raised"
+    <AppHeader
+      appearance="workspace"
+      footer={
+        <Progress
+          appearance="trail"
+          label="Event solve progress"
+          maxValue={Math.max(progress.total, 1)}
+          value={progress.solved}
+        />
+      }
     >
-      <div className="flex min-h-16 items-center gap-6 px-4">
-        <div className="kitsune-optical-center flex min-w-0 flex-1 flex-wrap items-baseline gap-x-6 gap-y-1">
+      <section aria-label="Event progress" className="flex min-w-0 items-center gap-6">
+        <div className="kitsune-optical-center flex min-w-0 flex-1 items-baseline gap-6">
           <h1 className="m-0 shrink-0 truncate font-display text-lg font-semibold tracking-tight text-text">
             {eventName}
           </h1>
           {selectedChallenge ? (
-            <div className="hidden min-w-0 items-baseline gap-2 text-base xl:flex">
+            <div className="hidden min-w-0 items-baseline gap-2 text-sm 2xl:flex">
               <ChallengeCategoryLabel category={selectedChallenge.category} showIcon={false} />
               <span className="text-text-subtle">/</span>
               <strong className="truncate font-medium text-text">{selectedChallenge.name}</strong>
             </div>
           ) : null}
-          <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 text-base tabular-nums text-text-muted">
+          <div className="hidden shrink-0 items-baseline gap-6 text-sm tabular-nums text-text-muted xl:flex">
             <span>
               <strong className="font-semibold text-text">{progress.solved}</strong> /{' '}
               {progress.total} solved
@@ -106,21 +114,15 @@ export function ChallengeEventTrail({
             </DialogTrigger>
             <Tooltip>Keyboard shortcuts</Tooltip>
           </TooltipTrigger>
-          <div className="flex items-center gap-3">
-            <span className="kitsune-optical-center hidden text-right text-sm tabular-nums text-text-muted sm:block">
+          <div className="hidden items-center gap-3 xl:flex">
+            <span className="kitsune-optical-center hidden text-right text-sm tabular-nums text-text-muted 2xl:block">
               Rank <strong className="font-semibold text-text">{standing.rank}</strong> /{' '}
               {standing.totalCompetitors}
             </span>
             <Sparkline interpolation="step" series={standing.scoreSeries} />
           </div>
         </div>
-      </div>
-      <Progress
-        appearance="trail"
-        label="Event solve progress"
-        maxValue={Math.max(progress.total, 1)}
-        value={progress.solved}
-      />
-    </section>
+      </section>
+    </AppHeader>
   );
 }
