@@ -197,6 +197,10 @@ reusable failure mode, add the general rule here before closing the issue.
 - Repeated standings, metrics, and category summaries use aligned ledgers or
   lists. They do not become grids of individually rounded cards. A common
   region is reserved for one coherent object, not applied once per datum.
+- When length or area represents a quantity, geometry must be proportional to
+  the underlying value. Equal-sized challenge segments are prohibited when
+  point values differ. Accessibility minimums may constrain extreme cases;
+  the component must retain the real value and expose it in text.
 - Detail and sensitive-value actions open a Dialog or Sheet. Sensitive values
   have explicit copy actions.
 - Map backend lifecycle states to the few user-facing states needed for the

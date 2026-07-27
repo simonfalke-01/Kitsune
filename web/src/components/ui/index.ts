@@ -40,3 +40,4 @@ export * from './text-area';
 export * from './text-field';
 export * from './toast';
 export * from './tooltip';
+export * from './weighted-segment-bar';

@@ -103,6 +103,11 @@ describe('ChallengeWorkspace', () => {
     expect(screen.getByRole('heading', { name: 'Challenge field' })).toBeVisible();
     expect(screen.getByText('18 recorded solves')).toBeVisible();
     expect(screen.getByLabelText('0 of 1 challenges solved')).toBeVisible();
+    expect(
+      within(screen.getByRole('region', { name: 'Your run' })).getAllByRole('link', {
+        name: 'Open Shrine gate, 300 pts, 18 solves, Unsolved'
+      })[0]
+    ).toHaveAttribute('href', '/challenges?challenge=challenge');
     expect(screen.getAllByText('Web')[0]).toBeVisible();
     expect(screen.getAllByText('18 solves')[0]).toBeVisible();
     expect(screen.getByRole('slider', { name: 'Challenge list width' })).toHaveValue('38');
@@ -132,18 +137,22 @@ describe('ChallengeWorkspace', () => {
       null
     );
 
-    expect(screen.getAllByRole('link', { name: /Web trail/ })[0]).toBeVisible();
-    expect(screen.getAllByRole('link', { name: /Crypto trail/ })[0]).toBeVisible();
+    const challengeList = screen.getByRole('region', { name: 'Challenge list' });
+
+    expect(within(challengeList).getByRole('link', { name: /Web trail/ })).toBeVisible();
+    expect(within(challengeList).getByRole('link', { name: /Crypto trail/ })).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: /Web/ }));
 
-    expect(screen.queryAllByRole('link', { name: /Web trail/ })).toHaveLength(0);
-    expect(screen.getAllByRole('link', { name: /Crypto trail/ })[0]).toBeVisible();
+    expect(
+      within(challengeList).queryByRole('link', { name: /Web trail/ })
+    ).not.toBeInTheDocument();
+    expect(within(challengeList).getByRole('link', { name: /Crypto trail/ })).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: /Web/ }));
 
-    expect(screen.getAllByRole('link', { name: /Web trail/ })[0]).toBeVisible();
-    expect(screen.getAllByRole('link', { name: /Crypto trail/ })[0]).toBeVisible();
+    expect(within(challengeList).getByRole('link', { name: /Web trail/ })).toBeVisible();
+    expect(within(challengeList).getByRole('link', { name: /Crypto trail/ })).toBeVisible();
   });
 
   it('supports a survey-gated challenge that reveals a normal submission flag', async () => {
@@ -208,8 +217,11 @@ describe('ChallengeWorkspace', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Hide solved challenges' }));
 
-    expect(screen.queryAllByRole('link', { name: /Solved trail/ })).toHaveLength(0);
-    expect(screen.getAllByRole('link', { name: /Open trail/ }).length).toBeGreaterThan(0);
+    const challengeList = screen.getByRole('region', { name: 'Challenge list' });
+    expect(
+      within(challengeList).queryByRole('link', { name: /Solved trail/ })
+    ).not.toBeInTheDocument();
+    expect(within(challengeList).getByRole('link', { name: /Open trail/ })).toBeVisible();
     expect(window.localStorage.getItem('kitsune.challenge-preferences.v2.event')).toContain(
       '"hideSolved":true'
     );

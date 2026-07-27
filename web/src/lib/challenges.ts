@@ -92,6 +92,21 @@ export function challengePointValue(challenge: ChallengeExperience): number {
   return 0;
 }
 
+export function challengePointWeights(
+  challenges: readonly ChallengeExperience[]
+): ReadonlyMap<string, number> {
+  const values = challenges.map((challenge) => challengePointValue(challenge));
+  const positiveValues = values.filter((value) => value > 0);
+  const fallback = positiveValues.length > 0 ? Math.min(...positiveValues) : 1;
+
+  return new Map(
+    challenges.map((challenge, index) => {
+      const value = values[index] ?? 0;
+      return [challenge.id, value > 0 ? value : fallback];
+    })
+  );
+}
+
 export function challengePoints(challenge: ChallengeExperience): string {
   if (challenge.scoring.kind === 'static') {
     return `${challenge.scoring.points} pts`;

@@ -1,51 +1,84 @@
 import { ChallengeCategoryLabel, challengeCategoryDefinition } from './challenge-category';
-import type { ChallengeEventStandingStub, ChallengeSolveContext } from './challenge-solve-stub';
-import { EmptyState, LineChart } from '@/components/ui';
-import { cx } from '@/components/ui/styles';
+import {
+  solveCountLabel,
+  type ChallengeEventStandingStub,
+  type ChallengeSolveContext
+} from './challenge-solve-stub';
+import {
+  EmptyState,
+  LineChart,
+  WeightedSegmentBar,
+  type WeightedSegmentBarItem
+} from '@/components/ui';
 import {
   challengePointValue,
+  challengePointWeights,
+  challengePoints,
   challengeProgress,
   groupChallenges,
-  type ChallengeCategoryTone,
   type ChallengeExperience
 } from '@/lib/challenges';
 
-const categorySolidClasses: Record<ChallengeCategoryTone, string> = {
-  amber: 'bg-category-amber',
-  blue: 'bg-category-blue',
-  cyan: 'bg-category-cyan',
-  lime: 'bg-category-lime',
-  orange: 'bg-category-orange',
-  pink: 'bg-category-pink',
-  teal: 'bg-category-teal',
-  violet: 'bg-category-violet'
-};
-
-const categorySubtleClasses: Record<ChallengeCategoryTone, string> = {
-  amber: 'bg-category-amber-subtle',
-  blue: 'bg-category-blue-subtle',
-  cyan: 'bg-category-cyan-subtle',
-  lime: 'bg-category-lime-subtle',
-  orange: 'bg-category-orange-subtle',
-  pink: 'bg-category-pink-subtle',
-  teal: 'bg-category-teal-subtle',
-  violet: 'bg-category-violet-subtle'
-};
-
 interface ChallengeOverviewProps {
   challenges: readonly ChallengeExperience[];
+  getChallengeHref?: (challengeId: string) => string;
+  onSelectChallenge?: (challengeId: string, trigger: HTMLElement) => void;
   solveContexts: ReadonlyMap<string, ChallengeSolveContext>;
   standing: ChallengeEventStandingStub;
 }
 
-export function ChallengeOverview({ challenges, solveContexts, standing }: ChallengeOverviewProps) {
+export function ChallengeOverview({
+  challenges,
+  getChallengeHref,
+  onSelectChallenge,
+  solveContexts,
+  standing
+}: ChallengeOverviewProps) {
   const progress = challengeProgress(challenges);
   const groups = groupChallenges(challenges);
+  const pointWeights = challengePointWeights(challenges);
   const recordedSolves = challenges.reduce((total, challenge) => {
     return total + (solveContexts.get(challenge.id)?.totalSolves ?? challenge.solveCount ?? 0);
   }, 0);
   const remaining = Math.max(0, progress.total - progress.solved);
   const eventStart = standing.scoreSeries.points[0]?.x;
+
+  function segmentItems(
+    segmentChallenges: readonly ChallengeExperience[],
+    weights: ReadonlyMap<string, number>
+  ): WeightedSegmentBarItem[] {
+    return segmentChallenges.map((challenge) => {
+      const definition = challengeCategoryDefinition(challenge.category);
+      const points = challengePoints(challenge);
+      const solves = solveCountLabel(
+        solveContexts.get(challenge.id)?.totalSolves ?? challenge.solveCount ?? 0
+      );
+      const state = challenge.solved ? 'Solved' : 'Unsolved';
+
+      return {
+        href: getChallengeHref?.(challenge.id),
+        id: challenge.id,
+        isEmphasized: challenge.solved,
+        label: `Open ${challenge.name}, ${points}, ${solves}, ${state}`,
+        onPress: (event) => {
+          const target = event.target as HTMLElement;
+          onSelectChallenge?.(challenge.id, target.closest('a') ?? target);
+        },
+        tone: definition.tone,
+        tooltip: (
+          <span className="grid gap-1">
+            <strong className="font-semibold text-text">{challenge.name}</strong>
+            <span className="flex flex-wrap gap-x-3 text-xs tabular-nums text-text-muted">
+              <span>{points}</span>
+              <span>{solves}</span>
+              <span>{state}</span>
+            </span>
+          </span>
+        ),
+        value: weights.get(challenge.id) ?? 1
+      };
+    });
+  }
 
   if (challenges.length === 0) {
     return (
@@ -108,30 +141,10 @@ export function ChallengeOverview({ challenges, solveContexts, standing }: Chall
             <span className="text-sm tabular-nums text-text-muted">{remaining} remaining</span>
           </div>
 
-          <ol
-            aria-label={`${progress.solved} of ${progress.total} challenges solved`}
-            className="m-0 flex list-none gap-1 p-0"
-          >
-            {challenges.map((challenge) => {
-              const definition = challengeCategoryDefinition(challenge.category);
-
-              return (
-                <li
-                  className={cx(
-                    'h-2 min-w-0 flex-1 rounded-sm',
-                    challenge.solved
-                      ? categorySolidClasses[definition.tone]
-                      : categorySubtleClasses[definition.tone]
-                  )}
-                  key={challenge.id}
-                >
-                  <span className="sr-only">
-                    {challenge.name}: {challenge.solved ? 'solved' : 'unsolved'}
-                  </span>
-                </li>
-              );
-            })}
-          </ol>
+          <WeightedSegmentBar
+            ariaLabel={`${progress.solved} of ${progress.total} challenges solved`}
+            items={segmentItems(challenges, pointWeights)}
+          />
 
           <div className="hidden grid-cols-6 gap-4 px-3 text-xs text-text-subtle xl:grid">
             <span className="col-span-2">Category</span>
@@ -142,7 +155,6 @@ export function ChallengeOverview({ challenges, solveContexts, standing }: Chall
 
           <ul className="m-0 grid list-none gap-0 p-0">
             {groups.map((group) => {
-              const definition = challengeCategoryDefinition(group.category);
               const availablePoints = group.challenges.reduce((total, challenge) => {
                 return total + challengePointValue(challenge);
               }, 0);
@@ -161,23 +173,17 @@ export function ChallengeOverview({ challenges, solveContexts, standing }: Chall
                   <strong className="min-w-0 text-sm font-semibold xl:col-span-2">
                     <ChallengeCategoryLabel category={group.category} />
                   </strong>
-                  <div className="grid min-w-0 gap-2 xl:col-span-2">
-                    <span className="text-right text-sm font-semibold tabular-nums text-text">
+                  <div className="flex min-w-0 items-center gap-3 xl:col-span-2">
+                    <WeightedSegmentBar
+                      ariaLabel={`${group.solved} of ${group.challenges.length} ${group.category} challenges solved`}
+                      className="min-w-0 flex-1"
+                      items={segmentItems(
+                        group.challenges,
+                        challengePointWeights(group.challenges)
+                      )}
+                    />
+                    <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-text">
                       {group.solved} / {group.challenges.length}
-                    </span>
-                    <span className="flex gap-1">
-                      {group.challenges.map((challenge) => (
-                        <span
-                          aria-hidden
-                          className={cx(
-                            'h-1 min-w-0 flex-1 rounded-sm',
-                            challenge.solved
-                              ? categorySolidClasses[definition.tone]
-                              : categorySubtleClasses[definition.tone]
-                          )}
-                          key={challenge.id}
-                        />
-                      ))}
                     </span>
                   </div>
                   <span className="text-sm tabular-nums text-text-muted xl:text-right">

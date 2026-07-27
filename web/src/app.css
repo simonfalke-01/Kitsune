@@ -504,6 +504,11 @@
     transition: width var(--duration-normal) var(--ease-out-quart);
   }
 
+  .kitsune-weighted-segment {
+    flex-basis: 0;
+    flex-grow: var(--segment-weight);
+  }
+
   .kitsune-disclosure-panel {
     height: var(--disclosure-panel-height);
     overflow: clip;

@@ -219,6 +219,10 @@ without losing competition context.
   ledger.
 - The ledger shows category, solved/total, remaining challenge segments,
   available points, and solve activity on shared alignment rules.
+- Segment length encodes available points. Unequal point values must produce
+  proportionally unequal lengths; equal blocks are permitted only for equal
+  values. Minimum target sizing may protect accessibility but must never be
+  mistaken for the underlying scale.
 - Colour is confined to lines, segments, and category identifiers. Surfaces
   remain quiet.
 

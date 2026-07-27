@@ -4,6 +4,7 @@ import type { ChallengeSummary } from './api/client';
 import {
   challengeAttempts,
   challengeCategoryTone,
+  challengePointWeights,
   challengeProgress,
   challengeSelection,
   createChallengeExperience,
@@ -104,6 +105,42 @@ describe('challenge workspace helpers', () => {
       total: 2
     });
     expect(challengeAttempts(challenges[1]!)).toBe('3 attempts left');
+  });
+
+  it('weights challenge segments by points with a safe plugin fallback', () => {
+    const challenges = [
+      createChallengeExperience(
+        challenge('Thousand', 'Web', {
+          scoring: {
+            kind: 'static',
+            points: 1_000
+          }
+        })
+      ),
+      createChallengeExperience(
+        challenge('Five hundred', 'Web', {
+          scoring: {
+            kind: 'static',
+            points: 500
+          }
+        })
+      ),
+      createChallengeExperience(
+        challenge('Plugin', 'Web', {
+          scoring: {
+            kind: 'plugin',
+            plugin: 'custom',
+            strategy: 'variable'
+          }
+        })
+      )
+    ];
+    const weights = challengePointWeights(challenges);
+
+    expect(weights.get('Thousand')).toBe(1_000);
+    expect(weights.get('Five hundred')).toBe(500);
+    expect(weights.get('Thousand')).toBe((weights.get('Five hundred') ?? 0) * 2);
+    expect(weights.get('Plugin')).toBe(500);
   });
 
   it('maps categories and URL selections deterministically', () => {

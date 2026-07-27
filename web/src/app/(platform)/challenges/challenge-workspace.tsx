@@ -168,6 +168,11 @@ export function ChallengeWorkspace({
   ) : (
     <ChallengeOverview
       challenges={displayedChallenges}
+      getChallengeHref={getChallengeHref}
+      onSelectChallenge={(challengeId, trigger) => {
+        selectionTriggerRef.current = trigger;
+        onSelectChallenge?.(challengeId);
+      }}
       solveContexts={solveContexts}
       standing={standing}
     />
