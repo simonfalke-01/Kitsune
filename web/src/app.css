@@ -645,28 +645,42 @@
   }
 
   .kitsune-solve-edge-frame {
+    --solve-effect-inner-radius: calc(var(--radius-viewport) - var(--spacing-effect-frame));
+
+    background:
+      radial-gradient(
+          circle at 100% 100%,
+          transparent var(--solve-effect-inner-radius),
+          var(--solve-effect-edge) var(--solve-effect-inner-radius)
+        )
+        top left / var(--radius-viewport) var(--radius-viewport) no-repeat,
+      radial-gradient(
+          circle at 0 100%,
+          transparent var(--solve-effect-inner-radius),
+          var(--solve-effect-edge) var(--solve-effect-inner-radius)
+        )
+        top right / var(--radius-viewport) var(--radius-viewport) no-repeat,
+      radial-gradient(
+          circle at 100% 0,
+          transparent var(--solve-effect-inner-radius),
+          var(--solve-effect-edge) var(--solve-effect-inner-radius)
+        )
+        bottom left / var(--radius-viewport) var(--radius-viewport) no-repeat,
+      radial-gradient(
+          circle at 0 0,
+          transparent var(--solve-effect-inner-radius),
+          var(--solve-effect-edge) var(--solve-effect-inner-radius)
+        )
+        bottom right / var(--radius-viewport) var(--radius-viewport) no-repeat,
+      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) top / 100%
+        var(--spacing-effect-frame) no-repeat,
+      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) right /
+        var(--spacing-effect-frame) 100% no-repeat,
+      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) bottom / 100%
+        var(--spacing-effect-frame) no-repeat,
+      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) left /
+        var(--spacing-effect-frame) 100% no-repeat;
     animation: kitsune-solve-edge-frame var(--duration-celebration) linear both;
-  }
-
-  .kitsune-solve-edge-fill {
-    fill: var(--solve-effect-edge);
-  }
-
-  .kitsune-solve-edge-cutout {
-    x: var(--spacing-effect-frame);
-    y: var(--spacing-effect-frame);
-    width: calc(100% - var(--spacing-effect-frame) - var(--spacing-effect-frame));
-    height: calc(100% - var(--spacing-effect-frame) - var(--spacing-effect-frame));
-    rx: calc(var(--radius-viewport) - var(--spacing-effect-frame));
-  }
-
-  /* Functional luminance values for the SVG mask, not interface colors. */
-  .kitsune-solve-mask-include {
-    fill: white;
-  }
-
-  .kitsune-solve-mask-exclude {
-    fill: black;
   }
 
   .kitsune-solve-edge-wash {

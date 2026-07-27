@@ -1,6 +1,6 @@
 'use client';
 
-import { type CSSProperties, useId } from 'react';
+import type { CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 
 import type { FlagSubmitSuccessEffect } from './challenge-presentation';
@@ -80,38 +80,7 @@ interface EffectFrameProps extends Pick<ChallengeSuccessEffectProps, 'onComplete
 }
 
 function ViewportFrame({ onComplete }: Pick<EffectFrameProps, 'onComplete'>) {
-  const maskId = `solve-edge-${useId().replaceAll(':', '')}`;
-
-  return (
-    <span className="kitsune-solve-edge-frame absolute inset-0" onAnimationEnd={onComplete}>
-      <svg className="kitsune-solve-edge-svg block size-full" focusable="false">
-        <defs>
-          <mask
-            height="100%"
-            id={maskId}
-            maskUnits="userSpaceOnUse"
-            mask-type="luminance"
-            width="100%"
-            x="0"
-            y="0"
-          >
-            <rect className="kitsune-solve-mask-include" height="100%" width="100%" />
-            <rect
-              className="kitsune-solve-edge-cutout kitsune-solve-mask-exclude"
-              height="100%"
-              width="100%"
-            />
-          </mask>
-        </defs>
-        <rect
-          className="kitsune-solve-edge-fill"
-          height="100%"
-          mask={`url(#${maskId})`}
-          width="100%"
-        />
-      </svg>
-    </span>
-  );
+  return <span className="kitsune-solve-edge-frame absolute inset-0" onAnimationEnd={onComplete} />;
 }
 
 function EdgeBorder({ isFirstBlood, onComplete }: EffectFrameProps) {

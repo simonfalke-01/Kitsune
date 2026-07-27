@@ -415,8 +415,8 @@ describe('ChallengeWorkspace', () => {
     expect(solveEffect).not.toHaveAttribute('data-first-blood');
     expect(edgeFrame?.tagName.toLowerCase()).toBe('span');
     expect(edgeFrame).toHaveClass('inset-0');
-    expect(edgeFrame?.querySelector('.kitsune-solve-edge-svg')).toHaveClass('size-full');
-    expect(edgeFrame?.querySelector('.kitsune-solve-edge-cutout')).toBeInTheDocument();
+    expect(edgeFrame).toBeEmptyDOMElement();
+    expect(edgeFrame?.querySelector('svg')).not.toBeInTheDocument();
     expect(edgeFrame?.parentElement).toBe(solveEffect);
     expect(document.querySelector('.kitsune-solve-edge-wash')).not.toBeInTheDocument();
     expect(document.querySelector('.kitsune-solve-origin')).not.toBeInTheDocument();
@@ -455,12 +455,8 @@ describe('ChallengeWorkspace', () => {
     const solveEffect = document.querySelector('.kitsune-solve-effect');
     expect(document.querySelector('.kitsune-solve-edge-frame')?.parentElement).toBe(solveEffect);
     expect(document.querySelector('.kitsune-solve-edge-frame')).toHaveClass('inset-0');
-    expect(document.querySelector('.kitsune-solve-edge-frame .kitsune-solve-edge-svg')).toHaveClass(
-      'size-full'
-    );
-    expect(
-      document.querySelector('.kitsune-solve-edge-frame .kitsune-solve-edge-cutout')
-    ).toBeInTheDocument();
+    expect(document.querySelector('.kitsune-solve-edge-frame')).toBeEmptyDOMElement();
+    expect(document.querySelector('.kitsune-solve-edge-frame svg')).not.toBeInTheDocument();
     expect(document.querySelector('.kitsune-solve-edge-wash')?.parentElement).toBe(solveEffect);
   });
 
