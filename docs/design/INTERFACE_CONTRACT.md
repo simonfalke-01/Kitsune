@@ -144,6 +144,10 @@ reusable failure mode, add the general rule here before closing the issue.
 - User-adjusted workspace splits persist across reloads and synchronize across
   tabs. Persist only committed drag or keyboard values; synchronous storage on
   pointer movement is prohibited because it compromises direct manipulation.
+- Resolve persisted workspace splits in the document head before first paint.
+  Server-rendered split geometry must consume the validated pre-paint value and
+  clamp it to the component range; hydration must not expose the default width
+  before restoring the user's preference.
 - Selection feedback is optimistic. A challenge row marks itself selected and
   changes the detail in the activation frame; URL synchronization must never
   sit on the critical feedback path.

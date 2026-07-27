@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 import '../app.css';
 import { AppProviders } from './providers';
+import { splitWorkspaceBootstrapScript } from './split-workspace-bootstrap';
 import { themeBootstrapScript } from './theme-bootstrap';
 
 export const metadata: Metadata = {
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           type="font/otf"
         />
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+        <script dangerouslySetInnerHTML={{ __html: splitWorkspaceBootstrapScript }} />
       </head>
       <body>
         <AppProviders>{children}</AppProviders>

@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
+import { renderToString } from 'react-dom/server';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { SplitWorkspace } from './split-workspace';
@@ -214,5 +215,27 @@ describe('SplitWorkspace', () => {
     expect(
       screen.getByRole('slider', { name: 'Persistent panel' }).closest('.kitsune-split-workspace')
     ).toHaveStyle({ '--split-workspace-left': '31.375%' });
+  });
+
+  it('renders persisted split geometry through the pre-paint preference', () => {
+    window.localStorage.setItem('kitsune.split-workspace.v1.challenge-list', '31.375');
+
+    const markup = renderToString(
+      <SplitWorkspace
+        ariaLabel="Persistent panel"
+        defaultValue={34}
+        left={<div>List</div>}
+        maximum={48}
+        minimum={24}
+        persistenceKey="challenge-list"
+        right={<div>Detail</div>}
+      />
+    );
+
+    expect(markup).toContain('--split-workspace-preference-challenge-list');
+    expect(markup).toContain(
+      'clamp(24%, var(--split-workspace-preference-challenge-list, 34%), 48%)'
+    );
+    expect(markup).not.toContain('--split-workspace-left:34%');
   });
 });

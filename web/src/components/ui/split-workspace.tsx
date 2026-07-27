@@ -29,6 +29,8 @@ function clamp(value: number, minimum: number, maximum: number): number {
 
 const splitWorkspacePersistenceEvent = 'kitsune-split-workspace-preference';
 const splitWorkspacePersistenceVersion = 'v1';
+const splitWorkspaceServerSnapshot = '__kitsune_split_workspace_server__';
+const splitWorkspacePreferenceKeyPattern = /^[a-z0-9-]+$/;
 
 function subscribeToSplitWorkspacePreference(change: () => void): () => void {
   window.addEventListener('storage', change);
@@ -57,7 +59,15 @@ function splitWorkspacePreferenceSnapshot(key?: string): string {
 }
 
 function getServerSplitWorkspacePreferenceSnapshot(): string {
-  return '';
+  return splitWorkspaceServerSnapshot;
+}
+
+function splitWorkspacePreferenceProperty(key?: string): string | undefined {
+  if (!key || !splitWorkspacePreferenceKeyPattern.test(key)) {
+    return undefined;
+  }
+
+  return `--split-workspace-preference-${key}`;
 }
 
 interface UncontrolledSplitState {
@@ -120,7 +130,7 @@ export function SplitWorkspace({
     getServerSplitWorkspacePreferenceSnapshot
   );
   const [uncontrolledState, setUncontrolledState] = useState<UncontrolledSplitState>({
-    persistenceSnapshot: '',
+    persistenceSnapshot: splitWorkspaceServerSnapshot,
     value: defaultValue
   });
   const [isDragging, setIsDragging] = useState(false);
@@ -132,7 +142,10 @@ export function SplitWorkspace({
   let uncontrolledValue = uncontrolledState.value;
 
   if (uncontrolledState.persistenceSnapshot !== persistenceSnapshot) {
-    const persistedValue = persistenceSnapshot ? Number(persistenceSnapshot) : Number.NaN;
+    const persistedValue =
+      persistenceSnapshot && persistenceSnapshot !== splitWorkspaceServerSnapshot
+        ? Number(persistenceSnapshot)
+        : Number.NaN;
     uncontrolledValue = Number.isFinite(persistedValue) ? persistedValue : defaultValue;
     setUncontrolledState({
       persistenceSnapshot,
@@ -141,8 +154,15 @@ export function SplitWorkspace({
   }
 
   const resolvedValue = clamp(value ?? uncontrolledValue, minimum, maximum);
+  const preferenceProperty = splitWorkspacePreferenceProperty(persistenceKey);
+  const isServerSnapshot = persistenceSnapshot === splitWorkspaceServerSnapshot;
+  const initialUncontrolledValue = clamp(defaultValue, minimum, maximum);
+  const styleValue =
+    value === undefined && isServerSnapshot && preferenceProperty
+      ? `clamp(${minimum}%, var(${preferenceProperty}, ${initialUncontrolledValue}%), ${maximum}%)`
+      : `${resolvedValue}%`;
   const style: SplitWorkspaceStyle = {
-    '--split-workspace-left': `${resolvedValue}%`
+    '--split-workspace-left': styleValue
   };
 
   function updateValue(nextValue: number) {
