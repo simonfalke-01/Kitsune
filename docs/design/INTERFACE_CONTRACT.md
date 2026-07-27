@@ -65,6 +65,9 @@ reusable failure mode, add the general rule here before closing the issue.
 - Monospace is reserved for flags and actual code, commands, logs, or code
   input. IDs, badges, labels, navigation, metrics, and ordinary operational
   data use the sans family with tabular figures where alignment matters.
+- Suisse Intl carries display, interface, and body text at the canonical
+  400/500/600/700 weights. Suisse Intl Mono carries technical content at 400
+  and 700. Both are self-hosted; components consume only the shared font tokens.
 
 ## 3. Framework and design-system boundary
 

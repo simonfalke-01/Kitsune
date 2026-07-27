@@ -1,9 +1,78 @@
-@import '@fontsource-variable/archivo';
-@import '@fontsource-variable/instrument-sans';
-@import '@fontsource/jetbrains-mono/400.css';
-@import '@fontsource/jetbrains-mono/500.css';
 @import 'tailwindcss';
 @plugin "tailwindcss-react-aria-components";
+
+@font-face {
+  font-family: 'Suisse Intl';
+  src: url('/fonts/suisse-intl-regular.otf') format('opentype');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Suisse Intl';
+  src: url('/fonts/suisse-intl-medium.otf') format('opentype');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'Suisse Intl';
+  src: url('/fonts/suisse-intl-semibold.otf') format('opentype');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'Suisse Intl';
+  src: url('/fonts/suisse-intl-bold.otf') format('opentype');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'Suisse Intl Mono';
+  src: url('/fonts/suisse-intl-mono-regular.otf') format('opentype');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Suisse Intl Mono';
+  src: url('/fonts/suisse-intl-mono-bold.otf') format('opentype');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 700;
+}
+
+/* Temporary family aliases keep non-DOM canvas exports on the canonical UI face. */
+@font-face {
+  font-family: 'Archivo Variable';
+  src: url('/fonts/suisse-intl-semibold.otf') format('opentype');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'Instrument Sans Variable';
+  src: url('/fonts/suisse-intl-regular.otf') format('opentype');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Instrument Sans Variable';
+  src: url('/fonts/suisse-intl-semibold.otf') format('opentype');
+  font-display: swap;
+  font-style: normal;
+  font-weight: 600;
+}
 
 @custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
 
@@ -394,9 +463,9 @@
   --text-2xl: 2.5rem;
   --text-2xl--line-height: 1.1;
 
-  --font-display: 'Archivo Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-sans: 'Instrument Sans Variable', ui-sans-serif, system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  --font-display: 'Suisse Intl', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Suisse Intl', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Suisse Intl Mono', ui-monospace, monospace;
 
   --font-weight-normal: 400;
   --font-weight-medium: 500;
