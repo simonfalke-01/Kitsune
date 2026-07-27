@@ -645,6 +645,31 @@ describe('ChallengeWorkspace', () => {
     expect(within(standings).getAllByText('Foxden').length).toBeGreaterThan(0);
   });
 
+  it('keeps unsolved podium places as stable neutral slots', () => {
+    const open = createChallengeExperience(challenge({ id: 'open-podium' }), {
+      solveCount: 0
+    });
+
+    renderWorkspace([open], open.id);
+
+    const solveStrip = screen.getByLabelText('Challenge solve context');
+    const openStatuses = within(solveStrip).getAllByText('Open, no solve yet');
+
+    expect(openStatuses).toHaveLength(3);
+    for (const status of openStatuses) {
+      const slot = status.closest('li');
+      expect(status).toHaveClass('sr-only');
+      expect(slot).toHaveClass(
+        'kitsune-open-podium-slot',
+        'min-h-16',
+        'border-l-2',
+        'border-border'
+      );
+      expect(within(slot!).queryByRole('img')).not.toBeInTheDocument();
+    }
+    expect(within(solveStrip).queryByText('No solve')).not.toBeInTheDocument();
+  });
+
   it('preserves the solved dock and emits the default edge border', async () => {
     const workspaceActions = actions();
     workspaceActions.submitAnswer = vi.fn().mockResolvedValue({

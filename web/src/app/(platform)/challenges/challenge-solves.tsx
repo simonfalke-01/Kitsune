@@ -186,7 +186,13 @@ export function ChallengeSolveStrip({ context }: ChallengeSolveStripProps) {
           const entryPlacement = (index + 1) as 1 | 2 | 3;
 
           return (
-            <li className="flex min-h-16 min-w-0 items-center gap-3 px-3 py-2" key={entryPlacement}>
+            <li
+              className={cx(
+                'flex min-h-16 min-w-0 items-center gap-3 px-3 py-2',
+                entry ? null : 'kitsune-open-podium-slot border-l-2 border-border'
+              )}
+              key={entryPlacement}
+            >
               <span
                 className={cx(
                   'kitsune-optical-center flex w-8 shrink-0 items-center justify-end gap-1 text-xs font-semibold',
@@ -210,13 +216,7 @@ export function ChallengeSolveStrip({ context }: ChallengeSolveStripProps) {
                   competitorName={entry.competitorName}
                 />
               ) : (
-                <span className="flex min-w-0 flex-1 items-center gap-3">
-                  <span aria-hidden className="size-control shrink-0" />
-                  <span className="kitsune-optical-center grid min-w-0 gap-0">
-                    <strong className="truncate text-sm font-semibold text-text">Open</strong>
-                    <span className="truncate text-xs font-normal text-text-muted">No solve</span>
-                  </span>
-                </span>
+                <span className="sr-only">Open, no solve yet</span>
               )}
             </li>
           );
