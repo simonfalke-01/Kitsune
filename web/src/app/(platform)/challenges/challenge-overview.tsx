@@ -95,7 +95,7 @@ export function ChallengeOverview({
       aria-labelledby="competition-overview-title"
       className="h-full min-h-0 overflow-hidden bg-surface-raised"
     >
-      <div className="flex h-full min-h-0 w-full flex-col gap-8 px-6 py-6">
+      <div className="flex h-full min-h-0 w-full flex-col gap-6 px-6 py-6">
         <header className="flex shrink-0 flex-wrap items-end justify-between gap-6">
           <div className="grid gap-2">
             <h2
@@ -119,7 +119,7 @@ export function ChallengeOverview({
           </p>
         </header>
 
-        <section aria-labelledby="score-trajectory-title" className="grid shrink-0 gap-4">
+        <section aria-labelledby="score-trajectory-title" className="grid shrink-0 gap-2">
           <h3 className="m-0 text-base font-semibold text-text" id="score-trajectory-title">
             Around your rank
           </h3>
@@ -130,7 +130,6 @@ export function ChallengeOverview({
                 description="Running scores for your team and nearby competitors."
                 eventStart={eventStart}
                 formatYValue={(value) => `${value.toLocaleString()} pts`}
-                height="expanded"
                 interpolation="step"
                 series={standing.nearbySeries}
                 showDataTable={false}

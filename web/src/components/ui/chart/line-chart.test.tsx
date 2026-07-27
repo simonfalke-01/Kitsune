@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { formatChartTimestamp, LineChart } from './line-chart';
@@ -32,12 +32,25 @@ const series: ChartSeries<{ score: number }>[] = [
   }
 ];
 
+let resizeChart: ResizeObserverCallback;
+
 beforeEach(() => {
   window.matchMedia = vi.fn().mockImplementation(() => ({
     addEventListener: vi.fn(),
     matches: true,
     removeEventListener: vi.fn()
   }));
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      constructor(callback: ResizeObserverCallback) {
+        resizeChart = callback;
+      }
+
+      disconnect() {}
+      observe() {}
+    }
+  );
 });
 
 describe('LineChart', () => {
@@ -57,7 +70,24 @@ describe('LineChart', () => {
 
     const chart = screen.getByRole('img', { name: 'Score history' });
     expect(chart).toBeVisible();
+    expect(chart).toHaveAttribute('preserveAspectRatio', 'xMinYMin meet');
     expect(screen.getByRole('button', { name: 'Chart data' })).toBeVisible();
+
+    vi.spyOn(chart, 'getBoundingClientRect').mockReturnValue({
+      bottom: 320,
+      height: 320,
+      left: 0,
+      right: 480,
+      toJSON: () => ({}),
+      top: 0,
+      width: 480,
+      x: 0,
+      y: 0
+    });
+    act(() => {
+      resizeChart([], {} as ResizeObserver);
+    });
+    expect(chart).toHaveAttribute('viewBox', '0 0 480 320');
 
     fireEvent.keyDown(chart, {
       key: 'ArrowRight'

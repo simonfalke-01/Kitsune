@@ -8,7 +8,7 @@ export function ChallengeNearbyStandings({ entries }: ChallengeNearbyStandingsPr
   return (
     <aside
       aria-label="Teams around your rank"
-      className="relative h-chart-compact w-full min-w-0 justify-self-start overflow-hidden text-left md:h-chart-tall"
+      className="relative h-chart-compact w-full min-w-0 justify-self-start overflow-hidden text-left md:h-chart"
     >
       {entries.length === 0 ? (
         <p className="m-0 flex h-full items-center text-sm text-text-muted">No nearby teams</p>

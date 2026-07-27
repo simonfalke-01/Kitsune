@@ -450,7 +450,6 @@
   --spacing-control: 2.75rem;
   --spacing-chart: 20rem;
   --spacing-chart-compact: 11rem;
-  --spacing-chart-tall: 28rem;
   --spacing-challenge-list-header: calc(var(--spacing) * 12 + var(--spacing) * 16);
   --spacing-collapsed-rail: 4rem;
   --spacing-effect-frame: 0.25rem;

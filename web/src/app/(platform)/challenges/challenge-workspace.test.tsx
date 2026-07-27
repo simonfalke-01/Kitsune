@@ -146,11 +146,8 @@ describe('ChallengeWorkspace', () => {
     expect(nearbyRanks).toEqual(nearbyRows.map((_, index) => nearbyRanks[0]! + index));
     expect(currentTeam).toHaveClass('font-semibold', 'text-accent-text');
     expect(currentTeam.closest('li')).toHaveAttribute('aria-current', 'true');
-    expect(screen.getByRole('img', { name: 'Scores around your rank' })).toHaveClass(
-      'h-chart',
-      'md:h-chart-tall'
-    );
-    expect(nearbyTeams).toHaveClass('md:h-chart-tall');
+    expect(screen.getByRole('img', { name: 'Scores around your rank' })).toHaveClass('h-chart');
+    expect(nearbyTeams).toHaveClass('md:h-chart');
     expect(nearbyTeams).toHaveClass('w-full', 'justify-self-start', 'text-left');
     expect(nearbyTeams.querySelector('.bg-linear-to-b')).toBeInTheDocument();
     const challengeFieldHeading = screen.getByRole('heading', { name: 'Challenge field' });
@@ -162,7 +159,7 @@ describe('ChallengeWorkspace', () => {
     expect(challengeFieldHeading).toBeVisible();
     expect(challengeFieldHeading.parentElement).toHaveClass('px-3');
     expect(overview).toHaveClass('overflow-hidden');
-    expect(overviewLayout).toHaveClass('w-full', 'px-6', 'py-6');
+    expect(overviewLayout).toHaveClass('w-full', 'gap-6', 'px-6', 'py-6');
     expect(overviewLayout).not.toHaveClass('mx-auto', 'max-w-shell');
     expect(challengeField).toHaveClass('min-h-0', 'flex-1');
     expect(categoryScrollOwner).toHaveClass('min-h-0', 'flex-1', 'overflow-y-auto');

@@ -5,9 +5,10 @@ import {
   type PointerEvent,
   type ReactNode,
   useId,
+  useLayoutEffect,
   useMemo,
-  useState,
-  useSyncExternalStore
+  useRef,
+  useState
 } from 'react';
 
 import { Disclosure } from '../disclosure';
@@ -85,25 +86,6 @@ export function formatChartTimestamp(value: number): string {
   return `${day} ${month} ${year}, ${hour}:${minute} UTC`;
 }
 
-function subscribeToWideViewport(change: () => void): () => void {
-  if (typeof window.matchMedia !== 'function') {
-    return () => undefined;
-  }
-
-  const query = window.matchMedia('(min-width: 40rem)');
-  query.addEventListener('change', change);
-
-  return () => {
-    query.removeEventListener('change', change);
-  };
-}
-
-function getIsWideViewport(): boolean {
-  return typeof window.matchMedia === 'function'
-    ? window.matchMedia('(min-width: 40rem)').matches
-    : true;
-}
-
 export interface LineChartProps<Metadata> {
   activeSeriesId?: string | null;
   appearance?: keyof typeof lineChartAppearances;
@@ -114,7 +96,7 @@ export interface LineChartProps<Metadata> {
   formatTooltip?: (point: PlottedDatum<Metadata>) => ReactNode;
   formatXValue?: (value: number) => string;
   formatYValue?: (value: number) => string;
-  height?: 'compact' | 'expanded' | 'standard';
+  height?: 'compact' | 'standard';
   interpolation?: 'monotone' | 'step';
   legendPlacement?: 'below' | 'side';
   onActiveSeriesChange?: (seriesId: string | null) => void;
@@ -150,8 +132,54 @@ export function LineChart<Metadata>({
   const titleId = useId();
   const descriptionId = useId();
   const announcementId = useId();
-  const isWide = useSyncExternalStore(subscribeToWideViewport, getIsWideViewport, () => true);
-  const bounds = useMemo(() => createPlotBounds(), []);
+  const chartRef = useRef<SVGSVGElement>(null);
+  const [chartSize, setChartSize] = useState({
+    height: chartViewHeight,
+    width: chartViewWidth
+  });
+  const isWide = chartSize.width >= 640;
+  const bounds = useMemo(
+    () => createPlotBounds(chartSize.width, chartSize.height),
+    [chartSize.height, chartSize.width]
+  );
+
+  useLayoutEffect(() => {
+    const chart = chartRef.current;
+
+    if (!chart) {
+      return;
+    }
+
+    const measure = () => {
+      const rect = chart.getBoundingClientRect();
+
+      if (rect.width <= 0 || rect.height <= 0) {
+        return;
+      }
+
+      setChartSize((current) => {
+        if (current.width === rect.width && current.height === rect.height) {
+          return current;
+        }
+
+        return {
+          height: rect.height,
+          width: rect.width
+        };
+      });
+    };
+
+    measure();
+
+    if (typeof ResizeObserver !== 'function') {
+      return;
+    }
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(chart);
+
+    return () => observer.disconnect();
+  }, []);
   const resolvedYDomain = useMemo(() => {
     if (yDomain) {
       return yDomain;
@@ -225,8 +253,8 @@ export function LineChart<Metadata>({
   function pointerPosition(event: PointerEvent<SVGSVGElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
     return {
-      x: ((event.clientX - rect.left) / rect.width) * chartViewWidth,
-      y: ((event.clientY - rect.top) / rect.height) * chartViewHeight
+      x: ((event.clientX - rect.left) / rect.width) * chartSize.width,
+      y: ((event.clientY - rect.top) / rect.height) * chartSize.height
     };
   }
 
@@ -358,11 +386,7 @@ export function LineChart<Metadata>({
           aria-describedby={`${descriptionId} ${announcementId}`}
           aria-labelledby={titleId}
           className={`block w-full outline-none focus-visible:outline-2 focus-visible:outline-focus-ring ${
-            height === 'compact'
-              ? 'h-chart-compact'
-              : height === 'expanded'
-                ? 'h-chart md:h-chart-tall'
-                : 'h-chart'
+            height === 'compact' ? 'h-chart-compact' : 'h-chart'
           }`}
           onBlur={() => {
             if (!isLocked) {
@@ -381,10 +405,11 @@ export function LineChart<Metadata>({
             }
           }}
           onPointerMove={handlePointerMove}
-          preserveAspectRatio="none"
+          preserveAspectRatio="xMinYMin meet"
+          ref={chartRef}
           role="img"
           tabIndex={0}
-          viewBox={`0 0 ${chartViewWidth} ${chartViewHeight}`}
+          viewBox={`0 0 ${chartSize.width} ${chartSize.height}`}
         >
           <title id={titleId}>{title}</title>
           <desc id={descriptionId}>{description}</desc>

@@ -384,9 +384,14 @@ reusable failure mode, add the general rule here before closing the issue.
   team as the sole accented, weighted row. Neutral neighbours fade toward the
   top and bottom edges without implying that the ledger is an interactive
   picker.
-- At split-workspace widths, the nearby-score relationship uses the expanded
-  chart-height token. The default chart height is too shallow for this pane's
-  wide aspect and compresses score differences into a flat strip.
+- Once the nearby-score chart and standings share a row, both use the standard
+  chart-height token. The responsive column split corrects the wide aspect;
+  increasing height again wastes the fixed workspace and pushes the challenge
+  field below the user's decision context.
+- Responsive SVG charts measure their rendered box and recompute plot bounds,
+  pointer coordinates, ticks, and overlays from that box. They must not apply
+  `preserveAspectRatio="none"` to a fixed coordinate system, which visibly
+  distorts both data geometry and typography as a pane narrows.
 - A split pane already constrains the overview's reading context. The
   no-selection overview consumes the available pane width with one compact
   lateral inset; it must not reapply the global page-shell maximum and create
