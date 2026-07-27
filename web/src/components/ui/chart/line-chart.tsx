@@ -114,6 +114,7 @@ export interface LineChartProps<Metadata> {
   formatYValue?: (value: number) => string;
   height?: 'compact' | 'standard';
   interpolation?: 'monotone' | 'step';
+  legendPlacement?: 'below' | 'side';
   onActiveSeriesChange?: (seriesId: string | null) => void;
   series: readonly ChartSeries<Metadata>[];
   showDataTable?: boolean;
@@ -135,6 +136,7 @@ export function LineChart<Metadata>({
   formatYValue = (value) => chartNumberFormatter.format(value),
   height = 'standard',
   interpolation = 'monotone',
+  legendPlacement = 'below',
   onActiveSeriesChange,
   series,
   showDataTable = true,
@@ -275,9 +277,80 @@ export function LineChart<Metadata>({
     selectPoint(allPoints[nextIndex] ?? null);
   }
 
+  const legend = showLegend ? (
+    <ul
+      aria-label={`${title} series`}
+      className={`m-0 grid list-none gap-2 p-0 ${
+        legendPlacement === 'side' ? '' : 'sm:grid-cols-2 xl:grid-cols-3'
+      }`}
+    >
+      {model.plottedSeries.map((entry) => (
+        <li
+          className="flex min-w-0 items-center gap-3 text-sm"
+          key={entry.id}
+          onPointerEnter={() => {
+            onActiveSeriesChange?.(entry.id);
+          }}
+          onPointerLeave={() => {
+            onActiveSeriesChange?.(null);
+          }}
+        >
+          <svg aria-hidden className="h-2 w-6 shrink-0" viewBox="0 0 24 8">
+            <line
+              className={toneClass(entry.tone)}
+              strokeDasharray={lineDashPatterns[entry.lineStyle ?? 'solid']}
+              strokeLinecap="round"
+              strokeWidth={3}
+              x1={1}
+              x2={23}
+              y1={4}
+              y2={4}
+            />
+          </svg>
+          <span
+            className={`min-w-0 flex-1 truncate ${
+              entry.isEmphasized ? 'font-semibold text-text' : 'text-text-muted'
+            }`}
+          >
+            {entry.label}
+          </span>
+          <span className="shrink-0 tabular-nums text-text-muted">
+            {formatYValue(entry.points.at(-1)?.y ?? 0)}
+          </span>
+        </li>
+      ))}
+    </ul>
+  ) : null;
+  const dataDisclosure = showDataTable ? (
+    <Disclosure density="compact" id={`${titleId}-data`} title="Chart data">
+      <ol className="m-0 grid list-none gap-2 p-0">
+        {allPoints.map((point) => (
+          <li
+            className="flex flex-wrap justify-between gap-4 text-sm"
+            key={`${point.seriesId}-${point.id}`}
+          >
+            <span>{point.seriesLabel}</span>
+            <span className="flex flex-wrap justify-end gap-x-3 tabular-nums text-text-muted">
+              <span>{formatYValue(point.y)}</span>
+              <span>{formatXValue(point.x)}</span>
+            </span>
+          </li>
+        ))}
+      </ol>
+    </Disclosure>
+  ) : null;
+
   return (
-    <div className="grid gap-4">
-      <div className={lineChartAppearances[appearance]}>
+    <div
+      className={
+        legendPlacement === 'side' ? 'grid gap-4 xl:grid-cols-4 xl:items-start' : 'grid gap-4'
+      }
+    >
+      <div
+        className={`${lineChartAppearances[appearance]} ${
+          legendPlacement === 'side' ? 'xl:col-span-3' : ''
+        }`}
+      >
         {/* React Aria has no chart primitive; this single focus target provides chart-specific keyboard exploration. */}
         <svg
           aria-describedby={`${descriptionId} ${announcementId}`}
@@ -405,63 +478,17 @@ export function LineChart<Metadata>({
             : 'Use the arrow keys to explore chart points.'}
         </span>
       </div>
-      {showLegend ? (
-        <ul className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2 xl:grid-cols-3">
-          {model.plottedSeries.map((entry) => (
-            <li
-              className="flex min-w-0 items-center gap-3 text-sm"
-              key={entry.id}
-              onPointerEnter={() => {
-                onActiveSeriesChange?.(entry.id);
-              }}
-              onPointerLeave={() => {
-                onActiveSeriesChange?.(null);
-              }}
-            >
-              <svg aria-hidden className="h-2 w-6 shrink-0" viewBox="0 0 24 8">
-                <line
-                  className={toneClass(entry.tone)}
-                  strokeDasharray={lineDashPatterns[entry.lineStyle ?? 'solid']}
-                  strokeLinecap="round"
-                  strokeWidth={3}
-                  x1={1}
-                  x2={23}
-                  y1={4}
-                  y2={4}
-                />
-              </svg>
-              <span
-                className={`min-w-0 flex-1 truncate ${
-                  entry.isEmphasized ? 'font-semibold text-text' : 'text-text-muted'
-                }`}
-              >
-                {entry.label}
-              </span>
-              <span className="shrink-0 tabular-nums text-text-muted">
-                {formatYValue(entry.points.at(-1)?.y ?? 0)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      {showDataTable ? (
-        <Disclosure density="compact" id={`${titleId}-data`} title="Chart data">
-          <ol className="m-0 grid list-none gap-2 p-0">
-            {allPoints.map((point) => (
-              <li
-                className="flex flex-wrap justify-between gap-4 text-sm"
-                key={`${point.seriesId}-${point.id}`}
-              >
-                <span>{point.seriesLabel}</span>
-                <span className="flex flex-wrap justify-end gap-x-3 tabular-nums text-text-muted">
-                  <span>{formatYValue(point.y)}</span>
-                  <span>{formatXValue(point.x)}</span>
-                </span>
-              </li>
-            ))}
-          </ol>
-        </Disclosure>
-      ) : null}
+      {legendPlacement === 'side' ? (
+        <aside className="grid min-w-0 gap-4 xl:col-span-1">
+          {legend}
+          {dataDisclosure}
+        </aside>
+      ) : (
+        <>
+          {legend}
+          {dataDisclosure}
+        </>
+      )}
     </div>
   );
 }

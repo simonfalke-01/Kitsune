@@ -85,19 +85,16 @@ export function ChallengeOverview({ challenges, solveContexts, standing }: Chall
         </header>
 
         <section aria-labelledby="score-trajectory-title" className="grid gap-4">
-          <div className="flex flex-wrap items-baseline justify-between gap-4">
-            <h3 className="m-0 text-base font-semibold text-text" id="score-trajectory-title">
-              Around your rank
-            </h3>
-            <span className="text-sm text-text-muted">Score trajectory</span>
-          </div>
+          <h3 className="m-0 text-base font-semibold text-text" id="score-trajectory-title">
+            Around your rank
+          </h3>
           <LineChart
             appearance="bare"
             description="Running scores for your team and nearby competitors."
             eventStart={eventStart}
             formatYValue={(value) => `${value.toLocaleString()} pts`}
-            height="compact"
             interpolation="step"
+            legendPlacement="side"
             series={standing.nearbySeries}
             title="Scores around your rank"
           />
