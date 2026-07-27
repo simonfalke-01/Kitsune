@@ -385,7 +385,9 @@ export function ChallengeDetail({
           <div className="grid w-full gap-4">
             <ChallengeSolveStrip context={solveContext} />
             {isSolved ? (
-              <ChallengeSolvedSummary />
+              <ChallengeSolvedSummary
+                label={challenge.kind.type === 'manual_verification' ? 'Answer' : 'Flag'}
+              />
             ) : (
               <ChallengeSubmission
                 challenge={resolvedChallenge}

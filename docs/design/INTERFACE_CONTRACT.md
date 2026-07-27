@@ -309,9 +309,16 @@ reusable failure mode, add the general rule here before closing the issue.
   dock. The dock spans the pane; the text action remains content-width on wide
   layouts and expands only when the controls stack on narrow layouts.
 - A solved challenge removes the completed flag field. A compact status row may
-  replace it to preserve solve rank and timing context; do not retain an empty
+  replace it using the same label slot, control height, inset, and text origin
+  so the sticky dock does not reflow during confirmation. The submitted value
+  and replacement status must share a visual anchor. Do not retain an empty
   footer, expand the result into a large success banner, or permanently open a
   blank writeup editor.
+- Selected challenge rows retain their blue ring and leading rail across state
+  changes. Solved and blood washes remain visible inside that selection chrome;
+  no secondary shadow animation may overwrite the ring.
+- Asymmetric status glyphs use the shared optical-offset token when bounding-box
+  centering leaves their visual mass off the adjacent text baseline.
 - While solve timelines, standings, and team context are absent from the player
   API, one typed feature-local frontend adapter supplies deterministic data to
   every consuming challenge component. Do not widen the API, OpenAPI schema,

@@ -272,7 +272,7 @@ describe('ChallengeWorkspace', () => {
   it('shows podium context and a complete solve timeline with the current competitor', () => {
     const solved = createChallengeExperience(
       challenge({
-        id: 'solved-timeline',
+        id: 'blood-5',
         name: 'Solved timeline',
         solved: true
       }),
@@ -285,10 +285,13 @@ describe('ChallengeWorkspace', () => {
 
     expect(screen.getByLabelText('Challenge solve context')).toBeVisible();
     expect(screen.getAllByText('Foxden').length).toBeGreaterThan(0);
-    expect(screen.getByRole('link', { name: /Solved timeline/ })).toHaveAttribute(
-      'aria-current',
-      'true'
-    );
+    const selectedChallenge = screen.getByRole('link', { name: /Solved timeline/ });
+    const firstBlood = within(selectedChallenge).getByText('First blood');
+    expect(selectedChallenge).toHaveAttribute('aria-current', 'true');
+    expect(selectedChallenge).toHaveAttribute('data-solved', 'true');
+    expect(selectedChallenge).toHaveAttribute('data-blood', '1');
+    expect(selectedChallenge).toHaveClass('ring-1', 'ring-accent-border');
+    expect(firstBlood.querySelector('svg')).toHaveClass('-translate-y-optical');
 
     fireEvent.click(screen.getByRole('tab', { name: 'Solves 18' }));
 
@@ -319,6 +322,7 @@ describe('ChallengeWorkspace', () => {
     );
 
     const flagField = screen.getByLabelText('Flag');
+    expect(flagField).toHaveClass('h-control', 'px-3', 'text-base');
     const origin = new DOMRect(120, 600, 400, 44);
     vi.spyOn(flagField, 'getBoundingClientRect').mockReturnValue(origin);
 
@@ -334,6 +338,18 @@ describe('ChallengeWorkspace', () => {
     });
     expect(screen.queryByRole('button', { name: 'Submit flag' })).not.toBeInTheDocument();
     expect(screen.getAllByText('Challenge solved').length).toBeGreaterThan(0);
+    const solvedLabel = screen.getByText('Flag');
+    const solvedSummary = solvedLabel.parentElement;
+    const solvedMessage = within(solvedSummary as HTMLElement).getByText('Challenge solved');
+    const selectedChallenge = screen.getByRole('link', { name: /Shrine gate/ });
+    expect(solvedSummary).toHaveClass('grid', 'gap-2');
+    expect(solvedLabel).toHaveClass('text-sm', 'font-medium');
+    expect(solvedMessage).toHaveClass('text-base', 'font-medium');
+    expect(solvedMessage.parentElement).toHaveClass('h-control', 'border', 'px-3');
+    expect(selectedChallenge).toHaveAttribute('aria-current', 'true');
+    expect(selectedChallenge).toHaveAttribute('data-solved', 'true');
+    expect(selectedChallenge).toHaveClass('ring-1', 'ring-accent-border');
+    expect(selectedChallenge).not.toHaveAttribute('data-newly-solved');
     const solveEffect = document.querySelector('.kitsune-solve-effect');
     const solveOrigin = document.querySelector('.kitsune-solve-origin');
     const solveWave = document.querySelector('.kitsune-solve-wave');

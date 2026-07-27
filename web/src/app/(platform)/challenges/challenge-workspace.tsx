@@ -61,7 +61,6 @@ export function ChallengeWorkspace({
   selectedChallengeId
 }: ChallengeWorkspaceProps) {
   const isDesktop = useSyncExternalStore(subscribeToDesktop, getIsDesktop, () => true);
-  const [newlySolvedChallengeId, setNewlySolvedChallengeId] = useState<string | null>(null);
   const [optimisticSolveTimes, setOptimisticSolveTimes] = useState<ReadonlyMap<string, string>>(
     new Map()
   );
@@ -104,20 +103,6 @@ export function ChallengeWorkspace({
     displayedChallenges.find((challenge) => challenge.id === selectedChallengeId) ?? null;
 
   useEffect(() => {
-    if (!newlySolvedChallengeId) {
-      return;
-    }
-
-    const timeout = window.setTimeout(() => {
-      setNewlySolvedChallengeId(null);
-    }, 260);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [newlySolvedChallengeId]);
-
-  useEffect(() => {
     if (selectedChallengeId || !restoreSelectionFocusRef.current) {
       return;
     }
@@ -134,7 +119,6 @@ export function ChallengeWorkspace({
   }
 
   function handleSolved(challengeId: string, solvedAt: string) {
-    setNewlySolvedChallengeId(challengeId);
     setOptimisticSolveTimes((current) => {
       const next = new Map(current);
       next.set(challengeId, solvedAt);
@@ -147,7 +131,6 @@ export function ChallengeWorkspace({
       challenges={displayedChallenges}
       eventId={eventId}
       getChallengeHref={getChallengeHref}
-      newlySolvedChallengeId={newlySolvedChallengeId}
       onSelectChallenge={(challengeId, trigger) => {
         selectionTriggerRef.current = trigger;
         onSelectChallenge?.(challengeId);

@@ -174,7 +174,9 @@ export function ChallengeSolveStrip({ context }: ChallengeSolveStripProps) {
                   placementTextClasses[entryPlacement]
                 )}
               >
-                {entryPlacement === 1 ? <Trophy aria-hidden className="size-3" /> : null}
+                {entryPlacement === 1 ? (
+                  <Trophy aria-hidden className="size-3 -translate-y-optical" />
+                ) : null}
                 {ordinal(entryPlacement)}
               </span>
               <span className="flex min-w-0 items-center gap-2">
@@ -219,12 +221,19 @@ export function ChallengeSolveStrip({ context }: ChallengeSolveStripProps) {
   );
 }
 
-export function ChallengeSolvedSummary() {
+interface ChallengeSolvedSummaryProps {
+  label: string;
+}
+
+export function ChallengeSolvedSummary({ label }: ChallengeSolvedSummaryProps) {
   return (
-    <div className="flex items-center px-3 py-2 text-success-text">
-      <span className="inline-flex items-center gap-2 text-sm font-medium">
-        <Check aria-hidden className="size-4" />
-        Challenge solved
+    <div className="grid gap-2">
+      <span className="text-sm font-medium text-text">{label}</span>
+      <span className="flex h-control items-center rounded-md border border-transparent px-3 text-success-text">
+        <span className="inline-flex items-center gap-2 text-base font-medium">
+          Challenge solved
+          <Check aria-hidden className="size-4" />
+        </span>
       </span>
     </div>
   );

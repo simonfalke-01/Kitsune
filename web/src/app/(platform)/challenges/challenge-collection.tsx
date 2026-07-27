@@ -107,7 +107,6 @@ interface ChallengeCollectionProps {
   challenges: ChallengeExperience[];
   eventId: string;
   getChallengeHref?: (challengeId: string) => string;
-  newlySolvedChallengeId?: string | null;
   onSelectChallenge?: (challengeId: string, trigger: HTMLElement) => void;
   selectedChallengeId: string | null;
   solveContexts: ReadonlyMap<string, ChallengeSolveContext>;
@@ -117,7 +116,6 @@ export function ChallengeCollection({
   challenges,
   eventId,
   getChallengeHref,
-  newlySolvedChallengeId,
   onSelectChallenge,
   selectedChallengeId,
   solveContexts
@@ -261,9 +259,8 @@ export function ChallengeCollection({
                       <li key={challenge.id}>
                         <CollectionLink
                           appearance="challenge"
-                          className="kitsune-challenge-row kitsune-challenge-tile"
+                          className="kitsune-challenge-row"
                           data-blood={bloodRank ?? undefined}
-                          data-newly-solved={newlySolvedChallengeId === challenge.id}
                           data-solved={challenge.solved || undefined}
                           href={getChallengeHref?.(challenge.id)}
                           isSelected={selectedChallengeId === challenge.id}
@@ -285,7 +282,10 @@ export function ChallengeCollection({
                                   }`}
                                 >
                                   {bloodRank ? (
-                                    <Trophy aria-hidden className="size-4 shrink-0" />
+                                    <Trophy
+                                      aria-hidden
+                                      className="size-4 shrink-0 -translate-y-optical"
+                                    />
                                   ) : (
                                     <Check aria-hidden className="size-4 shrink-0" />
                                   )}
