@@ -633,14 +633,18 @@
           var(--solve-effect-edge) var(--solve-effect-inner-radius)
         )
         bottom right / var(--radius-viewport) var(--radius-viewport) no-repeat,
-      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) top / 100%
-        var(--spacing-effect-frame) no-repeat,
-      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) right /
-        var(--spacing-effect-frame) 100% no-repeat,
-      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) bottom / 100%
-        var(--spacing-effect-frame) no-repeat,
-      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) left /
-        var(--spacing-effect-frame) 100% no-repeat;
+      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) top center /
+        calc(100% - var(--radius-viewport) - var(--radius-viewport)) var(--spacing-effect-frame)
+        no-repeat,
+      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) center right /
+        var(--spacing-effect-frame) calc(100% - var(--radius-viewport) - var(--radius-viewport))
+        no-repeat,
+      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) bottom center /
+        calc(100% - var(--radius-viewport) - var(--radius-viewport)) var(--spacing-effect-frame)
+        no-repeat,
+      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) center left /
+        var(--spacing-effect-frame) calc(100% - var(--radius-viewport) - var(--radius-viewport))
+        no-repeat;
     animation: kitsune-solve-edge-frame var(--duration-celebration) linear both;
   }
 

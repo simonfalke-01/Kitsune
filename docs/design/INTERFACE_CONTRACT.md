@@ -177,7 +177,9 @@ reusable failure mode, add the general rule here before closing the issue.
 - Solve-effect viewport perimeters must not use SVG or CSS masks. Safari may
   reconstruct a masked layer while its ancestor animates and visibly flicker.
   Compose the static perimeter from edge strips and rounded corner fills, then
-  animate opacity on that plain HTML layer only.
+  animate opacity on that plain HTML layer only. Corner fills and edge strips
+  must meet without overlap because translucent semantic colors visibly darken
+  when composited twice.
 - Scrollbar tracks stay transparent. A pane may reveal its thumb while the user
   scrolls, then hide it after scrolling stops. Do not reserve a permanent gray
   track at the viewport edge.
