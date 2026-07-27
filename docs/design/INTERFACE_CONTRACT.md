@@ -112,6 +112,12 @@ reusable failure mode, add the general rule here before closing the issue.
 - Cards are for discrete objects. Do not wrap every section, nest rounded
   rectangles, or place a full-width card on a tinted canvas by default.
 - Use one elevation level at most. Prefer quiet borders and surface changes.
+- The neutral surface ladder must remain perceptible without becoming striped:
+  light mode uses a slightly darker canvas beneath a lighter raised surface;
+  dark mode steps upward in lightness from canvas to raised surface. Sunken
+  fields, default borders, hover, and active states each retain a distinct
+  adjacent step. Increase contrast in shared roles, never by adding local
+  outlines or darkening individual cards.
 - Keep one small radius scale, one field-height scale, one page shell, and one
   spacing rhythm.
 - Operational tables, toolbars, and controls favor scan speed over empty space.
