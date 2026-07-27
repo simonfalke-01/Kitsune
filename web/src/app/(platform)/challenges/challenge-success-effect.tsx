@@ -87,7 +87,7 @@ function EdgeBorder({ isFirstBlood, onComplete }: EffectFrameProps) {
       data-first-blood={isFirstBlood || undefined}
     >
       <span
-        className="kitsune-solve-edge-frame absolute inset-0 border-4"
+        className="kitsune-solve-edge-frame absolute inset-0 rounded-lg border-4"
         onAnimationEnd={onComplete}
       />
     </div>
@@ -103,7 +103,7 @@ function ScreenImprint({ isFirstBlood, onComplete }: EffectFrameProps) {
     >
       <span className="kitsune-solve-edge-wash absolute inset-0" />
       <span
-        className="kitsune-solve-edge-frame absolute inset-0 border-4"
+        className="kitsune-solve-edge-frame absolute inset-0 rounded-lg border-4"
         onAnimationEnd={onComplete}
       />
     </div>
