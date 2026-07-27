@@ -169,7 +169,7 @@ export function ChallengeOverview({
 
               return (
                 <li
-                  className="grid grid-cols-2 items-center gap-x-4 gap-y-2 px-3 py-3 xl:grid-cols-12"
+                  className="grid grid-cols-2 items-center gap-x-4 gap-y-2 px-3 py-1 xl:grid-cols-12"
                   key={group.category}
                 >
                   <strong className="min-w-0 text-sm font-semibold xl:col-span-2">
