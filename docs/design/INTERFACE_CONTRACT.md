@@ -378,6 +378,12 @@ reusable failure mode, add the general rule here before closing the issue.
   heading, overall challenge bar, and category column headings remain fixed.
   Only the category rows own vertical overflow when they exceed the remaining
   pane height; the overview pane and document do not become scroll owners.
+- The nearby-score chart uses a five-place local standings window instead of a
+  series legend. It shows consecutive rank, team, and point columns around the
+  current competitor, spans the chart's plotted height, and keeps the current
+  team as the sole accented, weighted row. Neutral neighbours fade toward the
+  top and bottom edges without implying that the ledger is an interactive
+  picker.
 - A split pane already constrains the overview's reading context. The
   no-selection overview consumes the available pane width with one compact
   lateral inset; it must not reapply the global page-shell maximum and create

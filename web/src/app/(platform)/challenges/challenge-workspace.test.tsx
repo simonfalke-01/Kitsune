@@ -132,6 +132,21 @@ describe('ChallengeWorkspace', () => {
     expect(screen.getByRole('heading', { name: 'Your run' })).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Around your rank' })).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Chart data' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('list', { name: 'Scores around your rank series' })
+    ).not.toBeInTheDocument();
+    const nearbyTeams = screen.getByRole('complementary', { name: 'Teams around your rank' });
+    const nearbyRows = within(nearbyTeams).getAllByRole('listitem');
+    const currentTeam = within(nearbyTeams).getByText('Foxden');
+    const nearbyRanks = nearbyRows.map((row) =>
+      Number(within(row).getByText(/^#/).textContent.slice(1))
+    );
+    expect(nearbyRows).toHaveLength(5);
+    expect(nearbyRanks).toEqual(nearbyRows.map((_, index) => nearbyRanks[0]! + index));
+    expect(currentTeam).toHaveClass('font-semibold', 'text-accent-text');
+    expect(currentTeam.closest('li')).toHaveAttribute('aria-current', 'true');
+    expect(nearbyTeams).toHaveClass('lg:h-chart');
+    expect(nearbyTeams.querySelector('.bg-linear-to-b')).toBeInTheDocument();
     const challengeFieldHeading = screen.getByRole('heading', { name: 'Challenge field' });
     const challengeField = screen.getByRole('region', { name: 'Challenge field' });
     const overview = screen.getByRole('heading', { name: 'Your run' }).closest('section');

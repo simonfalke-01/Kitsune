@@ -97,12 +97,13 @@ describe('challenge solve frontend adapter', () => {
     expect(formatSolveDelta(updated.selfEntry!.deltaMs)).toMatch(/^\+/);
   });
 
-  it('builds a stable nearby-score comparison with the current team emphasized', () => {
+  it('builds a five-place nearby-score window with the current team centered', () => {
     const standing = createChallengeEventStandingStub({
       challenges: [
-        createChallengeExperience(challenge({ solved: true }), {
+        createChallengeExperience(challenge({ id: 'solved', solved: true }), {
           solveCount: 18
-        })
+        }),
+        createChallengeExperience(challenge({ id: 'open', position: 1 }))
       ],
       currentCompetitor: {
         id: 'foxden',
@@ -112,11 +113,55 @@ describe('challenge solve frontend adapter', () => {
       eventStartedAt: '2026-07-23T10:00:00Z'
     });
 
-    expect(standing.nearbySeries).toHaveLength(4);
+    expect(standing.nearbySeries).toHaveLength(5);
+    expect(standing.nearbyStandings).toHaveLength(5);
+    expect(standing.nearbyStandings.map((entry) => entry.rank)).toEqual([
+      standing.rank - 2,
+      standing.rank - 1,
+      standing.rank,
+      standing.rank + 1,
+      standing.rank + 2
+    ]);
+    expect(standing.nearbyStandings[2]).toMatchObject({
+      isSelf: true,
+      name: 'Foxden',
+      rank: standing.rank
+    });
+    expect(standing.nearbyStandings.filter((entry) => entry.isSelf)).toHaveLength(1);
     expect(standing.nearbySeries.find((series) => series.isEmphasized)).toEqual(
       standing.scoreSeries
     );
     expect(standing.nearbySeries.every((series) => series.points.length === 8)).toBe(true);
+  });
+
+  it('keeps five consecutive nearby places at the first and final rank', () => {
+    const currentCompetitor = {
+      id: 'foxden',
+      name: 'Foxden'
+    };
+    const first = createChallengeEventStandingStub({
+      challenges: [createChallengeExperience(challenge({ solved: true }))],
+      currentCompetitor,
+      eventId: 'event-first'
+    });
+    const final = createChallengeEventStandingStub({
+      challenges: [createChallengeExperience(challenge())],
+      currentCompetitor,
+      eventId: 'event-final'
+    });
+
+    expect(first.rank).toBe(1);
+    expect(first.nearbyStandings.map((entry) => entry.rank)).toEqual([1, 2, 3, 4, 5]);
+    expect(first.nearbyStandings[0]?.isSelf).toBe(true);
+    expect(final.rank).toBe(final.totalCompetitors);
+    expect(final.nearbyStandings.map((entry) => entry.rank)).toEqual([
+      final.totalCompetitors - 4,
+      final.totalCompetitors - 3,
+      final.totalCompetitors - 2,
+      final.totalCompetitors - 1,
+      final.totalCompetitors
+    ]);
+    expect(final.nearbyStandings.at(-1)?.isSelf).toBe(true);
   });
 
   it('formats first-blood elapsed time without empty units', () => {

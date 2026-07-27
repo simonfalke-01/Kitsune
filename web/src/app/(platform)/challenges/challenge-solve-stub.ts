@@ -27,8 +27,17 @@ export interface ChallengeSolveContext {
   totalSolves: number;
 }
 
+export interface ChallengeNearbyStandingStub {
+  id: string;
+  isSelf: boolean;
+  name: string;
+  points: number;
+  rank: number;
+}
+
 export interface ChallengeEventStandingStub {
   nearbySeries: ChartSeries<null>[];
+  nearbyStandings: ChallengeNearbyStandingStub[];
   rank: number;
   scoreSeries: ChartSeries<null>;
   totalCompetitors: number;
@@ -226,6 +235,30 @@ export function createChallengeEventStandingStub(input: {
   const progressRatio = progress.total === 0 ? 0 : progress.solved / progress.total;
   const rank = Math.max(1, Math.round(totalCompetitors - progressRatio * (totalCompetitors - 1)));
   const eventStartMs = Date.parse(resolvedEventStart(input.eventStartedAt));
+  const nearbyStandingCount = Math.min(5, totalCompetitors);
+  const nearbyStandingStart = Math.min(
+    Math.max(1, rank - Math.floor(nearbyStandingCount / 2)),
+    totalCompetitors - nearbyStandingCount + 1
+  );
+  const nearbyStandings = Array.from(
+    { length: nearbyStandingCount },
+    (_, index): ChallengeNearbyStandingStub => {
+      const competitorRank = nearbyStandingStart + index;
+      const isSelf = competitorRank === rank;
+      const competitorSeed = stableHash(`${input.eventId}:standing:${competitorRank}`);
+
+      return {
+        id: isSelf ? input.currentCompetitor.id : `${input.eventId}:standing:${competitorRank}`,
+        isSelf,
+        name: isSelf
+          ? input.currentCompetitor.name
+          : generatedTeamName(competitorSeed, competitorRank),
+        points: Math.max(0, progress.earnedPoints + (rank - competitorRank) * 75),
+        rank: competitorRank
+      };
+    }
+  );
+
   function scoreSeries(
     id: string,
     label: string,
@@ -251,30 +284,24 @@ export function createChallengeEventStandingStub(input: {
     };
   }
 
-  const currentSeries = scoreSeries(
-    `${input.eventId}:self-score`,
-    input.currentCompetitor.name,
-    progress.earnedPoints,
-    0,
-    true
-  );
-  const nearbyScores = [
-    progress.earnedPoints + 150,
-    progress.earnedPoints + 75,
-    Math.max(0, progress.earnedPoints - 25)
-  ];
-  const nearbySeries = nearbyScores.map((score, index) => {
-    const competitorSeed = stableHash(`${input.eventId}:nearby:${index}`);
+  const nearbySeries = nearbyStandings.map((standing, index) => {
     return scoreSeries(
-      `${input.eventId}:nearby:${index}`,
-      generatedTeamName(competitorSeed, index),
-      score,
-      index + 1
+      standing.isSelf ? `${input.eventId}:self-score` : `${standing.id}:score`,
+      standing.name,
+      standing.points,
+      standing.isSelf ? 0 : index + 1,
+      standing.isSelf
     );
   });
+  const currentSeries = nearbySeries.find((series) => series.isEmphasized);
+
+  if (!currentSeries) {
+    throw new Error('Nearby standings must include the current competitor.');
+  }
 
   return {
-    nearbySeries: [currentSeries, nearbySeries[0]!, nearbySeries[1]!, nearbySeries[2]!],
+    nearbySeries,
+    nearbyStandings,
     rank,
     scoreSeries: currentSeries,
     totalCompetitors

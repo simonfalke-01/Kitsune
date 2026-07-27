@@ -1,4 +1,5 @@
 import { ChallengeCategoryLabel, challengeCategoryDefinition } from './challenge-category';
+import { ChallengeNearbyStandings } from './challenge-nearby-standings';
 import {
   solveCountLabel,
   type ChallengeEventStandingStub,
@@ -122,17 +123,22 @@ export function ChallengeOverview({
           <h3 className="m-0 text-base font-semibold text-text" id="score-trajectory-title">
             Around your rank
           </h3>
-          <LineChart
-            appearance="bare"
-            description="Running scores for your team and nearby competitors."
-            eventStart={eventStart}
-            formatYValue={(value) => `${value.toLocaleString()} pts`}
-            interpolation="step"
-            legendPlacement="side"
-            series={standing.nearbySeries}
-            showDataTable={false}
-            title="Scores around your rank"
-          />
+          <div className="grid gap-4 lg:grid-cols-4 lg:items-stretch">
+            <div className="min-w-0 lg:col-span-3">
+              <LineChart
+                appearance="bare"
+                description="Running scores for your team and nearby competitors."
+                eventStart={eventStart}
+                formatYValue={(value) => `${value.toLocaleString()} pts`}
+                interpolation="step"
+                series={standing.nearbySeries}
+                showDataTable={false}
+                showLegend={false}
+                title="Scores around your rank"
+              />
+            </div>
+            <ChallengeNearbyStandings entries={standing.nearbyStandings} />
+          </div>
         </section>
 
         <section
