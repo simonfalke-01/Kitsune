@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 
 import type { ChallengeWorkspaceActions } from './challenge-types';
 import { Alert, Button, Form, RadioGroup, TextField } from '@/components/ui';
@@ -43,7 +43,9 @@ export function ChallengeSubmission({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [receiptMessage, setReceiptMessage] = useState<string | null>(null);
   const flagFieldRef = useRef<HTMLDivElement>(null);
+  const flagInputId = useId();
   const choices = challenge.kind.type === 'multiple_choice' ? challenge.kind.choices : null;
+  const answerLabel = challenge.kind.type === 'manual_verification' ? 'Answer' : 'Flag';
 
   async function submit() {
     const normalizedAnswer = answer.trim();
@@ -117,21 +119,28 @@ export function ChallengeSubmission({
           </div>
         </>
       ) : (
-        <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-end">
-          <div className="min-w-0 flex-1" ref={flagFieldRef}>
-            <TextField
-              className="min-w-0"
-              errorMessage={error}
-              inputClassName="h-control bg-surface-sunken font-mono"
-              isInvalid={Boolean(error)}
-              label={challenge.kind.type === 'manual_verification' ? 'Answer' : 'Flag'}
-              onChange={setAnswer}
-              value={answer}
-            />
+        <div className="grid gap-2">
+          <label aria-hidden className="text-sm font-medium text-text" htmlFor={flagInputId}>
+            {answerLabel}
+          </label>
+          <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-start">
+            <div className="min-w-0 flex-1" ref={flagFieldRef}>
+              <TextField
+                className="min-w-0"
+                errorMessage={error}
+                inputClassName="h-control bg-surface-sunken font-mono"
+                inputId={flagInputId}
+                isInvalid={Boolean(error)}
+                label={answerLabel}
+                labelHidden
+                onChange={setAnswer}
+                value={answer}
+              />
+            </div>
+            <Button className="h-control w-full sm:w-auto" isLoading={isSubmitting} type="submit">
+              {challenge.kind.type === 'manual_verification' ? 'Submit for review' : 'Submit flag'}
+            </Button>
           </div>
-          <Button className="h-control w-full sm:w-auto" isLoading={isSubmitting} type="submit">
-            {challenge.kind.type === 'manual_verification' ? 'Submit for review' : 'Submit flag'}
-          </Button>
         </div>
       )}
       {receiptMessage ? <Alert title={receiptMessage} tone="info" /> : null}

@@ -22,6 +22,7 @@ import {
 export interface TextFieldProps extends Omit<ReactAriaTextFieldProps, 'children'> {
   description?: ReactNode;
   errorMessage?: ReactNode;
+  inputId?: string;
   inputClassName?: string;
   label: ReactNode;
   labelHidden?: boolean;
@@ -32,6 +33,7 @@ export function TextField({
   className,
   description,
   errorMessage,
+  inputId,
   inputClassName,
   label,
   labelHidden = false,
@@ -44,7 +46,11 @@ export function TextField({
       className={cx(fieldGroup, typeof className === 'string' ? className : undefined)}
     >
       <Label className={labelHidden ? 'sr-only' : fieldLabel}>{label}</Label>
-      <Input className={cx(fieldInputControl, inputClassName)} placeholder={placeholder} />
+      <Input
+        className={cx(fieldInputControl, inputClassName)}
+        id={inputId}
+        placeholder={placeholder}
+      />
       {description ? (
         <Text className={fieldDescription} slot="description">
           {description}
