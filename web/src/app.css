@@ -119,11 +119,12 @@
   --success-subtle: var(--success-3);
   --success-border: var(--success-6);
   --success: var(--success-9);
-  --success-imprint-edge: color-mix(in oklch, var(--success) 64%, transparent);
+  --success-imprint-edge: color-mix(in oklch, var(--success) 82%, transparent);
   --success-imprint-fill: color-mix(in oklch, var(--success) 7%, transparent);
   --success-wave-fill: color-mix(in oklch, var(--success) 18%, transparent);
   --success-hover: var(--success-10);
   --success-text: var(--success-12);
+  --challenge-success-wash: color-mix(in oklch, var(--success-subtle) 55%, var(--success-border));
 
   --warning-subtle: var(--warning-3);
   --warning-border: var(--warning-6);
@@ -179,9 +180,14 @@
   --first-blood-border: var(--warning-border);
   --first-blood: var(--warning);
   --first-blood-text: var(--podium-first);
-  --first-blood-imprint-edge: color-mix(in oklch, var(--first-blood) 64%, transparent);
+  --first-blood-imprint-edge: color-mix(in oklch, var(--first-blood) 82%, transparent);
   --first-blood-imprint-fill: color-mix(in oklch, var(--first-blood) 7%, transparent);
   --first-blood-wave-fill: color-mix(in oklch, var(--first-blood) 18%, transparent);
+  --challenge-first-blood-wash: color-mix(
+    in oklch,
+    var(--first-blood-subtle) 55%,
+    var(--first-blood-border)
+  );
 
   --chart-grid: var(--border-subtle);
   --chart-axis: var(--border);
@@ -231,12 +237,16 @@
   --success: oklch(68% 0.105 155);
   --success-hover: oklch(73% 0.1 155);
   --success-text: oklch(75% 0.09 155);
+  --success-imprint-edge: color-mix(in oklch, var(--success) 64%, transparent);
+  --challenge-success-wash: var(--success-subtle);
 
   --warning-subtle: oklch(25% 0.04 65);
   --warning-border: oklch(42% 0.065 65);
   --warning: oklch(74% 0.105 75);
   --warning-hover: oklch(79% 0.1 75);
   --warning-text: oklch(78% 0.09 75);
+  --first-blood-imprint-edge: color-mix(in oklch, var(--first-blood) 64%, transparent);
+  --challenge-first-blood-wash: var(--first-blood-subtle);
 
   --danger-subtle: oklch(24% 0.045 25);
   --danger-border: oklch(40% 0.07 25);
@@ -594,13 +604,17 @@
   }
 
   .kitsune-challenge-row[data-solved='true'] {
-    --challenge-state-wash: var(--success-subtle);
+    --challenge-state-wash: var(--challenge-success-wash);
 
     background: linear-gradient(90deg, var(--challenge-state-wash), transparent 48%);
   }
 
   .kitsune-challenge-row[data-blood='1'] {
-    --challenge-state-wash: var(--first-blood-subtle);
+    --challenge-state-wash: var(--challenge-first-blood-wash);
+  }
+
+  .kitsune-challenge-row[data-blood='1'] > .kitsune-collection-marker {
+    background-color: var(--first-blood);
   }
 
   .kitsune-challenge-row[data-blood='2'] {

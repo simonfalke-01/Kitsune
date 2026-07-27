@@ -204,10 +204,11 @@ export function ChallengeWorkspace({
           <SplitWorkspace
             appearance="workspace"
             ariaLabel="Challenge list width"
-            defaultValue={38}
+            defaultValue={34}
             left={collection}
             maximum={48}
-            minimum={28}
+            minimum={24}
+            persistenceKey="challenge-list"
             right={detail}
           />
         </div>

@@ -4,8 +4,10 @@ import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  useCallback,
   useRef,
-  useState
+  useState,
+  useSyncExternalStore
 } from 'react';
 import { Slider, SliderOutput, SliderThumb, SliderTrack } from 'react-aria-components';
 
@@ -23,6 +25,44 @@ interface SplitWorkspaceStyle extends CSSProperties {
 
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(Math.max(value, minimum), maximum);
+}
+
+const splitWorkspacePersistenceEvent = 'kitsune-split-workspace-preference';
+const splitWorkspacePersistenceVersion = 'v1';
+
+function subscribeToSplitWorkspacePreference(change: () => void): () => void {
+  window.addEventListener('storage', change);
+  window.addEventListener(splitWorkspacePersistenceEvent, change);
+
+  return () => {
+    window.removeEventListener('storage', change);
+    window.removeEventListener(splitWorkspacePersistenceEvent, change);
+  };
+}
+
+function splitWorkspaceStorageKey(key: string): string {
+  return `kitsune.split-workspace.${splitWorkspacePersistenceVersion}.${key}`;
+}
+
+function splitWorkspacePreferenceSnapshot(key?: string): string {
+  if (!key) {
+    return '';
+  }
+
+  try {
+    return window.localStorage.getItem(splitWorkspaceStorageKey(key)) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function getServerSplitWorkspacePreferenceSnapshot(): string {
+  return '';
+}
+
+interface UncontrolledSplitState {
+  persistenceSnapshot: string;
+  value: number;
 }
 
 interface ScrollPaneProps {
@@ -52,6 +92,7 @@ export interface SplitWorkspaceProps {
   maximum?: number;
   minimum?: number;
   onValueChange?: (value: number) => void;
+  persistenceKey?: string;
   right: ReactNode;
   value?: number;
 }
@@ -65,15 +106,40 @@ export function SplitWorkspace({
   maximum = 52,
   minimum = 32,
   onValueChange,
+  persistenceKey,
   right,
   value
 }: SplitWorkspaceProps) {
-  const [uncontrolledValue, setUncontrolledValue] = useState(defaultValue);
+  const getPersistenceSnapshot = useCallback(
+    () => splitWorkspacePreferenceSnapshot(persistenceKey),
+    [persistenceKey]
+  );
+  const persistenceSnapshot = useSyncExternalStore(
+    subscribeToSplitWorkspacePreference,
+    getPersistenceSnapshot,
+    getServerSplitWorkspacePreferenceSnapshot
+  );
+  const [uncontrolledState, setUncontrolledState] = useState<UncontrolledSplitState>({
+    persistenceSnapshot: '',
+    value: defaultValue
+  });
   const [isDragging, setIsDragging] = useState(false);
   const activePointerRef = useRef<number | null>(null);
   const dragOffsetRef = useRef(0);
+  const latestValueRef = useRef(defaultValue);
   const sliderRef = useRef<HTMLDivElement>(null);
   const workspaceRef = useRef<HTMLDivElement>(null);
+  let uncontrolledValue = uncontrolledState.value;
+
+  if (uncontrolledState.persistenceSnapshot !== persistenceSnapshot) {
+    const persistedValue = persistenceSnapshot ? Number(persistenceSnapshot) : Number.NaN;
+    uncontrolledValue = Number.isFinite(persistedValue) ? persistedValue : defaultValue;
+    setUncontrolledState({
+      persistenceSnapshot,
+      value: uncontrolledValue
+    });
+  }
+
   const resolvedValue = clamp(value ?? uncontrolledValue, minimum, maximum);
   const style: SplitWorkspaceStyle = {
     '--split-workspace-left': `${resolvedValue}%`
@@ -81,16 +147,35 @@ export function SplitWorkspace({
 
   function updateValue(nextValue: number) {
     const boundedValue = clamp(nextValue, minimum, maximum);
+    latestValueRef.current = boundedValue;
 
     // Pointer movement writes the shared coordinate synchronously so the divider
     // never waits for React scheduling before following the user's hand.
     workspaceRef.current?.style.setProperty('--split-workspace-left', `${boundedValue}%`);
 
     if (value === undefined) {
-      setUncontrolledValue(boundedValue);
+      setUncontrolledState({
+        persistenceSnapshot,
+        value: boundedValue
+      });
     }
 
     onValueChange?.(boundedValue);
+  }
+
+  function persistValue(nextValue: number) {
+    if (!persistenceKey) {
+      return;
+    }
+
+    const serializedValue = String(Math.round(clamp(nextValue, minimum, maximum) * 1000) / 1000);
+
+    try {
+      window.localStorage.setItem(splitWorkspaceStorageKey(persistenceKey), serializedValue);
+      window.dispatchEvent(new Event(splitWorkspacePersistenceEvent));
+    } catch {
+      // Resizing remains functional when storage is unavailable.
+    }
   }
 
   function finishPointerDrag(event: ReactPointerEvent<HTMLDivElement>) {
@@ -104,6 +189,7 @@ export function SplitWorkspace({
 
     activePointerRef.current = null;
     setIsDragging(false);
+    persistValue(latestValueRef.current);
   }
 
   return (
@@ -132,6 +218,9 @@ export function SplitWorkspace({
                 : resolvedValue + nextValue - semanticValue;
             updateValue(keyboardValue);
           }
+        }}
+        onChangeEnd={() => {
+          persistValue(latestValueRef.current);
         }}
         ref={sliderRef}
         step={1}
@@ -176,6 +265,7 @@ export function SplitWorkspace({
 
           const dividerX = bounds.left + (resolvedValue / 100) * bounds.width;
           dragOffsetRef.current = event.clientX - dividerX;
+          latestValueRef.current = resolvedValue;
           activePointerRef.current = event.pointerId;
           event.currentTarget.setPointerCapture(event.pointerId);
           sliderRef.current?.querySelector<HTMLElement>('[role="slider"]')?.focus();

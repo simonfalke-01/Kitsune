@@ -60,7 +60,7 @@ export function CollectionLink({
       <span
         aria-hidden
         className={cx(
-          'absolute rounded-sm bg-transparent',
+          'kitsune-collection-marker absolute rounded-sm bg-transparent',
           appearance === 'tile'
             ? 'inset-x-4 top-0 h-1'
             : appearance === 'challenge'

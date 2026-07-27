@@ -138,6 +138,9 @@ reusable failure mode, add the general rule here before closing the issue.
   separate tracks. Pointer movement preserves fractional percentages and writes
   that coordinate synchronously; integer keyboard steps remain available
   through the React Aria slider semantics.
+- User-adjusted workspace splits persist across reloads and synchronize across
+  tabs. Persist only committed drag or keyboard values; synchronous storage on
+  pointer movement is prohibited because it compromises direct manipulation.
 - Selection feedback is optimistic. A challenge row marks itself selected and
   changes the detail in the activation frame; URL synchronization must never
   sit on the critical feedback path.
@@ -145,6 +148,14 @@ reusable failure mode, add the general rule here before closing the issue.
   confirmation, toast, edge frame, screen imprint, and field wave all consume
   the shared first-blood gold role. Ordinary solves continue to use success
   green; do not recolor one part of the feedback sequence independently.
+- A first-blood challenge row adds one solid gold achievement rail to its gold
+  wash. The blue inset ring remains the selected-state signal; achievement and
+  current location must stay simultaneously legible rather than replacing one
+  another.
+- Light-mode solved and first-blood washes must remain visibly distinct from
+  the raised surface while retaining a pastel register. Solve-effect frames use
+  the stronger achievement edge role; dark mode keeps its independently tuned
+  surface and edge values.
 - Scrollbar tracks stay transparent. A pane may reveal its thumb while the user
   scrolls, then hide it after scrolling stops. Do not reserve a permanent gray
   track at the viewport edge.

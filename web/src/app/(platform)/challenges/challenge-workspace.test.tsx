@@ -132,10 +132,10 @@ describe('ChallengeWorkspace', () => {
     ).toHaveAttribute('href', '/challenges?challenge=challenge');
     expect(screen.getAllByText('Web')[0]).toBeVisible();
     expect(screen.getAllByText('18 solves')[0]).toBeVisible();
-    expect(screen.getByRole('slider', { name: 'Challenge list width' })).toHaveValue('38');
+    expect(screen.getByRole('slider', { name: 'Challenge list width' })).toHaveValue('34');
     expect(screen.getByRole('slider', { name: 'Challenge list width' })).toHaveAttribute(
       'min',
-      '28'
+      '24'
     );
     expect(screen.getByRole('button', { name: /Web/ }).closest('h2')).toHaveClass(
       'sticky',
@@ -348,6 +348,7 @@ describe('ChallengeWorkspace', () => {
     expect(selectedChallenge).toHaveAttribute('data-solved', 'true');
     expect(selectedChallenge).toHaveAttribute('data-blood', '1');
     expect(selectedChallenge).toHaveClass('ring-1', 'ring-accent-border');
+    expect(selectedChallenge.querySelector('.kitsune-collection-marker')).toBeInTheDocument();
     expect(firstBlood.querySelector('svg')).toHaveClass('-translate-y-optical');
 
     fireEvent.click(screen.getByRole('tab', { name: 'Solves 18' }));
@@ -412,7 +413,7 @@ describe('ChallengeWorkspace', () => {
     expect(solveEffect?.parentElement).toBe(document.body);
     expect(solveEffect).toHaveClass('fixed', 'inset-0', 'z-celebration');
     expect(solveEffect).not.toHaveAttribute('data-first-blood');
-    expect(edgeFrame).toHaveClass('border-2');
+    expect(edgeFrame).toHaveClass('border-4');
     expect(edgeFrame?.parentElement).toBe(solveEffect);
     expect(document.querySelector('.kitsune-solve-edge-wash')).not.toBeInTheDocument();
     expect(document.querySelector('.kitsune-solve-origin')).not.toBeInTheDocument();
