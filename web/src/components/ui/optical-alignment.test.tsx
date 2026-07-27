@@ -46,7 +46,7 @@ describe('optical vertical alignment', () => {
       'kitsune-optical-py-2'
     );
     expect(screen.getByText('Challenges')).toHaveClass('kitsune-optical-center');
-    expect(screen.getByText('KL')).toHaveClass('kitsune-optical-center');
+    expect(screen.getByText('KL')).toHaveClass('w-full', '-translate-y-optical', 'text-center');
     expect(screen.getByRole('img', { name: 'Kitsune Labs profile picture' })).toContainElement(
       screen.getByRole('presentation')
     );

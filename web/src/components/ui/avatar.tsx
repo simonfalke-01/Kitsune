@@ -43,7 +43,7 @@ export interface AvatarProps {
 export function Avatar({ className, name, size = 'medium', src, tone = 'blue' }: AvatarProps) {
   const classes = cx(
     'relative inline-flex shrink-0 items-center justify-center overflow-hidden border',
-    'font-semibold tracking-tight',
+    'font-semibold tracking-wide',
     variantClass(avatarSizes, size),
     variantClass(avatarTones, tone),
     className
@@ -51,7 +51,7 @@ export function Avatar({ className, name, size = 'medium', src, tone = 'blue' }:
 
   return (
     <span aria-label={`${name} profile picture`} className={classes} role="img">
-      <span className="kitsune-optical-center">{initials(name)}</span>
+      <span className="w-full -translate-y-optical text-center">{initials(name)}</span>
       {src ? (
         // Dynamic team-avatar hosts are operator configured; this primitive owns sizing and fallback.
         // eslint-disable-next-line @next/next/no-img-element
