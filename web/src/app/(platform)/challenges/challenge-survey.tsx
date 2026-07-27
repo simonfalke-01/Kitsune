@@ -32,8 +32,8 @@ export function ChallengeSurvey({ challenge, isGate, onComplete }: ChallengeSurv
         )
       );
       await onComplete(completeAnswers);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'The survey could not be submitted.');
+    } catch {
+      setError('The rating could not be submitted. Check your connection and retry.');
     } finally {
       setIsSubmitting(false);
     }

@@ -66,8 +66,12 @@ export function ChallengeSubmission({
       }
 
       await onReceipt(receipt);
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'The answer could not be submitted.');
+    } catch {
+      setError(
+        challenge.kind.type === 'manual_verification'
+          ? 'The answer could not be submitted. Check your connection and retry.'
+          : 'The flag could not be submitted. Check your connection and retry.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -95,25 +99,21 @@ export function ChallengeSubmission({
             }))}
             value={answer}
           />
-          <div className="flex">
-            <Button className="w-full" isLoading={isSubmitting} type="submit">
+          <div className="flex justify-end">
+            <Button isLoading={isSubmitting} type="submit">
               Submit flag
             </Button>
           </div>
         </>
       ) : (
-        <div className="flex flex-col items-start gap-2 sm:flex-row">
+        <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-end">
           <TextField
             className="min-w-0 flex-1"
             errorMessage={error}
             inputClassName="h-control bg-surface-sunken font-mono"
             isInvalid={Boolean(error)}
             label={challenge.kind.type === 'manual_verification' ? 'Answer' : 'Flag'}
-            labelHidden
             onChange={setAnswer}
-            placeholder={
-              challenge.kind.type === 'manual_verification' ? 'Enter answer' : 'Enter flag'
-            }
             value={answer}
           />
           <Button className="h-control w-full sm:w-auto" isLoading={isSubmitting} type="submit">

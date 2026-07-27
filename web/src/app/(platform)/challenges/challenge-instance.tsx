@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 
+import { formatSolveTimestamp } from './challenge-solve-stub';
 import { Alert, Button, CodeBlock, StatusIndicator } from '@/components/ui';
 
 export type ChallengeInstanceState =
@@ -19,7 +20,6 @@ interface ChallengeInstanceProps {
   onStart?: () => Promise<void>;
   onStop?: () => Promise<void>;
   state: ChallengeInstanceState;
-  template: string;
   unavailableReason?: string;
 }
 
@@ -39,11 +39,9 @@ export function ChallengeInstance({
   onStart,
   onStop,
   state,
-  template,
   unavailableReason
 }: ChallengeInstanceProps) {
   const [pendingAction, setPendingAction] = useState<'extend' | 'start' | 'stop' | null>(null);
-  const isTransitioning = state === 'starting' || state === 'stopping';
 
   async function run(
     action: 'extend' | 'start' | 'stop',
@@ -81,7 +79,6 @@ export function ChallengeInstance({
           }
         />
       </div>
-      <CodeBlock code={template} label="Instance template" />
       {state === 'unavailable' ? (
         <Alert
           description={
@@ -107,14 +104,11 @@ export function ChallengeInstance({
         </div>
       ) : null}
       {state === 'running' && expiresAt ? (
-        <p className="m-0 text-sm text-text-muted">
-          Expires {new Date(expiresAt).toLocaleString()}
-        </p>
+        <p className="m-0 text-sm text-text-muted">Expires {formatSolveTimestamp(expiresAt)}</p>
       ) : null}
-      <div className="flex flex-wrap gap-2">
-        {state === 'stopped' || state === 'error' || state === 'unavailable' ? (
+      {(state === 'stopped' || state === 'error') && onStart ? (
+        <div className="flex flex-wrap gap-2">
           <Button
-            isDisabled={!onStart || state === 'unavailable'}
             isLoading={pendingAction === 'start'}
             onPress={() => {
               void run('start', onStart);
@@ -122,11 +116,12 @@ export function ChallengeInstance({
           >
             Deploy
           </Button>
-        ) : null}
-        {state === 'running' ? (
-          <>
+        </div>
+      ) : null}
+      {state === 'running' && (onExtend || onStop) ? (
+        <div className="flex flex-wrap gap-2">
+          {onExtend ? (
             <Button
-              isDisabled={!onExtend}
               isLoading={pendingAction === 'extend'}
               onPress={() => {
                 void run('extend', onExtend);
@@ -135,8 +130,9 @@ export function ChallengeInstance({
             >
               Extend
             </Button>
+          ) : null}
+          {onStop ? (
             <Button
-              isDisabled={!onStop}
               isLoading={pendingAction === 'stop'}
               onPress={() => {
                 void run('stop', onStop);
@@ -145,12 +141,9 @@ export function ChallengeInstance({
             >
               Stop
             </Button>
-          </>
-        ) : null}
-        {isTransitioning ? (
-          <span className="self-center text-sm text-text-muted">Provider action in progress</span>
-        ) : null}
-      </div>
+          ) : null}
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -83,8 +83,8 @@ export function ChallengeHints({ challenge, loadHints, unlockHint }: ChallengeHi
 
     try {
       setHints(await loadHints(challenge.id));
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'Hints could not be loaded.');
+    } catch {
+      setError('Hints could not be loaded. Check your connection and retry.');
     } finally {
       setIsLoading(false);
     }
@@ -99,9 +99,9 @@ export function ChallengeHints({ challenge, loadHints, unlockHint }: ChallengeHi
           setHints(result);
         }
       })
-      .catch((caught) => {
+      .catch(() => {
         if (active) {
-          setError(caught instanceof Error ? caught.message : 'Hints could not be loaded.');
+          setError('Hints could not be loaded. Check your connection and retry.');
         }
       })
       .finally(() => {
@@ -132,8 +132,8 @@ export function ChallengeHints({ challenge, loadHints, unlockHint }: ChallengeHi
         tone: 'info'
       });
       return true;
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'The hint could not be unlocked.');
+    } catch {
+      setError('The hint could not be revealed. Check your connection and retry.');
       return false;
     } finally {
       setPendingHint(null);
@@ -170,7 +170,7 @@ export function ChallengeHints({ challenge, loadHints, unlockHint }: ChallengeHi
   }
 
   if (hints.length === 0) {
-    return <p className="m-0 text-base text-text-muted">No hints are available.</p>;
+    return <p className="m-0 text-base text-text-muted">No hints are available</p>;
   }
 
   return (

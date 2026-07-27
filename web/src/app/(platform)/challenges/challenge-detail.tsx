@@ -197,7 +197,6 @@ export function ChallengeDetail({
             {challenge.kind.type === 'dynamic_instance' ? (
               <ChallengeInstance
                 state="unavailable"
-                template={challenge.kind.template}
                 unavailableReason="Challenge instances are unavailable right now. Try again later."
               />
             ) : null}
@@ -233,7 +232,7 @@ export function ChallengeDetail({
             ) : null}
 
             {showPostSolveSurvey ? (
-              <section className="grid gap-4 border-t border-border-subtle pt-6">
+              <section className="grid gap-4">
                 <h3 className="m-0 text-base font-semibold text-text">Rate this challenge</h3>
                 {postSolveSurveyComplete ? (
                   <p className="m-0 text-sm font-medium text-success-text">Rating submitted</p>

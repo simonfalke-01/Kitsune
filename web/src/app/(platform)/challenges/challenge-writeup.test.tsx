@@ -101,7 +101,7 @@ describe('ChallengeWriteup', () => {
         submit: true
       });
     });
-    expect(await screen.findByText('Your writeup is waiting for organizer review.')).toBeVisible();
+    expect(await screen.findByText('Your writeup is waiting for organizer review')).toBeVisible();
     expect(screen.getByLabelText('Writeup')).toBeDisabled();
   });
 

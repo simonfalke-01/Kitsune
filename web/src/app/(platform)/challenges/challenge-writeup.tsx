@@ -42,12 +42,8 @@ export function ChallengeWriteup({
       const loaded = await loadWriteup(challengeId);
       setWriteup(loaded);
       setBody(loaded?.body ?? '');
-    } catch (loadError) {
-      setError(
-        loadError instanceof Error
-          ? loadError.message
-          : 'Your writeup could not be loaded. Check your connection and retry.'
-      );
+    } catch {
+      setError('Your writeup could not be loaded. Check your connection and retry.');
     } finally {
       setIsLoading(false);
     }
@@ -91,12 +87,8 @@ export function ChallengeWriteup({
         title: submit ? 'Writeup submitted' : 'Draft saved',
         tone: 'success'
       });
-    } catch (saveError) {
-      setError(
-        saveError instanceof Error
-          ? saveError.message
-          : 'Your writeup could not be saved. Check your connection and retry.'
-      );
+    } catch {
+      setError('Your writeup could not be saved. Check your connection and retry.');
     } finally {
       setPendingAction(null);
     }
@@ -136,25 +128,22 @@ export function ChallengeWriteup({
   return (
     <div className="grid gap-4">
       {showTitle ? (
-        <div className="grid gap-1">
-          <h3 className="m-0 font-display text-lg font-semibold tracking-tight text-text">
-            Solution writeup
-          </h3>
-          <p className="m-0 text-sm text-text-muted">Markdown supported</p>
-        </div>
+        <h3 className="m-0 font-display text-lg font-semibold tracking-tight text-text">
+          Solution writeup
+        </h3>
       ) : null}
 
       {writeup?.state === 'changes_requested' && writeup.feedback ? (
         <Alert description={writeup.feedback} title="Organizer feedback" tone="warning" />
       ) : null}
       {writeup?.state === 'submitted' ? (
-        <Alert title="Your writeup is waiting for organizer review." tone="info" />
+        <Alert title="Your writeup is waiting for organizer review" tone="info" />
       ) : null}
       {writeup?.state === 'approved' ? (
-        <Alert title="Your writeup was approved." tone="success" />
+        <Alert title="Your writeup was approved" tone="success" />
       ) : null}
       {writeup?.state === 'published' ? (
-        <Alert title="Your writeup is published." tone="success" />
+        <Alert title="Your writeup is published" tone="success" />
       ) : null}
       {error ? <Alert title={error} tone="danger" /> : null}
 
@@ -165,7 +154,11 @@ export function ChallengeWriteup({
         }}
       >
         <TextArea
-          description={isEditable ? 'Markdown supported' : 'This writeup is locked during review.'}
+          description={
+            isEditable
+              ? 'Markdown supported. At least 20 characters are required for review.'
+              : 'This writeup is locked during review.'
+          }
           isDisabled={!isEditable || pendingAction !== null}
           label="Writeup"
           onChange={setBody}

@@ -158,13 +158,12 @@ export function ChallengeCollection({
 
   return (
     <section aria-label="Challenge list" className="flex min-h-full flex-col bg-surface-raised">
-      <div className="sticky top-0 z-20 flex h-16 items-center gap-2 bg-surface-raised px-3">
+      <div className="sticky top-0 z-20 flex min-h-24 items-end gap-2 bg-surface-raised px-3 py-3">
         <SearchField
           className="min-w-0 flex-1"
           label="Search challenges"
-          labelHidden
           onChange={setQuery}
-          placeholder="Search challenges"
+          placeholder="Name or category"
           value={query}
         />
         <TooltipTrigger>
@@ -242,7 +241,7 @@ export function ChallengeCollection({
               <Disclosure
                 className={`${categoryTextClasses[tone]} bg-surface-raised`}
                 density="compact"
-                headingClassName="sticky top-16 z-10 bg-surface-sunken"
+                headingClassName="sticky top-24 z-10 bg-surface-sunken"
                 headingLevel={2}
                 id={group.category}
                 key={group.category}

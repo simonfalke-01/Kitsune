@@ -6,15 +6,11 @@ import { ChallengeInstance } from './challenge-instance';
 describe('ChallengeInstance', () => {
   it('shows an honest unavailable state without active controls', () => {
     render(
-      <ChallengeInstance
-        state="unavailable"
-        template="pwn-lantern-v1"
-        unavailableReason="Lifecycle API unavailable."
-      />
+      <ChallengeInstance state="unavailable" unavailableReason="Lifecycle API unavailable." />
     );
 
     expect(screen.getByText('Lifecycle API unavailable.')).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Deploy' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Deploy' })).not.toBeInTheDocument();
   });
 
   it('shows running endpoints and lifecycle actions', () => {
@@ -30,7 +26,6 @@ describe('ChallengeInstance', () => {
         onExtend={vi.fn().mockResolvedValue(undefined)}
         onStop={vi.fn().mockResolvedValue(undefined)}
         state="running"
-        template="pwn-lantern-v1"
       />
     );
 

@@ -108,7 +108,7 @@ describe('ChallengeWorkspace', () => {
     expect(screen.getByRole('slider', { name: 'Challenge list width' })).toHaveValue('38');
     expect(screen.getByRole('button', { name: /Web/ }).closest('h2')).toHaveClass(
       'sticky',
-      'top-16'
+      'top-24'
     );
   });
 
