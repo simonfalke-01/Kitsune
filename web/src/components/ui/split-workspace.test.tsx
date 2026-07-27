@@ -99,6 +99,8 @@ describe('SplitWorkspace', () => {
     const workspace = screen
       .getByText('Detail remains mounted')
       .closest<HTMLElement>('.kitsune-split-workspace')!;
+    workspace.style.setProperty('--duration-slow', '260ms');
+    workspace.style.setProperty('--motion-split-bounce', '0.12');
     const leftPane = workspace.firstElementChild as HTMLElement;
     vi.spyOn(leftPane, 'getBoundingClientRect').mockImplementation(() => {
       const track = workspace.style.getPropertyValue('--split-workspace-left');
@@ -133,7 +135,15 @@ describe('SplitWorkspace', () => {
     expect(screen.getByText('Collapsed navigation remains available')).toBeVisible();
     expect(screen.queryByRole('slider', { name: 'Collapsible panel' })).not.toBeInTheDocument();
     expect(workspace).toHaveStyle({ '--split-workspace-left': 'var(--spacing-collapsed-rail)' });
-    expect(motionMocks.animate).toHaveBeenCalledWith(400, 64, expect.any(Object));
+    expect(motionMocks.animate).toHaveBeenCalledWith(
+      400,
+      64,
+      expect.objectContaining({
+        bounce: 0.12,
+        type: 'spring',
+        visualDuration: 0.26
+      })
+    );
 
     rerender(
       <SplitWorkspace

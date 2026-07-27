@@ -39,17 +39,13 @@ function splitWorkspaceMotion(element: HTMLElement) {
       ? durationNumber / 1000
       : durationNumber
     : 0;
-  const easingValue = computed.getPropertyValue('--ease-out-spatial').trim();
-  const easingMatch = easingValue.match(/cubic-bezier\(([^)]+)\)/);
-  const easingNumbers = easingMatch?.[1]?.split(',').map((value) => Number(value.trim()));
-  const ease =
-    easingNumbers?.length === 4 && easingNumbers.every(Number.isFinite)
-      ? (easingNumbers as [number, number, number, number])
-      : ('easeOut' as const);
+  const bounceValue = Number.parseFloat(computed.getPropertyValue('--motion-split-bounce'));
+  const bounce = Number.isFinite(bounceValue) ? clamp(bounceValue, 0, 1) : 0;
 
   return {
-    duration,
-    ease
+    bounce,
+    type: 'spring' as const,
+    visualDuration: duration
   };
 }
 
