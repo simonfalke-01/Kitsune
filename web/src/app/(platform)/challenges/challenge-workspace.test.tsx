@@ -332,7 +332,13 @@ describe('ChallengeWorkspace', () => {
     expect(screen.getAllByText('Challenge solved').length).toBeGreaterThan(0);
     const solveWave = document.querySelector('.kitsune-solve-wave');
     expect(solveWave?.parentElement).toBe(document.body);
-    expect(solveWave).toHaveClass('fixed', 'z-celebration', 'ring-2', 'ring-success-border');
+    expect(solveWave).toHaveClass(
+      'fixed',
+      'z-celebration',
+      'bg-success-wave',
+      'ring-2',
+      'ring-success-border'
+    );
     expect(solveWave).toHaveStyle({
       '--solve-wave-diameter': `${Math.hypot(window.innerWidth, window.innerHeight) * 2}px`,
       '--solve-wave-x': '0px',

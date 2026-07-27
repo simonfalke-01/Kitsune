@@ -119,6 +119,7 @@
   --success-subtle: var(--success-3);
   --success-border: var(--success-6);
   --success: var(--success-9);
+  --success-wave: color-mix(in oklch, var(--success) 24%, transparent);
   --success-hover: var(--success-10);
   --success-text: var(--success-12);
 
@@ -289,6 +290,7 @@
   --color-success-subtle: var(--success-subtle);
   --color-success-border: var(--success-border);
   --color-success: var(--success);
+  --color-success-wave: var(--success-wave);
   --color-success-hover: var(--success-hover);
   --color-success-text: var(--success-text);
   --color-warning-subtle: var(--warning-subtle);

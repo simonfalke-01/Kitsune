@@ -144,7 +144,7 @@ export function ChallengeDetail({
         ? createPortal(
             <span
               aria-hidden
-              className="kitsune-solve-wave pointer-events-none fixed z-celebration aspect-square rounded-full ring-2 ring-success-border"
+              className="kitsune-solve-wave pointer-events-none fixed z-celebration aspect-square rounded-full bg-success-wave ring-2 ring-success-border"
               style={solveWaveStyle}
             />,
             document.body
