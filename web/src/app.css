@@ -517,12 +517,13 @@
     grid-template-columns: var(--split-workspace-left) minmax(0, 1fr);
   }
 
-  .kitsune-split-track {
-    right: var(--split-workspace-maximum-inset);
-    left: var(--split-workspace-minimum);
+  .kitsune-split-handle {
+    left: var(--split-workspace-left);
   }
 
-  .kitsune-split-thumb[data-dragging] .kitsune-split-grip {
+  .kitsune-split-handle[data-dragging] .kitsune-split-grip,
+  .kitsune-split-workspace:has(.kitsune-split-semantic-thumb[data-focus-visible])
+    .kitsune-split-grip {
     background-color: var(--accent);
   }
 

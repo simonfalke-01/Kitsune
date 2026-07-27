@@ -133,10 +133,14 @@ reusable failure mode, add the general rule here before closing the issue.
   pointer target. A keyboard-only value change does not prove the pointer
   interaction works. Pointer dragging must be tested against the rendered
   target and update pane geometry continuously.
-- The splitter's physical track spans the same minimum-to-maximum percentage
-  interval used by the pane grid. Pointer position, thumb position, and pane
-  width remain one-to-one throughout a drag; mapping a constrained value range
-  across the full workspace is a functional defect.
+- The splitter grid boundary, visible grip, and pointer calculation consume one
+  literal workspace percentage. They must not derive parallel coordinates from
+  separate tracks. Pointer movement preserves fractional percentages and writes
+  that coordinate synchronously; integer keyboard steps remain available
+  through the React Aria slider semantics.
+- Selection feedback is optimistic. A challenge row marks itself selected and
+  changes the detail in the activation frame; URL synchronization must never
+  sit on the critical feedback path.
 - Scrollbar tracks stay transparent. A pane may reveal its thumb while the user
   scrolls, then hide it after scrolling stops. Do not reserve a permanent gray
   track at the viewport edge.

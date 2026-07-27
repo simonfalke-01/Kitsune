@@ -63,41 +63,42 @@ describe('SplitWorkspace', () => {
     );
 
     const slider = screen.getByRole('slider', { name: 'Pointer-resizable panel' });
-    const thumb = slider.closest('.kitsune-split-thumb')!;
-    const track = thumb.parentElement!;
-    const workspace = track.closest('.kitsune-split-workspace')!;
+    const workspace = slider.closest('.kitsune-split-workspace')!;
+    const handle = workspace.querySelector<HTMLElement>('.kitsune-split-handle')!;
 
-    expect(track).toHaveClass('kitsune-split-track', 'absolute', 'inset-y-0');
+    expect(handle).toHaveClass('kitsune-split-handle', 'absolute', 'inset-y-0');
     expect(workspace).toHaveStyle({
-      '--split-workspace-left': '40%',
-      '--split-workspace-maximum-inset': '48%',
-      '--split-workspace-minimum': '32%'
+      '--split-workspace-left': '40%'
     });
 
-    Object.defineProperty(track, 'getBoundingClientRect', {
+    Object.defineProperty(workspace, 'getBoundingClientRect', {
       configurable: true,
       value: () => ({
         bottom: 600,
         height: 600,
-        left: 320,
-        right: 520,
+        left: 0,
+        right: 1000,
         toJSON: () => undefined,
         top: 0,
-        width: 200,
-        x: 320,
+        width: 1000,
+        x: 0,
         y: 0
       })
     });
-    Object.defineProperty(thumb, 'setPointerCapture', {
+    Object.defineProperty(handle, 'setPointerCapture', {
       configurable: true,
       value: () => undefined
     });
-    Object.defineProperty(thumb, 'releasePointerCapture', {
+    Object.defineProperty(handle, 'hasPointerCapture', {
+      configurable: true,
+      value: () => true
+    });
+    Object.defineProperty(handle, 'releasePointerCapture', {
       configurable: true,
       value: () => undefined
     });
 
-    fireEvent.pointerDown(thumb, {
+    fireEvent.pointerDown(handle, {
       button: 0,
       buttons: 1,
       clientX: 400,
@@ -105,24 +106,44 @@ describe('SplitWorkspace', () => {
       pointerId: 1,
       pointerType: 'mouse'
     });
-    fireEvent.pointerMove(document, {
+    fireEvent.pointerMove(handle, {
       buttons: 1,
-      clientX: 440,
+      clientX: 437.5,
       clientY: 300,
       pointerId: 1,
       pointerType: 'mouse'
     });
 
     expect(slider).toHaveValue('44');
-    expect(workspace).toHaveStyle({ '--split-workspace-left': '44%' });
+    expect(workspace).toHaveStyle({ '--split-workspace-left': '43.75%' });
 
-    fireEvent.pointerUp(document, {
-      button: 0,
-      buttons: 0,
-      clientX: 440,
+    fireEvent.pointerMove(handle, {
+      buttons: 1,
+      clientX: -200,
       clientY: 300,
       pointerId: 1,
       pointerType: 'mouse'
     });
+    expect(workspace).toHaveStyle({ '--split-workspace-left': '32%' });
+
+    fireEvent.pointerMove(handle, {
+      buttons: 1,
+      clientX: 1200,
+      clientY: 300,
+      pointerId: 1,
+      pointerType: 'mouse'
+    });
+    expect(workspace).toHaveStyle({ '--split-workspace-left': '52%' });
+
+    fireEvent.pointerUp(handle, {
+      button: 0,
+      buttons: 0,
+      clientX: 1200,
+      clientY: 300,
+      pointerId: 1,
+      pointerType: 'mouse'
+    });
+
+    expect(handle).not.toHaveAttribute('data-dragging');
   });
 });

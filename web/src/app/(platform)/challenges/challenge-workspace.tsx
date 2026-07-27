@@ -52,6 +52,11 @@ export interface ChallengeWorkspaceProps {
   selectedChallengeId: string | null;
 }
 
+interface ImmediateSelection {
+  current: string | null;
+  source: string | null;
+}
+
 export function ChallengeWorkspace({
   actions,
   challenges,
@@ -67,9 +72,22 @@ export function ChallengeWorkspace({
   selectedChallengeId
 }: ChallengeWorkspaceProps) {
   const isDesktop = useSyncExternalStore(subscribeToDesktop, getIsDesktop, () => true);
+  const [immediateSelection, setImmediateSelection] = useState<ImmediateSelection>({
+    current: selectedChallengeId,
+    source: selectedChallengeId
+  });
   const [optimisticSolveTimes, setOptimisticSolveTimes] = useState<ReadonlyMap<string, string>>(
     new Map()
   );
+  let immediateSelectedChallengeId = immediateSelection.current;
+
+  if (immediateSelection.source !== selectedChallengeId) {
+    immediateSelectedChallengeId = selectedChallengeId;
+    setImmediateSelection({
+      current: selectedChallengeId,
+      source: selectedChallengeId
+    });
+  }
   const restoreSelectionFocusRef = useRef(false);
   const selectionTriggerRef = useRef<HTMLElement | null>(null);
   const displayedChallenges = useMemo(() => {
@@ -106,7 +124,7 @@ export function ChallengeWorkspace({
     });
   }, [currentCompetitor, displayedChallenges, eventId, eventStartedAt]);
   const selectedChallenge =
-    displayedChallenges.find((challenge) => challenge.id === selectedChallengeId) ?? null;
+    displayedChallenges.find((challenge) => challenge.id === immediateSelectedChallengeId) ?? null;
 
   useEffect(() => {
     if (selectedChallengeId || !restoreSelectionFocusRef.current) {
@@ -121,7 +139,14 @@ export function ChallengeWorkspace({
 
   function closeDetail() {
     restoreSelectionFocusRef.current = true;
+    setImmediateSelection({ current: null, source: selectedChallengeId });
     onClearSelection();
+  }
+
+  function selectChallenge(challengeId: string, trigger: HTMLElement) {
+    selectionTriggerRef.current = trigger;
+    setImmediateSelection({ current: challengeId, source: selectedChallengeId });
+    onSelectChallenge?.(challengeId);
   }
 
   function handleSolved(challengeId: string, solvedAt: string) {
@@ -138,10 +163,9 @@ export function ChallengeWorkspace({
       eventId={eventId}
       getChallengeHref={getChallengeHref}
       onSelectChallenge={(challengeId, trigger) => {
-        selectionTriggerRef.current = trigger;
-        onSelectChallenge?.(challengeId);
+        selectChallenge(challengeId, trigger);
       }}
-      selectedChallengeId={selectedChallengeId}
+      selectedChallengeId={immediateSelectedChallengeId}
       solveContexts={solveContexts}
     />
   );
@@ -160,8 +184,7 @@ export function ChallengeWorkspace({
       challenges={displayedChallenges}
       getChallengeHref={getChallengeHref}
       onSelectChallenge={(challengeId, trigger) => {
-        selectionTriggerRef.current = trigger;
-        onSelectChallenge?.(challengeId);
+        selectChallenge(challengeId, trigger);
       }}
       solveContexts={solveContexts}
       standing={standing}
@@ -184,7 +207,7 @@ export function ChallengeWorkspace({
             defaultValue={38}
             left={collection}
             maximum={48}
-            minimum={32}
+            minimum={28}
             right={detail}
           />
         </div>

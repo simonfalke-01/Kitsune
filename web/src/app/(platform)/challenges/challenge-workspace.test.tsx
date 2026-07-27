@@ -133,6 +133,10 @@ describe('ChallengeWorkspace', () => {
     expect(screen.getAllByText('Web')[0]).toBeVisible();
     expect(screen.getAllByText('18 solves')[0]).toBeVisible();
     expect(screen.getByRole('slider', { name: 'Challenge list width' })).toHaveValue('38');
+    expect(screen.getByRole('slider', { name: 'Challenge list width' })).toHaveAttribute(
+      'min',
+      '28'
+    );
     expect(screen.getByRole('button', { name: /Web/ }).closest('h2')).toHaveClass(
       'sticky',
       'top-24'
@@ -175,6 +179,39 @@ describe('ChallengeWorkspace', () => {
 
     expect(within(challengeList).getByRole('link', { name: /Web trail/ })).toBeVisible();
     expect(within(challengeList).getByRole('link', { name: /Crypto trail/ })).toBeVisible();
+  });
+
+  it('changes selection and detail in the activation frame before URL synchronization', () => {
+    renderWorkspace(
+      [
+        createChallengeExperience(
+          challenge({
+            id: 'first',
+            name: 'First trail'
+          })
+        ),
+        createChallengeExperience(
+          challenge({
+            id: 'second',
+            name: 'Second trail',
+            position: 1
+          })
+        )
+      ],
+      'first'
+    );
+
+    const challengeList = screen.getByRole('region', { name: 'Challenge list' });
+    const first = within(challengeList).getByRole('link', { name: /First trail/ });
+    const second = within(challengeList).getByRole('link', { name: /Second trail/ });
+
+    expect(first).toHaveAttribute('aria-current', 'true');
+    fireEvent.click(second);
+
+    expect(second).toHaveAttribute('aria-current', 'true');
+    expect(second).toHaveClass('ring-1', 'ring-accent-border');
+    expect(first).not.toHaveAttribute('aria-current');
+    expect(screen.getByRole('heading', { name: 'Second trail' })).toBeVisible();
   });
 
   it('packs solved progress segments before unsolved segments', () => {
