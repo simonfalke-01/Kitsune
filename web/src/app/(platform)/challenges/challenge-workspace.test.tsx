@@ -367,7 +367,7 @@ describe('ChallengeWorkspace', () => {
     const edgeFrame = document.querySelector('.kitsune-solve-edge-frame');
     expect(solveEffect?.parentElement).toBe(document.body);
     expect(solveEffect).toHaveClass('fixed', 'inset-0', 'z-celebration');
-    expect(edgeFrame).toHaveClass('border', 'border-success-imprint-edge');
+    expect(edgeFrame).toHaveClass('border-2', 'border-success-imprint-edge');
     expect(edgeFrame?.parentElement).toBe(solveEffect);
     expect(document.querySelector('.kitsune-solve-edge-wash')).not.toBeInTheDocument();
     expect(document.querySelector('.kitsune-solve-origin')).not.toBeInTheDocument();

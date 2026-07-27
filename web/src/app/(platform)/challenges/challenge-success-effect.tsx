@@ -80,7 +80,7 @@ function EdgeBorder({ onComplete }: Pick<ChallengeSuccessEffectProps, 'onComplet
       className="kitsune-solve-effect pointer-events-none fixed inset-0 z-celebration"
     >
       <span
-        className="kitsune-solve-edge-frame absolute inset-0 border border-success-imprint-edge"
+        className="kitsune-solve-edge-frame absolute inset-0 border-2 border-success-imprint-edge"
         onAnimationEnd={onComplete}
       />
     </div>
@@ -95,7 +95,7 @@ function ScreenImprint({ onComplete }: Pick<ChallengeSuccessEffectProps, 'onComp
     >
       <span className="kitsune-solve-edge-wash absolute inset-0" />
       <span
-        className="kitsune-solve-edge-frame absolute inset-0 border border-success-imprint-edge"
+        className="kitsune-solve-edge-frame absolute inset-0 border-2 border-success-imprint-edge"
         onAnimationEnd={onComplete}
       />
     </div>
