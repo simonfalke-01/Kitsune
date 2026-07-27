@@ -71,6 +71,7 @@ describe('LineChart', () => {
     const chart = screen.getByRole('img', { name: 'Score history' });
     expect(chart).toBeVisible();
     expect(chart).toHaveAttribute('preserveAspectRatio', 'none');
+    expect(container.querySelector('text.fill-chart-label')).toHaveAttribute('x', '0');
     expect(screen.getByRole('button', { name: 'Chart data' })).toBeVisible();
 
     vi.spyOn(chart, 'getBoundingClientRect').mockReturnValue({

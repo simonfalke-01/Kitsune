@@ -13,7 +13,7 @@ export function ChallengeNearbyStandings({ entries }: ChallengeNearbyStandingsPr
       {entries.length === 0 ? (
         <p className="m-0 flex h-full items-center text-sm text-text-muted">No nearby teams</p>
       ) : (
-        <ol className="m-0 grid h-full list-none grid-rows-5 p-0">
+        <ol className="m-0 grid h-full list-none grid-rows-7 p-0">
           {entries.map((entry) => (
             <li
               aria-current={entry.isSelf ? 'true' : undefined}

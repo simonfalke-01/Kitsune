@@ -141,7 +141,7 @@ describe('ChallengeWorkspace', () => {
     const nearbyRanks = nearbyRows.map((row) =>
       Number(within(row).getByText(/^#/).textContent.slice(1))
     );
-    expect(nearbyRows).toHaveLength(5);
+    expect(nearbyRows).toHaveLength(7);
     expect(nearbyRows[0]).not.toHaveClass('px-3');
     expect(nearbyRanks).toEqual(nearbyRows.map((_, index) => nearbyRanks[0]! + index));
     expect(currentTeam).toHaveClass('font-semibold', 'text-accent-text');

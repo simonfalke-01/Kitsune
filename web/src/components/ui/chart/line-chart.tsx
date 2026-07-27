@@ -427,7 +427,7 @@ export function LineChart<Metadata>({
                   y1={y}
                   y2={y}
                 />
-                <text className="fill-chart-label text-xs" x={bounds.left} y={y - 8}>
+                <text className="fill-chart-label text-xs" x={0} y={y - 8}>
                   {formatYValue(tick.value)}
                 </text>
               </g>

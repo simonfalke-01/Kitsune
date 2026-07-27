@@ -378,12 +378,15 @@ reusable failure mode, add the general rule here before closing the issue.
   heading, overall challenge bar, and category column headings remain fixed.
   Only the category rows own vertical overflow when they exceed the remaining
   pane height; the overview pane and document do not become scroll owners.
-- The nearby-score chart uses a five-place local standings window instead of a
+- The nearby-score chart uses a seven-place local standings window instead of a
   series legend. It shows consecutive rank, team, and point columns around the
   current competitor, spans the chart's plotted height, and keeps the current
   team as the sole accented, weighted row. Neutral neighbours fade toward the
   top and bottom edges without implying that the ledger is an interactive
   picker.
+- The chart's first visible Y-axis label shares the section's leading edge.
+  Grid lines retain their internal label inset; that functional plotting inset
+  must not shift the chart's entire visible block away from its heading.
 - Once the nearby-score chart and standings share a row, both use the standard
   chart-height token. The responsive column split corrects the wide aspect;
   increasing height again wastes the fixed workspace and pushes the challenge

@@ -247,7 +247,7 @@ export function createChallengeEventStandingStub(input: {
   const progressRatio = progress.total === 0 ? 0 : progress.solved / progress.total;
   const rank = Math.max(1, Math.round(totalCompetitors - progressRatio * (totalCompetitors - 1)));
   const eventStartMs = Date.parse(resolvedEventStart(input.eventStartedAt));
-  const nearbyStandingCount = Math.min(5, totalCompetitors);
+  const nearbyStandingCount = Math.min(7, totalCompetitors);
   const nearbyStandingStart = Math.min(
     Math.max(1, rank - Math.floor(nearbyStandingCount / 2)),
     totalCompetitors - nearbyStandingCount + 1

@@ -257,8 +257,8 @@ without losing competition context.
   origin.
 - Do not use one rounded card per category.
 - Do not repeat event-trail facts unless a comparison gives them new meaning.
-- The nearby-score chart pairs with a five-place standings window centered on
-  the current team whenever the rank has two neighbours on either side. Rank,
+- The nearby-score chart pairs with a seven-place standings window centered on
+  the current team whenever the rank has three neighbours on either side. Rank,
   team, and points share stable columns across the chart height. Only the
   current team receives accent and weight; neutral neighbours recede through a
   subtle top-and-bottom fade rather than colored legend keys.

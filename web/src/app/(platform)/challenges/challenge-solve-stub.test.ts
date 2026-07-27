@@ -97,7 +97,7 @@ describe('challenge solve frontend adapter', () => {
     expect(formatSolveDelta(updated.selfEntry!.deltaMs)).toMatch(/^\+/);
   });
 
-  it('builds a five-place nearby-score window with the current team centered', () => {
+  it('builds a seven-place nearby-score window with the current team centered', () => {
     const standing = createChallengeEventStandingStub({
       challenges: [
         createChallengeExperience(challenge({ id: 'solved', solved: true }), {
@@ -113,16 +113,18 @@ describe('challenge solve frontend adapter', () => {
       eventStartedAt: '2026-07-23T10:00:00Z'
     });
 
-    expect(standing.nearbySeries).toHaveLength(5);
-    expect(standing.nearbyStandings).toHaveLength(5);
+    expect(standing.nearbySeries).toHaveLength(7);
+    expect(standing.nearbyStandings).toHaveLength(7);
     expect(standing.nearbyStandings.map((entry) => entry.rank)).toEqual([
+      standing.rank - 3,
       standing.rank - 2,
       standing.rank - 1,
       standing.rank,
       standing.rank + 1,
-      standing.rank + 2
+      standing.rank + 2,
+      standing.rank + 3
     ]);
-    expect(standing.nearbyStandings[2]).toMatchObject({
+    expect(standing.nearbyStandings[3]).toMatchObject({
       isSelf: true,
       name: 'Foxden',
       rank: standing.rank
@@ -152,7 +154,7 @@ describe('challenge solve frontend adapter', () => {
     ).toEqual(standing.nearbyStandings.map((entry) => entry.points).sort((a, b) => a - b));
   });
 
-  it('keeps five consecutive nearby places at the first and final rank', () => {
+  it('keeps seven consecutive nearby places at the first and final rank', () => {
     const currentCompetitor = {
       id: 'foxden',
       name: 'Foxden'
@@ -169,10 +171,12 @@ describe('challenge solve frontend adapter', () => {
     });
 
     expect(first.rank).toBe(1);
-    expect(first.nearbyStandings.map((entry) => entry.rank)).toEqual([1, 2, 3, 4, 5]);
+    expect(first.nearbyStandings.map((entry) => entry.rank)).toEqual([1, 2, 3, 4, 5, 6, 7]);
     expect(first.nearbyStandings[0]?.isSelf).toBe(true);
     expect(final.rank).toBe(final.totalCompetitors);
     expect(final.nearbyStandings.map((entry) => entry.rank)).toEqual([
+      final.totalCompetitors - 6,
+      final.totalCompetitors - 5,
       final.totalCompetitors - 4,
       final.totalCompetitors - 3,
       final.totalCompetitors - 2,
