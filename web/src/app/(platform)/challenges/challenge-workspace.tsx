@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 
+import {
+  appendChallengeAttempt,
+  challengeAttemptOutcome,
+  type ChallengeAttemptActorStub,
+  type ChallengeAttemptHistory
+} from './challenge-attempt-stub';
 import { ChallengeCollection } from './challenge-collection';
 import { ChallengeDetail } from './challenge-detail';
 import { ChallengeEventTrail } from './challenge-event-trail';
@@ -27,6 +33,7 @@ import {
 } from './challenge-solve-stub';
 import type { ChallengeWorkspaceActions } from './challenge-types';
 import { Sheet, SplitWorkspace, type SplitWorkspaceHandle } from '@/components/ui';
+import type { SubmissionReceipt } from '@/lib/api/client';
 import type { ChallengeExperience } from '@/lib/challenges';
 
 export type { ChallengeWorkspaceActions } from './challenge-types';
@@ -49,12 +56,14 @@ function getIsDesktop(): boolean {
 export interface ChallengeWorkspaceProps {
   actions: ChallengeWorkspaceActions;
   challenges: ChallengeExperience[];
+  currentAttemptActor?: ChallengeAttemptActorStub;
   currentCompetitor: ChallengeCompetitorStub;
   eventId: string;
   eventName: string;
   eventStartedAt?: string | null;
   flagSubmitSuccessEffect?: FlagSubmitSuccessEffect;
   getChallengeHref?: (challengeId: string, tab: ChallengeDetailTab) => string;
+  initialAttemptHistory?: ChallengeAttemptHistory;
   onChallengeChanged?: () => Promise<void>;
   onClearSelection: () => void;
   onSelectChallenge?: (challengeId: string, tab: ChallengeDetailTab) => void;
@@ -105,12 +114,14 @@ function availableTab(
 export function ChallengeWorkspace({
   actions,
   challenges,
+  currentAttemptActor,
   currentCompetitor,
   eventId,
   eventName,
   eventStartedAt,
   flagSubmitSuccessEffect = challengePresentationSettingsStub.flagSubmitSuccessEffect,
   getChallengeHref,
+  initialAttemptHistory = new Map(),
   onChallengeChanged,
   onClearSelection,
   onSelectChallenge,
@@ -139,6 +150,9 @@ export function ChallengeWorkspace({
   });
   const [optimisticSolveTimes, setOptimisticSolveTimes] = useState<ReadonlyMap<string, string>>(
     new Map()
+  );
+  const [attemptHistory, setAttemptHistory] = useState<ChallengeAttemptHistory>(
+    () => new Map(initialAttemptHistory)
   );
   const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
   const [focusedChallengeId, setFocusedChallengeId] = useState<string | null>(null);
@@ -401,6 +415,18 @@ export function ChallengeWorkspace({
     });
   }
 
+  function handleAttempt(challengeId: string, value: string, receipt: SubmissionReceipt) {
+    setAttemptHistory((current) =>
+      appendChallengeAttempt(current, challengeId, {
+        actor: currentAttemptActor ?? currentCompetitor,
+        id: receipt.id,
+        outcome: challengeAttemptOutcome(receipt.outcome),
+        submittedAt: receipt.submitted_at,
+        value
+      })
+    );
+  }
+
   const collection = (
     <ChallengeCollection
       challenges={displayedChallenges}
@@ -425,12 +451,16 @@ export function ChallengeWorkspace({
   const detail = selectedChallenge ? (
     <ChallengeDetail
       actions={actions}
+      attempts={attemptHistory.get(selectedChallenge.id) ?? []}
       challenge={selectedChallenge}
       eventId={eventId}
       flagSubmitSuccessEffect={flagSubmitSuccessEffect}
       isFocusMode={isFocusModeActive}
       key={selectedChallenge.id}
       onChallengeChanged={onChallengeChanged}
+      onAttempt={(value, receipt) => {
+        handleAttempt(selectedChallenge.id, value, receipt);
+      }}
       onSolved={handleSolved}
       onFocusModeChange={(focused) => {
         setFocusedChallengeId(focused ? selectedChallenge.id : null);
@@ -512,11 +542,15 @@ export function ChallengeWorkspace({
         >
           <ChallengeDetail
             actions={actions}
+            attempts={attemptHistory.get(selectedChallenge.id) ?? []}
             challenge={selectedChallenge}
             eventId={eventId}
             flagSubmitSuccessEffect={flagSubmitSuccessEffect}
             key={selectedChallenge.id}
             onChallengeChanged={onChallengeChanged}
+            onAttempt={(value, receipt) => {
+              handleAttempt(selectedChallenge.id, value, receipt);
+            }}
             onSolved={handleSolved}
             onTabChange={selectTab}
             selectedTab={immediateSelectedTab}

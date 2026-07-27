@@ -28,7 +28,7 @@ function submissionMessage(receipt: SubmissionReceipt): string {
 interface ChallengeSubmissionProps {
   challenge: ChallengeExperience;
   onCorrectOrigin?: (origin: DOMRect, value: string, isFirstBlood: boolean) => void;
-  onReceipt: (receipt: SubmissionReceipt) => Promise<void>;
+  onReceipt: (receipt: SubmissionReceipt, submittedValue: string) => Promise<void>;
   submitAnswer: ChallengeWorkspaceActions['submitAnswer'];
 }
 
@@ -78,7 +78,7 @@ export function ChallengeSubmission({
         setAnswer('');
       }
 
-      await onReceipt(receipt);
+      await onReceipt(receipt, normalizedAnswer);
     } catch {
       setError(
         challenge.kind.type === 'manual_verification'

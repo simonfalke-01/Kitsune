@@ -188,6 +188,13 @@ reusable failure mode, add the general rule here before closing the issue.
   owns a labelled control; F toggles it; Escape exits only when no overlay owns
   Escape. Focus mode is intentionally session-local and never restored on
   reload.
+- Shared challenge attempts use one compact dock summary and one aligned detail
+  ledger. Each entry exposes the normalized submitted value, teammate identity,
+  textual outcome, and absolute timestamp. New receipts prepend without
+  duplicate replay identities, and the history remains visible after a solve.
+  Empty real challenge data renders no attempt claim; deterministic teammate
+  attempts exist only in the typed frontend demo adapter until the player API
+  owns this model.
 - First blood is an achievement state, not a warning. Its sidebar wash, solved
   confirmation, toast, edge frame, screen imprint, and field wave all consume
   the shared first-blood gold role. Ordinary solves continue to use success

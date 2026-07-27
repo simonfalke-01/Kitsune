@@ -226,6 +226,11 @@ without losing competition context.
   tab, and in-progress answer. It is never restored after a reload. A visible
   control, F shortcut, and overlay-aware Escape path keep the mode explicit
   and trivially reversible.
+- Shared attempt history stays beside flag entry as one compact team summary.
+  Its detail view is an aligned ledger of submitted value, teammate, outcome,
+  and absolute time. It remains available after a solve, adds each receipt in
+  place, and never becomes a card feed. Until the backend supplies this model,
+  only the explicit demo adapter may seed teammate attempts.
 - The splitter is a direct-manipulation control. Its hit target is forgiving,
   its affordance is visible without guessing, dragging updates continuously,
   and arrow keys provide an equivalent path.

@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
 
+import { createChallengeAttemptHistoryStub } from './challenge-attempt-stub';
 import { createChallengeDemo, createChallengeDemoActions } from './challenge-demo';
 import { challengeDetailTab, challengeWorkspacePath } from './challenge-workspace-memory';
 import { ChallengeWorkspace } from './challenge-workspace';
@@ -18,6 +19,10 @@ export function ChallengeBoard() {
   const requestedTab = challengeDetailTab(new URLSearchParams(resolvedSearchParams).get('tab'));
   const challenges = useMemo(() => createChallengeDemo('demo-event'), []);
   const actions = useMemo(() => createChallengeDemoActions(challenges), [challenges]);
+  const initialAttemptHistory = useMemo(
+    () => createChallengeAttemptHistoryStub(challenges),
+    [challenges]
+  );
   const selectedChallengeId = requestedChallengeId
     ? challenges.some((challenge) => challenge.id === requestedChallengeId)
       ? requestedChallengeId
@@ -32,9 +37,14 @@ export function ChallengeBoard() {
         id: 'kitsune-labs',
         name: 'Kitsune Labs'
       }}
+      currentAttemptActor={{
+        id: 'simonfalke',
+        name: 'simonfalke'
+      }}
       eventId="demo-event"
       eventName="Kitsune Open"
       eventStartedAt="2026-07-26T04:00:00Z"
+      initialAttemptHistory={initialAttemptHistory}
       getChallengeHref={(challengeId, tab) => {
         return challengeWorkspacePath(
           resolvedPathname,

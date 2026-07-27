@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SessionProvider } from '@/app/session-context';
 import { ThemeProvider } from '@/app/theme-context';
+import type { ChallengeAttemptHistory } from './challenge-attempt-stub';
 import type { FlagSubmitSuccessEffect } from './challenge-presentation';
 import {
   rememberChallengeListScroll,
@@ -76,7 +77,8 @@ function renderWorkspace(
   selectedChallengeId: string | null,
   workspaceActions = actions(),
   flagSubmitSuccessEffect?: FlagSubmitSuccessEffect,
-  selectedChallengeTab: ChallengeDetailTab = 'details'
+  selectedChallengeTab: ChallengeDetailTab = 'details',
+  initialAttemptHistory?: ChallengeAttemptHistory
 ) {
   render(
     <ThemeProvider>
@@ -91,6 +93,7 @@ function renderWorkspace(
           getChallengeHref={(challengeId) => `/challenges?challenge=${challengeId}`}
           onClearSelection={vi.fn()}
           onSelectChallenge={vi.fn()}
+          initialAttemptHistory={initialAttemptHistory}
           selectedChallengeId={selectedChallengeId}
           selectedChallengeTab={selectedChallengeTab}
         />
@@ -325,6 +328,49 @@ describe('ChallengeWorkspace', () => {
 
     fireEvent.keyDown(window, { key: 'f' });
     expect(screen.getByRole('button', { name: 'Exit focus mode' })).toBeVisible();
+  });
+
+  it('shows seeded team attempts as a compact summary and an aligned ledger', async () => {
+    const initialAttemptHistory: ChallengeAttemptHistory = new Map([
+      [
+        'challenge',
+        [
+          {
+            actor: { id: 'simonfalke', name: 'simonfalke' },
+            id: 'attempt-2',
+            outcome: 'incorrect',
+            submittedAt: '2026-07-26T05:07:00.000Z',
+            value: 'kit{second_guess}'
+          },
+          {
+            actor: { id: 'mika', name: 'mika' },
+            id: 'attempt-1',
+            outcome: 'incorrect',
+            submittedAt: '2026-07-26T05:02:00.000Z',
+            value: 'kit{first_guess}'
+          }
+        ]
+      ]
+    ]);
+
+    renderWorkspace(
+      [createChallengeExperience(challenge())],
+      'challenge',
+      actions(),
+      undefined,
+      'details',
+      initialAttemptHistory
+    );
+
+    expect(screen.getByText('2 team attempts')).toBeVisible();
+    expect(screen.getByText('Last incorrect by simonfalke')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'View attempts' }));
+
+    const dialog = await screen.findByRole('dialog', { name: 'Team attempts' });
+    const ledger = within(dialog).getByRole('list', { name: 'Shared attempt history' });
+    expect(within(ledger).getAllByRole('listitem')).toHaveLength(2);
+    expect(within(ledger).getByText('kit{second_guess}')).toBeVisible();
+    expect(within(ledger).getByText('simonfalke')).toBeVisible();
   });
 
   it('changes selection and detail in the activation frame before URL synchronization', () => {
@@ -800,6 +846,10 @@ describe('ChallengeWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Submit flag' }));
 
     expect(await screen.findByText('Incorrect. 3 attempts remain.')).toBeVisible();
+    expect(screen.getByText('1 team attempt')).toBeVisible();
+    expect(screen.getByText('Last incorrect by Foxden')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'View attempts' }));
+    expect(await screen.findByText('kit{incorrect}')).toBeVisible();
     expect(document.querySelector('.kitsune-solve-effect')).not.toBeInTheDocument();
   });
 });

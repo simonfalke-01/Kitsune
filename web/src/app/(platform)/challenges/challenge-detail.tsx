@@ -3,6 +3,8 @@
 import { Check, PanelLeftClose, PanelLeftOpen, Trophy } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 
+import { ChallengeAttemptHistory } from './challenge-attempt-history';
+import type { ChallengeAttemptEntry } from './challenge-attempt-stub';
 import { ChallengeCategoryLabel } from './challenge-category';
 import { ChallengeHints } from './challenge-hints';
 import { ChallengeInstance } from './challenge-instance';
@@ -47,10 +49,12 @@ import {
 
 interface ChallengeDetailProps {
   actions: ChallengeWorkspaceActions;
+  attempts: readonly ChallengeAttemptEntry[];
   challenge: ChallengeExperience;
   eventId: string;
   flagSubmitSuccessEffect: FlagSubmitSuccessEffect;
   isFocusMode?: boolean;
+  onAttempt: (value: string, receipt: SubmissionReceipt) => void;
   onChallengeChanged?: () => Promise<void>;
   onFocusModeChange?: (focused: boolean) => void;
   onSolved?: (challengeId: string, solvedAt: string) => void;
@@ -115,10 +119,12 @@ function RememberedTabPanel({ challengeId, children, eventId, tab }: RememberedT
 
 export function ChallengeDetail({
   actions,
+  attempts,
   challenge,
   eventId,
   flagSubmitSuccessEffect,
   isFocusMode = false,
+  onAttempt,
   onChallengeChanged,
   onFocusModeChange,
   onSolved,
@@ -144,7 +150,9 @@ export function ChallengeDetail({
     solved: isSolved
   };
 
-  async function handleReceipt(receipt: SubmissionReceipt) {
+  async function handleReceipt(receipt: SubmissionReceipt, submittedValue: string) {
+    onAttempt(submittedValue, receipt);
+
     if (typeof receipt.attempts_remaining === 'number') {
       setAttemptsRemaining(receipt.attempts_remaining);
     }
@@ -436,6 +444,7 @@ export function ChallengeDetail({
         <footer className="z-20 shrink-0 bg-surface-sunken px-6 py-4">
           <div className="grid w-full gap-4">
             <ChallengeSolveStrip context={solveContext} />
+            <ChallengeAttemptHistory attempts={attempts} />
             {isSolved ? (
               <ChallengeSolvedSummary
                 isFirstBlood={isFirstBlood}
