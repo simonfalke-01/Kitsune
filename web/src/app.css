@@ -120,8 +120,6 @@
   --success-border: var(--success-6);
   --success: var(--success-9);
   --success-wave-fill: color-mix(in oklch, var(--success) 18%, transparent);
-  --success-wave-front: color-mix(in oklch, var(--success) 42%, transparent);
-  --success-wave-origin: color-mix(in oklch, var(--success) 32%, transparent);
   --success-hover: var(--success-10);
   --success-text: var(--success-12);
 
@@ -456,21 +454,9 @@
   }
 }
 
-@keyframes kitsune-solve-origin {
-  from {
-    opacity: 1;
-    transform: scale(0.96);
-  }
-
-  to {
-    opacity: 0;
-    transform: scale(1.03);
-  }
-}
-
 @keyframes kitsune-solve-wave-propagate {
   from {
-    transform: translate3d(-50%, -50%, 0) scale(0);
+    transform: translate3d(-50%, -50%, 0) scale(var(--solve-wave-start-scale));
   }
 
   to {
@@ -478,9 +464,19 @@
   }
 }
 
-@keyframes kitsune-solve-wave-material {
+@keyframes kitsune-solve-origin-dissolve {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes kitsune-solve-wave-dissolve {
   from,
-  72% {
+  50% {
     opacity: 1;
   }
 
@@ -507,29 +503,20 @@
     left: var(--solve-origin-left);
     width: var(--solve-origin-width);
     height: var(--solve-origin-height);
-    background-color: var(--success-wave-origin);
-    animation: kitsune-solve-origin var(--duration-slow) var(--ease-out-quart) both;
-    will-change: opacity, transform;
+    animation: kitsune-solve-origin-dissolve var(--duration-slow) linear both;
+    will-change: opacity;
   }
 
   .kitsune-solve-wave {
     top: var(--solve-wave-y);
     left: var(--solve-wave-x);
     width: var(--solve-wave-diameter);
-    animation: kitsune-solve-wave-propagate var(--duration-celebration) linear both;
-    will-change: transform;
-  }
-
-  .kitsune-solve-wave-material {
-    background: radial-gradient(
-      circle,
-      var(--success-wave-fill) 0%,
-      var(--success-wave-fill) 72%,
-      var(--success-wave-front) 86%,
-      transparent 100%
-    );
-    animation: kitsune-solve-wave-material var(--duration-celebration) var(--ease-out-quart) both;
-    will-change: opacity;
+    background-color: var(--success-wave-fill);
+    animation:
+      kitsune-solve-wave-propagate var(--duration-celebration) linear both,
+      kitsune-solve-wave-dissolve var(--duration-celebration) linear both;
+    contain: strict;
+    will-change: opacity, transform;
   }
 
   .kitsune-challenge-row[data-solved='true'] {

@@ -45,7 +45,9 @@ interface SolveWaveGeometry {
   originHeight: number;
   originLeft: number;
   originTop: number;
+  originValue: string;
   originWidth: number;
+  startScale: number;
   x: number;
   y: number;
 }
@@ -56,6 +58,7 @@ interface SolveWaveStyle extends CSSProperties {
   '--solve-origin-top'?: string;
   '--solve-origin-width'?: string;
   '--solve-wave-diameter'?: string;
+  '--solve-wave-start-scale'?: string;
   '--solve-wave-x'?: string;
   '--solve-wave-y'?: string;
 }
@@ -125,12 +128,17 @@ export function ChallengeDetail({
         '--solve-origin-top': `${solveWave.originTop}px`,
         '--solve-origin-width': `${solveWave.originWidth}px`,
         '--solve-wave-diameter': `${solveWave.diameter}px`,
+        '--solve-wave-start-scale': String(solveWave.startScale),
         '--solve-wave-x': `${solveWave.x}px`,
         '--solve-wave-y': `${solveWave.y}px`
       }
     : undefined;
 
-  function startSolveWave(origin: DOMRect) {
+  function startSolveWave(origin: DOMRect, originValue: string) {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+
     const x = origin.left + origin.width / 2;
     const y = origin.top + origin.height / 2;
     const farthestCorner = Math.max(
@@ -139,13 +147,16 @@ export function ChallengeDetail({
       Math.hypot(x, window.innerHeight - y),
       Math.hypot(window.innerWidth - x, window.innerHeight - y)
     );
+    const diameter = Math.max(1, farthestCorner * 2);
 
     setSolveWave({
-      diameter: Math.max(1, farthestCorner * 2),
+      diameter,
       originHeight: origin.height,
       originLeft: origin.left,
       originTop: origin.top,
+      originValue,
       originWidth: origin.width,
+      startScale: Math.max(1, Math.min(origin.width, origin.height)) / diameter,
       x,
       y
     });
@@ -163,10 +174,13 @@ export function ChallengeDetail({
               className="kitsune-solve-effect pointer-events-none fixed inset-0 z-celebration"
               style={solveWaveStyle}
             >
-              <span className="kitsune-solve-origin absolute rounded-md ring-2 ring-success-border" />
-              <span className="kitsune-solve-wave absolute aspect-square rounded-full">
-                <span className="kitsune-solve-wave-material absolute inset-0 rounded-full" />
+              <span className="kitsune-solve-origin absolute flex items-center overflow-hidden whitespace-nowrap rounded-md border border-success-border bg-success-subtle px-3 font-mono text-base text-success-text">
+                {solveWave.originValue}
               </span>
+              <span
+                className="kitsune-solve-wave absolute aspect-square rounded-full"
+                onAnimationEnd={() => setSolveWave(null)}
+              />
             </div>,
             document.body
           )

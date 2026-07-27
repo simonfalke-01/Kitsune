@@ -27,7 +27,7 @@ function submissionMessage(receipt: SubmissionReceipt): string {
 
 interface ChallengeSubmissionProps {
   challenge: ChallengeExperience;
-  onCorrectOrigin?: (origin: DOMRect) => void;
+  onCorrectOrigin?: (origin: DOMRect, value: string) => void;
   onReceipt: (receipt: SubmissionReceipt) => Promise<void>;
   submitAnswer: ChallengeWorkspaceActions['submitAnswer'];
 }
@@ -65,7 +65,7 @@ export function ChallengeSubmission({
         const input = flagFieldRef.current?.querySelector('input');
 
         if (input) {
-          onCorrectOrigin?.(input.getBoundingClientRect());
+          onCorrectOrigin?.(input.getBoundingClientRect(), normalizedAnswer);
         }
       }
 

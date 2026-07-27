@@ -285,12 +285,14 @@ reusable failure mode, add the general rule here before closing the issue.
   gives an immediate pending state followed by exact feedback.
 - A confirmed correct flag emits one restrained success wave from the measured
   flag-field bounds across the viewport above product chrome. The wave uses
-  a brief field-shaped source imprint, constant-velocity radial propagation,
-  and an independently fading semantic green material. Only transform and
-  opacity animate; the effect never delays the solved state, never intercepts
-  input, and disappears under reduced motion. Linear motion is permitted only
-  for this physical wavefront because acceleration would falsify propagation;
-  the dedicated 1.2-second duration is permitted only for this rare,
+  a true rounded-rectangle imprint at the measured field and a concurrent
+  circular front from its centre. The imprint preserves the textbox bounds,
+  shared field radius, edge, and submitted value; it never substitutes an
+  approximate ellipse. Only transform and opacity animate; the effect never
+  delays the solved state, never intercepts input, cleans itself up after
+  completion, and disappears under reduced motion. Linear motion is permitted
+  only for this physical propagation because acceleration would falsify its
+  travel. The dedicated 1.2-second duration is permitted only for this rare,
   non-blocking viewport-scale confirmation.
 - The challenge list, selected detail, resources, hints, and flag input remain
   in one task flow. Selecting a challenge updates the detail in place and may

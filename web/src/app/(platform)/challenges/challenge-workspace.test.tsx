@@ -318,7 +318,11 @@ describe('ChallengeWorkspace', () => {
       workspaceActions
     );
 
-    fireEvent.change(screen.getByLabelText('Flag'), {
+    const flagField = screen.getByLabelText('Flag');
+    const origin = new DOMRect(120, 600, 400, 44);
+    vi.spyOn(flagField, 'getBoundingClientRect').mockReturnValue(origin);
+
+    fireEvent.change(flagField, {
       target: {
         value: 'kit{correct}'
       }
@@ -333,20 +337,35 @@ describe('ChallengeWorkspace', () => {
     const solveEffect = document.querySelector('.kitsune-solve-effect');
     const solveOrigin = document.querySelector('.kitsune-solve-origin');
     const solveWave = document.querySelector('.kitsune-solve-wave');
-    const solveWaveMaterial = document.querySelector('.kitsune-solve-wave-material');
+    const x = origin.left + origin.width / 2;
+    const y = origin.top + origin.height / 2;
+    const farthestCorner = Math.max(
+      Math.hypot(x, y),
+      Math.hypot(window.innerWidth - x, y),
+      Math.hypot(x, window.innerHeight - y),
+      Math.hypot(window.innerWidth - x, window.innerHeight - y)
+    );
+    const diameter = farthestCorner * 2;
     expect(solveEffect?.parentElement).toBe(document.body);
     expect(solveEffect).toHaveClass('fixed', 'inset-0', 'z-celebration');
-    expect(solveOrigin).toHaveClass('ring-2', 'ring-success-border');
-    expect(solveWaveMaterial).toBeInTheDocument();
-    expect(solveWaveMaterial?.parentElement).toBe(solveWave);
+    expect(solveOrigin).toHaveClass(
+      'rounded-md',
+      'border-success-border',
+      'bg-success-subtle',
+      'font-mono'
+    );
+    expect(solveOrigin).not.toHaveClass('rounded-full');
+    expect(solveOrigin).toHaveTextContent('kit{correct}');
+    expect(solveWave).toHaveClass('aspect-square', 'rounded-full');
     expect(solveEffect).toHaveStyle({
-      '--solve-origin-height': '0px',
-      '--solve-origin-left': '0px',
-      '--solve-origin-top': '0px',
-      '--solve-origin-width': '0px',
-      '--solve-wave-diameter': `${Math.hypot(window.innerWidth, window.innerHeight) * 2}px`,
-      '--solve-wave-x': '0px',
-      '--solve-wave-y': '0px'
+      '--solve-origin-height': `${origin.height}px`,
+      '--solve-origin-left': `${origin.left}px`,
+      '--solve-origin-top': `${origin.top}px`,
+      '--solve-origin-width': `${origin.width}px`,
+      '--solve-wave-diameter': `${diameter}px`,
+      '--solve-wave-start-scale': String(Math.min(origin.width, origin.height) / diameter),
+      '--solve-wave-x': `${x}px`,
+      '--solve-wave-y': `${y}px`
     });
   });
 
