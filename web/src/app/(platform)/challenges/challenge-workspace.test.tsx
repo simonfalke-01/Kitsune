@@ -413,7 +413,7 @@ describe('ChallengeWorkspace', () => {
     expect(solveEffect?.parentElement).toBe(document.body);
     expect(solveEffect).toHaveClass('fixed', 'inset-0', 'z-celebration');
     expect(solveEffect).not.toHaveAttribute('data-first-blood');
-    expect(edgeFrame).toHaveClass('rounded-lg', 'border-4');
+    expect(edgeFrame).toHaveClass('inset-1', 'rounded-md', 'border-4');
     expect(edgeFrame?.parentElement).toBe(solveEffect);
     expect(document.querySelector('.kitsune-solve-edge-wash')).not.toBeInTheDocument();
     expect(document.querySelector('.kitsune-solve-origin')).not.toBeInTheDocument();
@@ -452,7 +452,8 @@ describe('ChallengeWorkspace', () => {
     const solveEffect = document.querySelector('.kitsune-solve-effect');
     expect(document.querySelector('.kitsune-solve-edge-frame')?.parentElement).toBe(solveEffect);
     expect(document.querySelector('.kitsune-solve-edge-frame')).toHaveClass(
-      'rounded-lg',
+      'inset-1',
+      'rounded-md',
       'border-4'
     );
     expect(document.querySelector('.kitsune-solve-edge-wash')?.parentElement).toBe(solveEffect);

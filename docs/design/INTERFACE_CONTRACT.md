@@ -159,9 +159,10 @@ reusable failure mode, add the general rule here before closing the issue.
 - Resolve stored or system theme preference in the document head before first
   paint. Hydration must not be the first point at which the root theme class is
   applied, and it must not temporarily overwrite the pre-paint result.
-- Full-viewport effect frames use the shared large radius while remaining flush
-  to the viewport. This keeps their arc inside rounded browser window corners
-  instead of painting a square frame that the host chrome clips.
+- Browser chrome does not expose its viewport corner radius to CSS. Full-screen
+  effect frames therefore use one spacing-step safe inset and the corresponding
+  smaller shared radius, keeping the complete contour inside rounded host
+  window clipping rather than guessing a flush outer radius.
 - Scrollbar tracks stay transparent. A pane may reveal its thumb while the user
   scrolls, then hide it after scrolling stops. Do not reserve a permanent gray
   track at the viewport edge.
