@@ -141,6 +141,10 @@ reusable failure mode, add the general rule here before closing the issue.
 - Selection feedback is optimistic. A challenge row marks itself selected and
   changes the detail in the activation frame; URL synchronization must never
   sit on the critical feedback path.
+- First blood is an achievement state, not a warning. Its sidebar wash, solved
+  confirmation, toast, edge frame, screen imprint, and field wave all consume
+  the shared first-blood gold role. Ordinary solves continue to use success
+  green; do not recolor one part of the feedback sequence independently.
 - Scrollbar tracks stay transparent. A pane may reveal its thumb while the user
   scrolls, then hide it after scrolling stops. Do not reserve a permanent gray
   track at the viewport edge.

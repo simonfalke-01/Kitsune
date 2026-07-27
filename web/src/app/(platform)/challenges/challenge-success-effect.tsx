@@ -7,6 +7,7 @@ import type { FlagSubmitSuccessEffect } from './challenge-presentation';
 
 export interface ChallengeSuccessEffectOrigin {
   height: number;
+  isFirstBlood: boolean;
   left: number;
   top: number;
   value: string;
@@ -60,9 +61,10 @@ function FieldWave({
     <div
       aria-hidden
       className="kitsune-solve-effect pointer-events-none fixed inset-0 z-celebration"
+      data-first-blood={origin.isFirstBlood || undefined}
       style={style}
     >
-      <span className="kitsune-solve-origin absolute flex items-center overflow-hidden whitespace-nowrap rounded-md border border-success-border bg-success-subtle px-3 font-mono text-base text-success-text">
+      <span className="kitsune-solve-origin absolute flex items-center overflow-hidden whitespace-nowrap rounded-md border px-3 font-mono text-base">
         {origin.value}
       </span>
       <span
@@ -73,29 +75,35 @@ function FieldWave({
   );
 }
 
-function EdgeBorder({ onComplete }: Pick<ChallengeSuccessEffectProps, 'onComplete'>) {
+interface EffectFrameProps extends Pick<ChallengeSuccessEffectProps, 'onComplete'> {
+  isFirstBlood: boolean;
+}
+
+function EdgeBorder({ isFirstBlood, onComplete }: EffectFrameProps) {
   return (
     <div
       aria-hidden
       className="kitsune-solve-effect pointer-events-none fixed inset-0 z-celebration"
+      data-first-blood={isFirstBlood || undefined}
     >
       <span
-        className="kitsune-solve-edge-frame absolute inset-0 border-2 border-success-imprint-edge"
+        className="kitsune-solve-edge-frame absolute inset-0 border-2"
         onAnimationEnd={onComplete}
       />
     </div>
   );
 }
 
-function ScreenImprint({ onComplete }: Pick<ChallengeSuccessEffectProps, 'onComplete'>) {
+function ScreenImprint({ isFirstBlood, onComplete }: EffectFrameProps) {
   return (
     <div
       aria-hidden
       className="kitsune-solve-effect pointer-events-none fixed inset-0 z-celebration"
+      data-first-blood={isFirstBlood || undefined}
     >
       <span className="kitsune-solve-edge-wash absolute inset-0" />
       <span
-        className="kitsune-solve-edge-frame absolute inset-0 border-2 border-success-imprint-edge"
+        className="kitsune-solve-edge-frame absolute inset-0 border-2"
         onAnimationEnd={onComplete}
       />
     </div>
@@ -112,11 +120,12 @@ export function ChallengeSuccessEffect({
   }
 
   let renderedEffect;
+  const isFirstBlood = origin.isFirstBlood;
 
   if (effect === 'edge-border') {
-    renderedEffect = <EdgeBorder onComplete={onComplete} />;
+    renderedEffect = <EdgeBorder isFirstBlood={isFirstBlood} onComplete={onComplete} />;
   } else if (effect === 'screen-imprint') {
-    renderedEffect = <ScreenImprint onComplete={onComplete} />;
+    renderedEffect = <ScreenImprint isFirstBlood={isFirstBlood} onComplete={onComplete} />;
   } else {
     renderedEffect = <FieldWave onComplete={onComplete} origin={origin} />;
   }

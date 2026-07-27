@@ -175,6 +175,14 @@
   --podium-third-subtle: var(--category-orange-subtle);
   --podium-third: var(--category-orange);
 
+  --first-blood-subtle: var(--podium-first-subtle);
+  --first-blood-border: var(--warning-border);
+  --first-blood: var(--warning);
+  --first-blood-text: var(--podium-first);
+  --first-blood-imprint-edge: color-mix(in oklch, var(--first-blood) 64%, transparent);
+  --first-blood-imprint-fill: color-mix(in oklch, var(--first-blood) 7%, transparent);
+  --first-blood-wave-fill: color-mix(in oklch, var(--first-blood) 18%, transparent);
+
   --chart-grid: var(--border-subtle);
   --chart-axis: var(--border);
   --chart-label: var(--text-muted);
@@ -340,6 +348,10 @@
   --color-podium-second: var(--podium-second);
   --color-podium-third-subtle: var(--podium-third-subtle);
   --color-podium-third: var(--podium-third);
+  --color-first-blood-subtle: var(--first-blood-subtle);
+  --color-first-blood-border: var(--first-blood-border);
+  --color-first-blood: var(--first-blood);
+  --color-first-blood-text: var(--first-blood-text);
   --color-chart-grid: var(--chart-grid);
   --color-chart-axis: var(--chart-axis);
   --color-chart-label: var(--chart-label);
@@ -528,6 +540,9 @@
   }
 
   .kitsune-solve-origin {
+    border-color: var(--solve-effect-origin-border);
+    background-color: var(--solve-effect-origin-fill);
+    color: var(--solve-effect-origin-text);
     top: var(--solve-origin-top);
     left: var(--solve-origin-left);
     width: var(--solve-origin-width);
@@ -540,7 +555,7 @@
     top: var(--solve-wave-y);
     left: var(--solve-wave-x);
     width: var(--solve-wave-diameter);
-    background-color: var(--success-wave-fill);
+    background-color: var(--solve-effect-wave-fill);
     animation:
       kitsune-solve-wave-propagate var(--duration-celebration) linear both,
       kitsune-solve-wave-dissolve var(--duration-celebration) linear both;
@@ -549,14 +564,33 @@
   }
 
   .kitsune-solve-edge-frame {
+    border-color: var(--solve-effect-edge);
     animation: kitsune-solve-edge-frame var(--duration-celebration) linear both;
     will-change: opacity;
   }
 
   .kitsune-solve-edge-wash {
-    background-color: var(--success-imprint-fill);
+    background-color: var(--solve-effect-fill);
     animation: kitsune-solve-edge-wash var(--duration-celebration) linear both;
     will-change: opacity;
+  }
+
+  .kitsune-solve-effect {
+    --solve-effect-edge: var(--success-imprint-edge);
+    --solve-effect-fill: var(--success-imprint-fill);
+    --solve-effect-origin-border: var(--success-border);
+    --solve-effect-origin-fill: var(--success-subtle);
+    --solve-effect-origin-text: var(--success-text);
+    --solve-effect-wave-fill: var(--success-wave-fill);
+  }
+
+  .kitsune-solve-effect[data-first-blood='true'] {
+    --solve-effect-edge: var(--first-blood-imprint-edge);
+    --solve-effect-fill: var(--first-blood-imprint-fill);
+    --solve-effect-origin-border: var(--first-blood-border);
+    --solve-effect-origin-fill: var(--first-blood-subtle);
+    --solve-effect-origin-text: var(--first-blood-text);
+    --solve-effect-wave-fill: var(--first-blood-wave-fill);
   }
 
   .kitsune-challenge-row[data-solved='true'] {
@@ -566,7 +600,7 @@
   }
 
   .kitsune-challenge-row[data-blood='1'] {
-    --challenge-state-wash: var(--warning-subtle);
+    --challenge-state-wash: var(--first-blood-subtle);
   }
 
   .kitsune-challenge-row[data-blood='2'] {

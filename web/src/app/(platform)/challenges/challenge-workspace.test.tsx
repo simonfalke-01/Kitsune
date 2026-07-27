@@ -411,7 +411,8 @@ describe('ChallengeWorkspace', () => {
     const edgeFrame = document.querySelector('.kitsune-solve-edge-frame');
     expect(solveEffect?.parentElement).toBe(document.body);
     expect(solveEffect).toHaveClass('fixed', 'inset-0', 'z-celebration');
-    expect(edgeFrame).toHaveClass('border-2', 'border-success-imprint-edge');
+    expect(solveEffect).not.toHaveAttribute('data-first-blood');
+    expect(edgeFrame).toHaveClass('border-2');
     expect(edgeFrame?.parentElement).toBe(solveEffect);
     expect(document.querySelector('.kitsune-solve-edge-wash')).not.toBeInTheDocument();
     expect(document.querySelector('.kitsune-solve-origin')).not.toBeInTheDocument();
@@ -498,12 +499,8 @@ describe('ChallengeWorkspace', () => {
     const diameter = farthestCorner * 2;
     expect(solveEffect?.parentElement).toBe(document.body);
     expect(solveEffect).toHaveClass('fixed', 'inset-0', 'z-celebration');
-    expect(solveOrigin).toHaveClass(
-      'rounded-md',
-      'border-success-border',
-      'bg-success-subtle',
-      'font-mono'
-    );
+    expect(solveEffect).not.toHaveAttribute('data-first-blood');
+    expect(solveOrigin).toHaveClass('rounded-md', 'border', 'font-mono');
     expect(solveOrigin).not.toHaveClass('rounded-full');
     expect(solveOrigin).toHaveTextContent('kit{correct}');
     expect(solveWave).toHaveClass('aspect-square', 'rounded-full');
@@ -517,6 +514,53 @@ describe('ChallengeWorkspace', () => {
       '--solve-wave-x': `${x}px`,
       '--solve-wave-y': `${y}px`
     });
+  });
+
+  it.each([
+    ['edge-border', '.kitsune-solve-edge-frame'],
+    ['screen-imprint', '.kitsune-solve-edge-wash'],
+    ['field-wave', '.kitsune-solve-wave']
+  ] as const)('uses one first-blood gold state for the %s effect', async (effect, effectPart) => {
+    const workspaceActions = actions();
+    workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
+      attempts_remaining: 4,
+      awarded_points: 300,
+      challenge_id: 'challenge',
+      first_blood: true,
+      id: 'submission',
+      outcome: 'correct',
+      replayed: false,
+      submitted_at: '2026-07-23T12:00:00Z'
+    });
+    renderWorkspace(
+      [createChallengeExperience(challenge(), { solveCount: 0 })],
+      'challenge',
+      workspaceActions,
+      effect
+    );
+    const flagField = screen.getByLabelText('Flag');
+    vi.spyOn(flagField, 'getBoundingClientRect').mockReturnValue(new DOMRect(120, 600, 400, 44));
+    fireEvent.change(flagField, {
+      target: {
+        value: 'kit{first}'
+      }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit flag' }));
+
+    await waitFor(() => {
+      expect(workspaceActions.submitAnswer).toHaveBeenCalledWith('challenge', 'kit{first}');
+    });
+
+    const solveEffect = document.querySelector('.kitsune-solve-effect');
+    const solvedMessage = screen.getByText('Challenge solved');
+    const solvedSummary = solvedMessage.closest('[data-first-blood]');
+    const selectedChallenge = screen.getByRole('link', { name: /Shrine gate/ });
+    expect(solveEffect).toHaveAttribute('data-first-blood', 'true');
+    expect(solveEffect?.querySelector(effectPart)).toBeInTheDocument();
+    expect(solvedSummary).toHaveAttribute('data-first-blood', 'true');
+    expect(solvedMessage.parentElement).toHaveClass('text-first-blood-text');
+    expect(selectedChallenge).toHaveAttribute('data-blood', '1');
+    expect(screen.getAllByText('First blood').length).toBeGreaterThan(0);
   });
 
   it('supports disabling the flag success effect', async () => {

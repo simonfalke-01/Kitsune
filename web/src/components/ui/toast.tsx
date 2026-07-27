@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle2, CircleAlert, Info, TriangleAlert, X } from 'lucide-react';
+import { CheckCircle2, CircleAlert, Info, TriangleAlert, Trophy, X } from 'lucide-react';
 import type { CSSProperties, ReactNode } from 'react';
 import {
   Button as ReactAriaButton,
@@ -15,6 +15,10 @@ import { flushSync } from 'react-dom';
 import { cx, focusRing, variantClass } from './styles';
 
 const toastTones = {
+  firstBlood: {
+    icon: Trophy,
+    style: 'border-first-blood-border bg-first-blood-subtle text-first-blood-text'
+  },
   info: {
     icon: Info,
     style: 'border-info-border bg-info-subtle text-info-text'
@@ -100,6 +104,7 @@ export function ToastRegion() {
               variantClass(
                 {
                   danger: toastTones.danger.style,
+                  firstBlood: toastTones.firstBlood.style,
                   info: toastTones.info.style,
                   success: toastTones.success.style,
                   warning: toastTones.warning.style

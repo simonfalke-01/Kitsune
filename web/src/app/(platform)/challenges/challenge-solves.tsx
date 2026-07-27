@@ -227,17 +227,30 @@ export function ChallengeSolveStrip({ context }: ChallengeSolveStripProps) {
 }
 
 interface ChallengeSolvedSummaryProps {
+  isFirstBlood?: boolean;
   label: string;
 }
 
-export function ChallengeSolvedSummary({ label }: ChallengeSolvedSummaryProps) {
+export function ChallengeSolvedSummary({
+  isFirstBlood = false,
+  label
+}: ChallengeSolvedSummaryProps) {
   return (
-    <div className="grid gap-2">
+    <div className="grid gap-2" data-first-blood={isFirstBlood || undefined}>
       <span className="text-sm font-medium text-text">{label}</span>
-      <span className="flex h-control items-center rounded-md border border-transparent px-3 text-success-text">
+      <span
+        className={cx(
+          'flex h-control items-center rounded-md border border-transparent px-3',
+          isFirstBlood ? 'text-first-blood-text' : 'text-success-text'
+        )}
+      >
         <span className="inline-flex items-center gap-2 text-base font-medium">
           Challenge solved
-          <Check aria-hidden className="size-4" />
+          {isFirstBlood ? (
+            <Trophy aria-hidden className="size-4 -translate-y-optical" />
+          ) : (
+            <Check aria-hidden className="size-4" />
+          )}
         </span>
       </span>
     </div>

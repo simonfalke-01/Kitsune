@@ -1,6 +1,6 @@
 'use client';
 
-import { Check } from 'lucide-react';
+import { Check, Trophy } from 'lucide-react';
 import { useState } from 'react';
 
 import { ChallengeCategoryLabel } from './challenge-category';
@@ -57,6 +57,9 @@ export function ChallengeDetail({
   const [attemptsRemaining, setAttemptsRemaining] = useState(challenge.attemptsRemaining);
   const [gateComplete, setGateComplete] = useState(false);
   const [isPendingReview, setIsPendingReview] = useState(false);
+  const [isFirstBlood, setIsFirstBlood] = useState(
+    challenge.solved && solveContext.selfEntry?.rank === 1
+  );
   const [isSolved, setIsSolved] = useState(challenge.solved);
   const [postSolveSurveyComplete, setPostSolveSurveyComplete] = useState(false);
   const [successEffectOrigin, setSuccessEffectOrigin] =
@@ -75,6 +78,7 @@ export function ChallengeDetail({
 
     if (receipt.outcome === 'correct') {
       setIsPendingReview(false);
+      setIsFirstBlood(receipt.first_blood);
       setIsSolved(true);
       onSolved?.(challenge.id, receipt.submitted_at);
       showToast({
@@ -82,7 +86,7 @@ export function ChallengeDetail({
           ? `First blood and ${receipt.awarded_points} points.`
           : `${receipt.awarded_points} points awarded.`,
         title: 'Challenge solved',
-        tone: 'success'
+        tone: receipt.first_blood ? 'firstBlood' : 'success'
       });
       await onChallengeChanged?.();
       return;
@@ -105,7 +109,7 @@ export function ChallengeDetail({
   const showPostSolveSurvey =
     challenge.surveyMode === 'post_solve' && challenge.survey.length > 0 && isSolved;
   const hasResources = Boolean(connection) || challenge.attachments.length > 0;
-  function startSuccessEffect(origin: DOMRect, value: string) {
+  function startSuccessEffect(origin: DOMRect, value: string, firstBlood: boolean) {
     if (
       flagSubmitSuccessEffect === 'none' ||
       window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -115,6 +119,7 @@ export function ChallengeDetail({
 
     setSuccessEffectOrigin({
       height: origin.height,
+      isFirstBlood: firstBlood,
       left: origin.left,
       top: origin.top,
       value,
@@ -149,9 +154,17 @@ export function ChallengeDetail({
                 {solveContext.totalSolves.toLocaleString()} solves
               </span>
               {isSolved ? (
-                <span className="inline-flex items-center gap-1 font-medium text-success-text">
-                  <Check aria-hidden className="size-4" />
-                  Solved
+                <span
+                  className={`inline-flex items-center gap-1 font-medium ${
+                    isFirstBlood ? 'text-first-blood-text' : 'text-success-text'
+                  }`}
+                >
+                  {isFirstBlood ? (
+                    <Trophy aria-hidden className="size-4 -translate-y-optical" />
+                  ) : (
+                    <Check aria-hidden className="size-4" />
+                  )}
+                  {isFirstBlood ? 'First blood' : 'Solved'}
                 </span>
               ) : null}
               {isPendingReview ? (
@@ -335,6 +348,7 @@ export function ChallengeDetail({
             <ChallengeSolveStrip context={solveContext} />
             {isSolved ? (
               <ChallengeSolvedSummary
+                isFirstBlood={isFirstBlood}
                 label={challenge.kind.type === 'manual_verification' ? 'Answer' : 'Flag'}
               />
             ) : (
