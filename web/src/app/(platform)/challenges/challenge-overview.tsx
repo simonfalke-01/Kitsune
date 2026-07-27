@@ -92,10 +92,10 @@ export function ChallengeOverview({
   return (
     <section
       aria-labelledby="competition-overview-title"
-      className="kitsune-scroll-region h-full min-h-0 overflow-y-auto overscroll-contain bg-surface-raised"
+      className="h-full min-h-0 overflow-hidden bg-surface-raised"
     >
-      <div className="mx-auto grid w-full max-w-shell content-start gap-8 px-8 py-8">
-        <header className="flex flex-wrap items-end justify-between gap-6">
+      <div className="mx-auto flex h-full min-h-0 w-full max-w-shell flex-col gap-8 px-8 py-8">
+        <header className="flex shrink-0 flex-wrap items-end justify-between gap-6">
           <div className="grid gap-2">
             <h2
               className="m-0 font-display text-xl font-semibold tracking-tight text-text"
@@ -118,7 +118,7 @@ export function ChallengeOverview({
           </p>
         </header>
 
-        <section aria-labelledby="score-trajectory-title" className="grid gap-4">
+        <section aria-labelledby="score-trajectory-title" className="grid shrink-0 gap-4">
           <h3 className="m-0 text-base font-semibold text-text" id="score-trajectory-title">
             Around your rank
           </h3>
@@ -135,7 +135,10 @@ export function ChallengeOverview({
           />
         </section>
 
-        <section aria-labelledby="category-progress-title" className="grid gap-4">
+        <section
+          aria-labelledby="category-progress-title"
+          className="flex min-h-0 flex-1 flex-col gap-4"
+        >
           <div className="flex flex-wrap items-baseline justify-between gap-4 px-3">
             <h3 className="m-0 text-base font-semibold text-text" id="category-progress-title">
               Challenge field
@@ -156,49 +159,51 @@ export function ChallengeOverview({
             <span className="col-span-2 text-right">Field solves</span>
           </div>
 
-          <ul className="m-0 grid list-none gap-0 p-0">
-            {groups.map((group) => {
-              const availablePoints = group.challenges.reduce((total, challenge) => {
-                return total + challengePointValue(challenge);
-              }, 0);
-              const categorySolves = group.challenges.reduce((total, challenge) => {
-                return (
-                  total +
-                  (solveContexts.get(challenge.id)?.totalSolves ?? challenge.solveCount ?? 0)
-                );
-              }, 0);
+          <div className="kitsune-scroll-region min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <ul aria-label="Category breakdown" className="m-0 grid list-none gap-0 p-0">
+              {groups.map((group) => {
+                const availablePoints = group.challenges.reduce((total, challenge) => {
+                  return total + challengePointValue(challenge);
+                }, 0);
+                const categorySolves = group.challenges.reduce((total, challenge) => {
+                  return (
+                    total +
+                    (solveContexts.get(challenge.id)?.totalSolves ?? challenge.solveCount ?? 0)
+                  );
+                }, 0);
 
-              return (
-                <li
-                  className="grid grid-cols-2 items-center gap-x-4 gap-y-2 px-3 py-0 xl:grid-cols-12"
-                  key={group.category}
-                >
-                  <strong className="min-w-0 text-sm font-semibold xl:col-span-2">
-                    <ChallengeCategoryLabel category={group.category} />
-                  </strong>
-                  <div className="flex min-w-0 items-center gap-3 xl:col-span-7">
-                    <WeightedSegmentBar
-                      ariaLabel={`${group.solved} of ${group.challenges.length} ${group.category} challenges solved`}
-                      className="min-w-0 flex-1"
-                      items={segmentItems(
-                        orderChallengeSegments(group.challenges),
-                        challengePointWeights(group.challenges)
-                      )}
-                    />
-                    <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-text">
-                      {group.solved} / {group.challenges.length}
+                return (
+                  <li
+                    className="grid grid-cols-2 items-center gap-x-4 gap-y-2 px-3 py-0 xl:grid-cols-12"
+                    key={group.category}
+                  >
+                    <strong className="min-w-0 text-sm font-semibold xl:col-span-2">
+                      <ChallengeCategoryLabel category={group.category} />
+                    </strong>
+                    <div className="flex min-w-0 items-center gap-3 xl:col-span-7">
+                      <WeightedSegmentBar
+                        ariaLabel={`${group.solved} of ${group.challenges.length} ${group.category} challenges solved`}
+                        className="min-w-0 flex-1"
+                        items={segmentItems(
+                          orderChallengeSegments(group.challenges),
+                          challengePointWeights(group.challenges)
+                        )}
+                      />
+                      <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-text">
+                        {group.solved} / {group.challenges.length}
+                      </span>
+                    </div>
+                    <span className="text-sm tabular-nums text-text-muted xl:col-span-1 xl:text-right">
+                      {availablePoints.toLocaleString()} pts
                     </span>
-                  </div>
-                  <span className="text-sm tabular-nums text-text-muted xl:col-span-1 xl:text-right">
-                    {availablePoints.toLocaleString()} pts
-                  </span>
-                  <span className="text-right text-sm tabular-nums text-text-muted xl:col-span-2">
-                    {categorySolves.toLocaleString()} {categorySolves === 1 ? 'solve' : 'solves'}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
+                    <span className="text-right text-sm tabular-nums text-text-muted xl:col-span-2">
+                      {categorySolves.toLocaleString()} {categorySolves === 1 ? 'solve' : 'solves'}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
         </section>
       </div>
     </section>

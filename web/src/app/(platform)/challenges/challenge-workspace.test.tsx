@@ -103,8 +103,18 @@ describe('ChallengeWorkspace', () => {
     expect(screen.queryByRole('button', { name: 'Chart data' })).not.toBeInTheDocument();
     const challengeFieldHeading = screen.getByRole('heading', { name: 'Challenge field' });
     const challengeField = screen.getByRole('region', { name: 'Challenge field' });
+    const overview = screen.getByRole('heading', { name: 'Your run' }).closest('section');
+    const categoryBreakdown = screen.getByRole('list', { name: 'Category breakdown' });
+    const categoryScrollOwner = categoryBreakdown.parentElement;
     expect(challengeFieldHeading).toBeVisible();
     expect(challengeFieldHeading.parentElement).toHaveClass('px-3');
+    expect(overview).toHaveClass('overflow-hidden');
+    expect(challengeField).toHaveClass('min-h-0', 'flex-1');
+    expect(categoryScrollOwner).toHaveClass('min-h-0', 'flex-1', 'overflow-y-auto');
+    expect(categoryScrollOwner).not.toContainElement(screen.getByText('Progress'));
+    expect(categoryScrollOwner).not.toContainElement(
+      screen.getByLabelText('0 of 1 challenges solved')
+    );
     expect(screen.getByText('18 recorded solves')).toBeVisible();
     expect(screen.getByLabelText('0 of 1 challenges solved')).toHaveClass('px-3');
     expect(within(challengeField).getByText('Progress').parentElement).toHaveClass('grid-cols-12');

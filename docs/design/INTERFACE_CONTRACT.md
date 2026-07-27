@@ -270,6 +270,10 @@ reusable failure mode, add the general rule here before closing the issue.
 - When no challenge is selected, the detail pane presents one composed model
   of the competitor's position and the remaining challenge field. It does not
   repeat event-trail facts as KPI tiles or wrap each category in a card.
+- In that overview, the run summary, nearby-score chart, challenge-field
+  heading, overall challenge bar, and category column headings remain fixed.
+  Only the category rows own vertical overflow when they exceed the remaining
+  pane height; the overview pane and document do not become scroll owners.
 - Challenge categories are independent disclosures, all expanded by default.
   Category headings remain sticky inside the challenge-list scroll owner and
   retain their Lucide category icon, pastel index colour, solved ratio, and
