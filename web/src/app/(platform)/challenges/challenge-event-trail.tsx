@@ -58,9 +58,12 @@ export function ChallengeEventTrail({
       <section aria-label="Event progress" className="flex min-w-0 items-center justify-end gap-6">
         <div className="flex shrink-0 items-center gap-6">
           <div className="hidden items-center gap-3 xl:flex">
-            <span className="kitsune-optical-center hidden text-right text-sm tabular-nums text-text-muted 2xl:block">
-              Rank <strong className="font-semibold text-text">{standing.rank}</strong> /{' '}
-              {standing.totalCompetitors}
+            <span className="kitsune-optical-center hidden items-baseline gap-2 text-right text-sm tabular-nums text-text-muted 2xl:flex">
+              <span>rank</span>
+              <span>
+                <strong className="font-semibold text-text">{standing.rank}</strong> /{' '}
+                {standing.totalCompetitors}
+              </span>
             </span>
             <Sparkline interpolation="step" series={standing.scoreSeries} />
           </div>

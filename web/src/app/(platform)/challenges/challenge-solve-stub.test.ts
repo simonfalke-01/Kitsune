@@ -4,7 +4,8 @@ import {
   appendCurrentCompetitorSolve,
   createChallengeEventStandingStub,
   createChallengeSolveContextStub,
-  formatSolveDelta
+  formatSolveDelta,
+  formatSolveElapsedTime
 } from './challenge-solve-stub';
 import type { ChallengeSummary } from '@/lib/api/client';
 import { createChallengeExperience } from '@/lib/challenges';
@@ -116,5 +117,13 @@ describe('challenge solve frontend adapter', () => {
       standing.scoreSeries
     );
     expect(standing.nearbySeries.every((series) => series.points.length === 8)).toBe(true);
+  });
+
+  it('formats first-blood elapsed time without empty units', () => {
+    const startedAt = '2026-07-23T10:00:00Z';
+
+    expect(formatSolveElapsedTime('2026-07-23T18:00:00Z', startedAt)).toBe('8h');
+    expect(formatSolveElapsedTime('2026-07-23T11:17:00Z', startedAt)).toBe('1h 17min');
+    expect(formatSolveElapsedTime('2026-07-23T10:00:12Z', startedAt)).toBe('1min');
   });
 });

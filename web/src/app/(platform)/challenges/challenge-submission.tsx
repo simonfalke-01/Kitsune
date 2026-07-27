@@ -3,27 +3,9 @@
 import { useId, useRef, useState } from 'react';
 
 import type { ChallengeWorkspaceActions } from './challenge-types';
-import { Alert, Button, Form, RadioGroup, TextField } from '@/components/ui';
+import { Button, Form, RadioGroup, showToast, TextField } from '@/components/ui';
 import type { SubmissionReceipt } from '@/lib/api/client';
 import type { ChallengeExperience } from '@/lib/challenges';
-
-function submissionMessage(receipt: SubmissionReceipt): string {
-  if (receipt.outcome === 'correct') {
-    return receipt.first_blood
-      ? `Correct. First blood and ${receipt.awarded_points} points.`
-      : `Correct. ${receipt.awarded_points} points.`;
-  }
-
-  if (receipt.outcome === 'pending') {
-    return 'Submitted for review.';
-  }
-
-  if (typeof receipt.attempts_remaining === 'number') {
-    return `Incorrect. ${receipt.attempts_remaining} attempts remain.`;
-  }
-
-  return 'Incorrect flag.';
-}
 
 interface ChallengeSubmissionProps {
   challenge: ChallengeExperience;
@@ -41,7 +23,6 @@ export function ChallengeSubmission({
   const [answer, setAnswer] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [receiptMessage, setReceiptMessage] = useState<string | null>(null);
   const flagFieldRef = useRef<HTMLDivElement>(null);
   const flagInputId = useId();
   const choices = challenge.kind.type === 'multiple_choice' ? challenge.kind.choices : null;
@@ -56,12 +37,10 @@ export function ChallengeSubmission({
     }
 
     setError(null);
-    setReceiptMessage(null);
     setIsSubmitting(true);
 
     try {
       const receipt = await submitAnswer(challenge.id, normalizedAnswer);
-      const message = submissionMessage(receipt);
 
       if (receipt.outcome === 'correct') {
         const input = flagFieldRef.current?.querySelector('input');
@@ -72,9 +51,16 @@ export function ChallengeSubmission({
       }
 
       if (receipt.outcome === 'incorrect') {
-        setError(message);
+        showToast({
+          description:
+            typeof receipt.attempts_remaining === 'number'
+              ? `${receipt.attempts_remaining} attempts remain.`
+              : undefined,
+          title:
+            challenge.kind.type === 'manual_verification' ? 'Incorrect answer' : 'Incorrect flag',
+          tone: 'danger'
+        });
       } else {
-        setReceiptMessage(message);
         setAnswer('');
       }
 
@@ -134,7 +120,6 @@ export function ChallengeSubmission({
                 label={answerLabel}
                 labelHidden
                 onChange={setAnswer}
-                reserveErrorSpace
                 value={answer}
               />
             </div>
@@ -144,7 +129,6 @@ export function ChallengeSubmission({
           </div>
         </div>
       )}
-      {receiptMessage ? <Alert title={receiptMessage} tone="info" /> : null}
     </Form>
   );
 }

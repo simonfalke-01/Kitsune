@@ -1,8 +1,10 @@
+'use client';
+
 import { cx, variantClass } from './styles';
 
 const avatarSizes = {
-  medium: 'size-12 text-sm',
-  small: 'size-8 text-xs'
+  medium: 'size-control rounded-lg text-sm',
+  small: 'size-8 rounded-md text-xs'
 } as const;
 
 const avatarTones = {
@@ -34,12 +36,13 @@ export interface AvatarProps {
   className?: string;
   name: string;
   size?: keyof typeof avatarSizes;
+  src?: string | null;
   tone?: AvatarTone;
 }
 
-export function Avatar({ className, name, size = 'medium', tone = 'blue' }: AvatarProps) {
+export function Avatar({ className, name, size = 'medium', src, tone = 'blue' }: AvatarProps) {
   const classes = cx(
-    'inline-flex shrink-0 items-center justify-center overflow-hidden rounded-md border',
+    'relative inline-flex shrink-0 items-center justify-center overflow-hidden border',
     'font-semibold tracking-tight',
     variantClass(avatarSizes, size),
     variantClass(avatarTones, tone),
@@ -47,8 +50,22 @@ export function Avatar({ className, name, size = 'medium', tone = 'blue' }: Avat
   );
 
   return (
-    <span aria-hidden className={classes}>
+    <span aria-label={`${name} profile picture`} className={classes} role="img">
       <span className="kitsune-optical-center">{initials(name)}</span>
+      {src ? (
+        // Dynamic team-avatar hosts are operator configured; this primitive owns sizing and fallback.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          alt=""
+          className="absolute inset-0 size-full object-cover"
+          height="48"
+          onError={(event) => {
+            event.currentTarget.remove();
+          }}
+          src={src}
+          width="48"
+        />
+      ) : null}
     </span>
   );
 }

@@ -16,7 +16,7 @@ interface HintUnlockActionProps {
 
 function HintUnlockAction({ challenge, hint, isLoading, onUnlock }: HintUnlockActionProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const label = hint.cost > 0 ? `Unlock for ${hint.cost} points` : 'Reveal hint';
+  const label = hint.cost > 0 ? 'Unlock hint' : 'Reveal hint';
 
   if (hint.cost === 0) {
     return (
@@ -26,7 +26,8 @@ function HintUnlockAction({ challenge, hint, isLoading, onUnlock }: HintUnlockAc
           void onUnlock();
         }}
         size="small"
-        tone="secondary"
+        className="min-h-control"
+        tone="quiet"
       >
         {label}
       </Button>
@@ -35,7 +36,7 @@ function HintUnlockAction({ challenge, hint, isLoading, onUnlock }: HintUnlockAc
 
   return (
     <DialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
-      <Button isDisabled={isLoading} size="small" tone="secondary">
+      <Button className="min-h-control" isDisabled={isLoading} size="small" tone="quiet">
         {label}
       </Button>
       <AlertDialog
@@ -179,23 +180,28 @@ export function ChallengeHints({ challenge, loadHints, unlockHint }: ChallengeHi
       <ol className="m-0 grid list-none divide-y divide-border-subtle p-0">
         {hints.map((hint, index) => (
           <li className="grid gap-3 py-4 first:pt-0 last:pb-0" key={hint.id}>
-            <div className="flex items-center justify-between gap-4">
-              <strong className="text-base text-text">Hint {index + 1}</strong>
-              <span className="text-sm tabular-nums text-text-muted">
-                {hint.cost > 0 ? `${hint.cost} points` : 'Free'}
-              </span>
-            </div>
             {hint.unlocked && hint.content ? (
-              <p className="m-0 whitespace-pre-line text-base text-text-muted">{hint.content}</p>
+              <>
+                <strong className="text-base text-text">Hint {index + 1}</strong>
+                <p className="m-0 whitespace-pre-line text-base text-text-muted">{hint.content}</p>
+              </>
             ) : (
-              <div className="grid justify-items-start gap-2">
-                <span className="text-sm text-text-muted">Locked</span>
-                <HintUnlockAction
-                  challenge={challenge}
-                  hint={hint}
-                  isLoading={pendingHint === hint.id}
-                  onUnlock={() => unlock(hint)}
-                />
+              <div className="flex min-h-control items-center justify-between gap-4">
+                <span className="flex min-w-0 items-baseline gap-2">
+                  <strong className="text-base text-text">Hint {index + 1}</strong>
+                  <span className="text-sm text-text-muted">Locked</span>
+                </span>
+                <div className="flex shrink-0 items-center gap-3">
+                  <span className="text-sm tabular-nums text-text-muted">
+                    {hint.cost > 0 ? `${hint.cost} pts` : 'Free'}
+                  </span>
+                  <HintUnlockAction
+                    challenge={challenge}
+                    hint={hint}
+                    isLoading={pendingHint === hint.id}
+                    onUnlock={() => unlock(hint)}
+                  />
+                </div>
               </div>
             )}
           </li>

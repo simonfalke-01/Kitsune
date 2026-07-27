@@ -230,25 +230,19 @@ without losing competition context.
   second navigation bar above the event trail or duplicate either context.
 - Focus mode reduces the collection to one narrow navigation rail while
   preserving its mounted state, split preference, scroll position, selected
-  tab, and in-progress answer. The rail keeps the restore action, category
-  identity, solved ratios, and current category visible without competing with
-  the detail. It is never restored after a reload. A visible collection-toolbar
-  control collapses it; the rail owns the inverse control. F and overlay-aware
-  Escape remain accelerators, never the only way back.
+  tab, and in-progress answer. The rail keeps only the restore action; category
+  summaries remain in the list where they are useful and do not become a
+  parallel icon index. It is never restored after a reload. A visible
+  collection-toolbar control collapses it; the rail owns the inverse control.
+  F and overlay-aware Escape remain accelerators, never the only way back.
 - Collapsing and restoring the collection use one short spatial transition.
   The pane track moves continuously while mounted list and rail content trade
   places through restrained opacity and position changes. The transition is
   interruptible, never runs during pointer resizing, and resolves immediately
   under reduced motion.
-- Shared attempt history stays beside flag entry as one compact team summary.
-  Its detail view is an aligned ledger of submitted value, teammate, outcome,
-  and absolute time. It remains available after a solve, adds each receipt in
-  place, and never becomes a card feed. Until the backend supplies this model,
-  only the explicit demo adapter may seed teammate attempts.
-- Attempt detail is an anchored, dismissible popover from its action, not a
-  modal interruption. Flag validation reserves one flexible message line from
-  the initial state so an incorrect receipt never changes the dock's geometry;
-  longer accessible copy may still expand instead of clipping.
+- Incorrect receipts preserve the entered flag and use the toast channel; they
+  do not add an inline message row or reserve empty dock space. Prevention and
+  recovery errors remain adjacent to the field and may reflow rather than clip.
 - The splitter is a direct-manipulation control. Its hit target is forgiving,
   its affordance is visible without guessing, dragging updates continuously,
   and arrow keys provide an equivalent path.
@@ -282,10 +276,20 @@ without losing competition context.
   authors remain explicitly isolated in the frontend demo adapter.
 - Details, solves, hints, and writeup occupy stable tabs; switching tabs does
   not flash or move fixed chrome.
+- Solve tabs put the tabular count first and use singular `Solve` only for one.
+- A locked hint is one aligned decision row: identity and locked state lead;
+  cost and action trail. The action label names the action, never repeats the
+  price, and does not float beneath the state as a disconnected button.
 - The description may use one bounded region because it is a discrete authored
   object. Nested sub-sections rely on whitespace before borders.
 - Solve standings are aligned rows, not a feed of identical cards. Team
   identity, rank, relative time, and absolute time share stable columns.
+- First-three-plus-self summaries use placement, a larger team avatar, and one
+  two-line identity stack. Team name leads; first-blood elapsed time, solve
+  delta, or `Unsolved` sits directly beneath it instead of floating at the far
+  edge.
+- First blood reports elapsed competition time in compact units, omitting empty
+  units: `8h`, `1h 17min`, or `17min`.
 - First-three-plus-self context and flag submission form one persistent action
   dock. Its subparts are connected by alignment, not mini cards.
 - Blank writeups and blank flags are prevented before submission. Errors remain

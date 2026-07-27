@@ -2,6 +2,7 @@ import { Check, Trophy } from 'lucide-react';
 
 import {
   formatSolveDelta,
+  formatSolveElapsedTime,
   formatSolveTimestamp,
   type ChallengeSolveContext,
   type ChallengeSolveEntry
@@ -52,12 +53,32 @@ function avatarTone(value: string): AvatarTone {
   return avatarTones[hash % avatarTones.length] ?? 'blue';
 }
 
+interface SolveIdentityProps {
+  avatarUrl?: string | null;
+  caption: string;
+  competitorId: string;
+  competitorName: string;
+}
+
+function SolveIdentity({ avatarUrl, caption, competitorId, competitorName }: SolveIdentityProps) {
+  return (
+    <span className="flex min-w-0 flex-1 items-center gap-3">
+      <Avatar name={competitorName} src={avatarUrl} tone={avatarTone(competitorId)} />
+      <span className="kitsune-optical-center grid min-w-0 gap-0">
+        <strong className="truncate text-sm font-semibold text-text">{competitorName}</strong>
+        <span className="truncate text-xs font-normal tabular-nums text-text-muted">{caption}</span>
+      </span>
+    </span>
+  );
+}
+
 interface SolveRowProps {
   entry: ChallengeSolveEntry;
+  eventStartedAt: string;
   isPinned?: boolean;
 }
 
-function SolveRow({ entry, isPinned = false }: SolveRowProps) {
+function SolveRow({ entry, eventStartedAt, isPinned = false }: SolveRowProps) {
   const entryPlacement = placement(entry);
 
   return (
@@ -68,34 +89,27 @@ function SolveRow({ entry, isPinned = false }: SolveRowProps) {
         isPinned ? 'sticky bottom-0 z-10 bg-accent-subtle shadow-md' : null
       )}
     >
-      <span className="flex shrink-0 items-center gap-4">
-        <strong
-          className={cx(
-            'kitsune-optical-center w-8 text-right text-sm font-semibold tabular-nums text-text-muted',
-            entryPlacement ? placementTextClasses[entryPlacement] : null,
-            entry.isSelf ? 'text-accent-text' : null
-          )}
-        >
-          #{entry.rank}
-        </strong>
-        <Avatar name={entry.competitorName} size="small" tone={avatarTone(entry.competitorId)} />
-      </span>
-      <div className="kitsune-optical-center grid min-w-0 flex-1 gap-1">
-        <strong
-          className={cx(
-            'truncate text-base font-medium text-text',
-            entryPlacement ? placementTextClasses[entryPlacement] : null,
-            entry.isSelf ? 'text-accent-text' : null
-          )}
-        >
-          {entry.competitorName}
-        </strong>
-        <span className="text-xs tabular-nums text-text-muted">
-          {entry.isSelf ? 'You' : `#${entry.globalRank} overall`}
-        </span>
-      </div>
+      <strong
+        className={cx(
+          'kitsune-optical-center w-8 shrink-0 text-right text-sm font-semibold tabular-nums text-text-muted',
+          entryPlacement ? placementTextClasses[entryPlacement] : null,
+          entry.isSelf ? 'text-accent-text' : null
+        )}
+      >
+        #{entry.rank}
+      </strong>
+      <SolveIdentity
+        avatarUrl={entry.avatarUrl}
+        caption={entry.isSelf ? 'You' : `#${entry.globalRank} overall`}
+        competitorId={entry.competitorId}
+        competitorName={entry.competitorName}
+      />
       <div className="kitsune-optical-center grid shrink-0 justify-items-end gap-1 text-right tabular-nums">
-        <strong className="text-sm font-medium text-text">{formatSolveDelta(entry.deltaMs)}</strong>
+        <strong className="text-sm font-medium text-text">
+          {entry.rank === 1
+            ? `First blood (${formatSolveElapsedTime(entry.solvedAt, eventStartedAt)})`
+            : formatSolveDelta(entry.deltaMs)}
+        </strong>
         <span className="text-xs text-text-muted">{formatSolveTimestamp(entry.solvedAt)}</span>
       </div>
     </li>
@@ -139,13 +153,18 @@ export function ChallengeSolves({ context, state = 'ready' }: ChallengeSolvesPro
   return (
     <ol aria-label="Solve standings" className="m-0 grid list-none gap-0 p-0">
       {leadingEntries.map((entry) => (
-        <SolveRow entry={entry} key={entry.id} />
+        <SolveRow entry={entry} eventStartedAt={context.eventStartedAt} key={entry.id} />
       ))}
       {context.selfEntry && pinSelf ? (
-        <SolveRow entry={context.selfEntry} isPinned key={`pinned-${context.selfEntry.id}`} />
+        <SolveRow
+          entry={context.selfEntry}
+          eventStartedAt={context.eventStartedAt}
+          isPinned
+          key={`pinned-${context.selfEntry.id}`}
+        />
       ) : null}
       {trailingEntries.map((entry) => (
-        <SolveRow entry={entry} key={entry.id} />
+        <SolveRow entry={entry} eventStartedAt={context.eventStartedAt} key={entry.id} />
       ))}
     </ol>
   );
@@ -167,13 +186,10 @@ export function ChallengeSolveStrip({ context }: ChallengeSolveStripProps) {
           const entryPlacement = (index + 1) as 1 | 2 | 3;
 
           return (
-            <li
-              className="flex min-h-control min-w-0 items-center gap-3 px-3 py-2"
-              key={entryPlacement}
-            >
+            <li className="flex min-h-16 min-w-0 items-center gap-3 px-3 py-2" key={entryPlacement}>
               <span
                 className={cx(
-                  'kitsune-optical-center flex shrink-0 items-center gap-1 text-xs font-semibold',
+                  'kitsune-optical-center flex w-8 shrink-0 items-center justify-end gap-1 text-xs font-semibold',
                   placementTextClasses[entryPlacement]
                 )}
               >
@@ -182,44 +198,46 @@ export function ChallengeSolveStrip({ context }: ChallengeSolveStripProps) {
                 ) : null}
                 {ordinal(entryPlacement)}
               </span>
-              <span className="flex min-w-0 flex-1 items-center gap-2">
-                {entry ? (
-                  <Avatar
-                    name={entry.competitorName}
-                    size="small"
-                    tone={avatarTone(entry.competitorId)}
-                  />
-                ) : (
-                  <span aria-hidden className="size-8 shrink-0" />
-                )}
-                <strong className="kitsune-optical-center truncate text-sm font-medium text-text">
-                  {entry?.competitorName ?? 'Open'}
-                </strong>
-              </span>
-              <span className="kitsune-optical-center shrink-0 text-right text-xs tabular-nums text-text-muted">
-                {entry ? formatSolveDelta(entry.deltaMs) : 'No solve'}
-              </span>
+              {entry ? (
+                <SolveIdentity
+                  avatarUrl={entry.avatarUrl}
+                  caption={
+                    entryPlacement === 1
+                      ? `First blood (${formatSolveElapsedTime(entry.solvedAt, context.eventStartedAt)})`
+                      : formatSolveDelta(entry.deltaMs)
+                  }
+                  competitorId={entry.competitorId}
+                  competitorName={entry.competitorName}
+                />
+              ) : (
+                <span className="flex min-w-0 flex-1 items-center gap-3">
+                  <span aria-hidden className="size-control shrink-0" />
+                  <span className="kitsune-optical-center grid min-w-0 gap-0">
+                    <strong className="truncate text-sm font-semibold text-text">Open</strong>
+                    <span className="truncate text-xs font-normal text-text-muted">No solve</span>
+                  </span>
+                </span>
+              )}
             </li>
           );
         })}
-        <li className="flex min-h-control min-w-0 items-center gap-3 border-l-2 border-accent bg-accent-subtle px-3 py-2 text-accent-text">
-          <span className="kitsune-optical-center flex shrink-0 items-center gap-1 text-xs font-semibold">
+        <li className="flex min-h-16 min-w-0 items-center gap-3 border-l-2 border-accent bg-accent-subtle px-3 py-2 text-accent-text">
+          <span className="kitsune-optical-center flex w-8 shrink-0 items-center justify-end gap-1 text-xs font-semibold">
             {context.selfEntry ? <Check aria-hidden className="size-3" /> : null}
             {context.selfEntry ? ordinal(context.selfEntry.rank) : 'You'}
           </span>
-          <span className="flex min-w-0 flex-1 items-center gap-2">
-            <Avatar
-              name={context.currentCompetitor.name}
-              size="small"
-              tone={avatarTone(context.currentCompetitor.id)}
-            />
-            <strong className="kitsune-optical-center truncate text-sm font-medium">
-              {context.currentCompetitor.name}
-            </strong>
-          </span>
-          <span className="kitsune-optical-center shrink-0 text-right text-xs tabular-nums">
-            {context.selfEntry ? formatSolveDelta(context.selfEntry.deltaMs) : 'Unsolved'}
-          </span>
+          <SolveIdentity
+            avatarUrl={context.currentCompetitor.avatarUrl}
+            caption={
+              context.selfEntry
+                ? context.selfEntry.rank === 1
+                  ? `First blood (${formatSolveElapsedTime(context.selfEntry.solvedAt, context.eventStartedAt)})`
+                  : formatSolveDelta(context.selfEntry.deltaMs)
+                : 'Unsolved'
+            }
+            competitorId={context.currentCompetitor.id}
+            competitorName={context.currentCompetitor.name}
+          />
         </li>
       </ul>
     </section>

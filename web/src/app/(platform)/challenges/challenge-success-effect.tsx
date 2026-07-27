@@ -3,7 +3,7 @@
 import type { CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 
-import type { FlagSubmitSuccessEffect } from './challenge-presentation';
+import type { FirstBloodEdgeColor, FlagSubmitSuccessEffect } from './challenge-presentation';
 
 export interface ChallengeSuccessEffectOrigin {
   height: number;
@@ -27,6 +27,7 @@ interface FieldWaveStyle extends CSSProperties {
 
 interface ChallengeSuccessEffectProps {
   effect: FlagSubmitSuccessEffect;
+  firstBloodEdgeColor: FirstBloodEdgeColor;
   onComplete: () => void;
   origin: ChallengeSuccessEffectOrigin;
 }
@@ -75,27 +76,40 @@ function FieldWave({
   );
 }
 
-interface EffectFrameProps extends Pick<ChallengeSuccessEffectProps, 'onComplete'> {
+interface EffectFrameProps extends Pick<
+  ChallengeSuccessEffectProps,
+  'firstBloodEdgeColor' | 'onComplete'
+> {
   isFirstBlood: boolean;
 }
 
-function ViewportFrame({ onComplete }: Pick<EffectFrameProps, 'onComplete'>) {
-  return <span className="kitsune-solve-edge-frame absolute inset-0" onAnimationEnd={onComplete} />;
+function ViewportFrame({ firstBloodEdgeColor, isFirstBlood, onComplete }: EffectFrameProps) {
+  return (
+    <span
+      className="kitsune-solve-edge-frame absolute inset-0"
+      data-edge-color={isFirstBlood ? firstBloodEdgeColor : undefined}
+      onAnimationEnd={onComplete}
+    />
+  );
 }
 
-function EdgeBorder({ isFirstBlood, onComplete }: EffectFrameProps) {
+function EdgeBorder({ firstBloodEdgeColor, isFirstBlood, onComplete }: EffectFrameProps) {
   return (
     <div
       aria-hidden
       className="kitsune-solve-effect pointer-events-none fixed inset-0 z-celebration"
       data-first-blood={isFirstBlood || undefined}
     >
-      <ViewportFrame onComplete={onComplete} />
+      <ViewportFrame
+        firstBloodEdgeColor={firstBloodEdgeColor}
+        isFirstBlood={isFirstBlood}
+        onComplete={onComplete}
+      />
     </div>
   );
 }
 
-function ScreenImprint({ isFirstBlood, onComplete }: EffectFrameProps) {
+function ScreenImprint({ firstBloodEdgeColor, isFirstBlood, onComplete }: EffectFrameProps) {
   return (
     <div
       aria-hidden
@@ -103,13 +117,18 @@ function ScreenImprint({ isFirstBlood, onComplete }: EffectFrameProps) {
       data-first-blood={isFirstBlood || undefined}
     >
       <span className="kitsune-solve-edge-wash absolute inset-0" />
-      <ViewportFrame onComplete={onComplete} />
+      <ViewportFrame
+        firstBloodEdgeColor={firstBloodEdgeColor}
+        isFirstBlood={isFirstBlood}
+        onComplete={onComplete}
+      />
     </div>
   );
 }
 
 export function ChallengeSuccessEffect({
   effect,
+  firstBloodEdgeColor,
   onComplete,
   origin
 }: ChallengeSuccessEffectProps) {
@@ -121,9 +140,21 @@ export function ChallengeSuccessEffect({
   const isFirstBlood = origin.isFirstBlood;
 
   if (effect === 'edge-border') {
-    renderedEffect = <EdgeBorder isFirstBlood={isFirstBlood} onComplete={onComplete} />;
+    renderedEffect = (
+      <EdgeBorder
+        firstBloodEdgeColor={firstBloodEdgeColor}
+        isFirstBlood={isFirstBlood}
+        onComplete={onComplete}
+      />
+    );
   } else if (effect === 'screen-imprint') {
-    renderedEffect = <ScreenImprint isFirstBlood={isFirstBlood} onComplete={onComplete} />;
+    renderedEffect = (
+      <ScreenImprint
+        firstBloodEdgeColor={firstBloodEdgeColor}
+        isFirstBlood={isFirstBlood}
+        onComplete={onComplete}
+      />
+    );
   } else {
     renderedEffect = <FieldWave onComplete={onComplete} origin={origin} />;
   }

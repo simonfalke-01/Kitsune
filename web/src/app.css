@@ -183,6 +183,14 @@
   --first-blood-imprint-edge: color-mix(in oklch, var(--first-blood) 82%, transparent);
   --first-blood-imprint-fill: color-mix(in oklch, var(--first-blood) 7%, transparent);
   --first-blood-wave-fill: color-mix(in oklch, var(--first-blood) 18%, transparent);
+  --first-blood-rainbow-blue: var(--category-blue);
+  --first-blood-rainbow-cyan: var(--category-cyan);
+  --first-blood-rainbow-violet: var(--category-violet);
+  --first-blood-rainbow-pink: var(--category-pink);
+  --first-blood-rainbow-orange: var(--category-orange);
+  --first-blood-rainbow-amber: var(--category-amber);
+  --first-blood-rainbow-lime: var(--category-lime);
+  --first-blood-rainbow-teal: var(--category-teal);
   --challenge-first-blood-wash: color-mix(
     in oklch,
     var(--first-blood-subtle) 55%,
@@ -416,6 +424,7 @@
   --shadow-lg: 0 4px 8px oklch(0% 0 0 / 4%), 0 12px 24px oklch(0% 0 0 / 6%);
 
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-spatial: cubic-bezier(0.32, 0.72, 0, 1);
   --duration-fast: 120ms;
   --duration-normal: 180ms;
   --duration-slow: 260ms;
@@ -571,7 +580,7 @@
 
   .kitsune-split-workspace {
     grid-template-columns: var(--split-workspace-left) minmax(0, 1fr);
-    transition: grid-template-columns var(--duration-slow) var(--ease-out-quart);
+    transition: grid-template-columns var(--duration-slow) var(--ease-out-spatial);
   }
 
   .kitsune-split-workspace[data-resizing] {
@@ -681,6 +690,73 @@
     background-color: var(--solve-effect-fill);
     animation: kitsune-solve-edge-wash var(--duration-celebration) linear both;
     will-change: opacity;
+  }
+
+  .kitsune-solve-edge-frame[data-edge-color='success'] {
+    --solve-effect-edge: var(--success-imprint-edge);
+  }
+
+  .kitsune-solve-edge-frame[data-edge-color='rainbow'] {
+    background:
+      radial-gradient(
+          circle at 100% 100%,
+          transparent var(--solve-effect-inner-radius),
+          var(--first-blood-rainbow-blue) var(--solve-effect-inner-radius)
+        )
+        top left / var(--radius-viewport) var(--radius-viewport) no-repeat,
+      radial-gradient(
+          circle at 0 100%,
+          transparent var(--solve-effect-inner-radius),
+          var(--first-blood-rainbow-orange) var(--solve-effect-inner-radius)
+        )
+        top right / var(--radius-viewport) var(--radius-viewport) no-repeat,
+      radial-gradient(
+          circle at 100% 0,
+          transparent var(--solve-effect-inner-radius),
+          var(--first-blood-rainbow-violet) var(--solve-effect-inner-radius)
+        )
+        bottom left / var(--radius-viewport) var(--radius-viewport) no-repeat,
+      radial-gradient(
+          circle at 0 0,
+          transparent var(--solve-effect-inner-radius),
+          var(--first-blood-rainbow-teal) var(--solve-effect-inner-radius)
+        )
+        bottom right / var(--radius-viewport) var(--radius-viewport) no-repeat,
+      linear-gradient(
+          90deg,
+          var(--first-blood-rainbow-blue),
+          var(--first-blood-rainbow-violet),
+          var(--first-blood-rainbow-pink),
+          var(--first-blood-rainbow-orange)
+        )
+        top center / calc(100% - var(--radius-viewport) - var(--radius-viewport))
+        var(--spacing-effect-frame) no-repeat,
+      linear-gradient(
+          180deg,
+          var(--first-blood-rainbow-orange),
+          var(--first-blood-rainbow-amber),
+          var(--first-blood-rainbow-lime),
+          var(--first-blood-rainbow-teal)
+        )
+        center right / var(--spacing-effect-frame)
+        calc(100% - var(--radius-viewport) - var(--radius-viewport)) no-repeat,
+      linear-gradient(
+          90deg,
+          var(--first-blood-rainbow-violet),
+          var(--first-blood-rainbow-blue),
+          var(--first-blood-rainbow-cyan),
+          var(--first-blood-rainbow-teal)
+        )
+        bottom center / calc(100% - var(--radius-viewport) - var(--radius-viewport))
+        var(--spacing-effect-frame) no-repeat,
+      linear-gradient(
+          180deg,
+          var(--first-blood-rainbow-blue),
+          var(--first-blood-rainbow-pink),
+          var(--first-blood-rainbow-violet)
+        )
+        center left / var(--spacing-effect-frame)
+        calc(100% - var(--radius-viewport) - var(--radius-viewport)) no-repeat;
   }
 
   .kitsune-solve-effect {

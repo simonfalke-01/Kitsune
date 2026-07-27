@@ -165,7 +165,7 @@ export function ChallengeCollection({
   return (
     <section aria-label="Challenge list" className="flex min-h-full flex-col bg-surface-raised">
       <div className="sticky top-0 z-20 bg-surface-raised">
-        <div className="flex min-h-12 items-center justify-start px-3">
+        <div className="flex min-h-12 items-center justify-start px-4">
           <dl
             aria-label="Challenge progress"
             className="kitsune-optical-center m-0 flex gap-6 text-sm tabular-nums text-text-muted"
@@ -188,7 +188,7 @@ export function ChallengeCollection({
             </div>
           </dl>
         </div>
-        <div className="flex min-h-16 items-center gap-2 px-3">
+        <div className="flex min-h-16 items-start gap-2 px-3 pt-1">
           <SearchField
             className="min-w-0 flex-1"
             label="Search challenges"
@@ -294,7 +294,6 @@ export function ChallengeCollection({
             return (
               <Disclosure
                 className={`${categoryTextClasses[tone]} bg-surface-raised`}
-                data-challenge-category={group.category}
                 density="compact"
                 headingClassName="sticky top-challenge-list-header z-10 bg-surface-sunken"
                 headingLevel={2}

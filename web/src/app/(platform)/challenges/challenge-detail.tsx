@@ -3,12 +3,10 @@
 import { Check, Trophy } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 
-import { ChallengeAttemptHistory } from './challenge-attempt-history';
-import type { ChallengeAttemptEntry } from './challenge-attempt-stub';
 import { ChallengeCategoryLabel } from './challenge-category';
 import { ChallengeHints } from './challenge-hints';
 import { ChallengeInstance } from './challenge-instance';
-import type { FlagSubmitSuccessEffect } from './challenge-presentation';
+import type { FirstBloodEdgeColor, FlagSubmitSuccessEffect } from './challenge-presentation';
 import type { ChallengeSolveContext } from './challenge-solve-stub';
 import { ChallengeSolvedSummary, ChallengeSolves, ChallengeSolveStrip } from './challenge-solves';
 import { ChallengeSubmission } from './challenge-submission';
@@ -46,11 +44,10 @@ import {
 
 interface ChallengeDetailProps {
   actions: ChallengeWorkspaceActions;
-  attempts: readonly ChallengeAttemptEntry[];
   challenge: ChallengeExperience;
   eventId: string;
+  firstBloodEdgeColor: FirstBloodEdgeColor;
   flagSubmitSuccessEffect: FlagSubmitSuccessEffect;
-  onAttempt: (value: string, receipt: SubmissionReceipt) => void;
   onChallengeChanged?: () => Promise<void>;
   onSolved?: (challengeId: string, solvedAt: string) => void;
   onTabChange: (tab: ChallengeDetailTab) => void;
@@ -114,11 +111,10 @@ function RememberedTabPanel({ challengeId, children, eventId, tab }: RememberedT
 
 export function ChallengeDetail({
   actions,
-  attempts,
   challenge,
   eventId,
+  firstBloodEdgeColor,
   flagSubmitSuccessEffect,
-  onAttempt,
   onChallengeChanged,
   onSolved,
   onTabChange,
@@ -143,9 +139,7 @@ export function ChallengeDetail({
     solved: isSolved
   };
 
-  async function handleReceipt(receipt: SubmissionReceipt, submittedValue: string) {
-    onAttempt(submittedValue, receipt);
-
+  async function handleReceipt(receipt: SubmissionReceipt) {
     if (typeof receipt.attempts_remaining === 'number') {
       setAttemptsRemaining(receipt.attempts_remaining);
     }
@@ -209,6 +203,7 @@ export function ChallengeDetail({
       {successEffectOrigin ? (
         <ChallengeSuccessEffect
           effect={flagSubmitSuccessEffect}
+          firstBloodEdgeColor={firstBloodEdgeColor}
           onComplete={() => setSuccessEffectOrigin(null)}
           origin={successEffectOrigin}
         />
@@ -266,7 +261,12 @@ export function ChallengeDetail({
       >
         <TabsList aria-label="Challenge sections" className="shrink-0 border-b-0 px-3">
           <TabsTab id="details">Details</TabsTab>
-          <TabsTab id="solves">Solves {solveContext.totalSolves.toLocaleString()}</TabsTab>
+          <TabsTab id="solves">
+            <strong className="font-semibold tabular-nums">
+              {solveContext.totalSolves.toLocaleString()}
+            </strong>{' '}
+            {solveContext.totalSolves === 1 ? 'Solve' : 'Solves'}
+          </TabsTab>
           <TabsTab id="hints">Hints</TabsTab>
           {isSolved && challenge.writeups_enabled && actions.loadWriteup && actions.saveWriteup ? (
             <TabsTab id="writeup">Writeup</TabsTab>
@@ -413,7 +413,6 @@ export function ChallengeDetail({
         <footer className="z-20 shrink-0 bg-surface-sunken px-6 py-4">
           <div className="grid w-full gap-4">
             <ChallengeSolveStrip context={solveContext} />
-            <ChallengeAttemptHistory attempts={attempts} />
             {isSolved ? (
               <ChallengeSolvedSummary
                 isFirstBlood={isFirstBlood}

@@ -2,11 +2,13 @@ import type { ChartSeries } from '@/lib/visualization/types';
 import { challengeProgress, type ChallengeExperience } from '@/lib/challenges';
 
 export interface ChallengeCompetitorStub {
+  avatarUrl?: string | null;
   id: string;
   name: string;
 }
 
 export interface ChallengeSolveEntry {
+  avatarUrl?: string | null;
   competitorId: string;
   competitorName: string;
   deltaMs: number;
@@ -136,6 +138,7 @@ export function createChallengeSolveContextStub(input: {
       : `solve-${input.challenge.id}-${rank}`;
 
     return {
+      avatarUrl: isSelf ? input.currentCompetitor.avatarUrl : null,
       competitorId,
       competitorName: isSelf ? input.currentCompetitor.name : generatedTeamName(seed, index),
       deltaMs: solvedAtMs - firstSolveMs,
@@ -191,6 +194,7 @@ export function appendCurrentCompetitorSolve(
     : Math.max(Date.parse(context.eventStartedAt), firstSolveAt);
   const rank = context.totalSolves + 1;
   const selfEntry: ChallengeSolveEntry = {
+    avatarUrl: currentCompetitor.avatarUrl,
     competitorId: currentCompetitor.id,
     competitorName: currentCompetitor.name,
     deltaMs: Math.max(0, resolvedSolvedAt - firstSolveAt),
@@ -300,6 +304,24 @@ export function formatSolveDelta(deltaMs: number): string {
   }
 
   return `+${minutes}m`;
+}
+
+export function formatSolveElapsedTime(solvedAt: string, eventStartedAt: string): string {
+  const elapsedMs = Date.parse(solvedAt) - Date.parse(eventStartedAt);
+  const totalMinutes = Math.max(1, Math.round(elapsedMs / minute));
+  const days = Math.floor(totalMinutes / 1_440);
+  const hours = Math.floor((totalMinutes % 1_440) / 60);
+  const minutes = totalMinutes % 60;
+
+  if (days > 0) {
+    return hours > 0 ? `${days}d ${hours}h` : `${days}d`;
+  }
+
+  if (hours > 0) {
+    return minutes > 0 ? `${hours}h ${minutes}min` : `${hours}h`;
+  }
+
+  return `${minutes}min`;
 }
 
 export function formatSolveTimestamp(value: string): string {

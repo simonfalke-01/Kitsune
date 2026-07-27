@@ -31,22 +31,14 @@ export function Popover({ className, size = 'content', ...props }: PopoverProps)
   );
 }
 
-const popoverDialogSizes = {
-  content: 'max-w-prose',
-  wide: 'w-full max-w-detail'
-} as const;
+export type PopoverDialogProps = ReactAriaDialogProps;
 
-export interface PopoverDialogProps extends ReactAriaDialogProps {
-  size?: keyof typeof popoverDialogSizes;
-}
-
-export function PopoverDialog({ className, size = 'content', ...props }: PopoverDialogProps) {
+export function PopoverDialog({ className, ...props }: PopoverDialogProps) {
   return (
     <ReactAriaDialog
       {...props}
       className={cx(
-        'p-3 text-sm text-text outline-none',
-        popoverDialogSizes[size],
+        'max-w-prose p-3 text-sm text-text outline-none',
         typeof className === 'string' ? className : undefined
       )}
     />

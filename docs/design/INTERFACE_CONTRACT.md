@@ -188,32 +188,28 @@ reusable failure mode, add the general rule here before closing the issue.
   escape path.
 - Desktop focus mode reduces the collection to the shared collapsed-rail width
   without unmounting either pane or overwriting the persisted split. The rail
-  owns Show challenge list plus compact category identity, solved ratios, and
-  current-category state; it does not duplicate challenge titles or event
-  metrics. The detail's tab, scroll position, form state, and submission
-  feedback survive entry and exit. The collection toolbar owns the collapse
-  control beside its other view controls. F toggles it; Escape exits only when
-  no overlay owns Escape. Focus mode is intentionally session-local and never
-  restored on reload.
+  owns only Show challenge list; it does not become a parallel category index
+  or duplicate challenge and event state. The detail's tab, scroll position,
+  form state, and submission feedback survive entry and exit. The collection
+  toolbar owns the collapse control beside its other view controls. F toggles
+  it; Escape exits only when no overlay owns Escape. Focus mode is intentionally
+  session-local and never restored on reload.
 - Focus-mode collapse and expansion use the shared slow duration and spatial
   easing on one pane track. Mounted collection and rail content cross over with
   the shared fast transform and opacity transition. Pointer resizing disables
   the pane transition, and reduced motion resolves the state change instantly.
-- Shared challenge attempts use one compact dock summary and one aligned detail
-  ledger. Each entry exposes the normalized submitted value, teammate identity,
-  textual outcome, and absolute timestamp. New receipts prepend without
-  duplicate replay identities, and the history remains visible after a solve.
-  Empty real challenge data renders no attempt claim; deterministic teammate
-  attempts exist only in the typed frontend demo adapter until the player API
-  owns this model.
-- Shared-attempt detail opens in a collision-aware popover anchored to its
-  trigger. It is not modal. The flag field reserves a flexible validation line
-  before submission so ordinary one-line feedback never changes sticky-dock
-  height; text enlargement and long localized errors remain free to reflow.
+- The flag field reserves a flexible validation line before submission so
+  ordinary one-line feedback never changes sticky-dock height; text enlargement
+  and long localized errors remain free to reflow.
 - First blood is an achievement state, not a warning. Its sidebar wash, solved
-  confirmation, toast, edge frame, screen imprint, and field wave all consume
-  the shared first-blood gold role. Ordinary solves continue to use success
-  green; do not recolor one part of the feedback sequence independently.
+  confirmation, toast, screen imprint, and field wave consume the shared
+  first-blood gold role. Its viewport edge color is an independent typed
+  presentation setting: first-blood color, another approved semantic color, or
+  rainbow. Ordinary solves continue to use success green.
+- The first-blood rainbow edge uses the shared category-color roles as one
+  static perimeter. It adds no glow, page wash, hue motion, or saturated panel,
+  and it retains the same edge geometry, timing, and reduced-motion behavior as
+  a single-color frame.
 - A first-blood challenge row adds one solid gold achievement rail to its gold
   wash. The blue inset ring remains the selected-state signal; achievement and
   current location must stay simultaneously legible rather than replacing one
@@ -426,18 +422,29 @@ reusable failure mode, add the general rule here before closing the issue.
   update the URL without reloading the document.
 - The challenge detail begins with the name, points, minimal decision-relevant
   metadata, description, resources when present, and the submission action.
+- Solve-tab labels put the tabular count first and use singular `Solve` only
+  when the count is exactly one.
 - A trusted challenge author appears beside the name as muted `by <name>` text.
   Omit the line when author data is absent; never invent an author outside the
   explicitly typed demo adapter or render authorship as a badge.
   Hints and writeups use progressive disclosure.
+- A locked hint renders identity and `Locked` at the leading edge, then cost and
+  a specifically labelled action at the trailing edge of one compact row. The
+  button never repeats the price and never drops beneath the state as a detached
+  control.
 - Challenge detail provides a solve timeline sourced from the same model as
   the compact first-three-plus-self context. Each solve shows rank, competitor,
   elapsed time from first solve, and absolute solve time. The current
   competitor stays identifiable and receives a pinned row when outside the
   leading results.
-- The compact first-three-plus-self context uses one horizontal ledger anatomy
-  per competitor: rank, avatar, name, then elapsed state on one line. Stacked
-  mini-profile cards with separate rank, identity, and time rows are prohibited.
+- The compact first-three-plus-self context uses one identity anatomy per
+  competitor: placement, a larger team avatar, then a two-line stack of team
+  name and elapsed state. First blood reports elapsed competition time in
+  compact non-empty units such as `8h` or `1h 17min`. A detached far-right time
+  label and separate mini-profile cards are prohibited.
+- Avatar slots render the real team profile image when the solve model supplies
+  one and retain initials as the load-failure fallback. Frontend demo state does
+  not fabricate profile art when no human-authored asset exists.
 - The first-three-plus-self context and flag action form one sticky detail
   dock. The dock spans the pane; the text action remains content-width on wide
   layouts and expands only when the controls stack on narrow layouts.
@@ -447,6 +454,9 @@ reusable failure mode, add the general rule here before closing the issue.
   and replacement status must share a visual anchor. Do not retain an empty
   footer, expand the result into a large success banner, or permanently open a
   blank writeup editor.
+- Incorrect receipts preserve the entered value and use a toast without adding
+  an inline message row or reserving empty height beneath the field. Blank input
+  and recoverable submission failures remain adjacent inline errors.
 - Selected challenge rows retain their blue ring and leading rail across state
   changes. Solved and blood washes remain visible inside that selection chrome;
   no secondary shadow animation may overwrite the ring.

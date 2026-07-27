@@ -37,7 +37,7 @@ describe('optical vertical alignment', () => {
       <>
         <TextArea label="Writeup" />
         <NavigationLink href="/challenges">Challenges</NavigationLink>
-        <Avatar name="Kitsune Labs" />
+        <Avatar name="Kitsune Labs" src="/teams/kitsune-labs.png" />
       </>
     );
 
@@ -47,5 +47,8 @@ describe('optical vertical alignment', () => {
     );
     expect(screen.getByText('Challenges')).toHaveClass('kitsune-optical-center');
     expect(screen.getByText('KL')).toHaveClass('kitsune-optical-center');
+    expect(screen.getByRole('img', { name: 'Kitsune Labs profile picture' })).toContainElement(
+      screen.getByRole('presentation')
+    );
   });
 });

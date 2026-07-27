@@ -2,12 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 
-import {
-  appendChallengeAttempt,
-  challengeAttemptOutcome,
-  type ChallengeAttemptActorStub,
-  type ChallengeAttemptHistory
-} from './challenge-attempt-stub';
 import { ChallengeCollapsedRail } from './challenge-collapsed-rail';
 import { ChallengeCollection } from './challenge-collection';
 import { ChallengeDetail } from './challenge-detail';
@@ -15,6 +9,7 @@ import { ChallengeEventTrail } from './challenge-event-trail';
 import { ChallengeOverview } from './challenge-overview';
 import {
   challengePresentationSettingsStub,
+  type FirstBloodEdgeColor,
   type FlagSubmitSuccessEffect
 } from './challenge-presentation';
 import {
@@ -34,7 +29,6 @@ import {
 } from './challenge-solve-stub';
 import type { ChallengeWorkspaceActions } from './challenge-types';
 import { Sheet, SplitWorkspace, type SplitWorkspaceHandle } from '@/components/ui';
-import type { SubmissionReceipt } from '@/lib/api/client';
 import type { ChallengeExperience } from '@/lib/challenges';
 
 export type { ChallengeWorkspaceActions } from './challenge-types';
@@ -57,14 +51,13 @@ function getIsDesktop(): boolean {
 export interface ChallengeWorkspaceProps {
   actions: ChallengeWorkspaceActions;
   challenges: ChallengeExperience[];
-  currentAttemptActor?: ChallengeAttemptActorStub;
   currentCompetitor: ChallengeCompetitorStub;
   eventId: string;
   eventName: string;
   eventStartedAt?: string | null;
+  firstBloodEdgeColor?: FirstBloodEdgeColor;
   flagSubmitSuccessEffect?: FlagSubmitSuccessEffect;
   getChallengeHref?: (challengeId: string, tab: ChallengeDetailTab) => string;
-  initialAttemptHistory?: ChallengeAttemptHistory;
   onChallengeChanged?: () => Promise<void>;
   onClearSelection: () => void;
   onSelectChallenge?: (challengeId: string, tab: ChallengeDetailTab) => void;
@@ -115,14 +108,13 @@ function availableTab(
 export function ChallengeWorkspace({
   actions,
   challenges,
-  currentAttemptActor,
   currentCompetitor,
   eventId,
   eventName,
   eventStartedAt,
+  firstBloodEdgeColor = challengePresentationSettingsStub.firstBloodEdgeColor,
   flagSubmitSuccessEffect = challengePresentationSettingsStub.flagSubmitSuccessEffect,
   getChallengeHref,
-  initialAttemptHistory = new Map(),
   onChallengeChanged,
   onClearSelection,
   onSelectChallenge,
@@ -151,9 +143,6 @@ export function ChallengeWorkspace({
   });
   const [optimisticSolveTimes, setOptimisticSolveTimes] = useState<ReadonlyMap<string, string>>(
     new Map()
-  );
-  const [attemptHistory, setAttemptHistory] = useState<ChallengeAttemptHistory>(
-    () => new Map(initialAttemptHistory)
   );
   const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
   const [focusedChallengeId, setFocusedChallengeId] = useState<string | null>(null);
@@ -233,27 +222,15 @@ export function ChallengeWorkspace({
       searchInputRef.current?.blur();
     }
   }, [selectedChallenge?.id, visibleChallengeRows]);
-  const restoreChallengeList = useCallback(
-    (category?: string) => {
-      setFocusedChallengeId(null);
-      window.requestAnimationFrame(() => {
-        if (!category) {
-          const selectedRow = visibleChallengeRows().find(
-            (row) => row.dataset.challengeId === selectedChallenge?.id
-          );
-          selectedRow?.focus();
-          return;
-        }
-
-        const categoryDisclosure = Array.from(
-          collectionScrollRef.current?.querySelectorAll<HTMLElement>('[data-challenge-category]') ??
-            []
-        ).find((candidate) => candidate.dataset.challengeCategory === category);
-        categoryDisclosure?.querySelector<HTMLElement>('button')?.focus();
-      });
-    },
-    [selectedChallenge?.id, visibleChallengeRows]
-  );
+  const restoreChallengeList = useCallback(() => {
+    setFocusedChallengeId(null);
+    window.requestAnimationFrame(() => {
+      const selectedRow = visibleChallengeRows().find(
+        (row) => row.dataset.challengeId === selectedChallenge?.id
+      );
+      selectedRow?.focus();
+    });
+  }, [selectedChallenge?.id, visibleChallengeRows]);
   const collapseChallengeList = useCallback(() => {
     if (!selectedChallenge) {
       return;
@@ -499,18 +476,6 @@ export function ChallengeWorkspace({
     });
   }
 
-  function handleAttempt(challengeId: string, value: string, receipt: SubmissionReceipt) {
-    setAttemptHistory((current) =>
-      appendChallengeAttempt(current, challengeId, {
-        actor: currentAttemptActor ?? currentCompetitor,
-        id: receipt.id,
-        outcome: challengeAttemptOutcome(receipt.outcome),
-        submittedAt: receipt.submitted_at,
-        value
-      })
-    );
-  }
-
   const collection = (
     <ChallengeCollection
       challenges={displayedChallenges}
@@ -537,15 +502,12 @@ export function ChallengeWorkspace({
   const detail = selectedChallenge ? (
     <ChallengeDetail
       actions={actions}
-      attempts={attemptHistory.get(selectedChallenge.id) ?? []}
       challenge={selectedChallenge}
       eventId={eventId}
+      firstBloodEdgeColor={firstBloodEdgeColor}
       flagSubmitSuccessEffect={flagSubmitSuccessEffect}
       key={selectedChallenge.id}
       onChallengeChanged={onChallengeChanged}
-      onAttempt={(value, receipt) => {
-        handleAttempt(selectedChallenge.id, value, receipt);
-      }}
       onSolved={handleSolved}
       onTabChange={selectTab}
       selectedTab={immediateSelectedTab}
@@ -587,15 +549,10 @@ export function ChallengeWorkspace({
             ariaLabel="Challenge list width"
             collapsedLeft={
               <ChallengeCollapsedRail
-                challenges={displayedChallenges}
-                onOpenCategory={(category) => {
-                  restoreChallengeList(category);
-                }}
                 onShowChallengeList={() => {
                   restoreChallengeList();
                 }}
                 railRef={collapsedRailRef}
-                selectedChallengeId={selectedChallenge?.id ?? null}
               />
             }
             defaultValue={34}
@@ -636,15 +593,12 @@ export function ChallengeWorkspace({
         >
           <ChallengeDetail
             actions={actions}
-            attempts={attemptHistory.get(selectedChallenge.id) ?? []}
             challenge={selectedChallenge}
             eventId={eventId}
+            firstBloodEdgeColor={firstBloodEdgeColor}
             flagSubmitSuccessEffect={flagSubmitSuccessEffect}
             key={selectedChallenge.id}
             onChallengeChanged={onChallengeChanged}
-            onAttempt={(value, receipt) => {
-              handleAttempt(selectedChallenge.id, value, receipt);
-            }}
             onSolved={handleSolved}
             onTabChange={selectTab}
             selectedTab={immediateSelectedTab}

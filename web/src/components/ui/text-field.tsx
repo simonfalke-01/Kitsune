@@ -27,7 +27,6 @@ export interface TextFieldProps extends Omit<ReactAriaTextFieldProps, 'children'
   label: ReactNode;
   labelHidden?: boolean;
   placeholder?: string;
-  reserveErrorSpace?: boolean;
 }
 
 export function TextField({
@@ -39,7 +38,6 @@ export function TextField({
   label,
   labelHidden = false,
   placeholder,
-  reserveErrorSpace = false,
   ...props
 }: TextFieldProps) {
   return (
@@ -58,13 +56,7 @@ export function TextField({
           {description}
         </Text>
       ) : null}
-      {reserveErrorSpace ? (
-        <div className="min-h-6" data-slot="field-error">
-          <FieldError className={fieldError}>{errorMessage}</FieldError>
-        </div>
-      ) : (
-        <FieldError className={fieldError}>{errorMessage}</FieldError>
-      )}
+      <FieldError className={fieldError}>{errorMessage}</FieldError>
     </ReactAriaTextField>
   );
 }

@@ -3,7 +3,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SessionProvider } from '@/app/session-context';
 import { ThemeProvider } from '@/app/theme-context';
-import type { ChallengeAttemptHistory } from './challenge-attempt-stub';
 import type { FlagSubmitSuccessEffect } from './challenge-presentation';
 import {
   rememberChallengeListScroll,
@@ -77,8 +76,7 @@ function renderWorkspace(
   selectedChallengeId: string | null,
   workspaceActions = actions(),
   flagSubmitSuccessEffect?: FlagSubmitSuccessEffect,
-  selectedChallengeTab: ChallengeDetailTab = 'details',
-  initialAttemptHistory?: ChallengeAttemptHistory
+  selectedChallengeTab: ChallengeDetailTab = 'details'
 ) {
   render(
     <ThemeProvider>
@@ -93,7 +91,6 @@ function renderWorkspace(
           getChallengeHref={(challengeId) => `/challenges?challenge=${challengeId}`}
           onClearSelection={vi.fn()}
           onSelectChallenge={vi.fn()}
-          initialAttemptHistory={initialAttemptHistory}
           selectedChallengeId={selectedChallengeId}
           selectedChallengeTab={selectedChallengeTab}
         />
@@ -166,6 +163,9 @@ describe('ChallengeWorkspace', () => {
     ).toHaveAttribute('href', '/challenges?challenge=challenge');
     expect(screen.getAllByText('Web')[0]).toBeVisible();
     expect(screen.getAllByText('18 solves')[0]).toBeVisible();
+    const rankLabel = screen.getByText('rank');
+    expect(rankLabel.parentElement).toHaveClass('items-baseline', 'gap-2');
+    expect(screen.queryByText('Rank')).not.toBeInTheDocument();
     expect(screen.getByRole('slider', { name: 'Challenge list width' })).toHaveValue('34');
     expect(screen.getByRole('slider', { name: 'Challenge list width' })).toHaveAttribute(
       'min',
@@ -178,7 +178,8 @@ describe('ChallengeWorkspace', () => {
     const progressSummary = screen.getByLabelText('Challenge progress');
     const challengeSearch = screen.getByRole('searchbox', { name: 'Search challenges' });
     expect(progressSummary).toHaveClass('kitsune-optical-center', 'gap-6');
-    expect(progressSummary.parentElement).toHaveClass('min-h-12', 'justify-start', 'px-3');
+    expect(progressSummary.parentElement).toHaveClass('min-h-12', 'justify-start', 'px-4');
+    expect(challengeSearch.closest('.min-h-16')).toHaveClass('items-start', 'pt-1');
     expect(progressSummary.compareDocumentPosition(challengeSearch)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     );
@@ -240,7 +241,7 @@ describe('ChallengeWorkspace', () => {
     const selectedPanel = screen.getByRole('tabpanel');
 
     await waitFor(() => {
-      expect(screen.getByRole('tab', { name: 'Solves 4' })).toHaveAttribute(
+      expect(screen.getByRole('tab', { name: '4 Solves' })).toHaveAttribute(
         'aria-selected',
         'true'
       );
@@ -292,13 +293,41 @@ describe('ChallengeWorkspace', () => {
     fireEvent.keyDown(search, { key: 'Escape' });
     expect(search).not.toHaveFocus();
     fireEvent.keyDown(window, { key: 's' });
-    expect(screen.getByRole('tab', { name: 'Solves 4' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: '4 Solves' })).toHaveAttribute('aria-selected', 'true');
 
     fireEvent.keyDown(window, { key: 'h' });
     expect(screen.getByRole('tab', { name: 'Hints' })).toHaveAttribute('aria-selected', 'true');
 
     fireEvent.keyDown(window, { key: 'd' });
     expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('keeps locked hint state, cost, and action in one aligned row', async () => {
+    const workspaceActions = actions();
+    workspaceActions.loadHints = vi.fn().mockResolvedValue([
+      {
+        content: null,
+        cost: 10,
+        id: 1,
+        unlocked: false
+      }
+    ]);
+    renderWorkspace([createChallengeExperience(challenge())], 'challenge', workspaceActions);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Hints' }));
+
+    const hintTitle = await screen.findByText('Hint 1');
+    const hintRow = hintTitle.parentElement?.parentElement;
+    expect(hintRow).toHaveClass('flex', 'min-h-control', 'items-center', 'justify-between');
+    expect(within(hintRow as HTMLElement).getByText('Locked')).toBeVisible();
+    expect(within(hintRow as HTMLElement).getByText('10 pts')).toBeVisible();
+    const unlock = within(hintRow as HTMLElement).getByRole('button', { name: 'Unlock hint' });
+    expect(unlock).toHaveClass('min-h-control', 'border-transparent');
+
+    fireEvent.click(unlock);
+    expect(await screen.findByRole('alertdialog', { name: 'Unlock hint?' })).toHaveTextContent(
+      '10 points will be deducted'
+    );
   });
 
   it('returns from search to the selected row before J and K navigation resumes', () => {
@@ -358,8 +387,8 @@ describe('ChallengeWorkspace', () => {
     });
     expect(workspace).toHaveAttribute('data-collapsed', 'true');
     expect(screen.getByRole('complementary', { name: 'Collapsed challenge list' })).toBeVisible();
-    expect(screen.getByRole('button', { name: /Open Web, 0 of 1 solved/ })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Show challenge list' })).toBeVisible();
+    expect(screen.queryByText('0/1')).not.toBeInTheDocument();
     expect(screen.queryByRole('slider', { name: 'Challenge list width' })).not.toBeInTheDocument();
     expect(screen.getByLabelText('Flag')).toBe(flag);
     expect(screen.getByLabelText('Flag')).toHaveValue('kit{draft}');
@@ -372,73 +401,6 @@ describe('ChallengeWorkspace', () => {
 
     fireEvent.keyDown(window, { key: 'f' });
     expect(screen.getByRole('button', { name: 'Show challenge list' })).toBeVisible();
-  });
-
-  it('restores the challenge list from a collapsed category shortcut', async () => {
-    renderWorkspace(
-      [
-        createChallengeExperience(challenge({ id: 'web', name: 'Web trail' })),
-        createChallengeExperience(
-          challenge({ category: 'Crypto', id: 'crypto', name: 'Crypto trail', position: 1 })
-        )
-      ],
-      'web'
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Collapse challenge list' }));
-    fireEvent.click(screen.getByRole('button', { name: /Open Crypto, 0 of 1 solved/ }));
-
-    await waitFor(() => {
-      expect(screen.getByRole('slider', { name: 'Challenge list width' })).toBeVisible();
-      expect(screen.getByRole('button', { name: /Crypto/ })).toHaveFocus();
-    });
-    expect(screen.getByRole('link', { name: /Web trail/ })).toHaveAttribute('aria-current', 'true');
-  });
-
-  it('shows seeded team attempts as a compact summary and an aligned ledger', async () => {
-    const initialAttemptHistory: ChallengeAttemptHistory = new Map([
-      [
-        'challenge',
-        [
-          {
-            actor: { id: 'simonfalke', name: 'simonfalke' },
-            id: 'attempt-2',
-            outcome: 'incorrect',
-            submittedAt: '2026-07-26T05:07:00.000Z',
-            value: 'kit{second_guess}'
-          },
-          {
-            actor: { id: 'mika', name: 'mika' },
-            id: 'attempt-1',
-            outcome: 'incorrect',
-            submittedAt: '2026-07-26T05:02:00.000Z',
-            value: 'kit{first_guess}'
-          }
-        ]
-      ]
-    ]);
-
-    renderWorkspace(
-      [createChallengeExperience(challenge())],
-      'challenge',
-      actions(),
-      undefined,
-      'details',
-      initialAttemptHistory
-    );
-
-    expect(screen.getByText('2 team attempts')).toBeVisible();
-    expect(screen.getByText('Last incorrect by simonfalke')).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'View attempts' }));
-
-    const dialog = await screen.findByRole('dialog', { name: 'Team attempts' });
-    expect(dialog.closest('.max-w-detail')).toBeInTheDocument();
-    expect(dialog).toHaveClass('w-full', 'max-w-detail');
-    expect(screen.getByText('Trace the request through the shrine.')).toBeVisible();
-    const ledger = within(dialog).getByRole('list', { name: 'Shared attempt history' });
-    expect(within(ledger).getAllByRole('listitem')).toHaveLength(2);
-    expect(within(ledger).getByText('kit{second_guess}')).toBeVisible();
-    expect(within(ledger).getByText('simonfalke')).toBeVisible();
   });
 
   it('changes selection and detail in the activation frame before URL synchronization', () => {
@@ -497,6 +459,17 @@ describe('ChallengeWorkspace', () => {
     expect(tabList).toHaveClass('px-3');
     expect(detailsTab).toHaveClass('px-3');
     expect(detailsTab).not.toHaveClass('first:pl-0');
+  });
+
+  it.each([
+    [0, '0 Solves'],
+    [1, '1 Solve'],
+    [2, '2 Solves']
+  ] as const)('labels %i recorded solves correctly', (solveCount, label) => {
+    renderWorkspace([createChallengeExperience(challenge(), { solveCount })], 'challenge');
+
+    const tab = screen.getByRole('tab', { name: label });
+    expect(within(tab).getByText(String(solveCount))).toHaveClass('font-semibold', 'tabular-nums');
   });
 
   it('packs solved progress segments before unsolved segments', () => {
@@ -623,9 +596,17 @@ describe('ChallengeWorkspace', () => {
     expect(solveStrip).toBeVisible();
     expect(solveStripRows).toHaveLength(4);
     for (const row of solveStripRows) {
-      expect(row).toHaveClass('flex', 'min-h-control', 'items-center');
+      expect(row).toHaveClass('flex', 'min-h-16', 'items-center');
       expect(row).not.toHaveClass('grid');
     }
+    for (const avatar of within(solveStrip).getAllByRole('img')) {
+      expect(avatar).toHaveClass('size-control', 'rounded-lg');
+    }
+    for (const identity of within(solveStrip).getAllByText('Foxden')) {
+      expect(identity).toHaveClass('text-sm', 'font-semibold');
+      expect(identity.nextElementSibling).toHaveClass('text-xs', 'font-normal');
+    }
+    expect(within(solveStrip).getAllByText(/^First blood \(.+\)$/).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Foxden').length).toBeGreaterThan(0);
     const selectedChallenge = screen.getByRole('link', { name: /Solved timeline/ });
     const firstBlood = within(selectedChallenge).getByText('First blood');
@@ -636,7 +617,7 @@ describe('ChallengeWorkspace', () => {
     expect(selectedChallenge.querySelector('.kitsune-collection-marker')).toBeInTheDocument();
     expect(firstBlood.querySelector('svg')).toHaveClass('-translate-y-optical');
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Solves 18' }));
+    fireEvent.click(screen.getByRole('tab', { name: '18 Solves' }));
 
     expect(window.localStorage.getItem('kitsune.challenge-workspace.v1.event')).toContain(
       '"tab":"solves"'
@@ -644,7 +625,7 @@ describe('ChallengeWorkspace', () => {
 
     const standings = screen.getByRole('list', { name: 'Solve standings' });
     expect(within(standings).getAllByRole('listitem').length).toBeGreaterThanOrEqual(18);
-    expect(within(standings).getAllByText('First blood').length).toBeGreaterThan(0);
+    expect(within(standings).getAllByText(/^First blood \(.+\)$/).length).toBeGreaterThan(0);
     expect(within(standings).getAllByText(/UTC/).length).toBeGreaterThan(0);
     expect(within(standings).getAllByText('Foxden').length).toBeGreaterThan(0);
   });
@@ -816,48 +797,57 @@ describe('ChallengeWorkspace', () => {
     ['edge-border', '.kitsune-solve-edge-frame'],
     ['screen-imprint', '.kitsune-solve-edge-wash'],
     ['field-wave', '.kitsune-solve-wave']
-  ] as const)('uses one first-blood gold state for the %s effect', async (effect, effectPart) => {
-    const workspaceActions = actions();
-    workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
-      attempts_remaining: 4,
-      awarded_points: 300,
-      challenge_id: 'challenge',
-      first_blood: true,
-      id: 'submission',
-      outcome: 'correct',
-      replayed: false,
-      submitted_at: '2026-07-23T12:00:00Z'
-    });
-    renderWorkspace(
-      [createChallengeExperience(challenge(), { solveCount: 0 })],
-      'challenge',
-      workspaceActions,
-      effect
-    );
-    const flagField = screen.getByLabelText('Flag');
-    vi.spyOn(flagField, 'getBoundingClientRect').mockReturnValue(new DOMRect(120, 600, 400, 44));
-    fireEvent.change(flagField, {
-      target: {
-        value: 'kit{first}'
+  ] as const)(
+    'uses the configured first-blood state for the %s effect',
+    async (effect, effectPart) => {
+      const workspaceActions = actions();
+      workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
+        attempts_remaining: 4,
+        awarded_points: 300,
+        challenge_id: 'challenge',
+        first_blood: true,
+        id: 'submission',
+        outcome: 'correct',
+        replayed: false,
+        submitted_at: '2026-07-23T12:00:00Z'
+      });
+      renderWorkspace(
+        [createChallengeExperience(challenge(), { solveCount: 0 })],
+        'challenge',
+        workspaceActions,
+        effect
+      );
+      const flagField = screen.getByLabelText('Flag');
+      vi.spyOn(flagField, 'getBoundingClientRect').mockReturnValue(new DOMRect(120, 600, 400, 44));
+      fireEvent.change(flagField, {
+        target: {
+          value: 'kit{first}'
+        }
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Submit flag' }));
+
+      await waitFor(() => {
+        expect(workspaceActions.submitAnswer).toHaveBeenCalledWith('challenge', 'kit{first}');
+      });
+
+      const solveEffect = document.querySelector('.kitsune-solve-effect');
+      const solvedMessage = screen.getByText('Challenge solved');
+      const solvedSummary = solvedMessage.closest('[data-first-blood]');
+      const selectedChallenge = screen.getByRole('link', { name: /Shrine gate/ });
+      expect(solveEffect).toHaveAttribute('data-first-blood', 'true');
+      expect(solveEffect?.querySelector(effectPart)).toBeInTheDocument();
+      if (effect === 'edge-border' || effect === 'screen-imprint') {
+        expect(solveEffect?.querySelector('.kitsune-solve-edge-frame')).toHaveAttribute(
+          'data-edge-color',
+          'rainbow'
+        );
       }
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Submit flag' }));
-
-    await waitFor(() => {
-      expect(workspaceActions.submitAnswer).toHaveBeenCalledWith('challenge', 'kit{first}');
-    });
-
-    const solveEffect = document.querySelector('.kitsune-solve-effect');
-    const solvedMessage = screen.getByText('Challenge solved');
-    const solvedSummary = solvedMessage.closest('[data-first-blood]');
-    const selectedChallenge = screen.getByRole('link', { name: /Shrine gate/ });
-    expect(solveEffect).toHaveAttribute('data-first-blood', 'true');
-    expect(solveEffect?.querySelector(effectPart)).toBeInTheDocument();
-    expect(solvedSummary).toHaveAttribute('data-first-blood', 'true');
-    expect(solvedMessage.parentElement).toHaveClass('text-first-blood-text');
-    expect(selectedChallenge).toHaveAttribute('data-blood', '1');
-    expect(screen.getAllByText('First blood').length).toBeGreaterThan(0);
-  });
+      expect(solvedSummary).toHaveAttribute('data-first-blood', 'true');
+      expect(solvedMessage.parentElement).toHaveClass('text-first-blood-text');
+      expect(selectedChallenge).toHaveAttribute('data-blood', '1');
+      expect(screen.getAllByText('First blood').length).toBeGreaterThan(0);
+    }
+  );
 
   it('supports disabling the flag success effect', async () => {
     const workspaceActions = actions();
@@ -911,26 +901,22 @@ describe('ChallengeWorkspace', () => {
       workspaceActions
     );
 
-    const errorSlot = screen
-      .getByLabelText('Flag')
-      .parentElement?.querySelector('[data-slot="field-error"]');
-    expect(errorSlot).toBeEmptyDOMElement();
+    const flagField = screen.getByLabelText('Flag');
+    expect(flagField.parentElement?.querySelector('[data-slot="field-error"]')).toBeNull();
 
-    fireEvent.change(screen.getByLabelText('Flag'), {
+    fireEvent.change(flagField, {
       target: {
         value: 'kit{incorrect}'
       }
     });
     fireEvent.click(screen.getByRole('button', { name: 'Submit flag' }));
 
-    expect(await screen.findByText('Incorrect. 3 attempts remain.')).toBeVisible();
-    expect(
-      screen.getByLabelText('Flag').parentElement?.querySelector('[data-slot="field-error"]')
-    ).toBe(errorSlot);
-    expect(screen.getByText('1 team attempt')).toBeVisible();
-    expect(screen.getByText('Last incorrect by Foxden')).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'View attempts' }));
-    expect(await screen.findByText('kit{incorrect}')).toBeVisible();
+    await waitFor(() => {
+      expect(workspaceActions.submitAnswer).toHaveBeenCalledWith('challenge', 'kit{incorrect}');
+    });
+    expect(screen.queryByText(/Incorrect/)).not.toBeInTheDocument();
+    expect(flagField).toHaveValue('kit{incorrect}');
+    expect(screen.queryByRole('button', { name: 'View attempts' })).not.toBeInTheDocument();
     expect(document.querySelector('.kitsune-solve-effect')).not.toBeInTheDocument();
   });
 });
