@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 import '../app.css';
 import { AppProviders } from './providers';
+import { themeBootstrapScript } from './theme-bootstrap';
 
 export const metadata: Metadata = {
   description: 'Operate and compete in capture the flag events.',
@@ -24,6 +25,9 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+      </head>
       <body>
         <AppProviders>{children}</AppProviders>
       </body>

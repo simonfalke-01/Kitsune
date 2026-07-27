@@ -5,7 +5,6 @@ import {
   type ReactNode,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useSyncExternalStore
 } from 'react';
@@ -21,6 +20,7 @@ interface ThemeContextValue {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 const themePreferenceKey = 'kitsune.theme';
 const themePreferenceEvent = 'kitsune-theme-preference';
+let volatileThemePreference: ThemePreference | null = null;
 
 interface ThemeProviderProps {
   children: ReactNode;
@@ -47,23 +47,38 @@ function getThemePreference(): ThemePreference {
     return 'system';
   }
 
-  const storedPreference = window.localStorage.getItem(themePreferenceKey);
-  return isThemePreference(storedPreference) ? storedPreference : 'system';
+  try {
+    const storedPreference = window.localStorage.getItem(themePreferenceKey);
+    return isThemePreference(storedPreference) ? storedPreference : 'system';
+  } catch {
+    return volatileThemePreference ?? 'system';
+  }
+}
+
+function applyResolvedTheme(): void {
+  const isDark = resolveDark(getThemePreference(), getSystemIsDark());
+  document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+  document.documentElement.classList.toggle('dark', isDark);
 }
 
 function subscribeToTheme(onStoreChange: () => void): () => void {
   const handleStorage = (event: StorageEvent) => {
     if (event.key === themePreferenceKey) {
+      applyResolvedTheme();
       onStoreChange();
     }
   };
+  const handlePreferenceChange = () => {
+    applyResolvedTheme();
+    onStoreChange();
+  };
 
   window.addEventListener('storage', handleStorage);
-  window.addEventListener(themePreferenceEvent, onStoreChange);
+  window.addEventListener(themePreferenceEvent, handlePreferenceChange);
 
   return () => {
     window.removeEventListener('storage', handleStorage);
-    window.removeEventListener(themePreferenceEvent, onStoreChange);
+    window.removeEventListener(themePreferenceEvent, handlePreferenceChange);
   };
 }
 
@@ -73,10 +88,14 @@ function getSystemIsDark(): boolean {
 
 function subscribeToSystemTheme(onStoreChange: () => void): () => void {
   const media = window.matchMedia('(prefers-color-scheme: dark)');
-  media.addEventListener('change', onStoreChange);
+  const handleChange = () => {
+    applyResolvedTheme();
+    onStoreChange();
+  };
+  media.addEventListener('change', handleChange);
 
   return () => {
-    media.removeEventListener('change', onStoreChange);
+    media.removeEventListener('change', handleChange);
   };
 }
 
@@ -89,13 +108,14 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   const systemIsDark = useSyncExternalStore(subscribeToSystemTheme, getSystemIsDark, () => false);
   const isDark = resolveDark(preference, systemIsDark);
 
-  useEffect(() => {
-    document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
-    document.documentElement.classList.toggle('dark', isDark);
-  }, [isDark]);
-
   const setPreference = useCallback((nextPreference: ThemePreference) => {
-    window.localStorage.setItem(themePreferenceKey, nextPreference);
+    try {
+      window.localStorage.setItem(themePreferenceKey, nextPreference);
+      volatileThemePreference = null;
+    } catch {
+      volatileThemePreference = nextPreference;
+    }
+
     window.dispatchEvent(new Event(themePreferenceEvent));
   }, []);
 

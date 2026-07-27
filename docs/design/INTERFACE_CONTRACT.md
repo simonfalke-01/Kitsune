@@ -156,6 +156,9 @@ reusable failure mode, add the general rule here before closing the issue.
   the raised surface while retaining a pastel register. Solve-effect frames use
   the stronger achievement edge role; dark mode keeps its independently tuned
   surface and edge values.
+- Resolve stored or system theme preference in the document head before first
+  paint. Hydration must not be the first point at which the root theme class is
+  applied, and it must not temporarily overwrite the pre-paint result.
 - Scrollbar tracks stay transparent. A pane may reveal its thumb while the user
   scrolls, then hide it after scrolling stops. Do not reserve a permanent gray
   track at the viewport edge.
