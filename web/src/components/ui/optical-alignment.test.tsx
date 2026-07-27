@@ -29,7 +29,10 @@ describe('optical vertical alignment', () => {
     );
     expect(screen.getByRole('textbox', { name: 'Team name' })).toHaveClass('kitsune-optical-py-2');
     expect(screen.getByText('Ready')).toHaveClass('kitsune-optical-py-1');
-    expect(screen.getByRole('tab', { name: 'Details' })).toHaveClass('kitsune-optical-py-3');
+    expect(screen.getByRole('tab', { name: 'Details' })).toHaveClass(
+      'kitsune-optical-py-3',
+      'cursor-pointer'
+    );
   });
 
   it('keeps prose controls symmetric and offsets only centered text', () => {

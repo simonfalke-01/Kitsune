@@ -281,6 +281,8 @@ reusable failure mode, add the general rule here before closing the issue.
   complete form from one row action.
 - Hover, focus, and selected surfaces retain internal padding and a stable hit
   area.
+- Tabs and other enabled pressable controls use the pointer cursor on web;
+  selectable text must not visually masquerade as their interaction model.
 - Controlled values are initialized from server data during the first render.
   Do not rely on an effect to repair hydration.
 

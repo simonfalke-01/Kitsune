@@ -48,11 +48,11 @@ export function TabsTab({ className, ...props }: TabProps) {
       {...props}
       className={cx(
         'shrink-0 border-b-2 border-transparent',
-        'kitsune-optical-py-3 px-3 text-sm font-medium text-text-muted outline-none',
+        'kitsune-optical-py-3 cursor-pointer px-3 text-sm font-medium text-text-muted outline-none',
         'transition-colors duration-fast ease-out-quart',
         'hover:text-text',
         'selected:border-accent selected:text-text',
-        'disabled:text-text-subtle',
+        'disabled:cursor-default disabled:text-text-subtle',
         focusRing,
         typeof className === 'string' ? className : undefined
       )}
