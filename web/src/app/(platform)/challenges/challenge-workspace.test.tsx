@@ -100,9 +100,16 @@ describe('ChallengeWorkspace', () => {
     expect(screen.getByRole('heading', { name: 'Foxden Invitational' })).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Your run' })).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Around your rank' })).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'Challenge field' })).toBeVisible();
+    const challengeFieldHeading = screen.getByRole('heading', { name: 'Challenge field' });
+    const challengeField = screen.getByRole('region', { name: 'Challenge field' });
+    expect(challengeFieldHeading).toBeVisible();
+    expect(challengeFieldHeading.parentElement).toHaveClass('px-3');
     expect(screen.getByText('18 recorded solves')).toBeVisible();
-    expect(screen.getByLabelText('0 of 1 challenges solved')).toBeVisible();
+    expect(screen.getByLabelText('0 of 1 challenges solved')).toHaveClass('px-3');
+    expect(within(challengeField).getByText('Progress').parentElement).toHaveClass('grid-cols-12');
+    expect(screen.getByLabelText('0 of 1 Web challenges solved').parentElement).toHaveClass(
+      'xl:col-span-7'
+    );
     expect(
       within(screen.getByRole('region', { name: 'Your run' })).getAllByRole('link', {
         name: 'Open Shrine gate, 300 pts, 18 solves, Unsolved'

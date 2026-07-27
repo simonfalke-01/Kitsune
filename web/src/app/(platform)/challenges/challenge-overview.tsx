@@ -134,7 +134,7 @@ export function ChallengeOverview({
         </section>
 
         <section aria-labelledby="category-progress-title" className="grid gap-4">
-          <div className="flex flex-wrap items-baseline justify-between gap-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-4 px-3">
             <h3 className="m-0 text-base font-semibold text-text" id="category-progress-title">
               Challenge field
             </h3>
@@ -143,14 +143,15 @@ export function ChallengeOverview({
 
           <WeightedSegmentBar
             ariaLabel={`${progress.solved} of ${progress.total} challenges solved`}
+            className="px-3"
             items={segmentItems(challenges, pointWeights)}
           />
 
-          <div className="hidden grid-cols-6 gap-4 px-3 text-xs text-text-subtle xl:grid">
+          <div className="hidden grid-cols-12 gap-4 px-3 text-xs text-text-subtle xl:grid">
             <span className="col-span-2">Category</span>
-            <span className="col-span-2">Progress</span>
+            <span className="col-span-7">Progress</span>
             <span className="text-right">Points</span>
-            <span className="text-right">Field solves</span>
+            <span className="col-span-2 text-right">Field solves</span>
           </div>
 
           <ul className="m-0 grid list-none gap-0 p-0">
@@ -167,13 +168,13 @@ export function ChallengeOverview({
 
               return (
                 <li
-                  className="grid grid-cols-2 items-center gap-x-4 gap-y-2 px-3 py-3 xl:grid-cols-6"
+                  className="grid grid-cols-2 items-center gap-x-4 gap-y-2 px-3 py-3 xl:grid-cols-12"
                   key={group.category}
                 >
                   <strong className="min-w-0 text-sm font-semibold xl:col-span-2">
                     <ChallengeCategoryLabel category={group.category} />
                   </strong>
-                  <div className="flex min-w-0 items-center gap-3 xl:col-span-2">
+                  <div className="flex min-w-0 items-center gap-3 xl:col-span-7">
                     <WeightedSegmentBar
                       ariaLabel={`${group.solved} of ${group.challenges.length} ${group.category} challenges solved`}
                       className="min-w-0 flex-1"
@@ -186,10 +187,10 @@ export function ChallengeOverview({
                       {group.solved} / {group.challenges.length}
                     </span>
                   </div>
-                  <span className="text-sm tabular-nums text-text-muted xl:text-right">
+                  <span className="text-sm tabular-nums text-text-muted xl:col-span-1 xl:text-right">
                     {availablePoints.toLocaleString()} pts
                   </span>
-                  <span className="text-right text-sm tabular-nums text-text-muted">
+                  <span className="text-right text-sm tabular-nums text-text-muted xl:col-span-2">
                     {categorySolves.toLocaleString()} {categorySolves === 1 ? 'solve' : 'solves'}
                   </span>
                 </li>
