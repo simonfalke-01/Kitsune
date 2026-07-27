@@ -4,21 +4,9 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
 
 import { createChallengeDemo, createChallengeDemoActions } from './challenge-demo';
+import { challengeDetailTab, challengeWorkspacePath } from './challenge-workspace-memory';
 import { ChallengeWorkspace } from './challenge-workspace';
 import { challengeSelection } from '@/lib/challenges';
-
-function challengePath(pathname: string, searchParams: URLSearchParams, challengeId?: string) {
-  const next = new URLSearchParams(searchParams);
-
-  if (challengeId) {
-    next.set('challenge', challengeId);
-  } else {
-    next.delete('challenge');
-  }
-
-  const query = next.toString();
-  return query ? `${pathname}?${query}` : pathname;
-}
 
 export function ChallengeBoard() {
   const pathname = usePathname();
@@ -27,6 +15,7 @@ export function ChallengeBoard() {
   const resolvedPathname = pathname ?? '/challenges';
   const resolvedSearchParams = searchParams?.toString() ?? '';
   const requestedChallengeId = challengeSelection(new URLSearchParams(resolvedSearchParams));
+  const requestedTab = challengeDetailTab(new URLSearchParams(resolvedSearchParams).get('tab'));
   const challenges = useMemo(() => createChallengeDemo('demo-event'), []);
   const actions = useMemo(() => createChallengeDemoActions(challenges), [challenges]);
   const selectedChallengeId = requestedChallengeId
@@ -46,18 +35,41 @@ export function ChallengeBoard() {
       eventId="demo-event"
       eventName="Kitsune Open 2026"
       eventStartedAt="2026-07-26T04:00:00Z"
-      getChallengeHref={(challengeId) => {
-        return challengePath(
+      getChallengeHref={(challengeId, tab) => {
+        return challengeWorkspacePath(
           resolvedPathname,
           new URLSearchParams(resolvedSearchParams),
-          challengeId
+          challengeId,
+          tab
         );
       }}
       onClearSelection={() => {
-        router.push(challengePath(resolvedPathname, new URLSearchParams(resolvedSearchParams)));
+        router.push(
+          challengeWorkspacePath(resolvedPathname, new URLSearchParams(resolvedSearchParams))
+        );
       }}
-      onSelectChallenge={() => undefined}
+      onSelectChallenge={(challengeId, tab) => {
+        router.push(
+          challengeWorkspacePath(
+            resolvedPathname,
+            new URLSearchParams(resolvedSearchParams),
+            challengeId,
+            tab
+          )
+        );
+      }}
+      onSelectTab={(challengeId, tab) => {
+        router.push(
+          challengeWorkspacePath(
+            resolvedPathname,
+            new URLSearchParams(resolvedSearchParams),
+            challengeId,
+            tab
+          )
+        );
+      }}
       selectedChallengeId={selectedChallengeId}
+      selectedChallengeTab={requestedTab}
     />
   );
 }

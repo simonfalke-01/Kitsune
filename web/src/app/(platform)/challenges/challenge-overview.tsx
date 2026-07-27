@@ -22,7 +22,7 @@ import {
 
 interface ChallengeOverviewProps {
   challenges: readonly ChallengeExperience[];
-  getChallengeHref?: (challengeId: string) => string;
+  getChallengeHref?: (challengeId: string) => string | undefined;
   onSelectChallenge?: (challengeId: string, trigger: HTMLElement) => void;
   solveContexts: ReadonlyMap<string, ChallengeSolveContext>;
   standing: ChallengeEventStandingStub;

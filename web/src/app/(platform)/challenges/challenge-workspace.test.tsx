@@ -2,6 +2,12 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FlagSubmitSuccessEffect } from './challenge-presentation';
+import {
+  rememberChallengeListScroll,
+  rememberChallengeScroll,
+  rememberChallengeTab,
+  type ChallengeDetailTab
+} from './challenge-workspace-memory';
 import { ChallengeWorkspace, type ChallengeWorkspaceActions } from './challenge-workspace';
 import type { ChallengeSummary } from '@/lib/api/client';
 import { createChallengeExperience, type ChallengeExperience } from '@/lib/challenges';
@@ -59,7 +65,8 @@ function renderWorkspace(
   challenges: ChallengeExperience[],
   selectedChallengeId: string | null,
   workspaceActions = actions(),
-  flagSubmitSuccessEffect?: FlagSubmitSuccessEffect
+  flagSubmitSuccessEffect?: FlagSubmitSuccessEffect,
+  selectedChallengeTab: ChallengeDetailTab = 'details'
 ) {
   render(
     <ChallengeWorkspace
@@ -73,6 +80,7 @@ function renderWorkspace(
       onClearSelection={vi.fn()}
       onSelectChallenge={vi.fn()}
       selectedChallengeId={selectedChallengeId}
+      selectedChallengeTab={selectedChallengeTab}
     />
   );
 
@@ -182,6 +190,33 @@ describe('ChallengeWorkspace', () => {
 
     expect(within(challengeList).getByRole('link', { name: /Web trail/ })).toBeVisible();
     expect(within(challengeList).getByRole('link', { name: /Crypto trail/ })).toBeVisible();
+  });
+
+  it('restores the challenge list, selected tab, and detail scroll positions', async () => {
+    rememberChallengeListScroll('event', 84);
+    rememberChallengeTab('event', 'challenge', 'solves');
+    rememberChallengeScroll('event', 'challenge', 'solves', 220);
+
+    renderWorkspace(
+      [createChallengeExperience(challenge(), { solveCount: 4 })],
+      'challenge',
+      actions(),
+      undefined,
+      'solves'
+    );
+
+    const challengeList = screen.getByRole('region', { name: 'Challenge list' });
+    const listScrollOwner = challengeList.parentElement;
+    const selectedPanel = screen.getByRole('tabpanel');
+
+    await waitFor(() => {
+      expect(screen.getByRole('tab', { name: 'Solves 4' })).toHaveAttribute(
+        'aria-selected',
+        'true'
+      );
+      expect(listScrollOwner?.scrollTop).toBe(84);
+      expect(selectedPanel.scrollTop).toBe(220);
+    });
   });
 
   it('changes selection and detail in the activation frame before URL synchronization', () => {
@@ -375,6 +410,10 @@ describe('ChallengeWorkspace', () => {
     expect(firstBlood.querySelector('svg')).toHaveClass('-translate-y-optical');
 
     fireEvent.click(screen.getByRole('tab', { name: 'Solves 18' }));
+
+    expect(window.localStorage.getItem('kitsune.challenge-workspace.v1.event')).toContain(
+      '"tab":"solves"'
+    );
 
     const standings = screen.getByRole('list', { name: 'Solve standings' });
     expect(within(standings).getAllByRole('listitem').length).toBeGreaterThanOrEqual(18);

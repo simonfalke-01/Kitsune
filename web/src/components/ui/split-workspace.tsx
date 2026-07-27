@@ -3,7 +3,9 @@
 import {
   type CSSProperties,
   type PointerEvent as ReactPointerEvent,
+  type RefObject,
   type ReactNode,
+  type UIEventHandler,
   useCallback,
   useRef,
   useState,
@@ -78,15 +80,19 @@ interface UncontrolledSplitState {
 interface ScrollPaneProps {
   children: ReactNode;
   className?: string;
+  onScroll?: UIEventHandler<HTMLDivElement>;
+  scrollRef?: RefObject<HTMLDivElement | null>;
 }
 
-function ScrollPane({ children, className }: ScrollPaneProps) {
+function ScrollPane({ children, className, onScroll, scrollRef }: ScrollPaneProps) {
   return (
     <div
       className={cx(
         'kitsune-scroll-region min-h-0 min-w-0 overflow-y-auto overscroll-contain',
         className
       )}
+      onScroll={onScroll}
+      ref={scrollRef}
     >
       {children}
     </div>
@@ -99,8 +105,10 @@ export interface SplitWorkspaceProps {
   className?: string;
   defaultValue?: number;
   left: ReactNode;
+  leftScrollRef?: RefObject<HTMLDivElement | null>;
   maximum?: number;
   minimum?: number;
+  onLeftScroll?: UIEventHandler<HTMLDivElement>;
   onValueChange?: (value: number) => void;
   persistenceKey?: string;
   right: ReactNode;
@@ -113,8 +121,10 @@ export function SplitWorkspace({
   className,
   defaultValue = 40,
   left,
+  leftScrollRef,
   maximum = 52,
   minimum = 32,
+  onLeftScroll,
   onValueChange,
   persistenceKey,
   right,
@@ -222,7 +232,9 @@ export function SplitWorkspace({
       ref={workspaceRef}
       style={style}
     >
-      <ScrollPane>{left}</ScrollPane>
+      <ScrollPane onScroll={onLeftScroll} scrollRef={leftScrollRef}>
+        {left}
+      </ScrollPane>
       <div className="min-h-0 min-w-0 overflow-hidden">{right}</div>
       <Slider
         aria-label={ariaLabel}

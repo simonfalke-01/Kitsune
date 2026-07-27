@@ -106,7 +106,7 @@ function writePreferences(eventId: string, preferences: ChallengeCollectionPrefe
 interface ChallengeCollectionProps {
   challenges: ChallengeExperience[];
   eventId: string;
-  getChallengeHref?: (challengeId: string) => string;
+  getChallengeHref?: (challengeId: string) => string | undefined;
   onSelectChallenge?: (challengeId: string, trigger: HTMLElement) => void;
   selectedChallengeId: string | null;
   solveContexts: ReadonlyMap<string, ChallengeSolveContext>;

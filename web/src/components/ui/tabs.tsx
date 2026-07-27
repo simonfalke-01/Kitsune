@@ -1,5 +1,6 @@
 'use client';
 
+import type { Ref } from 'react';
 import {
   Tab,
   TabList,
@@ -59,7 +60,11 @@ export function TabsTab({ className, ...props }: TabProps) {
   );
 }
 
-export function TabsPanel({ className, ...props }: TabPanelProps) {
+export interface TabsPanelProps extends TabPanelProps {
+  panelRef?: Ref<HTMLDivElement>;
+}
+
+export function TabsPanel({ className, panelRef, ...props }: TabsPanelProps) {
   return (
     <TabPanel
       {...props}
@@ -68,6 +73,7 @@ export function TabsPanel({ className, ...props }: TabPanelProps) {
         focusRing,
         typeof className === 'string' ? className : undefined
       )}
+      ref={panelRef}
     />
   );
 }

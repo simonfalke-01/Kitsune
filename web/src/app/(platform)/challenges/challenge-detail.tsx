@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, Trophy } from 'lucide-react';
-import { useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 import { ChallengeCategoryLabel } from './challenge-category';
 import { ChallengeHints } from './challenge-hints';
@@ -16,6 +16,13 @@ import {
 } from './challenge-success-effect';
 import { ChallengeSurvey } from './challenge-survey';
 import type { ChallengeWorkspaceActions } from './challenge-types';
+import {
+  challengeDetailTab,
+  challengeWorkspaceMemorySnapshot,
+  parseChallengeWorkspaceMemory,
+  rememberChallengeScroll,
+  type ChallengeDetailTab
+} from './challenge-workspace-memory';
 import { ChallengeWriteup } from './challenge-writeup';
 import {
   Alert,
@@ -38,19 +45,78 @@ import {
 interface ChallengeDetailProps {
   actions: ChallengeWorkspaceActions;
   challenge: ChallengeExperience;
+  eventId: string;
   flagSubmitSuccessEffect: FlagSubmitSuccessEffect;
   onChallengeChanged?: () => Promise<void>;
   onSolved?: (challengeId: string, solvedAt: string) => void;
+  onTabChange: (tab: ChallengeDetailTab) => void;
+  selectedTab: ChallengeDetailTab;
   showTitle?: boolean;
   solveContext: ChallengeSolveContext;
+}
+
+interface RememberedTabPanelProps {
+  challengeId: string;
+  children: ReactNode;
+  eventId: string;
+  tab: ChallengeDetailTab;
+}
+
+function RememberedTabPanel({ challengeId, children, eventId, tab }: RememberedTabPanelProps) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const scrollTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const panel = panelRef.current;
+
+    if (panel) {
+      const memory = parseChallengeWorkspaceMemory(challengeWorkspaceMemorySnapshot(eventId));
+      panel.scrollTop = memory.challenges[challengeId]?.scrollTop[tab] ?? 0;
+    }
+
+    return () => {
+      if (scrollTimerRef.current) {
+        window.clearTimeout(scrollTimerRef.current);
+      }
+
+      if (panel) {
+        rememberChallengeScroll(eventId, challengeId, tab, panel.scrollTop);
+      }
+    };
+  }, [challengeId, eventId, tab]);
+
+  return (
+    <TabsPanel
+      className="kitsune-scroll-region min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-none"
+      id={tab}
+      onScroll={(event) => {
+        if (scrollTimerRef.current) {
+          window.clearTimeout(scrollTimerRef.current);
+        }
+
+        const scrollTop = event.currentTarget.scrollTop;
+        scrollTimerRef.current = window.setTimeout(() => {
+          rememberChallengeScroll(eventId, challengeId, tab, scrollTop);
+          scrollTimerRef.current = null;
+        }, 120);
+      }}
+      panelRef={panelRef}
+      shouldForceMount
+    >
+      {children}
+    </TabsPanel>
+  );
 }
 
 export function ChallengeDetail({
   actions,
   challenge,
+  eventId,
   flagSubmitSuccessEffect,
   onChallengeChanged,
   onSolved,
+  onTabChange,
+  selectedTab,
   showTitle = true,
   solveContext
 }: ChallengeDetailProps) {
@@ -183,7 +249,13 @@ export function ChallengeDetail({
         </div>
       </header>
 
-      <Tabs defaultSelectedKey="details" layout="workspace">
+      <Tabs
+        layout="workspace"
+        onSelectionChange={(key) => {
+          onTabChange(challengeDetailTab(key));
+        }}
+        selectedKey={selectedTab}
+      >
         <TabsList aria-label="Challenge sections" className="shrink-0 border-b-0 px-6">
           <TabsTab className="first:pl-0" id="details">
             Details
@@ -195,11 +267,7 @@ export function ChallengeDetail({
           ) : null}
         </TabsList>
 
-        <TabsPanel
-          className="kitsune-scroll-region min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-none"
-          id="details"
-          shouldForceMount
-        >
+        <RememberedTabPanel challengeId={challenge.id} eventId={eventId} tab="details">
           <div className="grid w-full content-start gap-6 px-6 py-6">
             <section
               aria-labelledby={`description-${challenge.id}`}
@@ -303,23 +371,15 @@ export function ChallengeDetail({
               </section>
             ) : null}
           </div>
-        </TabsPanel>
+        </RememberedTabPanel>
 
-        <TabsPanel
-          className="kitsune-scroll-region min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-none"
-          id="solves"
-          shouldForceMount
-        >
+        <RememberedTabPanel challengeId={challenge.id} eventId={eventId} tab="solves">
           <div className="w-full px-6 py-6">
             <ChallengeSolves context={solveContext} />
           </div>
-        </TabsPanel>
+        </RememberedTabPanel>
 
-        <TabsPanel
-          className="kitsune-scroll-region min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-none"
-          id="hints"
-          shouldForceMount
-        >
+        <RememberedTabPanel challengeId={challenge.id} eventId={eventId} tab="hints">
           <div className="w-full px-6 py-6">
             <ChallengeHints
               challenge={challenge}
@@ -327,14 +387,10 @@ export function ChallengeDetail({
               unlockHint={actions.unlockHint}
             />
           </div>
-        </TabsPanel>
+        </RememberedTabPanel>
 
         {isSolved && challenge.writeups_enabled && actions.loadWriteup && actions.saveWriteup ? (
-          <TabsPanel
-            className="kitsune-scroll-region min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-none"
-            id="writeup"
-            shouldForceMount
-          >
+          <RememberedTabPanel challengeId={challenge.id} eventId={eventId} tab="writeup">
             <div className="w-full px-6 py-6">
               <ChallengeWriteup
                 challengeId={challenge.id}
@@ -343,7 +399,7 @@ export function ChallengeDetail({
                 showTitle={false}
               />
             </div>
-          </TabsPanel>
+          </RememberedTabPanel>
         ) : null}
       </Tabs>
 

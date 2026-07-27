@@ -161,6 +161,14 @@ reusable failure mode, add the general rule here before closing the issue.
 - Selection feedback is optimistic. A challenge row marks itself selected and
   changes the detail in the activation frame; URL synchronization must never
   sit on the critical feedback path.
+- Challenge selection and non-default detail tabs are represented in the URL.
+  Back, forward, refresh, and direct links restore the visible challenge and
+  tab; clearing selection removes both parameters without disturbing unrelated
+  query state.
+- Challenge workspace memory is event-scoped. It preserves the collection
+  position plus each challenge's last available tab and per-tab detail scroll
+  position. Restoring one value must not reset the others, and malformed or
+  unavailable stored values fall back safely.
 - First blood is an achievement state, not a warning. Its sidebar wash, solved
   confirmation, toast, edge frame, screen imprint, and field wave all consume
   the shared first-blood gold role. Ordinary solves continue to use success

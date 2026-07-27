@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 
 import { ChallengeCollection } from './challenge-collection';
 import { ChallengeDetail } from './challenge-detail';
@@ -10,6 +10,15 @@ import {
   challengePresentationSettingsStub,
   type FlagSubmitSuccessEffect
 } from './challenge-presentation';
+import {
+  challengeWorkspaceMemorySnapshot,
+  getServerChallengeWorkspaceMemorySnapshot,
+  parseChallengeWorkspaceMemory,
+  rememberChallengeListScroll,
+  rememberChallengeTab,
+  subscribeToChallengeWorkspaceMemory,
+  type ChallengeDetailTab
+} from './challenge-workspace-memory';
 import {
   appendCurrentCompetitorSolve,
   createChallengeEventStandingStub,
@@ -45,16 +54,40 @@ export interface ChallengeWorkspaceProps {
   eventName: string;
   eventStartedAt?: string | null;
   flagSubmitSuccessEffect?: FlagSubmitSuccessEffect;
-  getChallengeHref?: (challengeId: string) => string;
+  getChallengeHref?: (challengeId: string, tab: ChallengeDetailTab) => string;
   onChallengeChanged?: () => Promise<void>;
   onClearSelection: () => void;
-  onSelectChallenge?: (challengeId: string) => void;
+  onSelectChallenge?: (challengeId: string, tab: ChallengeDetailTab) => void;
+  onSelectTab?: (challengeId: string, tab: ChallengeDetailTab) => void;
   selectedChallengeId: string | null;
+  selectedChallengeTab?: ChallengeDetailTab;
 }
 
 interface ImmediateSelection {
   current: string | null;
+  sourceTab: ChallengeDetailTab;
   source: string | null;
+  tab: ChallengeDetailTab;
+}
+
+const scrollMemoryDelay = 120;
+
+function availableTab(
+  challenge: ChallengeExperience | null | undefined,
+  requestedTab: ChallengeDetailTab,
+  actions: ChallengeWorkspaceActions
+): ChallengeDetailTab {
+  if (
+    requestedTab === 'writeup' &&
+    (!challenge?.solved ||
+      !challenge.writeups_enabled ||
+      !actions.loadWriteup ||
+      !actions.saveWriteup)
+  ) {
+    return 'details';
+  }
+
+  return requestedTab;
 }
 
 export function ChallengeWorkspace({
@@ -69,25 +102,50 @@ export function ChallengeWorkspace({
   onChallengeChanged,
   onClearSelection,
   onSelectChallenge,
-  selectedChallengeId
+  onSelectTab,
+  selectedChallengeId,
+  selectedChallengeTab = 'details'
 }: ChallengeWorkspaceProps) {
   const isDesktop = useSyncExternalStore(subscribeToDesktop, getIsDesktop, () => true);
+  const getMemorySnapshot = useCallback(() => challengeWorkspaceMemorySnapshot(eventId), [eventId]);
+  const memorySnapshot = useSyncExternalStore(
+    subscribeToChallengeWorkspaceMemory,
+    getMemorySnapshot,
+    getServerChallengeWorkspaceMemorySnapshot
+  );
+  const workspaceMemory = useMemo(
+    () => parseChallengeWorkspaceMemory(memorySnapshot),
+    [memorySnapshot]
+  );
+  const requestedChallenge = challenges.find((challenge) => challenge.id === selectedChallengeId);
+  const requestedTab = availableTab(requestedChallenge, selectedChallengeTab, actions);
   const [immediateSelection, setImmediateSelection] = useState<ImmediateSelection>({
     current: selectedChallengeId,
-    source: selectedChallengeId
+    source: selectedChallengeId,
+    sourceTab: requestedTab,
+    tab: requestedTab
   });
   const [optimisticSolveTimes, setOptimisticSolveTimes] = useState<ReadonlyMap<string, string>>(
     new Map()
   );
   let immediateSelectedChallengeId = immediateSelection.current;
+  let immediateSelectedTab = immediateSelection.tab;
 
-  if (immediateSelection.source !== selectedChallengeId) {
+  if (
+    immediateSelection.source !== selectedChallengeId ||
+    immediateSelection.sourceTab !== requestedTab
+  ) {
     immediateSelectedChallengeId = selectedChallengeId;
+    immediateSelectedTab = requestedTab;
     setImmediateSelection({
       current: selectedChallengeId,
-      source: selectedChallengeId
+      source: selectedChallengeId,
+      sourceTab: requestedTab,
+      tab: requestedTab
     });
   }
+  const collectionScrollRef = useRef<HTMLDivElement>(null);
+  const collectionScrollTimerRef = useRef<number | null>(null);
   const restoreSelectionFocusRef = useRef(false);
   const selectionTriggerRef = useRef<HTMLElement | null>(null);
   const displayedChallenges = useMemo(() => {
@@ -125,6 +183,29 @@ export function ChallengeWorkspace({
   }, [currentCompetitor, displayedChallenges, eventId, eventStartedAt]);
   const selectedChallenge =
     displayedChallenges.find((challenge) => challenge.id === immediateSelectedChallengeId) ?? null;
+  immediateSelectedTab = availableTab(selectedChallenge, immediateSelectedTab, actions);
+
+  useEffect(() => {
+    const scrollOwner = collectionScrollRef.current;
+
+    if (scrollOwner) {
+      scrollOwner.scrollTop = workspaceMemory.listScrollTop;
+    }
+  }, [eventId, isDesktop, workspaceMemory.listScrollTop]);
+
+  useEffect(() => {
+    const scrollOwner = collectionScrollRef.current;
+
+    return () => {
+      if (collectionScrollTimerRef.current) {
+        window.clearTimeout(collectionScrollTimerRef.current);
+      }
+
+      if (scrollOwner) {
+        rememberChallengeListScroll(eventId, scrollOwner.scrollTop);
+      }
+    };
+  }, [eventId, isDesktop]);
 
   useEffect(() => {
     if (selectedChallengeId || !restoreSelectionFocusRef.current) {
@@ -139,14 +220,55 @@ export function ChallengeWorkspace({
 
   function closeDetail() {
     restoreSelectionFocusRef.current = true;
-    setImmediateSelection({ current: null, source: selectedChallengeId });
+    setImmediateSelection({
+      current: null,
+      source: selectedChallengeId,
+      sourceTab: selectedChallengeTab,
+      tab: 'details'
+    });
     onClearSelection();
   }
 
   function selectChallenge(challengeId: string, trigger: HTMLElement) {
+    const challenge = displayedChallenges.find((candidate) => candidate.id === challengeId);
+    const tab = availableTab(
+      challenge,
+      workspaceMemory.challenges[challengeId]?.tab ?? 'details',
+      actions
+    );
     selectionTriggerRef.current = trigger;
-    setImmediateSelection({ current: challengeId, source: selectedChallengeId });
-    onSelectChallenge?.(challengeId);
+    setImmediateSelection({
+      current: challengeId,
+      source: selectedChallengeId,
+      sourceTab: selectedChallengeTab,
+      tab
+    });
+    onSelectChallenge?.(challengeId, tab);
+  }
+
+  function selectTab(tab: ChallengeDetailTab) {
+    if (!selectedChallenge) {
+      return;
+    }
+
+    const resolvedTab = availableTab(selectedChallenge, tab, actions);
+    rememberChallengeTab(eventId, selectedChallenge.id, resolvedTab);
+    setImmediateSelection((current) => ({
+      ...current,
+      tab: resolvedTab
+    }));
+    onSelectTab?.(selectedChallenge.id, resolvedTab);
+  }
+
+  function rememberCollectionScroll(scrollTop: number) {
+    if (collectionScrollTimerRef.current) {
+      window.clearTimeout(collectionScrollTimerRef.current);
+    }
+
+    collectionScrollTimerRef.current = window.setTimeout(() => {
+      rememberChallengeListScroll(eventId, scrollTop);
+      collectionScrollTimerRef.current = null;
+    }, scrollMemoryDelay);
   }
 
   function handleSolved(challengeId: string, solvedAt: string) {
@@ -161,7 +283,15 @@ export function ChallengeWorkspace({
     <ChallengeCollection
       challenges={displayedChallenges}
       eventId={eventId}
-      getChallengeHref={getChallengeHref}
+      getChallengeHref={(challengeId) => {
+        const challenge = displayedChallenges.find((candidate) => candidate.id === challengeId);
+        const tab = availableTab(
+          challenge,
+          workspaceMemory.challenges[challengeId]?.tab ?? 'details',
+          actions
+        );
+        return getChallengeHref?.(challengeId, tab);
+      }}
       onSelectChallenge={(challengeId, trigger) => {
         selectChallenge(challengeId, trigger);
       }}
@@ -173,16 +303,27 @@ export function ChallengeWorkspace({
     <ChallengeDetail
       actions={actions}
       challenge={selectedChallenge}
+      eventId={eventId}
       flagSubmitSuccessEffect={flagSubmitSuccessEffect}
       key={selectedChallenge.id}
       onChallengeChanged={onChallengeChanged}
       onSolved={handleSolved}
+      onTabChange={selectTab}
+      selectedTab={immediateSelectedTab}
       solveContext={solveContexts.get(selectedChallenge.id)!}
     />
   ) : (
     <ChallengeOverview
       challenges={displayedChallenges}
-      getChallengeHref={getChallengeHref}
+      getChallengeHref={(challengeId) => {
+        const challenge = displayedChallenges.find((candidate) => candidate.id === challengeId);
+        const tab = availableTab(
+          challenge,
+          workspaceMemory.challenges[challengeId]?.tab ?? 'details',
+          actions
+        );
+        return getChallengeHref?.(challengeId, tab);
+      }}
       onSelectChallenge={(challengeId, trigger) => {
         selectChallenge(challengeId, trigger);
       }}
@@ -208,12 +349,22 @@ export function ChallengeWorkspace({
             left={collection}
             maximum={48}
             minimum={24}
+            leftScrollRef={collectionScrollRef}
+            onLeftScroll={(event) => {
+              rememberCollectionScroll(event.currentTarget.scrollTop);
+            }}
             persistenceKey="challenge-list"
             right={detail}
           />
         </div>
       ) : (
-        <div className="min-h-0 flex-1 overflow-y-auto rounded-md bg-surface-raised">
+        <div
+          className="min-h-0 flex-1 overflow-y-auto rounded-md bg-surface-raised"
+          onScroll={(event) => {
+            rememberCollectionScroll(event.currentTarget.scrollTop);
+          }}
+          ref={collectionScrollRef}
+        >
           {collection}
         </div>
       )}
@@ -231,10 +382,13 @@ export function ChallengeWorkspace({
           <ChallengeDetail
             actions={actions}
             challenge={selectedChallenge}
+            eventId={eventId}
             flagSubmitSuccessEffect={flagSubmitSuccessEffect}
             key={selectedChallenge.id}
             onChallengeChanged={onChallengeChanged}
             onSolved={handleSolved}
+            onTabChange={selectTab}
+            selectedTab={immediateSelectedTab}
             showTitle={false}
             solveContext={solveContexts.get(selectedChallenge.id)!}
           />

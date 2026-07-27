@@ -206,6 +206,12 @@ without losing competition context.
 
 - The document and workspace root never scroll. The collection and active
   right-pane body are the desktop scroll owners.
+- Challenge selection and the active detail tab are URL state. Browser Back,
+  forward, refresh, and copied links must restore the same visible object and
+  section without making URL synchronization delay immediate selection.
+- Remember the collection scroll position and each challenge's last tab and
+  per-tab detail position within the current event. Returning to prior work
+  must restore context without moving a different event's workspace.
 - The splitter is a direct-manipulation control. Its hit target is forgiving,
   its affordance is visible without guessing, dragging updates continuously,
   and arrow keys provide an equivalent path.
