@@ -642,10 +642,8 @@
   }
 
   .kitsune-solve-edge-frame {
-    --solve-effect-top-radius: var(--radius-md);
-    --solve-effect-top-inner-radius: calc(
-      var(--solve-effect-top-radius) - var(--spacing-effect-frame)
-    );
+    --solve-effect-top-radius: calc(var(--radius-md) + var(--spacing-effect-frame));
+    --solve-effect-top-inner-radius: var(--radius-md);
     --solve-effect-bottom-radius: var(--radius-viewport);
     --solve-effect-bottom-inner-radius: calc(
       var(--solve-effect-bottom-radius) - var(--spacing-effect-frame)
