@@ -729,6 +729,33 @@ describe('ChallengeWorkspace', () => {
     });
   });
 
+  it('keeps the current competitor at their true solve rank', () => {
+    const solved = createChallengeExperience(
+      challenge({
+        id: 'ordered-0',
+        name: 'Ordered timeline',
+        solved: true
+      }),
+      {
+        solveCount: 18
+      }
+    );
+
+    renderWorkspace([solved], solved.id);
+    fireEvent.click(screen.getByRole('tab', { name: '18 Solves' }));
+
+    const standings = screen.getByRole('list', { name: 'Solve standings' });
+    const rows = within(standings).getAllByRole('listitem');
+    const currentRow = within(standings).getByText('Foxden').closest('li');
+
+    expect(rows).toHaveLength(18);
+    expect(rows.map((row) => row.firstElementChild?.textContent)).toEqual(
+      Array.from({ length: 18 }, (_, index) => `#${index + 1}`)
+    );
+    expect(currentRow).toBe(rows[13]);
+    expect(currentRow).toHaveAttribute('aria-current', 'true');
+  });
+
   it('preserves the solved dock and emits the default edge border', async () => {
     const workspaceActions = actions();
     workspaceActions.submitAnswer = vi.fn().mockResolvedValue({

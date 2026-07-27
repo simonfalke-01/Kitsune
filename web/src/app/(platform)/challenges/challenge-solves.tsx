@@ -75,18 +75,17 @@ function SolveIdentity({ avatarUrl, caption, competitorId, competitorName }: Sol
 interface SolveRowProps {
   entry: ChallengeSolveEntry;
   eventStartedAt: string;
-  isPinned?: boolean;
 }
 
-function SolveRow({ entry, eventStartedAt, isPinned = false }: SolveRowProps) {
+function SolveRow({ entry, eventStartedAt }: SolveRowProps) {
   const entryPlacement = placement(entry);
 
   return (
     <li
+      aria-current={entry.isSelf ? 'true' : undefined}
       className={cx(
         'flex min-h-16 items-center gap-3 px-3 py-2',
-        entry.isSelf ? 'border-l-2 border-accent bg-accent-subtle' : null,
-        isPinned ? 'sticky bottom-0 z-10 bg-accent-subtle shadow-md' : null
+        entry.isSelf ? 'border-l-2 border-accent bg-accent-subtle' : null
       )}
     >
       <strong
@@ -144,26 +143,9 @@ export function ChallengeSolves({ context, state = 'ready' }: ChallengeSolvesPro
     return <EmptyState title="No solves yet" />;
   }
 
-  const pinSelf = context.selfEntry ? context.selfEntry.rank > 6 : false;
-  const leadingEntries = context.entries.slice(0, 6);
-  const trailingEntries = context.entries
-    .slice(6)
-    .filter((entry) => !pinSelf || entry.id !== context.selfEntry?.id);
-
   return (
     <ol aria-label="Solve standings" className="m-0 grid list-none gap-0 p-0">
-      {leadingEntries.map((entry) => (
-        <SolveRow entry={entry} eventStartedAt={context.eventStartedAt} key={entry.id} />
-      ))}
-      {context.selfEntry && pinSelf ? (
-        <SolveRow
-          entry={context.selfEntry}
-          eventStartedAt={context.eventStartedAt}
-          isPinned
-          key={`pinned-${context.selfEntry.id}`}
-        />
-      ) : null}
-      {trailingEntries.map((entry) => (
+      {context.entries.map((entry) => (
         <SolveRow entry={entry} eventStartedAt={context.eventStartedAt} key={entry.id} />
       ))}
     </ol>
