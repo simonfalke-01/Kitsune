@@ -159,6 +159,9 @@ describe('SplitWorkspace', () => {
 
     expect(screen.getByRole('slider', { name: 'Collapsible panel' })).toHaveValue('40');
     expect(motionMocks.animate).toHaveBeenLastCalledWith(64, 400, expect.any(Object));
+    expect(
+      (motionMocks.animate.mock.results[0]?.value as { stop: ReturnType<typeof vi.fn> }).stop
+    ).not.toHaveBeenCalled();
   });
 
   it('updates pane width continuously during a pointer drag', () => {

@@ -230,7 +230,6 @@ export function SplitWorkspace({
     }
 
     previousCollapsedRef.current = isLeftCollapsed;
-    collapseAnimationRef.current?.stop();
 
     const leftPane = workspace.firstElementChild as HTMLElement | null;
     const targetTrack = isLeftCollapsed ? 'var(--spacing-collapsed-rail)' : styleValue;
@@ -254,9 +253,14 @@ export function SplitWorkspace({
     }
 
     workspace.style.setProperty('--split-workspace-left', `${startWidth}px`);
-    collapseAnimationRef.current = animate(startWidth, targetWidth, {
+    const lifecycle = {
+      isComplete: false
+    };
+    const animation = animate(startWidth, targetWidth, {
       ...splitWorkspaceMotion(workspace),
       onComplete() {
+        lifecycle.isComplete = true;
+        collapseAnimationRef.current = null;
         collapseWidthRef.current = null;
         workspace.style.setProperty('--split-workspace-left', targetTrack);
         setRenderedCollapsed(isLeftCollapsed);
@@ -266,8 +270,16 @@ export function SplitWorkspace({
         workspace.style.setProperty('--split-workspace-left', `${nextWidth}px`);
       }
     });
+    collapseAnimationRef.current = lifecycle.isComplete ? null : animation;
 
-    return () => collapseAnimationRef.current?.stop();
+    return () => {
+      if (collapseAnimationRef.current !== animation) {
+        return;
+      }
+
+      collapseAnimationRef.current = null;
+      animation.stop();
+    };
   }, [isDragging, isLeftCollapsed, shouldReduceMotion, styleValue]);
 
   function updateValue(nextValue: number) {
