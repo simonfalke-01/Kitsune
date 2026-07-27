@@ -42,11 +42,19 @@ interface ChallengeDetailProps {
 
 interface SolveWaveGeometry {
   diameter: number;
+  originHeight: number;
+  originLeft: number;
+  originTop: number;
+  originWidth: number;
   x: number;
   y: number;
 }
 
 interface SolveWaveStyle extends CSSProperties {
+  '--solve-origin-height'?: string;
+  '--solve-origin-left'?: string;
+  '--solve-origin-top'?: string;
+  '--solve-origin-width'?: string;
   '--solve-wave-diameter'?: string;
   '--solve-wave-x'?: string;
   '--solve-wave-y'?: string;
@@ -112,6 +120,10 @@ export function ChallengeDetail({
   const hasResources = Boolean(connection) || challenge.attachments.length > 0;
   const solveWaveStyle: SolveWaveStyle | undefined = solveWave
     ? {
+        '--solve-origin-height': `${solveWave.originHeight}px`,
+        '--solve-origin-left': `${solveWave.originLeft}px`,
+        '--solve-origin-top': `${solveWave.originTop}px`,
+        '--solve-origin-width': `${solveWave.originWidth}px`,
         '--solve-wave-diameter': `${solveWave.diameter}px`,
         '--solve-wave-x': `${solveWave.x}px`,
         '--solve-wave-y': `${solveWave.y}px`
@@ -130,6 +142,10 @@ export function ChallengeDetail({
 
     setSolveWave({
       diameter: Math.max(1, farthestCorner * 2),
+      originHeight: origin.height,
+      originLeft: origin.left,
+      originTop: origin.top,
+      originWidth: origin.width,
       x,
       y
     });
@@ -142,11 +158,16 @@ export function ChallengeDetail({
     >
       {solveWave
         ? createPortal(
-            <span
+            <div
               aria-hidden
-              className="kitsune-solve-wave pointer-events-none fixed z-celebration aspect-square rounded-full bg-success-wave ring-2 ring-success-border"
+              className="kitsune-solve-effect pointer-events-none fixed inset-0 z-celebration"
               style={solveWaveStyle}
-            />,
+            >
+              <span className="kitsune-solve-origin absolute rounded-md ring-2 ring-success-border" />
+              <span className="kitsune-solve-wave absolute aspect-square rounded-full">
+                <span className="kitsune-solve-wave-material absolute inset-0 rounded-full" />
+              </span>
+            </div>,
             document.body
           )
         : null}

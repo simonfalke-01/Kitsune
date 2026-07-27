@@ -330,16 +330,20 @@ describe('ChallengeWorkspace', () => {
     });
     expect(screen.queryByRole('button', { name: 'Submit flag' })).not.toBeInTheDocument();
     expect(screen.getAllByText('Challenge solved').length).toBeGreaterThan(0);
+    const solveEffect = document.querySelector('.kitsune-solve-effect');
+    const solveOrigin = document.querySelector('.kitsune-solve-origin');
     const solveWave = document.querySelector('.kitsune-solve-wave');
-    expect(solveWave?.parentElement).toBe(document.body);
-    expect(solveWave).toHaveClass(
-      'fixed',
-      'z-celebration',
-      'bg-success-wave',
-      'ring-2',
-      'ring-success-border'
-    );
-    expect(solveWave).toHaveStyle({
+    const solveWaveMaterial = document.querySelector('.kitsune-solve-wave-material');
+    expect(solveEffect?.parentElement).toBe(document.body);
+    expect(solveEffect).toHaveClass('fixed', 'inset-0', 'z-celebration');
+    expect(solveOrigin).toHaveClass('ring-2', 'ring-success-border');
+    expect(solveWaveMaterial).toBeInTheDocument();
+    expect(solveWaveMaterial?.parentElement).toBe(solveWave);
+    expect(solveEffect).toHaveStyle({
+      '--solve-origin-height': '0px',
+      '--solve-origin-left': '0px',
+      '--solve-origin-top': '0px',
+      '--solve-origin-width': '0px',
       '--solve-wave-diameter': `${Math.hypot(window.innerWidth, window.innerHeight) * 2}px`,
       '--solve-wave-x': '0px',
       '--solve-wave-y': '0px'

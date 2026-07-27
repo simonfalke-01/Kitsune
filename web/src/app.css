@@ -119,7 +119,9 @@
   --success-subtle: var(--success-3);
   --success-border: var(--success-6);
   --success: var(--success-9);
-  --success-wave: color-mix(in oklch, var(--success) 24%, transparent);
+  --success-wave-fill: color-mix(in oklch, var(--success) 18%, transparent);
+  --success-wave-front: color-mix(in oklch, var(--success) 42%, transparent);
+  --success-wave-origin: color-mix(in oklch, var(--success) 32%, transparent);
   --success-hover: var(--success-10);
   --success-text: var(--success-12);
 
@@ -290,7 +292,6 @@
   --color-success-subtle: var(--success-subtle);
   --color-success-border: var(--success-border);
   --color-success: var(--success);
-  --color-success-wave: var(--success-wave);
   --color-success-hover: var(--success-hover);
   --color-success-text: var(--success-text);
   --color-warning-subtle: var(--warning-subtle);
@@ -391,7 +392,6 @@
   --shadow-lg: 0 4px 8px oklch(0% 0 0 / 4%), 0 12px 24px oklch(0% 0 0 / 6%);
 
   --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
-  --ease-in-out-sine: cubic-bezier(0.37, 0, 0.63, 1);
   --duration-fast: 120ms;
   --duration-normal: 180ms;
   --duration-slow: 260ms;
@@ -456,19 +456,36 @@
   }
 }
 
-@keyframes kitsune-solve-wave {
+@keyframes kitsune-solve-origin {
   from {
     opacity: 1;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes kitsune-solve-wave-propagate {
+  from {
     transform: translate3d(-50%, -50%, 0) scale(0);
   }
 
-  75% {
+  to {
+    transform: translate3d(-50%, -50%, 0) scale(1);
+  }
+}
+
+@keyframes kitsune-solve-wave-material {
+  from,
+  72% {
     opacity: 1;
   }
 
   to {
     opacity: 0;
-    transform: translate3d(-50%, -50%, 0) scale(1);
   }
 }
 
@@ -485,12 +502,34 @@
     animation: kitsune-solve-spark var(--duration-slow) var(--ease-out-quart);
   }
 
+  .kitsune-solve-origin {
+    top: var(--solve-origin-top);
+    left: var(--solve-origin-left);
+    width: var(--solve-origin-width);
+    height: var(--solve-origin-height);
+    background-color: var(--success-wave-origin);
+    animation: kitsune-solve-origin var(--duration-slow) var(--ease-out-quart) both;
+    will-change: opacity, transform;
+  }
+
   .kitsune-solve-wave {
     top: var(--solve-wave-y);
     left: var(--solve-wave-x);
     width: var(--solve-wave-diameter);
-    animation: kitsune-solve-wave var(--duration-celebration) var(--ease-in-out-sine) both;
-    will-change: opacity, transform;
+    animation: kitsune-solve-wave-propagate var(--duration-celebration) linear both;
+    will-change: transform;
+  }
+
+  .kitsune-solve-wave-material {
+    background: radial-gradient(
+      circle,
+      var(--success-wave-fill) 0%,
+      var(--success-wave-fill) 72%,
+      var(--success-wave-front) 86%,
+      transparent 100%
+    );
+    animation: kitsune-solve-wave-material var(--duration-celebration) var(--ease-out-quart) both;
+    will-change: opacity;
   }
 
   .kitsune-challenge-row[data-solved='true'] {
@@ -621,8 +660,7 @@
     --duration-celebration: 0ms;
   }
 
-  .kitsune-solve-wave {
-    animation: none;
-    opacity: 0;
+  .kitsune-solve-effect {
+    display: none;
   }
 }
