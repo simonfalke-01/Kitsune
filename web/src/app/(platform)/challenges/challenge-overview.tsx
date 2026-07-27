@@ -123,8 +123,8 @@ export function ChallengeOverview({
           <h3 className="m-0 text-base font-semibold text-text" id="score-trajectory-title">
             Around your rank
           </h3>
-          <div className="grid gap-4 lg:grid-cols-4 lg:items-stretch">
-            <div className="min-w-0 lg:col-span-3">
+          <div className="grid gap-4 md:grid-cols-3 md:items-stretch lg:grid-cols-4">
+            <div className="min-w-0 md:col-span-2 lg:col-span-3">
               <LineChart
                 appearance="bare"
                 description="Running scores for your team and nearby competitors."

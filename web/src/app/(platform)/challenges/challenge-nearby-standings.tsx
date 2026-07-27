@@ -8,16 +8,16 @@ export function ChallengeNearbyStandings({ entries }: ChallengeNearbyStandingsPr
   return (
     <aside
       aria-label="Teams around your rank"
-      className="relative h-chart-compact min-w-0 overflow-hidden lg:h-chart"
+      className="relative h-chart-compact min-w-0 overflow-hidden md:h-chart"
     >
       {entries.length === 0 ? (
-        <p className="m-0 flex h-full items-center px-3 text-sm text-text-muted">No nearby teams</p>
+        <p className="m-0 flex h-full items-center text-sm text-text-muted">No nearby teams</p>
       ) : (
         <ol className="m-0 grid h-full list-none grid-rows-5 p-0">
           {entries.map((entry) => (
             <li
               aria-current={entry.isSelf ? 'true' : undefined}
-              className="grid min-h-0 grid-cols-12 items-center gap-2 px-3 text-sm tabular-nums"
+              className="grid min-h-0 grid-cols-12 items-center gap-2 text-sm tabular-nums"
               key={entry.id}
             >
               <span className="col-span-2 text-text-subtle">#{entry.rank}</span>

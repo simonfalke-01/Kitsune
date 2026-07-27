@@ -142,10 +142,11 @@ describe('ChallengeWorkspace', () => {
       Number(within(row).getByText(/^#/).textContent.slice(1))
     );
     expect(nearbyRows).toHaveLength(5);
+    expect(nearbyRows[0]).not.toHaveClass('px-3');
     expect(nearbyRanks).toEqual(nearbyRows.map((_, index) => nearbyRanks[0]! + index));
     expect(currentTeam).toHaveClass('font-semibold', 'text-accent-text');
     expect(currentTeam.closest('li')).toHaveAttribute('aria-current', 'true');
-    expect(nearbyTeams).toHaveClass('lg:h-chart');
+    expect(nearbyTeams).toHaveClass('md:h-chart');
     expect(nearbyTeams.querySelector('.bg-linear-to-b')).toBeInTheDocument();
     const challengeFieldHeading = screen.getByRole('heading', { name: 'Challenge field' });
     const challengeField = screen.getByRole('region', { name: 'Challenge field' });
