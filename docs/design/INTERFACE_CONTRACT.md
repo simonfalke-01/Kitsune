@@ -228,8 +228,10 @@ reusable failure mode, add the general rule here before closing the issue.
   applied, and it must not temporarily overwrite the pre-paint result.
 - Full-screen effect frames remain flush to every viewport edge. Their dedicated
   outer fill is rectangular and lets host-window clipping define the true outer
-  curve; only the transparent inner cutout uses Kitsune's larger viewport
-  radius. This fills the corner wedge from the native edge to the inner curve.
+  curve. The transparent inner cutout uses the shared workspace-card radius at
+  both top corners and retains Kitsune's larger viewport radius at both bottom
+  corners. This fills each corner wedge from the native edge to its inner curve
+  while keeping the top frame concentric with the floating workspace surface.
 - Solve-effect viewport perimeters must not use SVG or CSS masks. Safari may
   reconstruct a masked layer while its ancestor animates and visibly flicker.
   Compose the static perimeter from edge strips and rounded corner fills, then

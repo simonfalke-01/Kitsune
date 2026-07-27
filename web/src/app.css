@@ -642,45 +642,52 @@
   }
 
   .kitsune-solve-edge-frame {
-    --solve-effect-inner-radius: calc(var(--radius-viewport) - var(--spacing-effect-frame));
+    --solve-effect-top-radius: var(--radius-md);
+    --solve-effect-top-inner-radius: calc(
+      var(--solve-effect-top-radius) - var(--spacing-effect-frame)
+    );
+    --solve-effect-bottom-radius: var(--radius-viewport);
+    --solve-effect-bottom-inner-radius: calc(
+      var(--solve-effect-bottom-radius) - var(--spacing-effect-frame)
+    );
 
     background:
       radial-gradient(
           circle at 100% 100%,
-          transparent var(--solve-effect-inner-radius),
-          var(--solve-effect-edge) var(--solve-effect-inner-radius)
+          transparent var(--solve-effect-top-inner-radius),
+          var(--solve-effect-edge) var(--solve-effect-top-inner-radius)
         )
-        top left / var(--radius-viewport) var(--radius-viewport) no-repeat,
+        top left / var(--solve-effect-top-radius) var(--solve-effect-top-radius) no-repeat,
       radial-gradient(
           circle at 0 100%,
-          transparent var(--solve-effect-inner-radius),
-          var(--solve-effect-edge) var(--solve-effect-inner-radius)
+          transparent var(--solve-effect-top-inner-radius),
+          var(--solve-effect-edge) var(--solve-effect-top-inner-radius)
         )
-        top right / var(--radius-viewport) var(--radius-viewport) no-repeat,
+        top right / var(--solve-effect-top-radius) var(--solve-effect-top-radius) no-repeat,
       radial-gradient(
           circle at 100% 0,
-          transparent var(--solve-effect-inner-radius),
-          var(--solve-effect-edge) var(--solve-effect-inner-radius)
+          transparent var(--solve-effect-bottom-inner-radius),
+          var(--solve-effect-edge) var(--solve-effect-bottom-inner-radius)
         )
-        bottom left / var(--radius-viewport) var(--radius-viewport) no-repeat,
+        bottom left / var(--solve-effect-bottom-radius) var(--solve-effect-bottom-radius) no-repeat,
       radial-gradient(
           circle at 0 0,
-          transparent var(--solve-effect-inner-radius),
-          var(--solve-effect-edge) var(--solve-effect-inner-radius)
+          transparent var(--solve-effect-bottom-inner-radius),
+          var(--solve-effect-edge) var(--solve-effect-bottom-inner-radius)
         )
-        bottom right / var(--radius-viewport) var(--radius-viewport) no-repeat,
+        bottom right / var(--solve-effect-bottom-radius) var(--solve-effect-bottom-radius) no-repeat,
       linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) top center /
-        calc(100% - var(--radius-viewport) - var(--radius-viewport)) var(--spacing-effect-frame)
-        no-repeat,
-      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) center right /
-        var(--spacing-effect-frame) calc(100% - var(--radius-viewport) - var(--radius-viewport))
-        no-repeat,
+        calc(100% - var(--solve-effect-top-radius) - var(--solve-effect-top-radius))
+        var(--spacing-effect-frame) no-repeat,
+      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) right 0 top
+        var(--solve-effect-top-radius) / var(--spacing-effect-frame)
+        calc(100% - var(--solve-effect-top-radius) - var(--solve-effect-bottom-radius)) no-repeat,
       linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) bottom center /
-        calc(100% - var(--radius-viewport) - var(--radius-viewport)) var(--spacing-effect-frame)
-        no-repeat,
-      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) center left /
-        var(--spacing-effect-frame) calc(100% - var(--radius-viewport) - var(--radius-viewport))
-        no-repeat;
+        calc(100% - var(--solve-effect-bottom-radius) - var(--solve-effect-bottom-radius))
+        var(--spacing-effect-frame) no-repeat,
+      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) left 0 top
+        var(--solve-effect-top-radius) / var(--spacing-effect-frame)
+        calc(100% - var(--solve-effect-top-radius) - var(--solve-effect-bottom-radius)) no-repeat;
     animation: kitsune-solve-edge-frame var(--duration-celebration) linear both;
   }
 
@@ -698,28 +705,28 @@
     background:
       radial-gradient(
           circle at 100% 100%,
-          transparent var(--solve-effect-inner-radius),
-          var(--first-blood-rainbow-blue) var(--solve-effect-inner-radius)
+          transparent var(--solve-effect-top-inner-radius),
+          var(--first-blood-rainbow-blue) var(--solve-effect-top-inner-radius)
         )
-        top left / var(--radius-viewport) var(--radius-viewport) no-repeat,
+        top left / var(--solve-effect-top-radius) var(--solve-effect-top-radius) no-repeat,
       radial-gradient(
           circle at 0 100%,
-          transparent var(--solve-effect-inner-radius),
-          var(--first-blood-rainbow-orange) var(--solve-effect-inner-radius)
+          transparent var(--solve-effect-top-inner-radius),
+          var(--first-blood-rainbow-orange) var(--solve-effect-top-inner-radius)
         )
-        top right / var(--radius-viewport) var(--radius-viewport) no-repeat,
+        top right / var(--solve-effect-top-radius) var(--solve-effect-top-radius) no-repeat,
       radial-gradient(
           circle at 100% 0,
-          transparent var(--solve-effect-inner-radius),
-          var(--first-blood-rainbow-violet) var(--solve-effect-inner-radius)
+          transparent var(--solve-effect-bottom-inner-radius),
+          var(--first-blood-rainbow-violet) var(--solve-effect-bottom-inner-radius)
         )
-        bottom left / var(--radius-viewport) var(--radius-viewport) no-repeat,
+        bottom left / var(--solve-effect-bottom-radius) var(--solve-effect-bottom-radius) no-repeat,
       radial-gradient(
           circle at 0 0,
-          transparent var(--solve-effect-inner-radius),
-          var(--first-blood-rainbow-teal) var(--solve-effect-inner-radius)
+          transparent var(--solve-effect-bottom-inner-radius),
+          var(--first-blood-rainbow-teal) var(--solve-effect-bottom-inner-radius)
         )
-        bottom right / var(--radius-viewport) var(--radius-viewport) no-repeat,
+        bottom right / var(--solve-effect-bottom-radius) var(--solve-effect-bottom-radius) no-repeat,
       linear-gradient(
           90deg,
           var(--first-blood-rainbow-blue),
@@ -727,7 +734,7 @@
           var(--first-blood-rainbow-pink),
           var(--first-blood-rainbow-orange)
         )
-        top center / calc(100% - var(--radius-viewport) - var(--radius-viewport))
+        top center / calc(100% - var(--solve-effect-top-radius) - var(--solve-effect-top-radius))
         var(--spacing-effect-frame) no-repeat,
       linear-gradient(
           180deg,
@@ -736,8 +743,8 @@
           var(--first-blood-rainbow-lime),
           var(--first-blood-rainbow-teal)
         )
-        center right / var(--spacing-effect-frame)
-        calc(100% - var(--radius-viewport) - var(--radius-viewport)) no-repeat,
+        right 0 top var(--solve-effect-top-radius) / var(--spacing-effect-frame)
+        calc(100% - var(--solve-effect-top-radius) - var(--solve-effect-bottom-radius)) no-repeat,
       linear-gradient(
           90deg,
           var(--first-blood-rainbow-violet),
@@ -745,7 +752,8 @@
           var(--first-blood-rainbow-cyan),
           var(--first-blood-rainbow-teal)
         )
-        bottom center / calc(100% - var(--radius-viewport) - var(--radius-viewport))
+        bottom center /
+        calc(100% - var(--solve-effect-bottom-radius) - var(--solve-effect-bottom-radius))
         var(--spacing-effect-frame) no-repeat,
       linear-gradient(
           180deg,
@@ -753,8 +761,8 @@
           var(--first-blood-rainbow-pink),
           var(--first-blood-rainbow-violet)
         )
-        center left / var(--spacing-effect-frame)
-        calc(100% - var(--radius-viewport) - var(--radius-viewport)) no-repeat;
+        left 0 top var(--solve-effect-top-radius) / var(--spacing-effect-frame)
+        calc(100% - var(--solve-effect-top-radius) - var(--solve-effect-bottom-radius)) no-repeat;
   }
 
   .kitsune-solve-effect {
