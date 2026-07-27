@@ -644,10 +644,6 @@ describe('ChallengeWorkspace', () => {
 
     renderWorkspace([solved], solved.id);
 
-    expect(screen.queryByLabelText('Challenge solve context')).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('tab', { name: '18 Solves' }));
-
     const solveStrip = await screen.findByLabelText('Challenge solve context');
     const solveStripList = within(solveStrip).getByRole('list');
     const solveStripRows = within(solveStrip).getAllByRole('listitem');
@@ -689,6 +685,12 @@ describe('ChallengeWorkspace', () => {
     expect(selectedChallenge.querySelector('.kitsune-collection-marker')).toBeInTheDocument();
     expect(firstBlood.querySelector('svg')).toHaveClass('-translate-y-optical');
 
+    fireEvent.click(screen.getByRole('tab', { name: '18 Solves' }));
+
+    await waitFor(() => {
+      expect(screen.queryByLabelText('Challenge solve context')).not.toBeInTheDocument();
+    });
+
     expect(window.localStorage.getItem('kitsune.challenge-workspace.v1.event')).toBeNull();
 
     const standings = screen.getByRole('list', { name: 'Solve standings' });
@@ -705,10 +707,6 @@ describe('ChallengeWorkspace', () => {
 
     renderWorkspace([open], open.id);
 
-    expect(screen.queryByLabelText('Challenge solve context')).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByRole('tab', { name: '0 Solves' }));
-
     const solveStrip = screen.getByLabelText('Challenge solve context');
     const openStatuses = within(solveStrip).getAllByText('Open');
 
@@ -722,7 +720,7 @@ describe('ChallengeWorkspace', () => {
     }
     expect(within(solveStrip).queryByText('No solve')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'Details' }));
+    fireEvent.click(screen.getByRole('tab', { name: '0 Solves' }));
 
     await waitFor(() => {
       expect(screen.queryByLabelText('Challenge solve context')).not.toBeInTheDocument();

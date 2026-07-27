@@ -297,11 +297,12 @@ without losing competition context.
   edge.
 - First blood reports elapsed competition time in compact units, omitting empty
   units: `8h`, `1h 17min`, or `17min`.
-- First-three-plus-self context appears only on the Solves tab, entering above
-  the stable flag action as one connected drawer. It orders 1st then 2nd in the
-  leading column and 3rd then self in the trailing column when space is tight,
-  then returns to one line when the detail pane can hold all four identities.
-  Its subparts are connected by alignment, not mini cards.
+- First-three-plus-self context supports the Details solving flow, entering
+  above the stable flag action as one connected drawer and retracting on Solves
+  where the full timeline already supplies that context. It orders 1st then 2nd
+  in the leading column and 3rd then self in the trailing column when space is
+  tight, then returns to one line when the detail pane can hold all four
+  identities. Its subparts are connected by alignment, not mini cards.
 - Blank writeups and blank flags are prevented before submission. Errors remain
   adjacent to the action and preserve input.
 

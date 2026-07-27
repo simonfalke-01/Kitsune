@@ -473,8 +473,9 @@ reusable failure mode, add the general rule here before closing the issue.
   name and elapsed state. First blood reports elapsed competition time in
   compact non-empty units such as `8h` or `1h 17min`. A detached far-right time
   label and separate mini-profile cards are prohibited.
-- The compact context is mounted only while Solves is selected. It enters and
-  exits from the stable flag dock edge as one restrained Motion drawer, with an
+- The compact context is mounted while Details is selected and retracts on
+  Solves, where the full timeline would make it redundant. It enters and exits
+  from the stable flag dock edge as one restrained Motion drawer, with an
   instant reduced-motion alternative. Its two-column order is 1st then 2nd in
   the leading column and 3rd then self in the trailing column; row-major visual
   ordering that produces 1st/3rd and 2nd/self columns is a defect. The layout

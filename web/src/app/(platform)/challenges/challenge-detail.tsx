@@ -417,7 +417,7 @@ export function ChallengeDetail({
         <footer className="z-20 shrink-0 bg-surface-sunken px-6 py-4">
           <div className="grid w-full">
             <AnimatePresence initial={false}>
-              {selectedTab === 'solves' ? (
+              {selectedTab === 'details' ? (
                 <motion.div
                   animate={{ height: 'auto', opacity: 1 }}
                   className="overflow-hidden"
