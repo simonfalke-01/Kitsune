@@ -648,7 +648,7 @@ describe('ChallengeWorkspace', () => {
     expect(within(standings).getAllByText('Foxden').length).toBeGreaterThan(0);
   });
 
-  it('keeps unsolved podium places as stable neutral slots', () => {
+  it('keeps unsolved podium places quiet and explicit', () => {
     const open = createChallengeExperience(challenge({ id: 'open-podium' }), {
       solveCount: 0
     });
@@ -656,16 +656,13 @@ describe('ChallengeWorkspace', () => {
     renderWorkspace([open], open.id);
 
     const solveStrip = screen.getByLabelText('Challenge solve context');
-    const openStatuses = within(solveStrip).getAllByText('Open, no solve yet');
+    const openStatuses = within(solveStrip).getAllByText('Open');
 
     expect(openStatuses).toHaveLength(3);
     for (const status of openStatuses) {
       const slot = status.closest('li');
-      const placeholder = slot?.querySelector('.kitsune-open-podium-slot');
-      expect(status).toHaveClass('sr-only');
-      expect(slot).toHaveClass('min-h-16');
-      expect(slot).not.toHaveClass('kitsune-open-podium-slot');
-      expect(placeholder).toHaveClass('flex-1', 'self-stretch', 'border-l-2', 'border-border');
+      expect(status).toHaveClass('text-sm', 'font-medium', 'text-text-muted');
+      expect(slot).toHaveClass('min-h-16', 'py-2');
       expect(slot?.firstElementChild).toHaveClass('text-text-muted');
       expect(within(slot!).queryByRole('img')).not.toBeInTheDocument();
     }

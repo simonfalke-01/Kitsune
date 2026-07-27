@@ -466,11 +466,9 @@ reusable failure mode, add the general rule here before closing the issue.
   name and elapsed state. First blood reports elapsed competition time in
   compact non-empty units such as `8h` or `1h 17min`. A detached far-right time
   label and separate mini-profile cards are prohibited.
-- An untaken top-three place preserves the occupied slot's exact footprint but
-  contains no fabricated avatar, team, or solve time. Its placement remains
-  visible in neutral text outside the placeholder while fine neutral diagonal
-  linework marks only the empty identity area. The placeholder contains no
-  visible copy or icon; assistive text names its state.
+- An untaken top-three place remains one quiet row with its neutral placement
+  and the single label `Open`. It contains no fabricated avatar, team, solve
+  time, secondary explanation, patterned surface, or placeholder card.
 - Avatar slots render the real team profile image when the solve model supplies
   one and retain initials as the load-failure fallback. Frontend demo state does
   not fabricate profile art when no human-authored asset exists.
