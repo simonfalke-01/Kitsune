@@ -16,6 +16,7 @@ import {
   challengePoints,
   challengeProgress,
   groupChallenges,
+  orderChallengeSegments,
   type ChallengeExperience
 } from '@/lib/challenges';
 
@@ -145,7 +146,7 @@ export function ChallengeOverview({
           <WeightedSegmentBar
             ariaLabel={`${progress.solved} of ${progress.total} challenges solved`}
             className="px-3"
-            items={segmentItems(challenges, pointWeights)}
+            items={segmentItems(orderChallengeSegments(challenges), pointWeights)}
           />
 
           <div className="hidden grid-cols-12 gap-4 px-3 text-xs text-text-subtle xl:grid">
@@ -180,7 +181,7 @@ export function ChallengeOverview({
                       ariaLabel={`${group.solved} of ${group.challenges.length} ${group.category} challenges solved`}
                       className="min-w-0 flex-1"
                       items={segmentItems(
-                        group.challenges,
+                        orderChallengeSegments(group.challenges),
                         challengePointWeights(group.challenges)
                       )}
                     />

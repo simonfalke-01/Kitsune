@@ -107,6 +107,18 @@ export function challengePointWeights(
   );
 }
 
+export function orderChallengeSegments(
+  challenges: readonly ChallengeExperience[]
+): ChallengeExperience[] {
+  return [...challenges].sort((left, right) => {
+    return (
+      Number(right.solved) - Number(left.solved) ||
+      left.position - right.position ||
+      left.name.localeCompare(right.name)
+    );
+  });
+}
+
 export function challengePoints(challenge: ChallengeExperience): string {
   if (challenge.scoring.kind === 'static') {
     return `${challenge.scoring.points} pts`;

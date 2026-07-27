@@ -164,6 +164,35 @@ describe('ChallengeWorkspace', () => {
     expect(within(challengeList).getByRole('link', { name: /Crypto trail/ })).toBeVisible();
   });
 
+  it('packs solved progress segments before unsolved segments', () => {
+    renderWorkspace(
+      [
+        createChallengeExperience(
+          challenge({
+            id: 'open-first',
+            name: 'Open first',
+            position: 0
+          })
+        ),
+        createChallengeExperience(
+          challenge({
+            id: 'solved-second',
+            name: 'Solved second',
+            position: 1,
+            solved: true
+          })
+        )
+      ],
+      null
+    );
+
+    const categoryProgress = screen.getByLabelText('1 of 2 Web challenges solved');
+    const segments = within(categoryProgress).getAllByRole('link');
+
+    expect(segments[0]).toHaveAccessibleName(/Open Solved second/);
+    expect(segments[1]).toHaveAccessibleName(/Open Open first/);
+  });
+
   it('supports a survey-gated challenge that reveals a normal submission flag', async () => {
     const workspaceActions = actions();
     const gated = createChallengeExperience(

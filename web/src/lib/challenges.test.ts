@@ -10,6 +10,7 @@ import {
   createChallengeExperience,
   filterChallenges,
   groupChallenges,
+  orderChallengeSegments,
   surveyAnswersAreComplete,
   surveyRange
 } from './challenges';
@@ -141,6 +142,30 @@ describe('challenge workspace helpers', () => {
     expect(weights.get('Five hundred')).toBe(500);
     expect(weights.get('Thousand')).toBe((weights.get('Five hundred') ?? 0) * 2);
     expect(weights.get('Plugin')).toBe(500);
+  });
+
+  it('packs solved progress segments toward the leading edge', () => {
+    const unsolved = createChallengeExperience(
+      challenge('Unsolved', 'Web', {
+        position: 0
+      })
+    );
+    const solvedLater = createChallengeExperience(
+      challenge('Solved later', 'Web', {
+        position: 2,
+        solved: true
+      })
+    );
+    const solvedEarlier = createChallengeExperience(
+      challenge('Solved earlier', 'Web', {
+        position: 1,
+        solved: true
+      })
+    );
+
+    expect(
+      orderChallengeSegments([unsolved, solvedLater, solvedEarlier]).map((item) => item.id)
+    ).toEqual(['Solved earlier', 'Solved later', 'Unsolved']);
   });
 
   it('maps categories and URL selections deterministically', () => {

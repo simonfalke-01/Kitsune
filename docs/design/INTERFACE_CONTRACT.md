@@ -201,6 +201,9 @@ reusable failure mode, add the general rule here before closing the issue.
   the underlying value. Equal-sized challenge segments are prohibited when
   point values differ. Accessibility minimums may constrain extreme cases;
   the component must retain the real value and expose it in text.
+- Progress segments accumulate from the leading edge: solved challenges come
+  before unsolved challenges while retaining their defined order within each
+  state. Completion must not appear as disconnected islands.
 - Detail and sensitive-value actions open a Dialog or Sheet. Sensitive values
   have explicit copy actions.
 - Map backend lifecycle states to the few user-facing states needed for the
