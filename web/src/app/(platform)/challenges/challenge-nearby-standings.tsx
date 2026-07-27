@@ -8,7 +8,7 @@ export function ChallengeNearbyStandings({ entries }: ChallengeNearbyStandingsPr
   return (
     <aside
       aria-label="Teams around your rank"
-      className="relative h-chart-compact min-w-0 overflow-hidden md:h-chart"
+      className="relative h-chart-compact w-full min-w-0 justify-self-start overflow-hidden text-left md:h-chart-tall"
     >
       {entries.length === 0 ? (
         <p className="m-0 flex h-full items-center text-sm text-text-muted">No nearby teams</p>
@@ -20,9 +20,11 @@ export function ChallengeNearbyStandings({ entries }: ChallengeNearbyStandingsPr
               className="grid min-h-0 grid-cols-12 items-center gap-2 text-sm tabular-nums"
               key={entry.id}
             >
-              <span className="col-span-2 text-text-subtle">#{entry.rank}</span>
+              <span className="col-span-2 justify-self-start text-left text-text-subtle">
+                #{entry.rank}
+              </span>
               <span
-                className={`col-span-6 min-w-0 break-words ${
+                className={`col-span-6 min-w-0 justify-self-start break-words text-left ${
                   entry.isSelf ? 'font-semibold text-accent-text' : 'font-medium text-text-muted'
                 }`}
               >

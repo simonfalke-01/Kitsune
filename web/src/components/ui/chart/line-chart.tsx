@@ -114,7 +114,7 @@ export interface LineChartProps<Metadata> {
   formatTooltip?: (point: PlottedDatum<Metadata>) => ReactNode;
   formatXValue?: (value: number) => string;
   formatYValue?: (value: number) => string;
-  height?: 'compact' | 'standard';
+  height?: 'compact' | 'expanded' | 'standard';
   interpolation?: 'monotone' | 'step';
   legendPlacement?: 'below' | 'side';
   onActiveSeriesChange?: (seriesId: string | null) => void;
@@ -358,7 +358,11 @@ export function LineChart<Metadata>({
           aria-describedby={`${descriptionId} ${announcementId}`}
           aria-labelledby={titleId}
           className={`block w-full outline-none focus-visible:outline-2 focus-visible:outline-focus-ring ${
-            height === 'compact' ? 'h-chart-compact' : 'h-chart'
+            height === 'compact'
+              ? 'h-chart-compact'
+              : height === 'expanded'
+                ? 'h-chart md:h-chart-tall'
+                : 'h-chart'
           }`}
           onBlur={() => {
             if (!isLocked) {

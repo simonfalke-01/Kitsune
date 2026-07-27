@@ -146,7 +146,12 @@ describe('ChallengeWorkspace', () => {
     expect(nearbyRanks).toEqual(nearbyRows.map((_, index) => nearbyRanks[0]! + index));
     expect(currentTeam).toHaveClass('font-semibold', 'text-accent-text');
     expect(currentTeam.closest('li')).toHaveAttribute('aria-current', 'true');
-    expect(nearbyTeams).toHaveClass('md:h-chart');
+    expect(screen.getByRole('img', { name: 'Scores around your rank' })).toHaveClass(
+      'h-chart',
+      'md:h-chart-tall'
+    );
+    expect(nearbyTeams).toHaveClass('md:h-chart-tall');
+    expect(nearbyTeams).toHaveClass('w-full', 'justify-self-start', 'text-left');
     expect(nearbyTeams.querySelector('.bg-linear-to-b')).toBeInTheDocument();
     const challengeFieldHeading = screen.getByRole('heading', { name: 'Challenge field' });
     const challengeField = screen.getByRole('region', { name: 'Challenge field' });

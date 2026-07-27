@@ -130,6 +130,7 @@ export function ChallengeOverview({
                 description="Running scores for your team and nearby competitors."
                 eventStart={eventStart}
                 formatYValue={(value) => `${value.toLocaleString()} pts`}
+                height="expanded"
                 interpolation="step"
                 series={standing.nearbySeries}
                 showDataTable={false}
