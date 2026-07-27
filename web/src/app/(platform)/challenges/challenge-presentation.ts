@@ -1,5 +1,6 @@
 export const flagSubmitSuccessEffectOptions = [
-  { id: 'edge-imprint', label: 'Edge imprint' },
+  { id: 'edge-border', label: 'Edge border' },
+  { id: 'screen-imprint', label: 'Screen imprint' },
   { id: 'field-wave', label: 'Field wave' },
   { id: 'none', label: 'No effect' }
 ] as const;
@@ -12,5 +13,5 @@ export interface ChallengePresentationSettings {
 
 // Frontend-only adapter until presentation settings are supplied by the admin API.
 export const challengePresentationSettingsStub: ChallengePresentationSettings = {
-  flagSubmitSuccessEffect: 'edge-imprint'
+  flagSubmitSuccessEffect: 'edge-border'
 };

@@ -73,7 +73,21 @@ function FieldWave({
   );
 }
 
-function EdgeImprint({ onComplete }: Pick<ChallengeSuccessEffectProps, 'onComplete'>) {
+function EdgeBorder({ onComplete }: Pick<ChallengeSuccessEffectProps, 'onComplete'>) {
+  return (
+    <div
+      aria-hidden
+      className="kitsune-solve-effect pointer-events-none fixed inset-0 z-celebration"
+    >
+      <span
+        className="kitsune-solve-edge-frame absolute inset-0 border border-success-imprint-edge"
+        onAnimationEnd={onComplete}
+      />
+    </div>
+  );
+}
+
+function ScreenImprint({ onComplete }: Pick<ChallengeSuccessEffectProps, 'onComplete'>) {
   return (
     <div
       aria-hidden
@@ -97,12 +111,15 @@ export function ChallengeSuccessEffect({
     return null;
   }
 
-  return createPortal(
-    effect === 'edge-imprint' ? (
-      <EdgeImprint onComplete={onComplete} />
-    ) : (
-      <FieldWave onComplete={onComplete} origin={origin} />
-    ),
-    document.body
-  );
+  let renderedEffect;
+
+  if (effect === 'edge-border') {
+    renderedEffect = <EdgeBorder onComplete={onComplete} />;
+  } else if (effect === 'screen-imprint') {
+    renderedEffect = <ScreenImprint onComplete={onComplete} />;
+  } else {
+    renderedEffect = <FieldWave onComplete={onComplete} origin={origin} />;
+  }
+
+  return createPortal(renderedEffect, document.body);
 }

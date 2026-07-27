@@ -119,7 +119,7 @@
   --success-subtle: var(--success-3);
   --success-border: var(--success-6);
   --success: var(--success-9);
-  --success-imprint-edge: color-mix(in oklch, var(--success) 52%, transparent);
+  --success-imprint-edge: color-mix(in oklch, var(--success) 64%, transparent);
   --success-imprint-fill: color-mix(in oklch, var(--success) 7%, transparent);
   --success-wave-fill: color-mix(in oklch, var(--success) 18%, transparent);
   --success-hover: var(--success-10);

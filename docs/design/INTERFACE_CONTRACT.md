@@ -287,15 +287,16 @@ reusable failure mode, add the general rule here before closing the issue.
   are not.
 - A flag submission updates in place, preserves the challenge position, and
   gives an immediate pending state followed by exact feedback.
-- Confirmed-flag feedback uses a typed presentation slot with `edge-imprint`,
-  `field-wave`, and `none` variants. Until the admin API supplies the setting,
-  one feature-local frontend adapter selects the default; screens do not branch
-  on ad hoc booleans.
-- The default edge imprint draws one crisp semantic-green viewport perimeter
-  at the screen boundary and briefly applies a low-opacity flat green wash over
-  the page. The perimeter registers without hidden off-screen travel, and the
-  weaker wash recedes before it. It uses no glow, blur, gradient, content
-  movement, or layout animation.
+- Confirmed-flag feedback uses a typed presentation slot with `edge-border`,
+  `screen-imprint`, `field-wave`, and `none` variants. Until the admin API
+  supplies the setting, one feature-local frontend adapter selects the default;
+  screens do not branch on ad hoc booleans.
+- The default edge border draws only one crisp semantic-green viewport
+  perimeter at the screen boundary. It applies no page tint, glow, blur,
+  gradient, content movement, or layout animation.
+- The optional screen imprint reuses that perimeter and briefly applies a
+  low-opacity flat green wash over the page. The weaker wash recedes before the
+  perimeter so it reads as a page imprint rather than replacing the border.
 - The optional field wave begins at the measured flag-field bounds and expands
   across the viewport above product chrome. Its imprint preserves the textbox
   bounds, shared field radius, edge, and submitted value; it never substitutes

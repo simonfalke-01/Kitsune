@@ -315,7 +315,7 @@ describe('ChallengeWorkspace', () => {
     expect(within(standings).getAllByText('Foxden').length).toBeGreaterThan(0);
   });
 
-  it('preserves the solved dock and emits the default edge imprint', async () => {
+  it('preserves the solved dock and emits the default edge border', async () => {
     const workspaceActions = actions();
     workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
       attempts_remaining: 4,
@@ -365,14 +365,47 @@ describe('ChallengeWorkspace', () => {
     expect(selectedChallenge).not.toHaveAttribute('data-newly-solved');
     const solveEffect = document.querySelector('.kitsune-solve-effect');
     const edgeFrame = document.querySelector('.kitsune-solve-edge-frame');
-    const edgeWash = document.querySelector('.kitsune-solve-edge-wash');
     expect(solveEffect?.parentElement).toBe(document.body);
     expect(solveEffect).toHaveClass('fixed', 'inset-0', 'z-celebration');
     expect(edgeFrame).toHaveClass('border', 'border-success-imprint-edge');
     expect(edgeFrame?.parentElement).toBe(solveEffect);
-    expect(edgeWash?.parentElement).toBe(solveEffect);
+    expect(document.querySelector('.kitsune-solve-edge-wash')).not.toBeInTheDocument();
     expect(document.querySelector('.kitsune-solve-origin')).not.toBeInTheDocument();
     expect(document.querySelector('.kitsune-solve-wave')).not.toBeInTheDocument();
+  });
+
+  it('keeps the full-screen imprint available as a presentation setting', async () => {
+    const workspaceActions = actions();
+    workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
+      attempts_remaining: 4,
+      awarded_points: 300,
+      challenge_id: 'challenge',
+      first_blood: false,
+      id: 'submission',
+      outcome: 'correct',
+      replayed: false,
+      submitted_at: '2026-07-23T12:00:00Z'
+    });
+    renderWorkspace(
+      [createChallengeExperience(challenge(), { solveCount: 4 })],
+      'challenge',
+      workspaceActions,
+      'screen-imprint'
+    );
+    fireEvent.change(screen.getByLabelText('Flag'), {
+      target: {
+        value: 'kit{correct}'
+      }
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Submit flag' }));
+
+    await waitFor(() => {
+      expect(workspaceActions.submitAnswer).toHaveBeenCalledWith('challenge', 'kit{correct}');
+    });
+
+    const solveEffect = document.querySelector('.kitsune-solve-effect');
+    expect(document.querySelector('.kitsune-solve-edge-frame')?.parentElement).toBe(solveEffect);
+    expect(document.querySelector('.kitsune-solve-edge-wash')?.parentElement).toBe(solveEffect);
   });
 
   it('keeps the field wave available as a presentation setting', async () => {
