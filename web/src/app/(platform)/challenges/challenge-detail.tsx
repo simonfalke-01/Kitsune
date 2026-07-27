@@ -150,7 +150,7 @@ export function ChallengeDetail({
       {solveWave ? (
         <span
           aria-hidden
-          className="kitsune-solve-wave pointer-events-none absolute z-30 aspect-square rounded-full"
+          className="kitsune-solve-wave pointer-events-none absolute z-30 aspect-square rounded-full ring-2 ring-success-border"
           style={solveWaveStyle}
         />
       ) : null}

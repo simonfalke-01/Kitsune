@@ -392,6 +392,7 @@
   --duration-fast: 120ms;
   --duration-normal: 180ms;
   --duration-slow: 260ms;
+  --duration-celebration: 600ms;
   --animate-toast-in: kitsune-toast-in var(--duration-normal) var(--ease-out-quart) both;
   --animate-toast-out: kitsune-toast-out var(--duration-fast) var(--ease-out-quart) both;
 
@@ -481,7 +482,7 @@
     left: var(--solve-wave-x);
     width: var(--solve-wave-diameter);
     background-color: var(--success-subtle);
-    animation: kitsune-solve-wave var(--duration-slow) var(--ease-out-quart) both;
+    animation: kitsune-solve-wave var(--duration-celebration) var(--ease-out-quart) both;
     will-change: opacity, transform;
   }
 
@@ -610,6 +611,7 @@
     --duration-fast: 0ms;
     --duration-normal: 0ms;
     --duration-slow: 0ms;
+    --duration-celebration: 0ms;
   }
 
   .kitsune-solve-wave {
