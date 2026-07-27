@@ -752,6 +752,7 @@ describe('ChallengeWorkspace', () => {
     );
     expect(currentRow).toBe(rows[13]);
     expect(currentRow).toHaveAttribute('aria-current', 'true');
+    expect(currentRow).toHaveClass('sticky', 'bottom-0', 'z-10');
   });
 
   it('preserves the solved dock and emits the default edge border', async () => {

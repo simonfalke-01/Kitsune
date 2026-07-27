@@ -85,7 +85,9 @@ function SolveRow({ entry, eventStartedAt }: SolveRowProps) {
       aria-current={entry.isSelf ? 'true' : undefined}
       className={cx(
         'flex min-h-16 items-center gap-3 px-3 py-2',
-        entry.isSelf ? 'border-l-2 border-accent bg-accent-subtle' : null
+        entry.isSelf
+          ? 'sticky bottom-0 z-10 border-l-2 border-accent bg-accent-subtle shadow-md'
+          : null
       )}
     >
       <strong

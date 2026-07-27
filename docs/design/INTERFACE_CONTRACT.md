@@ -466,7 +466,8 @@ reusable failure mode, add the general rule here before closing the issue.
 - Challenge detail provides a solve timeline sourced from the same model as
   the compact first-three-plus-self context. Each solve shows rank, competitor,
   elapsed time from first solve, and absolute solve time. The current competitor
-  stays identifiable at their true ordinal position; inserting a highlighted
+  stays identifiable at their true ordinal position, and that same row may
+  stick to the solve-pane edge while scrolling. Inserting a second highlighted
   self row between unrelated ranks is prohibited.
 - The compact first-three-plus-self context uses one identity anatomy per
   competitor: placement, a larger team avatar, then a two-line stack of team
