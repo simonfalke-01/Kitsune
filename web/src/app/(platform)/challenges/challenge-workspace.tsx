@@ -215,6 +215,22 @@ export function ChallengeWorkspace({
     displayedChallenges.find((challenge) => challenge.id === immediateSelectedChallengeId) ?? null;
   const isFocusModeActive = focusedChallengeId === selectedChallenge?.id;
   immediateSelectedTab = availableTab(selectedChallenge, immediateSelectedTab, actions);
+  const visibleChallengeRows = useCallback(() => {
+    return Array.from(
+      collectionScrollRef.current?.querySelectorAll<HTMLElement>('[data-challenge-row]') ?? []
+    ).filter((row) => !row.closest('[hidden], [aria-hidden="true"], [inert]'));
+  }, []);
+  const exitChallengeSearch = useCallback(() => {
+    const selectedRow = visibleChallengeRows().find(
+      (row) => row.dataset.challengeId === selectedChallenge?.id
+    );
+
+    if (selectedRow) {
+      selectedRow.focus();
+    } else {
+      searchInputRef.current?.blur();
+    }
+  }, [selectedChallenge?.id, visibleChallengeRows]);
 
   useEffect(() => {
     const scrollOwner = collectionScrollRef.current;
@@ -308,9 +324,7 @@ export function ChallengeWorkspace({
 
   useEffect(() => {
     function focusChallengeRow(direction: 1 | -1) {
-      const rows = Array.from(
-        collectionScrollRef.current?.querySelectorAll<HTMLElement>('[data-challenge-row]') ?? []
-      ).filter((row) => !row.closest('[hidden], [aria-hidden="true"], [inert]'));
+      const rows = visibleChallengeRows();
 
       if (rows.length === 0) {
         return;
@@ -339,6 +353,12 @@ export function ChallengeWorkspace({
       const hasOpenOverlay = Boolean(
         document.querySelector('[role="dialog"], [role="alertdialog"]')
       );
+
+      if (event.key === 'Escape' && event.target === searchInputRef.current) {
+        event.preventDefault();
+        exitChallengeSearch();
+        return;
+      }
 
       if (event.key === 'Escape' && isFocusModeActive && !hasOpenOverlay) {
         event.preventDefault();
@@ -405,7 +425,14 @@ export function ChallengeWorkspace({
     return () => {
       window.removeEventListener('keydown', handleWorkspaceShortcut);
     };
-  }, [isDesktop, isFocusModeActive, selectTab, selectedChallenge]);
+  }, [
+    exitChallengeSearch,
+    isDesktop,
+    isFocusModeActive,
+    selectTab,
+    selectedChallenge,
+    visibleChallengeRows
+  ]);
 
   function handleSolved(challengeId: string, solvedAt: string) {
     setOptimisticSolveTimes((current) => {
@@ -440,6 +467,14 @@ export function ChallengeWorkspace({
         );
         return getChallengeHref?.(challengeId, tab);
       }}
+      onCollapseChallengeList={
+        isDesktop && selectedChallenge
+          ? () => {
+              setFocusedChallengeId(selectedChallenge.id);
+            }
+          : undefined
+      }
+      onExitSearch={exitChallengeSearch}
       onSelectChallenge={(challengeId, trigger) => {
         selectChallenge(challengeId, trigger);
       }}
@@ -455,16 +490,12 @@ export function ChallengeWorkspace({
       challenge={selectedChallenge}
       eventId={eventId}
       flagSubmitSuccessEffect={flagSubmitSuccessEffect}
-      isFocusMode={isFocusModeActive}
       key={selectedChallenge.id}
       onChallengeChanged={onChallengeChanged}
       onAttempt={(value, receipt) => {
         handleAttempt(selectedChallenge.id, value, receipt);
       }}
       onSolved={handleSolved}
-      onFocusModeChange={(focused) => {
-        setFocusedChallengeId(focused ? selectedChallenge.id : null);
-      }}
       onTabChange={selectTab}
       selectedTab={immediateSelectedTab}
       solveContext={solveContexts.get(selectedChallenge.id)!}
@@ -494,7 +525,11 @@ export function ChallengeWorkspace({
       <ChallengeEventTrail
         challenges={displayedChallenges}
         eventName={eventName}
+        isChallengeListCollapsed={isFocusModeActive}
         isShortcutHelpOpen={isShortcutHelpOpen}
+        onExpandChallengeList={() => {
+          setFocusedChallengeId(null);
+        }}
         onShortcutHelpOpenChange={setIsShortcutHelpOpen}
         selectedChallenge={selectedChallenge}
         standing={standing}

@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ChevronsUpDown, Eye, EyeOff, Trophy } from 'lucide-react';
+import { Check, ChevronsUpDown, Eye, EyeOff, PanelLeftClose, Trophy } from 'lucide-react';
 import { type RefObject, useMemo, useState, useSyncExternalStore } from 'react';
 
 import {
@@ -107,6 +107,8 @@ interface ChallengeCollectionProps {
   challenges: ChallengeExperience[];
   eventId: string;
   getChallengeHref?: (challengeId: string) => string | undefined;
+  onCollapseChallengeList?: () => void;
+  onExitSearch?: () => void;
   onSelectChallenge?: (challengeId: string, trigger: HTMLElement) => void;
   selectedChallengeId: string | null;
   searchInputRef?: RefObject<HTMLInputElement | null>;
@@ -117,6 +119,8 @@ export function ChallengeCollection({
   challenges,
   eventId,
   getChallengeHref,
+  onCollapseChallengeList,
+  onExitSearch,
   onSelectChallenge,
   selectedChallengeId,
   searchInputRef,
@@ -158,11 +162,19 @@ export function ChallengeCollection({
 
   return (
     <section aria-label="Challenge list" className="flex min-h-full flex-col bg-surface-raised">
-      <div className="sticky top-0 z-20 flex min-h-24 items-end gap-2 bg-surface-raised px-3 py-3">
+      <div className="sticky top-0 z-20 flex min-h-16 items-center gap-2 bg-surface-raised px-3">
         <SearchField
           className="min-w-0 flex-1"
           label="Search challenges"
+          labelHidden
           inputRef={searchInputRef}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              event.preventDefault();
+              event.stopPropagation();
+              onExitSearch?.();
+            }
+          }}
           onChange={setQuery}
           placeholder="Name or category"
           value={query}
@@ -205,6 +217,20 @@ export function ChallengeCollection({
           </Button>
           <Tooltip>{expandedKeys.size === 0 ? 'Expand all' : 'Collapse all'}</Tooltip>
         </TooltipTrigger>
+        {onCollapseChallengeList ? (
+          <TooltipTrigger>
+            <Button
+              aria-label="Collapse challenge list"
+              className="size-control"
+              onPress={onCollapseChallengeList}
+              size="icon"
+              tone="quiet"
+            >
+              <PanelLeftClose aria-hidden className="size-4" />
+            </Button>
+            <Tooltip>Collapse challenge list</Tooltip>
+          </TooltipTrigger>
+        ) : null}
       </div>
 
       {groups.length === 0 ? (
@@ -242,7 +268,7 @@ export function ChallengeCollection({
               <Disclosure
                 className={`${categoryTextClasses[tone]} bg-surface-raised`}
                 density="compact"
-                headingClassName="sticky top-24 z-10 bg-surface-sunken"
+                headingClassName="sticky top-16 z-10 bg-surface-sunken"
                 headingLevel={2}
                 id={group.category}
                 key={group.category}
@@ -264,6 +290,7 @@ export function ChallengeCollection({
                           appearance="challenge"
                           className="kitsune-challenge-row"
                           data-blood={bloodRank ?? undefined}
+                          data-challenge-id={challenge.id}
                           data-challenge-row
                           data-solved={challenge.solved || undefined}
                           href={getChallengeHref?.(challenge.id)}

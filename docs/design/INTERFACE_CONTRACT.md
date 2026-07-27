@@ -174,6 +174,9 @@ reusable failure mode, add the general rule here before closing the issue.
   selection; Enter uses the focused row's normal link behavior; D, S, and H
   choose detail tabs; brackets resize the desktop split. Editable controls,
   composition, modifier chords, and open overlays must not trigger them.
+- Escape exits challenge search and restores focus to the selected rendered
+  challenge row when available. The next J or K movement continues from that
+  row while selection remains unchanged.
 - The event trail owns one concise shortcut reference reachable by pointer and
   keyboard. Every command retains a visible equivalent, and focus movement is
   never presented as selection.
@@ -184,10 +187,11 @@ reusable failure mode, add the general rule here before closing the issue.
   escape path.
 - Desktop focus mode collapses the collection to zero without unmounting either
   pane or overwriting the persisted split. The detail's tab, scroll position,
-  form state, and submission feedback survive entry and exit. The points row
-  owns a labelled control; F toggles it; Escape exits only when no overlay owns
-  Escape. Focus mode is intentionally session-local and never restored on
-  reload.
+  form state, and submission feedback survive entry and exit. The collection
+  toolbar owns the collapse control beside its other view controls; the merged
+  header exposes Show challenge list while collapsed. F toggles it; Escape
+  exits only when no overlay owns Escape. Focus mode is intentionally
+  session-local and never restored on reload.
 - Shared challenge attempts use one compact dock summary and one aligned detail
   ledger. Each entry exposes the normalized submitted value, teammate identity,
   textual outcome, and absolute timestamp. New receipts prepend without
@@ -195,6 +199,10 @@ reusable failure mode, add the general rule here before closing the issue.
   Empty real challenge data renders no attempt claim; deterministic teammate
   attempts exist only in the typed frontend demo adapter until the player API
   owns this model.
+- Shared-attempt detail opens in a collision-aware popover anchored to its
+  trigger. It is not modal. The flag field reserves a flexible validation line
+  before submission so ordinary one-line feedback never changes sticky-dock
+  height; text enlargement and long localized errors remain free to reflow.
 - First blood is an achievement state, not a warning. Its sidebar wash, solved
   confirmation, toast, edge frame, screen imprint, and field wave all consume
   the shared first-blood gold role. Ordinary solves continue to use success

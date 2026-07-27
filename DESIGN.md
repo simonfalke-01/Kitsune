@@ -216,6 +216,9 @@ without losing competition context.
   Slash focuses search; J and K move focus without selecting; Enter follows
   the focused challenge; D, S, and H choose detail sections; brackets resize
   the collection. Text entry and open overlays suspend workspace shortcuts.
+- Escape leaves challenge search and returns focus to the selected visible row
+  when one exists. J and K then continue from that row without selecting it;
+  trapped search focus is a keyboard-navigation defect.
 - Keep one stable shortcut reference in the event trail. Do not scatter key
   badges beside controls or make memorized commands a prerequisite.
 - On the challenge route, global navigation and event state share one header.
@@ -224,13 +227,18 @@ without losing competition context.
 - Focus mode temporarily removes the collection from the visual field while
   preserving its mounted state, split preference, scroll position, selected
   tab, and in-progress answer. It is never restored after a reload. A visible
-  control, F shortcut, and overlay-aware Escape path keep the mode explicit
-  and trivially reversible.
+  collection-toolbar control collapses it; the merged header exposes the
+  inverse control while collapsed. F and overlay-aware Escape remain
+  accelerators, never the only way back.
 - Shared attempt history stays beside flag entry as one compact team summary.
   Its detail view is an aligned ledger of submitted value, teammate, outcome,
   and absolute time. It remains available after a solve, adds each receipt in
   place, and never becomes a card feed. Until the backend supplies this model,
   only the explicit demo adapter may seed teammate attempts.
+- Attempt detail is an anchored, dismissible popover from its action, not a
+  modal interruption. Flag validation reserves one flexible message line from
+  the initial state so an incorrect receipt never changes the dock's geometry;
+  longer accessible copy may still expand instead of clipping.
 - The splitter is a direct-manipulation control. Its hit target is forgiving,
   its affordance is visible without guessing, dragging updates continuously,
   and arrow keys provide an equivalent path.

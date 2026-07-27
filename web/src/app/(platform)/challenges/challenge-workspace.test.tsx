@@ -173,7 +173,7 @@ describe('ChallengeWorkspace', () => {
     );
     expect(screen.getByRole('button', { name: /Web/ }).closest('h2')).toHaveClass(
       'sticky',
-      'top-24'
+      'top-16'
     );
   });
 
@@ -278,7 +278,8 @@ describe('ChallengeWorkspace', () => {
     fireEvent.keyDown(search, { key: 's' });
     expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true');
 
-    search.blur();
+    fireEvent.keyDown(search, { key: 'Escape' });
+    expect(search).not.toHaveFocus();
     fireEvent.keyDown(window, { key: 's' });
     expect(screen.getByRole('tab', { name: 'Solves 4' })).toHaveAttribute('aria-selected', 'true');
 
@@ -287,6 +288,32 @@ describe('ChallengeWorkspace', () => {
 
     fireEvent.keyDown(window, { key: 'd' });
     expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('returns from search to the selected row before J and K navigation resumes', () => {
+    renderWorkspace(
+      [
+        createChallengeExperience(challenge({ id: 'first', name: 'First trail' })),
+        createChallengeExperience(challenge({ id: 'second', name: 'Second trail', position: 1 }))
+      ],
+      'first'
+    );
+
+    const challengeList = screen.getByRole('region', { name: 'Challenge list' });
+    const first = within(challengeList).getByRole('link', { name: /First trail/ });
+    const second = within(challengeList).getByRole('link', { name: /Second trail/ });
+
+    fireEvent.keyDown(window, { key: '/' });
+    const search = screen.getByRole('searchbox', { name: 'Search challenges' });
+    expect(search).toHaveFocus();
+
+    fireEvent.keyDown(search, { key: 'Escape' });
+    expect(first).toHaveFocus();
+
+    fireEvent.keyDown(window, { key: 'j' });
+    expect(second).toHaveFocus();
+    expect(first).toHaveAttribute('aria-current', 'true');
+    expect(second).not.toHaveAttribute('aria-current');
   });
 
   it('resizes the challenge list and exposes a shortcut reference', async () => {
@@ -302,32 +329,33 @@ describe('ChallengeWorkspace', () => {
     const dialog = await screen.findByRole('dialog', { name: 'Keyboard shortcuts' });
     expect(within(dialog).getByText('Move through challenges')).toBeVisible();
     expect(within(dialog).getByText('Resize challenge list')).toBeVisible();
-    expect(within(dialog).getByText('Toggle focus mode')).toBeVisible();
+    expect(within(dialog).getByText('Toggle challenge list')).toBeVisible();
   });
 
   it('enters focus mode without remounting challenge state and restores the split on exit', () => {
     renderWorkspace([createChallengeExperience(challenge())], 'challenge');
 
     const flag = screen.getByLabelText('Flag');
-    fireEvent.change(flag, { target: { value: 'kit{draft}' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Enter focus mode' }));
-
     const workspace = screen
-      .getByRole('button', { name: 'Exit focus mode' })
+      .getByRole('slider', { name: 'Challenge list width' })
       .closest('.kitsune-split-workspace');
+    fireEvent.change(flag, { target: { value: 'kit{draft}' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse challenge list' }));
+
     expect(workspace).toHaveStyle({ '--split-workspace-left': '0%' });
+    expect(screen.getByRole('button', { name: 'Show challenge list' })).toBeVisible();
     expect(screen.queryByRole('slider', { name: 'Challenge list width' })).not.toBeInTheDocument();
     expect(screen.getByLabelText('Flag')).toBe(flag);
     expect(screen.getByLabelText('Flag')).toHaveValue('kit{draft}');
 
     fireEvent.keyDown(window, { key: 'Escape' });
 
-    expect(screen.getByRole('button', { name: 'Enter focus mode' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Collapse challenge list' })).toBeVisible();
     expect(screen.getByRole('slider', { name: 'Challenge list width' })).toHaveValue('34');
     expect(screen.getByLabelText('Flag')).toBe(flag);
 
     fireEvent.keyDown(window, { key: 'f' });
-    expect(screen.getByRole('button', { name: 'Exit focus mode' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Show challenge list' })).toBeVisible();
   });
 
   it('shows seeded team attempts as a compact summary and an aligned ledger', async () => {
@@ -367,6 +395,7 @@ describe('ChallengeWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'View attempts' }));
 
     const dialog = await screen.findByRole('dialog', { name: 'Team attempts' });
+    expect(dialog.closest('.max-w-detail')).toBeInTheDocument();
     const ledger = within(dialog).getByRole('list', { name: 'Shared attempt history' });
     expect(within(ledger).getAllByRole('listitem')).toHaveLength(2);
     expect(within(ledger).getByText('kit{second_guess}')).toBeVisible();
@@ -838,6 +867,11 @@ describe('ChallengeWorkspace', () => {
       workspaceActions
     );
 
+    const errorSlot = screen
+      .getByLabelText('Flag')
+      .parentElement?.querySelector('[data-slot="field-error"]');
+    expect(errorSlot).toBeEmptyDOMElement();
+
     fireEvent.change(screen.getByLabelText('Flag'), {
       target: {
         value: 'kit{incorrect}'
@@ -846,6 +880,9 @@ describe('ChallengeWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Submit flag' }));
 
     expect(await screen.findByText('Incorrect. 3 attempts remain.')).toBeVisible();
+    expect(
+      screen.getByLabelText('Flag').parentElement?.querySelector('[data-slot="field-error"]')
+    ).toBe(errorSlot);
     expect(screen.getByText('1 team attempt')).toBeVisible();
     expect(screen.getByText('Last incorrect by Foxden')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'View attempts' }));

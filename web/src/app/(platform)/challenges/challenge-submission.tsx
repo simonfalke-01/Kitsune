@@ -134,6 +134,7 @@ export function ChallengeSubmission({
                 label={answerLabel}
                 labelHidden
                 onChange={setAnswer}
+                reserveErrorSpace
                 value={answer}
               />
             </div>

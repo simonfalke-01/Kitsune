@@ -9,15 +9,22 @@ import {
 
 import { cx, overlaySurface } from './styles';
 
-export type PopoverProps = ReactAriaPopoverProps;
+const popoverSizes = {
+  content: 'min-w-menu max-w-prose',
+  wide: 'w-full max-w-detail'
+} as const;
 
-export function Popover({ className, ...props }: PopoverProps) {
+export interface PopoverProps extends ReactAriaPopoverProps {
+  size?: keyof typeof popoverSizes;
+}
+
+export function Popover({ className, size = 'content', ...props }: PopoverProps) {
   return (
     <ReactAriaPopover
       {...props}
       className={cx(
         overlaySurface,
-        'min-w-menu max-w-prose',
+        popoverSizes[size],
         typeof className === 'string' ? className : undefined
       )}
     />

@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, PanelLeftClose, PanelLeftOpen, Trophy } from 'lucide-react';
+import { Check, Trophy } from 'lucide-react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 
 import { ChallengeAttemptHistory } from './challenge-attempt-history';
@@ -28,15 +28,12 @@ import {
 import { ChallengeWriteup } from './challenge-writeup';
 import {
   Alert,
-  Button,
   CodeBlock,
   Link,
   Tabs,
   TabsList,
   TabsPanel,
   TabsTab,
-  Tooltip,
-  TooltipTrigger,
   showToast
 } from '@/components/ui';
 import type { SubmissionReceipt } from '@/lib/api/client';
@@ -53,10 +50,8 @@ interface ChallengeDetailProps {
   challenge: ChallengeExperience;
   eventId: string;
   flagSubmitSuccessEffect: FlagSubmitSuccessEffect;
-  isFocusMode?: boolean;
   onAttempt: (value: string, receipt: SubmissionReceipt) => void;
   onChallengeChanged?: () => Promise<void>;
-  onFocusModeChange?: (focused: boolean) => void;
   onSolved?: (challengeId: string, solvedAt: string) => void;
   onTabChange: (tab: ChallengeDetailTab) => void;
   selectedTab: ChallengeDetailTab;
@@ -123,10 +118,8 @@ export function ChallengeDetail({
   challenge,
   eventId,
   flagSubmitSuccessEffect,
-  isFocusMode = false,
   onAttempt,
   onChallengeChanged,
-  onFocusModeChange,
   onSolved,
   onTabChange,
   selectedTab,
@@ -258,31 +251,9 @@ export function ChallengeDetail({
               ) : null}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <strong className="text-lg tabular-nums text-text">
-              {challengePoints(resolvedChallenge)}
-            </strong>
-            {onFocusModeChange ? (
-              <TooltipTrigger>
-                <Button
-                  aria-label={isFocusMode ? 'Exit focus mode' : 'Enter focus mode'}
-                  className="size-control"
-                  onPress={() => {
-                    onFocusModeChange(!isFocusMode);
-                  }}
-                  size="icon"
-                  tone="quiet"
-                >
-                  {isFocusMode ? (
-                    <PanelLeftOpen aria-hidden className="size-4" />
-                  ) : (
-                    <PanelLeftClose aria-hidden className="size-4" />
-                  )}
-                </Button>
-                <Tooltip>{isFocusMode ? 'Exit focus mode' : 'Focus mode'}</Tooltip>
-              </TooltipTrigger>
-            ) : null}
-          </div>
+          <strong className="shrink-0 text-lg tabular-nums text-text">
+            {challengePoints(resolvedChallenge)}
+          </strong>
         </div>
       </header>
 

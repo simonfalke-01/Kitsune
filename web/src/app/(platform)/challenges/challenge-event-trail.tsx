@@ -1,4 +1,4 @@
-import { Keyboard } from 'lucide-react';
+import { Keyboard, PanelLeftOpen } from 'lucide-react';
 
 import { ChallengeCategoryLabel } from './challenge-category';
 import type { ChallengeEventStandingStub } from './challenge-solve-stub';
@@ -17,7 +17,9 @@ import { challengeProgress, type ChallengeExperience } from '@/lib/challenges';
 interface ChallengeEventTrailProps {
   challenges: ChallengeExperience[];
   eventName: string;
+  isChallengeListCollapsed: boolean;
   isShortcutHelpOpen: boolean;
+  onExpandChallengeList: () => void;
   onShortcutHelpOpenChange: (open: boolean) => void;
   selectedChallenge?: ChallengeExperience | null;
   standing: ChallengeEventStandingStub;
@@ -30,7 +32,7 @@ const challengeShortcuts = [
   { keys: ['D'], label: 'Open details' },
   { keys: ['S'], label: 'Open solves' },
   { keys: ['H'], label: 'Open hints' },
-  { keys: ['F'], label: 'Toggle focus mode' },
+  { keys: ['F'], label: 'Toggle challenge list' },
   { keys: ['[', ']'], label: 'Resize challenge list' },
   { keys: ['?'], label: 'Show shortcuts' }
 ] as const;
@@ -38,7 +40,9 @@ const challengeShortcuts = [
 export function ChallengeEventTrail({
   challenges,
   eventName,
+  isChallengeListCollapsed,
   isShortcutHelpOpen,
+  onExpandChallengeList,
   onShortcutHelpOpenChange,
   selectedChallenge,
   standing
@@ -59,6 +63,20 @@ export function ChallengeEventTrail({
       }
     >
       <section aria-label="Event progress" className="flex min-w-0 items-center gap-6">
+        {isChallengeListCollapsed ? (
+          <TooltipTrigger>
+            <Button
+              aria-label="Show challenge list"
+              className="size-control shrink-0"
+              onPress={onExpandChallengeList}
+              size="icon"
+              tone="quiet"
+            >
+              <PanelLeftOpen aria-hidden className="size-4" />
+            </Button>
+            <Tooltip>Show challenge list</Tooltip>
+          </TooltipTrigger>
+        ) : null}
         <div className="kitsune-optical-center flex min-w-0 flex-1 items-baseline gap-6">
           {selectedChallenge ? (
             <div className="hidden min-w-0 items-baseline gap-2 text-sm 2xl:flex">
@@ -81,6 +99,13 @@ export function ChallengeEventTrail({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-6">
+          <div className="hidden items-center gap-3 xl:flex">
+            <span className="kitsune-optical-center hidden text-right text-sm tabular-nums text-text-muted 2xl:block">
+              Rank <strong className="font-semibold text-text">{standing.rank}</strong> /{' '}
+              {standing.totalCompetitors}
+            </span>
+            <Sparkline interpolation="step" series={standing.scoreSeries} />
+          </div>
           <TooltipTrigger>
             <DialogTrigger isOpen={isShortcutHelpOpen} onOpenChange={onShortcutHelpOpenChange}>
               <Button
@@ -113,13 +138,6 @@ export function ChallengeEventTrail({
             </DialogTrigger>
             <Tooltip>Keyboard shortcuts</Tooltip>
           </TooltipTrigger>
-          <div className="hidden items-center gap-3 xl:flex">
-            <span className="kitsune-optical-center hidden text-right text-sm tabular-nums text-text-muted 2xl:block">
-              Rank <strong className="font-semibold text-text">{standing.rank}</strong> /{' '}
-              {standing.totalCompetitors}
-            </span>
-            <Sparkline interpolation="step" series={standing.scoreSeries} />
-          </div>
         </div>
       </section>
     </AppHeader>
