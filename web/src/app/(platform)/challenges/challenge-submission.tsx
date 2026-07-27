@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useRef, useState } from 'react';
+import { type RefObject, useId, useRef, useState } from 'react';
 
 import type { ChallengeWorkspaceActions } from './challenge-types';
 import { Button, Form, RadioGroup, showToast, TextField } from '@/components/ui';
@@ -8,6 +8,7 @@ import type { SubmissionReceipt } from '@/lib/api/client';
 import type { ChallengeExperience } from '@/lib/challenges';
 
 interface ChallengeSubmissionProps {
+  answerInputRef?: RefObject<HTMLInputElement | null>;
   challenge: ChallengeExperience;
   onCorrectOrigin?: (origin: DOMRect, value: string, isFirstBlood: boolean) => void;
   onReceipt: (receipt: SubmissionReceipt, submittedValue: string) => Promise<void>;
@@ -15,6 +16,7 @@ interface ChallengeSubmissionProps {
 }
 
 export function ChallengeSubmission({
+  answerInputRef,
   challenge,
   onCorrectOrigin,
   onReceipt,
@@ -116,6 +118,7 @@ export function ChallengeSubmission({
                 errorMessage={error}
                 inputClassName="h-control bg-surface-sunken font-mono"
                 inputId={flagInputId}
+                inputRef={answerInputRef}
                 isInvalid={Boolean(error)}
                 label={answerLabel}
                 labelHidden

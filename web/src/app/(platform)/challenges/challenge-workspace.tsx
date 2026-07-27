@@ -164,6 +164,7 @@ export function ChallengeWorkspace({
   const collectionScrollRef = useRef<HTMLDivElement>(null);
   const collectionScrollTimerRef = useRef<number | null>(null);
   const collapsedRailRef = useRef<HTMLElement>(null);
+  const answerInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const splitWorkspaceRef = useRef<SplitWorkspaceHandle>(null);
   const restoreSelectionFocusRef = useRef(false);
@@ -386,13 +387,22 @@ export function ChallengeWorkspace({
         event.metaKey ||
         event.ctrlKey ||
         event.altKey ||
-        isTextEntryTarget(event.target) ||
-        hasOpenOverlay
+        isTextEntryTarget(event.target)
       ) {
         return;
       }
 
       const key = event.key.toLocaleLowerCase();
+
+      if (event.key === '?' && (!hasOpenOverlay || isShortcutHelpOpen)) {
+        event.preventDefault();
+        setIsShortcutHelpOpen((current) => !current);
+        return;
+      }
+
+      if (hasOpenOverlay) {
+        return;
+      }
 
       if (event.key === '/') {
         event.preventDefault();
@@ -413,6 +423,12 @@ export function ChallengeWorkspace({
         return;
       }
 
+      if (selectedChallenge && key === 'a') {
+        event.preventDefault();
+        answerInputRef.current?.focus();
+        return;
+      }
+
       if (isDesktop && selectedChallenge && key === 'f') {
         event.preventDefault();
         if (isFocusModeActive) {
@@ -430,11 +446,6 @@ export function ChallengeWorkspace({
         );
         return;
       }
-
-      if (event.key === '?') {
-        event.preventDefault();
-        setIsShortcutHelpOpen(true);
-      }
     }
 
     window.addEventListener('keydown', handleWorkspaceShortcut);
@@ -446,6 +457,7 @@ export function ChallengeWorkspace({
     collapseChallengeList,
     isDesktop,
     isFocusModeActive,
+    isShortcutHelpOpen,
     restoreChallengeList,
     selectChallenge,
     selectTab,
@@ -481,6 +493,7 @@ export function ChallengeWorkspace({
   const detail = selectedChallenge ? (
     <ChallengeDetail
       actions={actions}
+      answerInputRef={answerInputRef}
       challenge={selectedChallenge}
       eventId={eventId}
       firstBloodEdgeColor={firstBloodEdgeColor}
@@ -566,6 +579,7 @@ export function ChallengeWorkspace({
         >
           <ChallengeDetail
             actions={actions}
+            answerInputRef={answerInputRef}
             challenge={selectedChallenge}
             eventId={eventId}
             firstBloodEdgeColor={firstBloodEdgeColor}

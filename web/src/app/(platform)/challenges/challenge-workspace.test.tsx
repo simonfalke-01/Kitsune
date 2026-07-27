@@ -338,6 +338,16 @@ describe('ChallengeWorkspace', () => {
     expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true');
   });
 
+  it('focuses the flag field with A without changing detail context', () => {
+    renderWorkspace([createChallengeExperience(challenge())], 'challenge');
+
+    const flag = screen.getByLabelText('Flag');
+    fireEvent.keyDown(window, { key: 'a' });
+
+    expect(flag).toHaveFocus();
+    expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true');
+  });
+
   it('keeps locked hint state, cost, and action in one aligned row', async () => {
     const workspaceActions = actions();
     workspaceActions.loadHints = vi.fn().mockResolvedValue([
@@ -406,6 +416,13 @@ describe('ChallengeWorkspace', () => {
     expect(within(dialog).getByText('Move challenge selection')).toBeVisible();
     expect(within(dialog).getByText('Resize challenge list')).toBeVisible();
     expect(within(dialog).getByText('Toggle challenge list')).toBeVisible();
+    expect(within(dialog).getByText('Focus answer field')).toBeVisible();
+
+    fireEvent.keyDown(window, { key: '?' });
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Keyboard shortcuts' })).not.toBeInTheDocument();
+    });
   });
 
   it('enters focus mode without remounting challenge state and restores the split on exit', () => {

@@ -173,9 +173,10 @@ reusable failure mode, add the general rule here before closing the issue.
 - Challenge workspace accelerators are additive: Slash focuses search; J and K
   move the actual selection through currently visible challenge rows and update
   detail in the same frame; Enter uses the focused row's normal link behavior;
-  D, S, and H choose detail tabs; brackets resize the desktop split. Editable
-  controls, composition, modifier chords, and open overlays must not trigger
-  them.
+  D, S, and H choose detail tabs; A focuses the visible flag or answer field;
+  brackets resize the desktop split; Question mark toggles shortcut help.
+  Editable controls, composition, modifier chords, and unrelated open overlays
+  must not trigger them.
 - Escape exits challenge search and restores focus to the selected rendered
   challenge row when available. The next J or K movement continues from that
   row and advances selection.

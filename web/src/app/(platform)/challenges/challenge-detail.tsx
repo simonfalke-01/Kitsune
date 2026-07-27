@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, Trophy } from 'lucide-react';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
 
 import { ChallengeCategoryLabel } from './challenge-category';
 import { ChallengeHints } from './challenge-hints';
@@ -44,6 +44,7 @@ import {
 
 interface ChallengeDetailProps {
   actions: ChallengeWorkspaceActions;
+  answerInputRef?: RefObject<HTMLInputElement | null>;
   challenge: ChallengeExperience;
   eventId: string;
   firstBloodEdgeColor: FirstBloodEdgeColor;
@@ -111,6 +112,7 @@ function RememberedTabPanel({ challengeId, children, eventId, tab }: RememberedT
 
 export function ChallengeDetail({
   actions,
+  answerInputRef,
   challenge,
   eventId,
   firstBloodEdgeColor,
@@ -420,6 +422,7 @@ export function ChallengeDetail({
               />
             ) : (
               <ChallengeSubmission
+                answerInputRef={answerInputRef}
                 challenge={resolvedChallenge}
                 onCorrectOrigin={startSuccessEffect}
                 onReceipt={handleReceipt}

@@ -219,7 +219,8 @@ without losing competition context.
 - Keyboard accelerators shorten repeat work without replacing visible paths.
   Slash focuses search; J and K move the actual challenge selection and detail
   together; Enter follows the focused challenge; D, S, and H choose detail
-  sections; brackets resize the collection. Text entry and open overlays
+  sections; A focuses the flag or answer field; brackets resize the collection.
+  Question mark toggles shortcut help. Text entry and unrelated open overlays
   suspend workspace shortcuts.
 - Escape leaves challenge search and returns focus to the selected visible row
   when one exists. J and K then continue selection from that row; trapped

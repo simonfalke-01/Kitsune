@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref } from 'react';
 import {
   FieldError,
   Input,
@@ -27,6 +27,7 @@ export interface TextFieldProps extends Omit<ReactAriaTextFieldProps, 'children'
   label: ReactNode;
   labelHidden?: boolean;
   placeholder?: string;
+  inputRef?: Ref<HTMLInputElement>;
 }
 
 export function TextField({
@@ -35,6 +36,7 @@ export function TextField({
   errorMessage,
   inputId,
   inputClassName,
+  inputRef,
   label,
   labelHidden = false,
   placeholder,
@@ -50,6 +52,7 @@ export function TextField({
         className={cx(fieldInputControl, inputClassName)}
         id={inputId}
         placeholder={placeholder}
+        ref={inputRef}
       />
       {description ? (
         <Text className={fieldDescription} slot="description">
