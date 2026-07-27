@@ -10,13 +10,20 @@ interface PlatformLayoutProps {
 }
 
 export default async function PlatformLayout({ children }: PlatformLayoutProps) {
-  const session = await getServerSession();
+  const isPublicDemo = process.env.KITSUNE_PUBLIC_DEMO !== 'false';
+  const session = isPublicDemo ? null : await getServerSession();
 
-  if (!session) {
+  if (!isPublicDemo && !session) {
     redirect('/login');
   }
 
-  const bootstrap = await getPlatformBootstrap();
+  const bootstrap = session
+    ? await getPlatformBootstrap()
+    : {
+        challenges: [],
+        events: [],
+        selectedEventId: null
+      };
 
   return (
     <PlatformProviders

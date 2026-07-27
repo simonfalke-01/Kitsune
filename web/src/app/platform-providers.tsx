@@ -12,7 +12,7 @@ interface PlatformProvidersProps {
   initialChallenges: ChallengeSummary[];
   initialEvents: EventSummary[];
   initialSelectedEventId: string | null;
-  initialSession: Session;
+  initialSession: Session | null;
 }
 
 export function PlatformProviders({

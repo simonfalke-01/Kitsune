@@ -44,7 +44,7 @@ function pathIsCurrent(pathname: string, href: string): boolean {
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname() ?? '/';
   const router = useRouter();
-  const { logout } = useSession();
+  const { isAuthenticated, logout } = useSession();
   const { isDark, setPreference } = useTheme();
   const mobileOptions = playerNavigation.map((item) => ({
     href: item.href,
@@ -113,27 +113,29 @@ export function AppShell({ children }: AppShellProps) {
               <Moon aria-hidden className="size-4" />
             )}
           </Button>
-          <Button
-            aria-label="Sign out"
-            onPress={() => {
-              void logout().then((signedOut) => {
-                if (signedOut) {
-                  router.replace('/login');
-                  router.refresh();
-                  return;
-                }
+          {isAuthenticated ? (
+            <Button
+              aria-label="Sign out"
+              onPress={() => {
+                void logout().then((signedOut) => {
+                  if (signedOut) {
+                    router.replace('/login');
+                    router.refresh();
+                    return;
+                  }
 
-                showToast({
-                  title: 'Sign out failed',
-                  tone: 'danger'
+                  showToast({
+                    title: 'Sign out failed',
+                    tone: 'danger'
+                  });
                 });
-              });
-            }}
-            size="icon"
-            tone="quiet"
-          >
-            <LogOut aria-hidden className="size-4" />
-          </Button>
+              }}
+              size="icon"
+              tone="quiet"
+            >
+              <LogOut aria-hidden className="size-4" />
+            </Button>
+          ) : null}
         </div>
       </header>
       <main
