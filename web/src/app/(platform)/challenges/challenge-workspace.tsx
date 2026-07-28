@@ -413,6 +413,18 @@ export function ChallengeWorkspace({
         return;
       }
 
+      if (!isFocusModeActive && key === 'x') {
+        event.preventDefault();
+        challengeCollectionRef.current?.toggleSolvedVisibility();
+        return;
+      }
+
+      if (!isFocusModeActive && key === 'e') {
+        event.preventDefault();
+        challengeCollectionRef.current?.toggleCategories();
+        return;
+      }
+
       if (selectedChallenge && (key === 'd' || key === 's' || key === 'h')) {
         event.preventDefault();
         selectTab(key === 'd' ? 'details' : key === 's' ? 'solves' : 'hints');
@@ -485,7 +497,6 @@ export function ChallengeWorkspace({
       ref={challengeCollectionRef}
       selectedChallengeId={immediateSelectedChallengeId}
       searchInputRef={searchInputRef}
-      showDetailFocusLink={Boolean(isDesktop && selectedChallenge)}
       solveContexts={solveContexts}
       presenceByChallenge={presenceByChallenge}
     />
@@ -537,6 +548,7 @@ export function ChallengeWorkspace({
               />
             }
             defaultValue={34}
+            excludeLeftFromTabOrder
             left={collection}
             isLeftCollapsed={isFocusModeActive}
             maximum={48}
@@ -557,6 +569,7 @@ export function ChallengeWorkspace({
             rememberCollectionScroll(event.currentTarget.scrollTop);
           }}
           ref={collectionScrollRef}
+          tabIndex={-1}
         >
           {collection}
         </div>

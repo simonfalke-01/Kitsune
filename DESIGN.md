@@ -227,13 +227,14 @@ without losing competition context.
 - Keyboard accelerators shorten repeat work without replacing visible paths.
   Slash focuses search; J and K move the actual challenge selection and detail
   together; Enter follows the focused challenge; D, S, and H choose detail
-  sections; A focuses the flag or answer field; brackets resize the collection.
-  Question mark toggles shortcut help. Text entry and unrelated open overlays
-  suspend workspace shortcuts.
-- The categorized challenge ledger is one React Aria composite. Category
-  parents and challenge children share one roving Tab stop, so Tab crosses the
-  ledger once instead of walking every row. J/K moves challenge-to-challenge;
-  standard tree keys retain an assistive-technology path through the hierarchy.
+  sections; A focuses the flag or answer field; X toggles solved challenges; E
+  toggles categories; brackets resize the collection. Question mark toggles
+  shortcut help. Text entry and unrelated open overlays suspend workspace
+  shortcuts.
+- The challenge browser is absent from sequential Tab order. Its React Aria
+  controls remain pointer-operable and programmatically focusable; Slash, J/K,
+  X, E, and F provide its keyboard path. Tab moves directly to detail controls
+  instead of entering the browser or walking challenge rows.
 - Escape leaves challenge search and returns focus to the selected visible row
   when one exists. J and K then continue selection from that row; trapped
   search focus or focus-only movement is a keyboard-navigation defect.

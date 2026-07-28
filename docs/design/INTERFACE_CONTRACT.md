@@ -191,16 +191,17 @@ reusable failure mode, add the general rule here before closing the issue.
   others, and malformed or unavailable stored values fall back safely.
 - Challenge workspace accelerators are additive: Slash focuses search; J and K
   move the actual selection through currently visible challenge rows and update
-  detail in the same frame; Enter uses the focused row's normal link behavior;
+  detail in the same frame; Enter activates the focused row;
   D, S, and H choose detail tabs; A focuses the visible flag or answer field;
-  brackets resize the desktop split; Question mark toggles shortcut help.
-  Editable controls, composition, modifier chords, and unrelated open overlays
-  must not trigger them.
-- The categorized challenge ledger uses the shared React Aria tree composition:
-  category parents own expansion and challenge children own selection. The
-  composite contributes one roving Tab stop rather than one stop per row.
-  J/K moves only through visible challenges; standard tree keys traverse and
-  expand the full hierarchy, and React Aria owns Space and Enter selection.
+  X toggles solved challenges; E toggles categories; brackets resize the desktop
+  split; Question mark toggles shortcut help. Editable controls, composition,
+  modifier chords, and unrelated open overlays must not trigger them.
+- The challenge browser contributes no sequential Tab stops. Search, category,
+  toolbar, and challenge actions remain React Aria controls that are
+  programmatically focusable and pointer-operable. Slash focuses search; J/K
+  moves visible challenge selection; X, E, and F own browser view changes; Space
+  and Enter activate the focused challenge. The browser region exposes these
+  through `aria-keyshortcuts`. Tab proceeds directly to detail.
 - Escape exits challenge search and restores focus to the selected rendered
   challenge row when available. The next J or K movement continues from that
   row and advances selection.
@@ -212,13 +213,10 @@ reusable failure mode, add the general rule here before closing the issue.
 - The event trail owns one concise shortcut reference reachable by pointer and
   keyboard. Every command retains a visible equivalent, and focus movement
   visually agrees with selection when J or K changes the active challenge.
-- With a selected desktop challenge, the collection exposes a focus-only `Skip
-challenge list` link before its controls. It moves focus to the visible
-  challenge heading, whose focus ring confirms the destination; the next Tab
-  continues with the detail actions. The detail exposes the inverse `Back to
-challenge search` link immediately before its first action. These bypasses
-  preserve direct access around the collection while its tree keyboard model
-  remains available, and remain absent from the narrow modal focus trap.
+- With a selected desktop challenge, the detail exposes `Back to challenge
+search` before its first action. It programmatically focuses the excluded
+  search field without placing the browser in sequential Tab order and remains
+  absent from the narrow modal focus trap.
 - The challenge route composes global navigation, event identity, live
   progress, standing, and global actions into one persistent header. Its solve
   progress rail is the header's lower edge. A separate global bar is hidden

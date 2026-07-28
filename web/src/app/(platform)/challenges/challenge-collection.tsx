@@ -4,6 +4,7 @@ import { ChevronsUpDown, Eye, EyeOff, PanelLeftClose } from 'lucide-react';
 import {
   forwardRef,
   type RefObject,
+  useCallback,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -11,18 +12,21 @@ import {
   useSyncExternalStore
 } from 'react';
 
-import { ChallengeCategoryLabel, challengeCategoryDefinition } from './challenge-category';
+import {
+  categoryTextClasses,
+  ChallengeCategoryLabel,
+  challengeCategoryDefinition
+} from './challenge-category';
 import { ChallengeCollectionRow } from './challenge-collection-row';
 import type { FirstBloodHighlightColor } from './challenge-presentation';
 import type { ChallengeSolveContext } from './challenge-solve-stub';
 import {
   Button,
-  CollectionTree,
-  CollectionTreeItem,
+  Disclosure,
+  DisclosureGroup,
   EmptyState,
   IconButton,
   SearchField,
-  SkipLink,
   Tooltip,
   TooltipTrigger
 } from '@/components/ui';
@@ -31,8 +35,20 @@ import {
   challengeProgress,
   filterChallenges,
   groupChallenges,
+  type ChallengeCategoryTone,
   type ChallengeExperience
 } from '@/lib/challenges';
+
+const categoryBorderClasses: Record<ChallengeCategoryTone, string> = {
+  amber: 'border-l-2 border-l-category-amber',
+  blue: 'border-l-2 border-l-category-blue',
+  cyan: 'border-l-2 border-l-category-cyan',
+  lime: 'border-l-2 border-l-category-lime',
+  orange: 'border-l-2 border-l-category-orange',
+  pink: 'border-l-2 border-l-category-pink',
+  teal: 'border-l-2 border-l-category-teal',
+  violet: 'border-l-2 border-l-category-violet'
+};
 
 const preferencesEvent = 'kitsune-challenge-preferences';
 const preferencesVersion = 'v2';
@@ -97,21 +113,14 @@ interface ChallengeCollectionProps {
   presenceByChallenge: ReadonlyMap<string, ChallengePresenceMember[]>;
   selectedChallengeId: string | null;
   searchInputRef?: RefObject<HTMLInputElement | null>;
-  showDetailFocusLink?: boolean;
   solveContexts: ReadonlyMap<string, ChallengeSolveContext>;
 }
 
 export interface ChallengeCollectionHandle {
   focusSelected(): boolean;
   moveSelection(direction: 1 | -1): void;
-}
-
-function categoryTreeKey(category: string): string {
-  return `category:${category}`;
-}
-
-function challengeTreeKey(challengeId: string): string {
-  return `challenge:${challengeId}`;
+  toggleCategories(): void;
+  toggleSolvedVisibility(): void;
 }
 
 export const ChallengeCollection = forwardRef<ChallengeCollectionHandle, ChallengeCollectionProps>(
@@ -126,7 +135,6 @@ export const ChallengeCollection = forwardRef<ChallengeCollectionHandle, Challen
       presenceByChallenge,
       selectedChallengeId,
       searchInputRef,
-      showDetailFocusLink = false,
       solveContexts
     },
     ref
@@ -159,14 +167,6 @@ export const ChallengeCollection = forwardRef<ChallengeCollectionHandle, Challen
       () => (query ? new Set<string>(groups.map((group) => group.category)) : expandedKeys),
       [expandedKeys, groups, query]
     );
-    const expandedTreeKeys = useMemo(
-      () => new Set([...resolvedExpandedCategories].map(categoryTreeKey)),
-      [resolvedExpandedCategories]
-    );
-    const categoryTreeKeys = useMemo(
-      () => new Set(groups.map((group) => categoryTreeKey(group.category))),
-      [groups]
-    );
     const visibleChallengeIds = useMemo(
       () =>
         groups.flatMap((group) =>
@@ -176,14 +176,41 @@ export const ChallengeCollection = forwardRef<ChallengeCollectionHandle, Challen
         ),
       [groups, resolvedExpandedCategories]
     );
-    const challengeRowRefs = useRef(new Map<string, HTMLDivElement>());
+    const challengeRowRefs = useRef(new Map<string, HTMLButtonElement>());
 
-    function savePreferences(nextHideSolved: boolean, nextExpandedKeys: Set<string>) {
-      writePreferences(eventId, {
-        collapsed: allCategories.filter((category) => !nextExpandedKeys.has(category)),
-        hideSolved: nextHideSolved
-      });
-    }
+    const savePreferences = useCallback(
+      (nextHideSolved: boolean, nextExpandedKeys: Set<string>) => {
+        writePreferences(eventId, {
+          collapsed: allCategories.filter((category) => !nextExpandedKeys.has(category)),
+          hideSolved: nextHideSolved
+        });
+      },
+      [allCategories, eventId]
+    );
+    const toggleSolvedVisibility = useCallback(() => {
+      const nextHideSolved = !hideSolved;
+      const hidesSelection =
+        nextHideSolved &&
+        challenges.some((challenge) => challenge.id === selectedChallengeId && challenge.solved);
+
+      if (hidesSelection) {
+        onClearSelectedChallenge?.();
+      }
+
+      savePreferences(nextHideSolved, expandedKeys);
+    }, [
+      challenges,
+      expandedKeys,
+      hideSolved,
+      onClearSelectedChallenge,
+      savePreferences,
+      selectedChallengeId
+    ]);
+    const toggleCategories = useCallback(() => {
+      const visibleCategories = groups.map((group) => group.category);
+      const next = expandedKeys.size === 0 ? new Set<string>(visibleCategories) : new Set<string>();
+      savePreferences(hideSolved, next);
+    }, [expandedKeys.size, groups, hideSolved, savePreferences]);
 
     useImperativeHandle(
       ref,
@@ -230,19 +257,25 @@ export const ChallengeCollection = forwardRef<ChallengeCollectionHandle, Challen
           if (nextChallengeId !== selectedChallengeId) {
             onSelectChallenge?.(nextChallengeId, nextRow);
           }
-        }
+        },
+        toggleCategories,
+        toggleSolvedVisibility
       }),
-      [onSelectChallenge, selectedChallengeId, visibleChallengeIds]
+      [
+        onSelectChallenge,
+        selectedChallengeId,
+        toggleCategories,
+        toggleSolvedVisibility,
+        visibleChallengeIds
+      ]
     );
 
     return (
       <section
+        aria-keyshortcuts="/ J K X E F"
         aria-label="Challenge list"
         className="relative flex min-h-full flex-col bg-surface-raised"
       >
-        {showDetailFocusLink ? (
-          <SkipLink href="#challenge-detail">Skip challenge list</SkipLink>
-        ) : null}
         <div className="sticky top-0 z-20 bg-surface-raised">
           <div className="flex min-h-12 items-center justify-start px-4">
             <dl
@@ -270,6 +303,7 @@ export const ChallengeCollection = forwardRef<ChallengeCollectionHandle, Challen
           <div className="flex min-h-16 items-start gap-2 px-3 pt-1">
             <SearchField
               className="min-w-0 flex-1"
+              excludeFromTabOrder
               label="Search challenges"
               labelHidden
               inputId="challenge-search"
@@ -281,21 +315,9 @@ export const ChallengeCollection = forwardRef<ChallengeCollectionHandle, Challen
             <TooltipTrigger>
               <IconButton
                 aria-pressed={hideSolved}
+                excludeFromTabOrder
                 label={hideSolved ? 'Show solved challenges' : 'Hide solved challenges'}
-                onPress={() => {
-                  const nextHideSolved = !hideSolved;
-                  const hidesSelection =
-                    nextHideSolved &&
-                    challenges.some(
-                      (challenge) => challenge.id === selectedChallengeId && challenge.solved
-                    );
-
-                  if (hidesSelection) {
-                    onClearSelectedChallenge?.();
-                  }
-
-                  savePreferences(nextHideSolved, expandedKeys);
-                }}
+                onPress={toggleSolvedVisibility}
               >
                 {hideSolved ? (
                   <EyeOff aria-hidden className="size-4" />
@@ -307,17 +329,11 @@ export const ChallengeCollection = forwardRef<ChallengeCollectionHandle, Challen
             </TooltipTrigger>
             <TooltipTrigger>
               <IconButton
+                excludeFromTabOrder
                 label={
                   expandedKeys.size === 0 ? 'Expand all categories' : 'Collapse all categories'
                 }
-                onPress={() => {
-                  const visibleCategories = groups.map((group) => group.category);
-                  const next =
-                    expandedKeys.size === 0
-                      ? new Set<string>(visibleCategories)
-                      : new Set<string>();
-                  savePreferences(hideSolved, next);
-                }}
+                onPress={toggleCategories}
               >
                 <ChevronsUpDown aria-hidden className="size-4" />
               </IconButton>
@@ -325,7 +341,11 @@ export const ChallengeCollection = forwardRef<ChallengeCollectionHandle, Challen
             </TooltipTrigger>
             {onCollapseChallengeList ? (
               <TooltipTrigger>
-                <IconButton label="Collapse challenge list" onPress={onCollapseChallengeList}>
+                <IconButton
+                  excludeFromTabOrder
+                  label="Collapse challenge list"
+                  onPress={onCollapseChallengeList}
+                >
                   <PanelLeftClose aria-hidden className="size-4" />
                 </IconButton>
                 <Tooltip>Collapse challenge list</Tooltip>
@@ -339,6 +359,7 @@ export const ChallengeCollection = forwardRef<ChallengeCollectionHandle, Challen
             <EmptyState
               action={
                 <Button
+                  excludeFromTabOrder
                   onPress={() => {
                     setQuery('');
                   }}
@@ -352,91 +373,63 @@ export const ChallengeCollection = forwardRef<ChallengeCollectionHandle, Challen
             />
           </div>
         ) : (
-          <CollectionTree
-            aria-label="Challenges"
-            disabledBehavior="selection"
-            disabledKeys={categoryTreeKeys}
-            expandedKeys={expandedTreeKeys}
+          <DisclosureGroup
+            allowsMultipleExpanded
+            appearance="plain"
+            expandedKeys={resolvedExpandedCategories}
             onExpandedChange={(keys) => {
-              const next = new Set(
-                [...keys]
-                  .map(String)
-                  .filter((key) => key.startsWith('category:'))
-                  .map((key) => key.slice('category:'.length))
-              );
+              const next = new Set([...keys].map(String));
               savePreferences(hideSolved, next);
             }}
-            onSelectionChange={(keys) => {
-              if (keys === 'all') {
-                return;
-              }
-
-              const selectedKey = [...keys][0];
-              if (typeof selectedKey !== 'string' || !selectedKey.startsWith('challenge:')) {
-                return;
-              }
-
-              const challengeId = selectedKey.slice('challenge:'.length);
-              const trigger = challengeRowRefs.current.get(challengeId);
-              if (trigger && challengeId !== selectedChallengeId) {
-                onSelectChallenge?.(challengeId, trigger);
-              }
-            }}
-            selectedKeys={
-              selectedChallengeId ? new Set([challengeTreeKey(selectedChallengeId)]) : new Set()
-            }
-            selectionBehavior="replace"
-            selectionMode="single"
           >
             {groups.map((group) => {
               const definition = challengeCategoryDefinition(group.category);
               const tone = definition.tone;
 
               return (
-                <CollectionTreeItem
-                  appearance="category"
-                  content={<ChallengeCategoryLabel category={group.category} />}
-                  id={categoryTreeKey(group.category)}
+                <Disclosure
+                  className={`${categoryTextClasses[tone]} bg-surface-raised`}
+                  density="compact"
+                  excludeTriggerFromTabOrder
+                  focusAppearance="inset"
+                  headingClassName="sticky top-challenge-list-header z-sticky bg-surface-sunken"
+                  headingLevel={2}
+                  id={group.category}
                   key={group.category}
                   meta={`${group.solved} / ${group.challenges.length}`}
-                  onAction={() => {
-                    const next = new Set(resolvedExpandedCategories);
-                    if (next.has(group.category)) {
-                      next.delete(group.category);
-                    } else {
-                      next.add(group.category);
-                    }
-                    savePreferences(hideSolved, next);
-                  }}
-                  textValue={definition.label}
-                  tone={tone}
+                  title={<ChallengeCategoryLabel category={group.category} />}
+                  tone="inherit"
+                  triggerClassName={categoryBorderClasses[tone]}
                 >
-                  {group.challenges.map((challenge) => {
-                    const challengePresence = presenceByChallenge.get(challenge.id) ?? [];
-                    const solveContext = solveContexts.get(challenge.id);
+                  <ul className="m-0 grid list-none bg-surface-raised p-0">
+                    {group.challenges.map((challenge) => {
+                      const challengePresence = presenceByChallenge.get(challenge.id) ?? [];
+                      const solveContext = solveContexts.get(challenge.id);
 
-                    return (
-                      <ChallengeCollectionRow
-                        challenge={challenge}
-                        firstBloodHighlightColor={firstBloodHighlightColor}
-                        key={challenge.id}
-                        presence={challengePresence}
-                        rowRef={(row) => {
-                          if (row) {
-                            challengeRowRefs.current.set(challenge.id, row);
-                          } else {
-                            challengeRowRefs.current.delete(challenge.id);
-                          }
-                        }}
-                        solveContext={solveContext}
-                        tone={tone}
-                      />
-                    );
-                  })}
-                </CollectionTreeItem>
+                      return (
+                        <ChallengeCollectionRow
+                          challenge={challenge}
+                          firstBloodHighlightColor={firstBloodHighlightColor}
+                          isSelected={selectedChallengeId === challenge.id}
+                          key={challenge.id}
+                          onSelect={onSelectChallenge}
+                          presence={challengePresence}
+                          rowRef={(row) => {
+                            if (row) {
+                              challengeRowRefs.current.set(challenge.id, row);
+                            } else {
+                              challengeRowRefs.current.delete(challenge.id);
+                            }
+                          }}
+                          solveContext={solveContext}
+                        />
+                      );
+                    })}
+                  </ul>
+                </Disclosure>
               );
             })}
-          </CollectionTree>
+          </DisclosureGroup>
         )}
       </section>
     );

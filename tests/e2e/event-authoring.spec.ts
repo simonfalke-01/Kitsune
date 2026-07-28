@@ -165,7 +165,7 @@ test('operator setup and competitor challenge submission work end to end', async
   });
   await page.goto('/challenges');
 
-  const challengeRow = page.getByRole('row', {
+  const challengeRow = page.getByRole('button', {
     name: new RegExp(created.challengeName)
   });
   await expect(challengeRow).toBeVisible();

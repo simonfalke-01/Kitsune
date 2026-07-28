@@ -99,6 +99,7 @@ interface UncontrolledSplitState {
 interface ScrollPaneProps {
   children: ReactNode;
   className?: string;
+  excludeFromTabOrder?: boolean;
   isScrollable?: boolean;
   onScroll?: UIEventHandler<HTMLDivElement>;
   scrollRef?: RefObject<HTMLDivElement | null>;
@@ -107,6 +108,7 @@ interface ScrollPaneProps {
 function ScrollPane({
   children,
   className,
+  excludeFromTabOrder = false,
   isScrollable = true,
   onScroll,
   scrollRef
@@ -120,6 +122,7 @@ function ScrollPane({
       )}
       onScroll={onScroll}
       ref={scrollRef}
+      tabIndex={excludeFromTabOrder ? -1 : undefined}
     >
       {children}
     </div>
@@ -132,6 +135,7 @@ export interface SplitWorkspaceProps {
   className?: string;
   collapsedLeft?: ReactNode;
   defaultValue?: number;
+  excludeLeftFromTabOrder?: boolean;
   isLeftCollapsed?: boolean;
   left: ReactNode;
   leftScrollRef?: RefObject<HTMLDivElement | null>;
@@ -155,6 +159,7 @@ export function SplitWorkspace({
   className,
   collapsedLeft,
   defaultValue = 40,
+  excludeLeftFromTabOrder = false,
   isLeftCollapsed = false,
   left,
   leftScrollRef,
@@ -353,7 +358,12 @@ export function SplitWorkspace({
       ref={workspaceRef}
       style={style}
     >
-      <ScrollPane isScrollable={!isLeftCollapsed} onScroll={onLeftScroll} scrollRef={leftScrollRef}>
+      <ScrollPane
+        excludeFromTabOrder={excludeLeftFromTabOrder}
+        isScrollable={!isLeftCollapsed}
+        onScroll={onLeftScroll}
+        scrollRef={leftScrollRef}
+      >
         <div
           aria-hidden={isLeftCollapsed || undefined}
           className="kitsune-split-expanded-pane min-h-full"

@@ -28,6 +28,7 @@ export interface SearchFieldProps extends Omit<
 > {
   description?: ReactNode;
   errorMessage?: ReactNode;
+  excludeFromTabOrder?: boolean;
   inputId?: string;
   inputRef?: RefObject<HTMLInputElement | null>;
   label: ReactNode;
@@ -39,6 +40,7 @@ export function SearchField({
   className,
   description,
   errorMessage,
+  excludeFromTabOrder = false,
   inputId,
   inputRef,
   label,
@@ -62,6 +64,7 @@ export function SearchField({
           id={inputId}
           placeholder={placeholder}
           ref={inputRef}
+          tabIndex={excludeFromTabOrder ? -1 : undefined}
         />
         <ReactAriaButton
           aria-label="Clear search"
@@ -70,6 +73,7 @@ export function SearchField({
             'hover:bg-surface-hover hover:text-text empty:hidden',
             focusRing
           )}
+          excludeFromTabOrder={excludeFromTabOrder}
         >
           <X aria-hidden className="size-4" />
         </ReactAriaButton>

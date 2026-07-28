@@ -65,6 +65,7 @@ export interface DisclosureProps extends Omit<ReactAriaDisclosureProps, 'childre
   children: ReactNode;
   density?: DisclosureDensity;
   description?: ReactNode;
+  excludeTriggerFromTabOrder?: boolean;
   focusAppearance?: keyof typeof disclosureFocusAppearances;
   headingClassName?: string;
   headingLevel?: 2 | 3 | 4;
@@ -79,6 +80,7 @@ export function Disclosure({
   className,
   density = 'standard',
   description,
+  excludeTriggerFromTabOrder = false,
   focusAppearance = 'outline',
   headingClassName,
   headingLevel = 3,
@@ -114,6 +116,7 @@ export function Disclosure({
             variantClass(disclosureFocusAppearances, focusAppearance),
             triggerClassName
           )}
+          excludeFromTabOrder={excludeTriggerFromTabOrder}
           slot="trigger"
         >
           <span className="flex min-w-0 flex-1 items-center justify-between gap-4">

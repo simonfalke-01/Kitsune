@@ -67,6 +67,22 @@ describe('SplitWorkspace', () => {
     expect(screen.getByText('Challenge detail')).toBeVisible();
   });
 
+  it('can exclude a browser-focusable scroll pane from sequential focus', () => {
+    render(
+      <SplitWorkspace
+        ariaLabel="Panel width"
+        excludeLeftFromTabOrder
+        left={<div>Excluded list</div>}
+        right={<div>Detail</div>}
+      />
+    );
+
+    expect(screen.getByText('Excluded list').closest('.kitsune-scroll-region')).toHaveAttribute(
+      'tabindex',
+      '-1'
+    );
+  });
+
   it('owns resize state when no external value is supplied', () => {
     render(
       <SplitWorkspace

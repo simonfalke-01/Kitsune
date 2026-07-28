@@ -32,6 +32,8 @@ const challengeShortcuts = [
   { keys: ['/'], label: 'Search challenges' },
   { keys: ['J', 'K'], label: 'Move challenge selection' },
   { keys: ['Enter'], label: 'Open focused challenge' },
+  { keys: ['X'], label: 'Toggle solved challenges' },
+  { keys: ['E'], label: 'Toggle challenge categories' },
   { keys: ['D'], label: 'Open details' },
   { keys: ['S'], label: 'Open solves' },
   { keys: ['H'], label: 'Open hints' },
