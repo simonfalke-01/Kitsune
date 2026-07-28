@@ -51,7 +51,7 @@ export function CollectionLink({
         'hover:bg-surface-hover',
         isSelected &&
           (appearance === 'challenge'
-            ? 'bg-accent-subtle ring-1 ring-inset ring-accent-border hover:bg-accent-subtle'
+            ? 'bg-accent-subtle hover:bg-accent-subtle'
             : 'border-accent-border bg-accent-subtle'),
         focusRing,
         typeof className === 'string' ? className : undefined
