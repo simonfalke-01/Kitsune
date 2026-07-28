@@ -23,6 +23,9 @@ const collectionLinkMarkers = {
   violet: 'bg-category-violet'
 } as const;
 
+const challengeFocusRing =
+  'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-text';
+
 export interface CollectionLinkProps extends Omit<ReactAriaLinkProps, 'children'> {
   appearance?: keyof typeof collectionLinkAppearances;
   children: ReactNode;
@@ -35,16 +38,29 @@ export function CollectionLink({
   children,
   className,
   isSelected = false,
+  onKeyDown,
   tone = 'accent',
   ...props
 }: CollectionLinkProps) {
-  const mergesSelectionAndFocus = appearance === 'challenge' && isSelected;
-
   return (
     <ReactAriaLink
       {...props}
       aria-current={isSelected ? 'true' : undefined}
       data-tone={tone}
+      onKeyDown={(event) => {
+        onKeyDown?.(event);
+
+        if (
+          appearance === 'challenge' &&
+          event.key === ' ' &&
+          !event.defaultPrevented &&
+          !event.repeat
+        ) {
+          event.preventDefault();
+          const link = event.currentTarget as HTMLAnchorElement;
+          link.click();
+        }
+      }}
       className={cx(
         'group relative block w-full',
         collectionLinkAppearances[appearance],
@@ -55,9 +71,7 @@ export function CollectionLink({
           (appearance === 'challenge'
             ? 'bg-accent-subtle ring-1 ring-inset ring-accent-border hover:bg-accent-subtle'
             : 'border-accent-border bg-accent-subtle'),
-        mergesSelectionAndFocus
-          ? 'focus-visible:ring-2 focus-visible:ring-focus-ring'
-          : focusRing,
+        appearance === 'challenge' ? challengeFocusRing : focusRing,
         typeof className === 'string' ? className : undefined
       )}
     >
