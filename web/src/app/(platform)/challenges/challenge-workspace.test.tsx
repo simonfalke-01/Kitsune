@@ -285,13 +285,13 @@ describe('ChallengeWorkspace', () => {
     expect(first).toHaveAttribute('aria-current', 'true');
     expect(screen.getByRole('heading', { name: 'First trail' })).toBeVisible();
 
-    fireEvent.keyDown(window, { key: 'j' });
+    fireEvent.keyDown(first, { key: 'j' });
     expect(second).toHaveFocus();
     expect(second).toHaveAttribute('aria-current', 'true');
     expect(first).not.toHaveAttribute('aria-current');
     expect(screen.getByRole('heading', { name: 'Second trail' })).toBeVisible();
 
-    fireEvent.keyDown(window, { key: 'k' });
+    fireEvent.keyDown(second, { key: 'k' });
     expect(first).toHaveFocus();
     expect(first).toHaveAttribute('aria-current', 'true');
     expect(first).toHaveAttribute('href', '/challenges?challenge=first');

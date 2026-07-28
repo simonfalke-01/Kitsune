@@ -390,6 +390,30 @@ export function ChallengeWorkspace({
       }
     }
 
+    function handleChallengeMovement(event: globalThis.KeyboardEvent) {
+      const key = event.key.toLocaleLowerCase();
+      const hasOpenOverlay = Boolean(
+        document.querySelector('[role="dialog"], [role="alertdialog"]')
+      );
+
+      if (
+        event.defaultPrevented ||
+        event.isComposing ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        hasOpenOverlay ||
+        isFocusModeActive ||
+        isTextEntryTarget(event.target) ||
+        (key !== 'j' && key !== 'k')
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      moveChallengeSelection(key === 'j' ? 1 : -1);
+    }
+
     function handleWorkspaceShortcut(event: globalThis.KeyboardEvent) {
       const hasOpenOverlay = Boolean(
         document.querySelector('[role="dialog"], [role="alertdialog"]')
@@ -437,12 +461,6 @@ export function ChallengeWorkspace({
         return;
       }
 
-      if (!isFocusModeActive && (key === 'j' || key === 'k')) {
-        event.preventDefault();
-        moveChallengeSelection(key === 'j' ? 1 : -1);
-        return;
-      }
-
       if (selectedChallenge && (key === 'd' || key === 's' || key === 'h')) {
         event.preventDefault();
         selectTab(key === 'd' ? 'details' : key === 's' ? 'solves' : 'hints');
@@ -474,8 +492,10 @@ export function ChallengeWorkspace({
       }
     }
 
+    window.addEventListener('keydown', handleChallengeMovement, { capture: true });
     window.addEventListener('keydown', handleWorkspaceShortcut);
     return () => {
+      window.removeEventListener('keydown', handleChallengeMovement, { capture: true });
       window.removeEventListener('keydown', handleWorkspaceShortcut);
     };
   }, [
