@@ -9,11 +9,11 @@ const e2ePort = Number(new URL(e2eUrl).port || 80);
 
 export default defineConfig({
   testDir: '../tests/e2e',
-  timeout: 120_000,
+  timeout: 60_000,
   fullyParallel: false,
   workers: 1,
   forbidOnly: Boolean(process.env.CI),
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0,
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: e2eUrl,
@@ -41,6 +41,9 @@ export default defineConfig({
     },
     {
       command: `pnpm dev --hostname 127.0.0.1 --port ${e2ePort}`,
+      env: {
+        KITSUNE_PUBLIC_DEMO: 'false'
+      },
       url: e2eUrl,
       reuseExistingServer: !process.env.CI,
       timeout: 120_000

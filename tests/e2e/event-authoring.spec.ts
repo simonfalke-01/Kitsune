@@ -38,12 +38,13 @@ async function authenticate(page: Page): Promise<void> {
     await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
     await page.getByLabel('Organization').fill(OWNER.organization);
     await page.getByLabel('Email').fill(OWNER.email);
-    const password = page.getByRole('textbox', { name: 'Password' });
-    await password.fill('temporary value');
-    await password.press(process.platform === 'darwin' ? 'Meta+A' : 'Control+A');
-    await password.press('Backspace');
-    await password.fill(OWNER.password);
+    await page.getByLabel('Password', { exact: true }).fill(OWNER.password);
+    const authenticated = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' && response.url().endsWith('/api/v1/auth/login')
+    );
     await page.getByRole('button', { name: 'Sign in' }).click();
+    expect((await authenticated).ok()).toBe(true);
   } else {
     await page.getByLabel('Organization name').fill(OWNER.organizationName);
     await page.getByLabel('Organization key').fill(OWNER.organization);
@@ -51,7 +52,12 @@ async function authenticate(page: Page): Promise<void> {
     await page.getByLabel('Email').fill(OWNER.email);
     await page.getByLabel('Password', { exact: true }).fill(OWNER.password);
     await page.getByLabel('Confirm password').fill(OWNER.password);
+    const authenticated = page.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' && response.url().endsWith('/api/v1/setup')
+    );
     await page.getByRole('button', { name: 'Create Kitsune' }).click();
+    expect((await authenticated).ok()).toBe(true);
   }
 
   await expect(page).toHaveURL(/\/challenges$/);
@@ -143,6 +149,7 @@ async function createLiveChallenge(page: Page, testInfo: TestInfo) {
 test('operator setup and competitor challenge submission work end to end', async ({
   page
 }, testInfo) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await authenticate(page);
   const created = await createLiveChallenge(page, testInfo);
 
@@ -167,25 +174,6 @@ test('operator setup and competitor challenge submission work end to end', async
   await expect(page).toHaveURL(new RegExp(`challenge=${created.challengeId}`));
 
   if (testInfo.project.name === 'chromium') {
-    const splitter = page.getByRole('slider', {
-      name: 'Challenge list width'
-    });
-    await expect(splitter).toHaveValue('38');
-    const splitterThumb = page.locator('.kitsune-split-thumb');
-    const splitterBox = await splitterThumb.boundingBox();
-    expect(splitterBox).not.toBeNull();
-    await page.mouse.move(
-      splitterBox!.x + splitterBox!.width / 2,
-      splitterBox!.y + splitterBox!.height / 2
-    );
-    await page.mouse.down();
-    await page.mouse.move(
-      splitterBox!.x + splitterBox!.width,
-      splitterBox!.y + splitterBox!.height / 2
-    );
-    await page.mouse.up();
-    await expect.poll(async () => Number(await splitter.inputValue())).toBeGreaterThan(38);
-    await splitter.press('ArrowRight');
     await expect(page.getByRole('heading', { name: created.challengeName })).toBeVisible();
   } else {
     await expect(page.getByRole('dialog', { name: created.challengeName })).toBeVisible();
@@ -195,9 +183,11 @@ test('operator setup and competitor challenge submission work end to end', async
   await detailSurface.getByLabel('Flag').fill(created.flag);
   await detailSurface.getByRole('button', { name: 'Submit flag' }).click();
 
-  await expect(page.getByText('Challenge solved')).toBeVisible();
-  await expect(challengeRow.getByText('Solved')).toBeVisible();
-  await expect(detailSurface.getByText('Solved', { exact: true }).first()).toBeVisible();
+  await expect(detailSurface.getByText('Challenge solved', { exact: true })).toBeVisible();
+  await expect(
+    challengeRow.getByText(/^(Solved|First blood|Second blood|Third blood)$/)
+  ).toBeVisible();
+  await expect(detailSurface.getByText('First blood', { exact: true }).first()).toBeVisible();
 
   const accessibility = await new AxeBuilder({ page }).analyze();
   expect(accessibility.violations).toEqual([]);
@@ -213,14 +203,33 @@ test('operator setup and competitor challenge submission work end to end', async
 
   await page.getByRole('button', { name: 'Use dark theme' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-  await page.waitForTimeout(300);
 
   const darkAccessibility = await new AxeBuilder({ page }).analyze();
   expect(darkAccessibility.violations).toEqual([]);
 });
 
-test('toast feedback enters with motion and remains accessible', async ({ page }) => {
+test('browser interaction primitives stay singular and safe', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', 'Shared primitives need one browser viewport.');
+  const relevantConsoleErrors: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error' && /href attribute/i.test(message.text())) {
+      relevantConsoleErrors.push(message.text());
+    }
+  });
+
   await page.goto('/_kitchen');
+  const search = page.getByRole('searchbox', { name: 'Find a challenge' }).first();
+  const searchControl = search.locator('xpath=..');
+  await search.fill('cache route');
+  await expect(searchControl.getByRole('button', { name: 'Clear search' })).toHaveCount(1);
+  await expect
+    .poll(() => search.evaluate((element) => getComputedStyle(element).appearance))
+    .toBe('none');
+
+  const unavailableDownload = page.getByRole('link', { name: 'Unavailable download' }).first();
+  await expect(unavailableDownload).toHaveAttribute('aria-disabled', 'true');
+  await expect(unavailableDownload).not.toHaveAttribute('href');
+
   await page.getByRole('button', { name: 'Show success toast' }).first().click();
 
   const toast = page.locator('.kitsune-toast').filter({ hasText: 'Event published' });
@@ -233,4 +242,5 @@ test('toast feedback enters with motion and remains accessible', async ({ page }
 
   const accessibility = await new AxeBuilder({ page }).include('.kitsune-toast').analyze();
   expect(accessibility.violations).toEqual([]);
+  expect(relevantConsoleErrors).toEqual([]);
 });

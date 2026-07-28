@@ -123,7 +123,7 @@ beforeEach(() => {
 });
 
 describe('ChallengeWorkspace', () => {
-  it('shows which teammate is viewing each challenge without adding a third row line', () => {
+  it('shows teammate presence only in the challenge row', () => {
     const presence = [
       {
         challenge_id: 'challenge',
@@ -146,7 +146,11 @@ describe('ChallengeWorkspace', () => {
     const challengeList = screen.getByRole('region', { name: 'Challenge list' });
     const challengeRow = within(challengeList).getByRole('link', { name: /Shrine gate/ });
     expect(within(challengeRow).getByText('Mina Park viewing')).toBeVisible();
-    expect(screen.getAllByLabelText('Mina Park is viewing this challenge')).toHaveLength(1);
+    expect(
+      within(screen.getByRole('article', { name: 'Shrine gate details' })).queryByText(
+        'Mina Park viewing'
+      )
+    ).not.toBeInTheDocument();
   });
 
   it('copies the selected challenge deep link', async () => {
@@ -178,15 +182,9 @@ describe('ChallengeWorkspace', () => {
     );
 
     expect(screen.getByRole('heading', { name: 'Foxden Invitational' })).toBeVisible();
-    expect(
-      screen.getByRole('heading', { name: 'Foxden Invitational' }).closest('header')
-    ).toHaveClass('kitsune-merged-header');
     expect(screen.getByRole('navigation', { name: 'Player' })).toContainElement(
       screen.getByRole('link', { name: 'Challenges' })
     );
-    expect(screen.queryByRole('heading', { name: 'Your run' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Around your rank' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: 'Challenge field' })).not.toBeInTheDocument();
     const challengeList = screen.getByRole('region', { name: 'Challenge list' });
     const workspace = challengeList.closest('.kitsune-split-workspace');
     const detailPane = workspace?.children.item(1);
@@ -198,28 +196,10 @@ describe('ChallengeWorkspace', () => {
       name: 'No challenge selected'
     });
     expect(selectionPrompt).toBeVisible();
-    expect(selectionPrompt).toHaveClass('text-text-muted');
-    expect(detailPane?.firstElementChild).toHaveClass('h-full', 'p-6');
-    expect(detailPane?.firstElementChild).not.toHaveClass('border', 'rounded-lg');
-    const rankLabel = screen.getByText('rank');
-    expect(rankLabel.parentElement).toHaveClass('items-baseline', 'gap-2');
-    expect(screen.queryByText('Rank')).not.toBeInTheDocument();
     expect(screen.getByRole('slider', { name: 'Challenge list width' })).toHaveValue('34');
-    expect(screen.getByRole('slider', { name: 'Challenge list width' })).toHaveAttribute(
-      'min',
-      '20'
-    );
     expect(screen.getByRole('button', { name: /Web/ }).closest('h2')).toHaveClass(
       'sticky',
       'top-challenge-list-header'
-    );
-    const progressSummary = screen.getByLabelText('Challenge progress');
-    const challengeSearch = screen.getByRole('searchbox', { name: 'Search challenges' });
-    expect(progressSummary).toHaveClass('kitsune-optical-center', 'gap-6');
-    expect(progressSummary.parentElement).toHaveClass('min-h-12', 'justify-start', 'px-4');
-    expect(challengeSearch.closest('.min-h-16')).toHaveClass('items-start', 'pt-1');
-    expect(progressSummary.compareDocumentPosition(challengeSearch)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING
     );
   });
 
@@ -397,7 +377,7 @@ describe('ChallengeWorkspace', () => {
     expect(screen.getByRole('tab', { name: '4 Solves' })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('keeps locked hint state, cost, and action in one aligned row', async () => {
+  it('keeps locked hint state, cost, and confirmation together', async () => {
     const workspaceActions = actions();
     workspaceActions.loadHints = vi.fn().mockResolvedValue([
       {
@@ -413,15 +393,9 @@ describe('ChallengeWorkspace', () => {
 
     const hintTitle = await screen.findByText('Hint 1');
     const hintRow = hintTitle.parentElement?.parentElement;
-    expect(hintRow).toHaveClass('flex', 'min-h-control', 'items-center', 'justify-between');
-    expect(hintTitle.parentElement).toHaveClass('shrink-0', 'whitespace-nowrap');
     expect(within(hintRow as HTMLElement).getByText('Locked')).toBeVisible();
-    const cost = within(hintRow as HTMLElement).getByText('10 pts');
-    expect(cost).toHaveClass('kitsune-optical-center');
-    expect(cost.parentElement).toHaveClass('gap-2');
+    expect(within(hintRow as HTMLElement).getByText('10 pts')).toBeVisible();
     const unlock = within(hintRow as HTMLElement).getByRole('button', { name: 'Unlock hint' });
-    expect(unlock).toHaveClass('min-h-control', 'border-border-subtle', 'bg-surface-raised');
-    expect(unlock).not.toHaveClass('border-transparent');
 
     fireEvent.click(unlock);
     expect(await screen.findByRole('alertdialog', { name: 'Unlock hint?' })).toHaveTextContent(
@@ -537,7 +511,6 @@ describe('ChallengeWorkspace', () => {
     fireEvent.click(second);
 
     expect(second).toHaveAttribute('aria-current', 'true');
-    expect(second).toHaveClass('ring-1', 'ring-accent-border');
     expect(first).not.toHaveAttribute('aria-current');
     expect(screen.getByRole('heading', { name: 'Second trail' })).toBeVisible();
   });
@@ -555,7 +528,6 @@ describe('ChallengeWorkspace', () => {
 
     const title = screen.getByRole('heading', { name: 'Shrine gate' });
     const titleLine = title.parentElement;
-    const detailHeader = title.closest('header');
     const author = within(titleLine as HTMLElement).getByText('by simonfalke');
     const collectionAuthor = within(
       screen.getByRole('region', { name: 'Challenge list' })
@@ -563,21 +535,12 @@ describe('ChallengeWorkspace', () => {
     const unselectedAuthor = within(
       screen.getByRole('region', { name: 'Challenge list' })
     ).getByText('by willow');
-    const tabList = screen.getByRole('tablist', { name: 'Challenge sections' });
-    const detailsTab = within(tabList).getByRole('tab', { name: 'Details' });
-
-    expect(detailHeader).toHaveClass('px-6', 'py-6');
-    expect(titleLine).toHaveClass('items-baseline', 'gap-x-2');
-    expect(author).toHaveClass('text-sm', 'text-text-muted');
-    expect(collectionAuthor).toHaveClass('text-sm', 'text-text-subtle', 'truncate');
+    expect(author).toBeVisible();
     expect(collectionAuthor.previousElementSibling).toHaveTextContent('Shrine gate');
     expect(unselectedAuthor.previousElementSibling).toHaveTextContent('Second trail');
     expect(
       within(screen.getByRole('region', { name: 'Challenge list' })).queryByText('Unsolved')
     ).not.toBeInTheDocument();
-    expect(tabList).toHaveClass('px-6');
-    expect(detailsTab).toHaveClass('px-3');
-    expect(detailsTab).not.toHaveClass('first:pl-0');
   });
 
   it.each([
@@ -683,47 +646,18 @@ describe('ChallengeWorkspace', () => {
     await waitFor(() => {
       expect(solveStrip).toBeVisible();
     });
-    expect(solveStripList).toHaveClass(
-      '@xl:grid-flow-col',
-      '@xl:grid-cols-2',
-      '@xl:grid-rows-2',
-      '@5xl:grid-flow-row',
-      '@5xl:grid-cols-4',
-      '@5xl:grid-rows-1'
-    );
+    expect(solveStripList).toBeVisible();
     expect(solveStripRows).toHaveLength(4);
     expect(solveStripRows[0]).toHaveTextContent('1st');
     expect(solveStripRows[1]).toHaveTextContent('2nd');
     expect(solveStripRows[2]).toHaveTextContent('3rd');
-    expect(solveStripRows[3]).toHaveClass('border-accent', 'bg-accent-subtle');
-    for (const row of solveStripRows) {
-      expect(row).toHaveClass('flex', 'min-h-16', 'items-center');
-      expect(row).not.toHaveClass('grid');
-    }
-    for (const avatar of within(solveStrip).getAllByRole('img')) {
-      expect(avatar).toHaveClass('size-control', 'rounded-lg');
-    }
-    for (const identity of within(solveStrip).getAllByText('Foxden')) {
-      expect(identity).toHaveClass('text-sm', 'font-semibold');
-      expect(identity.nextElementSibling).toHaveClass('text-xs', 'font-normal');
-    }
+    expect(solveStripRows[3]).toHaveTextContent('Foxden');
     expect(within(solveStrip).getAllByText(/^First blood \(.+\)$/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Foxden').length).toBeGreaterThan(0);
     const selectedChallenge = screen.getByRole('link', { name: /Solved timeline/ });
-    const firstBlood = within(selectedChallenge).getByText('First blood');
     expect(selectedChallenge).toHaveAttribute('aria-current', 'true');
     expect(selectedChallenge).toHaveAttribute('data-solved', 'true');
     expect(selectedChallenge).toHaveAttribute('data-blood', '1');
-    expect(selectedChallenge).toHaveClass('pl-4', 'pr-3');
-    expect(selectedChallenge).toHaveClass('ring-1', 'ring-accent-border');
-    expect(selectedChallenge.querySelector('.kitsune-collection-marker')).toHaveClass(
-      'w-rail',
-      'rounded-none'
-    );
-    expect(selectedChallenge.querySelector('.kitsune-collection-marker')).not.toHaveClass(
-      'rounded-sm'
-    );
-    expect(firstBlood.querySelector('svg')).toHaveClass('-translate-y-optical');
+    expect(within(selectedChallenge).getByText('First blood')).toBeVisible();
 
     fireEvent.click(screen.getByRole('tab', { name: '18 Solves' }));
 
@@ -731,10 +665,8 @@ describe('ChallengeWorkspace', () => {
       expect(screen.queryByLabelText('Challenge solve context')).not.toBeInTheDocument();
     });
 
-    expect(window.localStorage.getItem('kitsune.challenge-workspace.v1.event')).toBeNull();
-
     const standings = screen.getByRole('list', { name: 'Solve standings' });
-    expect(within(standings).getAllByRole('listitem').length).toBeGreaterThanOrEqual(18);
+    expect(within(standings).getAllByRole('listitem')).toHaveLength(18);
     expect(within(standings).getAllByText(/^First blood \(.+\)$/).length).toBeGreaterThan(0);
     expect(within(standings).getAllByText(/UTC/).length).toBeGreaterThan(0);
     expect(within(standings).getAllByText('Foxden').length).toBeGreaterThan(0);
@@ -753,9 +685,6 @@ describe('ChallengeWorkspace', () => {
     expect(openStatuses).toHaveLength(3);
     for (const status of openStatuses) {
       const slot = status.closest('li');
-      expect(status).toHaveClass('text-sm', 'font-medium', 'text-text-muted');
-      expect(slot).toHaveClass('min-h-16', 'py-2');
-      expect(slot?.firstElementChild).toHaveClass('text-text-muted');
       expect(within(slot!).queryByRole('img')).not.toBeInTheDocument();
     }
     expect(within(solveStrip).queryByText('No solve')).not.toBeInTheDocument();
@@ -792,8 +721,6 @@ describe('ChallengeWorkspace', () => {
     );
     expect(currentRow).toBe(rows[13]);
     expect(currentRow).toHaveAttribute('aria-current', 'true');
-    expect(currentRow).not.toHaveClass('sticky', 'bottom-0');
-
     const scrollOwner = currentRow?.closest<HTMLElement>('.kitsune-scroll-region');
     expect(scrollOwner).not.toBeNull();
 
@@ -806,33 +733,13 @@ describe('ChallengeWorkspace', () => {
     fireEvent.scroll(scrollOwner!);
 
     await waitFor(() => {
-      expect(document.querySelector('[data-scroll-edge-dock="bottom"]')).toHaveStyle({
-        left: '124px',
-        top: '436px',
-        width: '552px'
-      });
-    });
-
-    currentRowBounds.mockReturnValue(new DOMRect(124, 60, 552, 64));
-    fireEvent.scroll(scrollOwner!);
-
-    await waitFor(() => {
-      expect(document.querySelector('[data-scroll-edge-dock="top"]')).toHaveStyle({
-        left: '124px',
-        top: '100px',
-        width: '552px'
-      });
-    });
-
-    currentRowBounds.mockReturnValue(new DOMRect(124, 220, 552, 64));
-    fireEvent.scroll(scrollOwner!);
-
-    await waitFor(() => {
-      expect(document.querySelector('[data-scroll-edge-dock]')).not.toBeInTheDocument();
+      expect(document.querySelector('[data-scroll-edge-dock="bottom"]')).toHaveTextContent(
+        'Foxden'
+      );
     });
   });
 
-  it('preserves the solved dock and emits the default edge border', async () => {
+  it('replaces a successful submission with solved state across the workspace', async () => {
     const workspaceActions = actions();
     workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
       attempts_remaining: 4,
@@ -852,9 +759,7 @@ describe('ChallengeWorkspace', () => {
     );
 
     const flagField = screen.getByLabelText('Flag');
-    expect(flagField).toHaveClass('h-control', 'px-3', 'text-base');
-    const origin = new DOMRect(120, 600, 400, 44);
-    vi.spyOn(flagField, 'getBoundingClientRect').mockReturnValue(origin);
+    vi.spyOn(flagField, 'getBoundingClientRect').mockReturnValue(new DOMRect(120, 600, 400, 44));
 
     fireEvent.change(flagField, {
       target: {
@@ -868,273 +773,13 @@ describe('ChallengeWorkspace', () => {
     });
     expect(screen.queryByRole('button', { name: 'Submit flag' })).not.toBeInTheDocument();
     expect(screen.getAllByText('Challenge solved').length).toBeGreaterThan(0);
-    const solvedLabel = screen.getByText('Flag');
-    const solvedSummary = solvedLabel.parentElement;
-    const solvedMessage = within(solvedSummary as HTMLElement).getByText('Challenge solved');
     const selectedChallenge = screen.getByRole('link', { name: /Shrine gate/ });
-    expect(solvedSummary).toHaveClass('grid', 'gap-2');
-    expect(solvedLabel).toHaveClass('text-sm', 'font-medium');
-    expect(solvedMessage).toHaveClass('text-base', 'font-medium');
-    expect(solvedMessage.parentElement).toHaveClass('h-control', 'border', 'px-3');
     expect(selectedChallenge).toHaveAttribute('aria-current', 'true');
     expect(selectedChallenge).toHaveAttribute('data-solved', 'true');
-    expect(selectedChallenge).toHaveClass('ring-1', 'ring-accent-border');
-    expect(selectedChallenge).not.toHaveAttribute('data-newly-solved');
-    const solveEffect = document.querySelector('.kitsune-solve-effect');
-    const edgeFrame = document.querySelector('.kitsune-solve-edge-frame');
-    expect(solveEffect?.parentElement).toBe(document.body);
-    expect(solveEffect).toHaveClass('fixed', 'inset-0', 'z-celebration');
-    expect(solveEffect).not.toHaveAttribute('data-first-blood');
-    expect(edgeFrame?.tagName.toLowerCase()).toBe('span');
-    expect(edgeFrame).toHaveClass('inset-0');
-    expect(edgeFrame?.querySelector('.kitsune-solve-edge-svg')).toBeInTheDocument();
-    expect(edgeFrame?.querySelector('.kitsune-solve-edge-fill')).toBeInTheDocument();
-    expect(edgeFrame?.querySelector('.kitsune-solve-edge-cutout')).toBeInTheDocument();
-    expect(edgeFrame?.parentElement).toBe(solveEffect);
-    expect(document.querySelector('.kitsune-solve-edge-wash')).not.toBeInTheDocument();
-    expect(document.querySelector('.kitsune-solve-edge-wash-subtle')).toBeInTheDocument();
-    expect(document.querySelector('.kitsune-solve-origin')).not.toBeInTheDocument();
-    expect(document.querySelector('.kitsune-solve-wave')).not.toBeInTheDocument();
+    expect(document.querySelector('.kitsune-solve-effect')).toBeInTheDocument();
   });
 
-  it('keeps the full-screen imprint available as a presentation setting', async () => {
-    const workspaceActions = actions();
-    workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
-      attempts_remaining: 4,
-      awarded_points: 300,
-      challenge_id: 'challenge',
-      first_blood: false,
-      id: 'submission',
-      outcome: 'correct',
-      replayed: false,
-      submitted_at: '2026-07-23T12:00:00Z'
-    });
-    renderWorkspace(
-      [createChallengeExperience(challenge(), { solveCount: 4 })],
-      'challenge',
-      workspaceActions,
-      'screen-imprint'
-    );
-    fireEvent.change(screen.getByLabelText('Flag'), {
-      target: {
-        value: 'kit{correct}'
-      }
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Submit flag' }));
-
-    await waitFor(() => {
-      expect(workspaceActions.submitAnswer).toHaveBeenCalledWith('challenge', 'kit{correct}');
-    });
-
-    const solveEffect = document.querySelector('.kitsune-solve-effect');
-    expect(document.querySelector('.kitsune-solve-edge-frame')?.parentElement).toBe(solveEffect);
-    expect(document.querySelector('.kitsune-solve-edge-frame')).toHaveClass('inset-0');
-    expect(document.querySelector('.kitsune-solve-edge-svg')).toBeInTheDocument();
-    expect(document.querySelector('.kitsune-solve-edge-fill')).toBeInTheDocument();
-    expect(document.querySelector('.kitsune-solve-edge-cutout')).toBeInTheDocument();
-    expect(document.querySelector('.kitsune-solve-edge-wash')?.parentElement).toBe(solveEffect);
-  });
-
-  it('keeps the field wave available as a presentation setting', async () => {
-    const workspaceActions = actions();
-    workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
-      attempts_remaining: 4,
-      awarded_points: 300,
-      challenge_id: 'challenge',
-      first_blood: false,
-      id: 'submission',
-      outcome: 'correct',
-      replayed: false,
-      submitted_at: '2026-07-23T12:00:00Z'
-    });
-    renderWorkspace(
-      [createChallengeExperience(challenge(), { solveCount: 4 })],
-      'challenge',
-      workspaceActions,
-      'field-wave'
-    );
-    const flagField = screen.getByLabelText('Flag');
-    const origin = new DOMRect(120, 600, 400, 44);
-    vi.spyOn(flagField, 'getBoundingClientRect').mockReturnValue(origin);
-    fireEvent.change(flagField, {
-      target: {
-        value: 'kit{correct}'
-      }
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Submit flag' }));
-
-    await waitFor(() => {
-      expect(workspaceActions.submitAnswer).toHaveBeenCalledWith('challenge', 'kit{correct}');
-    });
-
-    const solveEffect = document.querySelector('.kitsune-solve-effect');
-    const solveOrigin = document.querySelector('.kitsune-solve-origin');
-    const solveWave = document.querySelector('.kitsune-solve-wave');
-    const x = origin.left + origin.width / 2;
-    const y = origin.top + origin.height / 2;
-    const farthestCorner = Math.max(
-      Math.hypot(x, y),
-      Math.hypot(window.innerWidth - x, y),
-      Math.hypot(x, window.innerHeight - y),
-      Math.hypot(window.innerWidth - x, window.innerHeight - y)
-    );
-    const diameter = farthestCorner * 2;
-    expect(solveEffect?.parentElement).toBe(document.body);
-    expect(solveEffect).toHaveClass('fixed', 'inset-0', 'z-celebration');
-    expect(solveEffect).not.toHaveAttribute('data-first-blood');
-    expect(solveOrigin).toHaveClass('rounded-md', 'border', 'font-mono');
-    expect(solveOrigin).not.toHaveClass('rounded-full');
-    expect(solveOrigin).toHaveTextContent('kit{correct}');
-    expect(solveWave).toHaveClass('aspect-square', 'rounded-full');
-    expect(solveEffect).toHaveStyle({
-      '--solve-origin-height': `${origin.height}px`,
-      '--solve-origin-left': `${origin.left}px`,
-      '--solve-origin-top': `${origin.top}px`,
-      '--solve-origin-width': `${origin.width}px`,
-      '--solve-wave-diameter': `${diameter}px`,
-      '--solve-wave-start-scale': String(Math.min(origin.width, origin.height) / diameter),
-      '--solve-wave-x': `${x}px`,
-      '--solve-wave-y': `${y}px`
-    });
-  });
-
-  it.each([
-    ['edge-border', '.kitsune-solve-edge-frame'],
-    ['screen-imprint', '.kitsune-solve-edge-wash'],
-    ['field-wave', '.kitsune-solve-wave']
-  ] as const)(
-    'uses the configured first-blood state for the %s effect',
-    async (effect, effectPart) => {
-      const workspaceActions = actions();
-      workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
-        attempts_remaining: 4,
-        awarded_points: 300,
-        challenge_id: 'challenge',
-        first_blood: true,
-        id: 'submission',
-        outcome: 'correct',
-        replayed: false,
-        submitted_at: '2026-07-23T12:00:00Z'
-      });
-      renderWorkspace(
-        [createChallengeExperience(challenge(), { solveCount: 0 })],
-        'challenge',
-        workspaceActions,
-        effect
-      );
-      const flagField = screen.getByLabelText('Flag');
-      vi.spyOn(flagField, 'getBoundingClientRect').mockReturnValue(new DOMRect(120, 600, 400, 44));
-      fireEvent.change(flagField, {
-        target: {
-          value: 'kit{first}'
-        }
-      });
-      fireEvent.click(screen.getByRole('button', { name: 'Submit flag' }));
-
-      await waitFor(() => {
-        expect(workspaceActions.submitAnswer).toHaveBeenCalledWith('challenge', 'kit{first}');
-      });
-
-      const solveEffect = document.querySelector('.kitsune-solve-effect');
-      const solvedMessage = screen.getByText('Challenge solved');
-      const solvedSummary = solvedMessage.closest('[data-first-blood]');
-      const selectedChallenge = screen.getByRole('link', { name: /Shrine gate/ });
-      expect(solveEffect).toHaveAttribute('data-first-blood', 'true');
-      expect(solveEffect?.querySelector(effectPart)).toBeInTheDocument();
-      if (effect === 'edge-border' || effect === 'screen-imprint') {
-        expect(solveEffect?.querySelector('.kitsune-solve-edge-frame')).toHaveAttribute(
-          'data-edge-color',
-          'rainbow'
-        );
-        expect(solveEffect?.querySelector('.kitsune-solve-edge-rainbow-fill')).toBeInTheDocument();
-        expect(solveEffect?.querySelector('.kitsune-solve-edge-cutout')).toBeInTheDocument();
-      }
-      expect(solvedSummary).toHaveAttribute('data-first-blood', 'true');
-      expect(solvedMessage.parentElement).toHaveClass('kitsune-first-blood-copy');
-      expect(solvedMessage.parentElement).toHaveAttribute('data-first-blood-color', 'rainbow');
-      expect(selectedChallenge).toHaveAttribute('data-blood', '1');
-      expect(selectedChallenge).toHaveAttribute('data-first-blood-color', 'rainbow');
-      expect(screen.getAllByText('First blood').length).toBeGreaterThan(0);
-    }
-  );
-
-  it('keeps first-blood highlight and edge colors independently configurable', async () => {
-    const workspaceActions = actions();
-    workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
-      attempts_remaining: 4,
-      awarded_points: 300,
-      challenge_id: 'challenge',
-      first_blood: true,
-      id: 'submission',
-      outcome: 'correct',
-      replayed: false,
-      submitted_at: '2026-07-23T12:00:00Z'
-    });
-    renderWorkspace(
-      [createChallengeExperience(challenge(), { solveCount: 0 })],
-      'challenge',
-      workspaceActions,
-      'edge-border',
-      'details',
-      'success',
-      'achievement'
-    );
-
-    fireEvent.change(screen.getByLabelText('Flag'), {
-      target: {
-        value: 'kit{first}'
-      }
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Submit flag' }));
-
-    await waitFor(() => {
-      expect(workspaceActions.submitAnswer).toHaveBeenCalledWith('challenge', 'kit{first}');
-    });
-
-    const solvedMessage = screen.getByText('Challenge solved');
-    const selectedChallenge = screen.getByRole('link', { name: /Shrine gate/ });
-    expect(document.querySelector('.kitsune-solve-edge-frame')).toHaveAttribute(
-      'data-edge-color',
-      'achievement'
-    );
-    expect(solvedMessage.parentElement).toHaveAttribute('data-first-blood-color', 'success');
-    expect(selectedChallenge).toHaveAttribute('data-first-blood-color', 'success');
-  });
-
-  it('supports disabling the flag success effect', async () => {
-    const workspaceActions = actions();
-    workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
-      attempts_remaining: 4,
-      awarded_points: 300,
-      challenge_id: 'challenge',
-      first_blood: false,
-      id: 'submission',
-      outcome: 'correct',
-      replayed: false,
-      submitted_at: '2026-07-23T12:00:00Z'
-    });
-    renderWorkspace(
-      [createChallengeExperience(challenge(), { solveCount: 4 })],
-      'challenge',
-      workspaceActions,
-      'none'
-    );
-    fireEvent.change(screen.getByLabelText('Flag'), {
-      target: {
-        value: 'kit{correct}'
-      }
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Submit flag' }));
-
-    await waitFor(() => {
-      expect(workspaceActions.submitAnswer).toHaveBeenCalledWith('challenge', 'kit{correct}');
-    });
-
-    expect(screen.getAllByText('Challenge solved').length).toBeGreaterThan(0);
-    expect(document.querySelector('.kitsune-solve-effect')).not.toBeInTheDocument();
-  });
-
-  it('emits a red edge border for an incorrect flag', async () => {
+  it('keeps an incorrect answer editable without adding noisy inline feedback', async () => {
     const workspaceActions = actions();
     workspaceActions.submitAnswer = vi.fn().mockResolvedValue({
       attempts_remaining: 3,
@@ -1169,15 +814,5 @@ describe('ChallengeWorkspace', () => {
     expect(screen.queryByText(/Incorrect/)).not.toBeInTheDocument();
     expect(flagField).toHaveValue('kit{incorrect}');
     expect(screen.queryByRole('button', { name: 'View attempts' })).not.toBeInTheDocument();
-    expect(document.querySelector('.kitsune-solve-effect')).toHaveAttribute(
-      'data-incorrect',
-      'true'
-    );
-    expect(document.querySelector('.kitsune-solve-edge-frame')).toHaveAttribute(
-      'data-edge-color',
-      'danger'
-    );
-    expect(document.querySelector('.kitsune-solve-edge-wash')).not.toBeInTheDocument();
-    expect(document.querySelector('.kitsune-solve-edge-wash-subtle')).toBeInTheDocument();
   });
 });

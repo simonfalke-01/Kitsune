@@ -509,6 +509,9 @@
   --duration-normal: 180ms;
   --duration-slow: 260ms;
   --duration-celebration: 1200ms;
+  --transition-duration-fast: var(--duration-fast);
+  --transition-duration-normal: var(--duration-normal);
+  --transition-duration-slow: var(--duration-slow);
   --animate-toast-in: kitsune-toast-in var(--duration-normal) var(--ease-out-quart) both;
   --animate-toast-out: kitsune-toast-out var(--duration-fast) var(--ease-out-quart) both;
 

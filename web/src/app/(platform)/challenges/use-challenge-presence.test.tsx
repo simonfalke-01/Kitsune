@@ -86,4 +86,70 @@ describe('useChallengePresence', () => {
     expect(get).not.toHaveBeenCalled();
     expect(put).not.toHaveBeenCalled();
   });
+
+  it('clears presence while hidden and when the workspace unmounts', async () => {
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'visible'
+    });
+    vi.spyOn(api, 'GET').mockResolvedValue({
+      data: { members: [] },
+      response: new Response(null, { status: 200 })
+    });
+    const put = vi.spyOn(api, 'PUT').mockResolvedValue({
+      data: { members: [] },
+      response: new Response(null, { status: 200 })
+    });
+    const { unmount } = renderHook(() =>
+      useChallengePresence({
+        csrfToken: 'csrf',
+        eventId: '019c0000-0000-7000-8000-000000000001',
+        isEnabled: true,
+        selectedChallengeId: teammate.challenge_id
+      })
+    );
+
+    await waitFor(() => {
+      expect(put).toHaveBeenCalledWith(
+        '/api/v1/events/{event_id}/challenge-presence',
+        expect.objectContaining({ body: { challenge_id: teammate.challenge_id } })
+      );
+    });
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'hidden'
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await waitFor(() => {
+      expect(put).toHaveBeenLastCalledWith(
+        '/api/v1/events/{event_id}/challenge-presence',
+        expect.objectContaining({ body: { challenge_id: null } })
+      );
+    });
+
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'visible'
+    });
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    await waitFor(() => {
+      expect(put).toHaveBeenLastCalledWith(
+        '/api/v1/events/{event_id}/challenge-presence',
+        expect.objectContaining({ body: { challenge_id: teammate.challenge_id } })
+      );
+    });
+
+    unmount();
+    await waitFor(() => {
+      expect(put).toHaveBeenLastCalledWith(
+        '/api/v1/events/{event_id}/challenge-presence',
+        expect.objectContaining({ body: { challenge_id: null } })
+      );
+    });
+  });
 });

@@ -61,6 +61,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 
@@ -99,5 +100,51 @@ describe('RealtimeProvider', () => {
 
     expect(screen.getByText('reconnecting')).toBeVisible();
     expect(screen.getByText('challenge_changed')).toBeVisible();
+  });
+
+  it('backs off after a disconnect and reconnects immediately when connectivity returns', () => {
+    vi.useFakeTimers();
+    Object.defineProperty(navigator, 'onLine', {
+      configurable: true,
+      value: true
+    });
+    render(
+      <RealtimeProvider>
+        <RealtimeProbe />
+      </RealtimeProvider>
+    );
+
+    const firstSocket = TestWebSocket.instances[0]!;
+    act(() => {
+      firstSocket.emit('open');
+      firstSocket.emit('close');
+    });
+    expect(screen.getByText('reconnecting')).toBeVisible();
+
+    act(() => {
+      vi.advanceTimersByTime(999);
+    });
+    expect(TestWebSocket.instances).toHaveLength(1);
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(TestWebSocket.instances).toHaveLength(2);
+
+    act(() => {
+      window.dispatchEvent(new Event('offline'));
+    });
+    expect(screen.getByText('offline')).toBeVisible();
+
+    act(() => {
+      window.dispatchEvent(new Event('online'));
+    });
+    expect(TestWebSocket.instances).toHaveLength(3);
+    expect(screen.getByText('reconnecting')).toBeVisible();
+
+    act(() => {
+      TestWebSocket.instances[2]?.emit('open');
+    });
+    expect(screen.getByText('connected')).toBeVisible();
   });
 });
