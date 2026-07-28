@@ -6,7 +6,6 @@ import { ChallengeCollapsedRail } from './challenge-collapsed-rail';
 import { ChallengeCollection } from './challenge-collection';
 import { ChallengeDetail } from './challenge-detail';
 import { ChallengeEventTrail } from './challenge-event-trail';
-import { ChallengeOverview } from './challenge-overview';
 import {
   challengePresentationSettingsStub,
   type FirstBloodEdgeColor,
@@ -28,7 +27,10 @@ import {
   type ChallengeCompetitorStub
 } from './challenge-solve-stub';
 import type { ChallengeWorkspaceActions } from './challenge-types';
-import { Sheet, SplitWorkspace, type SplitWorkspaceHandle } from '@/components/ui';
+import type { ChallengePresenceStatus } from './use-challenge-presence';
+import type { RealtimeStatus } from '@/app/realtime-context';
+import { EmptyState, Sheet, SplitWorkspace, type SplitWorkspaceHandle } from '@/components/ui';
+import type { ChallengePresenceMember } from '@/lib/api/client';
 import type { ChallengeExperience } from '@/lib/challenges';
 
 export type { ChallengeWorkspaceActions } from './challenge-types';
@@ -63,6 +65,9 @@ export interface ChallengeWorkspaceProps {
   onClearSelection: () => void;
   onSelectChallenge?: (challengeId: string, tab: ChallengeDetailTab) => void;
   onSelectTab?: (challengeId: string, tab: ChallengeDetailTab) => void;
+  presenceMembers?: ChallengePresenceMember[];
+  presenceStatus?: ChallengePresenceStatus;
+  realtimeStatus?: RealtimeStatus;
   selectedChallengeId: string | null;
   selectedChallengeTab?: ChallengeDetailTab;
 }
@@ -121,6 +126,9 @@ export function ChallengeWorkspace({
   onClearSelection,
   onSelectChallenge,
   onSelectTab,
+  presenceMembers = [],
+  presenceStatus = 'idle',
+  realtimeStatus = 'disabled',
   selectedChallengeId,
   selectedChallengeTab = 'details'
 }: ChallengeWorkspaceProps) {
@@ -208,6 +216,17 @@ export function ChallengeWorkspace({
   const selectedChallenge =
     displayedChallenges.find((challenge) => challenge.id === immediateSelectedChallengeId) ?? null;
   const isFocusModeActive = focusedChallengeId === selectedChallenge?.id;
+  const presenceByChallenge = useMemo(() => {
+    const grouped = new Map<string, ChallengePresenceMember[]>();
+
+    for (const member of presenceMembers) {
+      const current = grouped.get(member.challenge_id) ?? [];
+      current.push(member);
+      grouped.set(member.challenge_id, current);
+    }
+
+    return grouped;
+  }, [presenceMembers]);
   immediateSelectedTab = availableTab(selectedChallenge, immediateSelectedTab, actions);
   const visibleChallengeRows = useCallback(() => {
     return Array.from(
@@ -491,7 +510,9 @@ export function ChallengeWorkspace({
       }}
       selectedChallengeId={immediateSelectedChallengeId}
       searchInputRef={searchInputRef}
+      showDetailFocusLink={Boolean(isDesktop && selectedChallenge)}
       solveContexts={solveContexts}
+      presenceByChallenge={presenceByChallenge}
     />
   );
   const detail = selectedChallenge ? (
@@ -508,20 +529,12 @@ export function ChallengeWorkspace({
       onSolved={handleSolved}
       onTabChange={selectTab}
       selectedTab={immediateSelectedTab}
+      shareHref={getChallengeHref?.(selectedChallenge.id, 'details')}
+      showListFocusLink
       solveContext={solveContexts.get(selectedChallenge.id)!}
     />
   ) : (
-    <ChallengeOverview
-      challenges={displayedChallenges}
-      getChallengeHref={(challengeId) => {
-        return getChallengeHref?.(challengeId, 'details');
-      }}
-      onSelectChallenge={(challengeId, trigger) => {
-        selectChallenge(challengeId, trigger);
-      }}
-      solveContexts={solveContexts}
-      standing={standing}
-    />
+    <EmptyState appearance="plain" className="h-full" title="No challenge selected" />
   );
 
   return (
@@ -532,6 +545,8 @@ export function ChallengeWorkspace({
         isShortcutHelpOpen={isShortcutHelpOpen}
         onShortcutHelpOpenChange={setIsShortcutHelpOpen}
         standing={standing}
+        presenceStatus={presenceStatus}
+        realtimeStatus={realtimeStatus}
       />
       {isDesktop ? (
         <div className="min-h-0 flex-1">
@@ -550,7 +565,7 @@ export function ChallengeWorkspace({
             left={collection}
             isLeftCollapsed={isFocusModeActive}
             maximum={48}
-            minimum={24}
+            minimum={20}
             leftScrollRef={collectionScrollRef}
             onLeftScroll={(event) => {
               rememberCollectionScroll(event.currentTarget.scrollTop);
@@ -595,6 +610,7 @@ export function ChallengeWorkspace({
             onSolved={handleSolved}
             onTabChange={selectTab}
             selectedTab={immediateSelectedTab}
+            shareHref={getChallengeHref?.(selectedChallenge.id, 'details')}
             showTitle={false}
             solveContext={solveContexts.get(selectedChallenge.id)!}
           />

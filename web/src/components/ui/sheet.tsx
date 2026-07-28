@@ -11,7 +11,7 @@ import {
   type DialogProps as ReactAriaDialogProps
 } from 'react-aria-components';
 
-import { Button } from './button';
+import { IconButton } from './icon-button';
 import { cx } from './styles';
 
 export { DialogTrigger as SheetTrigger };
@@ -81,9 +81,9 @@ export function Sheet({
               </Heading>
               {description ? <p className="m-0 text-sm text-text-muted">{description}</p> : null}
             </div>
-            <Button aria-label="Close panel" size="icon" slot="close" tone="quiet">
+            <IconButton label="Close panel" slot="close">
               <X aria-hidden className="size-4" />
-            </Button>
+            </IconButton>
           </div>
           <div className={cx('flex-1 p-6', contentClassName)}>{children}</div>
           {footer ? (

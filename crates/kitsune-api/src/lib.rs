@@ -10,6 +10,7 @@ mod oauth;
 mod oidc;
 mod oidc_routes;
 mod passkeys;
+mod presence;
 mod profiles;
 mod realtime;
 mod resources;
@@ -307,7 +308,9 @@ pub struct ReadinessResponse {
         teams::leave_team,
         teams::event_registration,
         teams::register_event,
-        teams::unregister_event
+        teams::unregister_event,
+        presence::challenge_presence,
+        presence::update_challenge_presence
     ),
     components(schemas(
         HealthResponse,
@@ -396,6 +399,9 @@ pub struct ReadinessResponse {
         teams::AdminMemberTransferRequest,
         teams::AdminMemberTransferResponse,
         teams::AdminTeamMergeRequest,
+        presence::UpdateChallengePresenceRequest,
+        presence::ChallengePresenceMemberResponse,
+        presence::ChallengePresenceResponse,
         auth::SessionResponse,
         auth::UserResponse,
         tokens::CreateApiTokenRequest,
@@ -704,6 +710,10 @@ pub fn router(state: AppState) -> Router {
         .route(
             "/api/v1/events/{event_id}/challenges/{challenge_id}/submissions",
             post(submissions::submit_answer),
+        )
+        .route(
+            "/api/v1/events/{event_id}/challenge-presence",
+            get(presence::challenge_presence).put(presence::update_challenge_presence),
         )
         .route(
             "/api/v1/events/{event_id}/scoreboard",
@@ -3024,6 +3034,115 @@ mod tests {
         let status: serde_json::Value = serde_json::from_slice(&body).expect("registration status");
         assert_eq!(status["registration"]["competitor_id"], team_id);
 
+        let create_team_challenge = Request::builder()
+            .method("POST")
+            .uri(format!("/api/v1/events/{team_event_id}/challenges"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(
+                serde_json::json!({
+                    "name": "Shared Trail",
+                    "category": "Web",
+                    "description": "Coordinate without leaking team state.",
+                    "kind": {"type": "static_flag"},
+                    "state": "published",
+                    "scoring": {"kind": "static", "points": 100},
+                    "visibility": {
+                        "visible_from": null,
+                        "visible_until": null,
+                        "division_ids": [],
+                        "prerequisites": []
+                    },
+                    "tags": [],
+                    "max_attempts": null,
+                    "writeups_enabled": false,
+                    "position": 0,
+                    "answers": [{
+                        "kind": "exact",
+                        "value": "kit{shared-trail}",
+                        "case_insensitive": false
+                    }],
+                    "hints": [],
+                    "survey": []
+                })
+                .to_string(),
+            ))
+            .expect("team challenge request");
+        let response = app
+            .clone()
+            .oneshot(create_team_challenge)
+            .await
+            .expect("create team challenge");
+        assert_eq!(response.status(), StatusCode::CREATED);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("team challenge body")
+            .to_bytes();
+        let team_challenge: serde_json::Value =
+            serde_json::from_slice(&body).expect("team challenge");
+        let team_challenge_id = team_challenge["id"].as_str().expect("team challenge id");
+
+        let update_presence = Request::builder()
+            .method("PUT")
+            .uri(format!("/api/v1/events/{team_event_id}/challenge-presence"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(
+                serde_json::json!({"challenge_id": team_challenge_id}).to_string(),
+            ))
+            .expect("presence update request");
+        assert_eq!(
+            app.clone()
+                .oneshot(update_presence)
+                .await
+                .expect("presence update")
+                .status(),
+            StatusCode::OK
+        );
+
+        let teammate_presence = Request::builder()
+            .uri(format!("/api/v1/events/{team_event_id}/challenge-presence"))
+            .header(header::COOKIE, &player_cookies)
+            .body(Body::empty())
+            .expect("teammate presence request");
+        let response = app
+            .clone()
+            .oneshot(teammate_presence)
+            .await
+            .expect("teammate presence");
+        assert_eq!(response.status(), StatusCode::OK);
+        let body = response
+            .into_body()
+            .collect()
+            .await
+            .expect("teammate presence body")
+            .to_bytes();
+        let presence: serde_json::Value = serde_json::from_slice(&body).expect("presence");
+        assert_eq!(presence["members"][0]["user_id"], admin_id);
+        assert_eq!(presence["members"][0]["display_name"], "Organizer");
+        assert_eq!(presence["members"][0]["challenge_id"], team_challenge_id);
+
+        let clear_presence = Request::builder()
+            .method("PUT")
+            .uri(format!("/api/v1/events/{team_event_id}/challenge-presence"))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, &admin_cookies)
+            .header("x-csrf-token", admin_csrf)
+            .body(Body::from(r#"{"challenge_id":null}"#))
+            .expect("clear presence request");
+        assert_eq!(
+            app.clone()
+                .oneshot(clear_presence)
+                .await
+                .expect("clear presence")
+                .status(),
+            StatusCode::OK
+        );
+
         let team_profile = Request::builder()
             .uri(format!(
                 "/api/v1/events/{team_event_id}/competitors/team/{team_id}"
@@ -4423,8 +4542,8 @@ mod tests {
             .fetch_one(&pool)
             .await
             .expect("outbox count");
-        assert_eq!(audit_count, 49);
-        assert_eq!(outbox_count, 49);
+        assert_eq!(audit_count, 50);
+        assert_eq!(outbox_count, 50);
     }
 
     struct TestPlayerSession {

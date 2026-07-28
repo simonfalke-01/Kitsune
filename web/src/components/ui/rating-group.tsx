@@ -55,12 +55,12 @@ export function RatingGroup({
         {options.map((option) => (
           <ToggleButton
             className={cx(
-              'min-h-control min-w-control rounded-md border border-border-subtle',
+              'min-h-control min-w-control cursor-pointer rounded-md border border-border-subtle',
               'bg-surface-raised px-3 text-base font-medium text-text outline-none',
               'transition-colors duration-fast ease-out-quart',
               'hover:border-border hover:bg-surface-hover',
               'selected:border-accent selected:bg-accent selected:text-text-on-accent',
-              'disabled:bg-surface-active disabled:text-text-subtle',
+              'disabled:cursor-not-allowed disabled:bg-surface-active disabled:text-text-subtle',
               focusRing
             )}
             id={option}

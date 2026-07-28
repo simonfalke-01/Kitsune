@@ -27,7 +27,7 @@ function HintUnlockAction({ challenge, hint, isLoading, onUnlock }: HintUnlockAc
         }}
         size="small"
         className="min-h-control"
-        tone="quiet"
+        tone="secondary"
       >
         {label}
       </Button>
@@ -36,7 +36,7 @@ function HintUnlockAction({ challenge, hint, isLoading, onUnlock }: HintUnlockAc
 
   return (
     <DialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
-      <Button className="min-h-control" isDisabled={isLoading} size="small" tone="quiet">
+      <Button className="min-h-control" isDisabled={isLoading} size="small" tone="secondary">
         {label}
       </Button>
       <AlertDialog
@@ -63,6 +63,51 @@ function HintUnlockAction({ challenge, hint, isLoading, onUnlock }: HintUnlockAc
         title="Unlock hint?"
       />
     </DialogTrigger>
+  );
+}
+
+interface ChallengeHintItemProps {
+  challenge: ChallengeExperience;
+  hint: ChallengeHint;
+  index: number;
+  isLoading: boolean;
+  onUnlock: () => Promise<boolean>;
+}
+
+function ChallengeHintItem({
+  challenge,
+  hint,
+  index,
+  isLoading,
+  onUnlock
+}: ChallengeHintItemProps) {
+  return (
+    <li className="grid gap-3 py-4 first:pt-0 last:pb-0">
+      {hint.unlocked && hint.content ? (
+        <>
+          <strong className="text-base text-text">Hint {index + 1}</strong>
+          <p className="m-0 whitespace-pre-line text-base text-text-muted">{hint.content}</p>
+        </>
+      ) : (
+        <div className="flex min-h-control items-center justify-between gap-4">
+          <span className="flex shrink-0 items-baseline gap-2 whitespace-nowrap">
+            <strong className="text-base text-text">Hint {index + 1}</strong>
+            <span className="text-sm text-text-muted">Locked</span>
+          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="kitsune-optical-center text-sm tabular-nums text-text-muted">
+              {hint.cost > 0 ? `${hint.cost} pts` : 'Free'}
+            </span>
+            <HintUnlockAction
+              challenge={challenge}
+              hint={hint}
+              isLoading={isLoading}
+              onUnlock={onUnlock}
+            />
+          </div>
+        </div>
+      )}
+    </li>
   );
 }
 
@@ -179,32 +224,14 @@ export function ChallengeHints({ challenge, loadHints, unlockHint }: ChallengeHi
       {error ? <Alert title={error} tone="danger" /> : null}
       <ol className="m-0 grid list-none divide-y divide-border-subtle p-0">
         {hints.map((hint, index) => (
-          <li className="grid gap-3 py-4 first:pt-0 last:pb-0" key={hint.id}>
-            {hint.unlocked && hint.content ? (
-              <>
-                <strong className="text-base text-text">Hint {index + 1}</strong>
-                <p className="m-0 whitespace-pre-line text-base text-text-muted">{hint.content}</p>
-              </>
-            ) : (
-              <div className="flex min-h-control items-center justify-between gap-4">
-                <span className="flex min-w-0 items-baseline gap-2">
-                  <strong className="text-base text-text">Hint {index + 1}</strong>
-                  <span className="text-sm text-text-muted">Locked</span>
-                </span>
-                <div className="flex shrink-0 items-center gap-3">
-                  <span className="text-sm tabular-nums text-text-muted">
-                    {hint.cost > 0 ? `${hint.cost} pts` : 'Free'}
-                  </span>
-                  <HintUnlockAction
-                    challenge={challenge}
-                    hint={hint}
-                    isLoading={pendingHint === hint.id}
-                    onUnlock={() => unlock(hint)}
-                  />
-                </div>
-              </div>
-            )}
-          </li>
+          <ChallengeHintItem
+            challenge={challenge}
+            hint={hint}
+            index={index}
+            isLoading={pendingHint === hint.id}
+            key={hint.id}
+            onUnlock={() => unlock(hint)}
+          />
         ))}
       </ol>
     </div>

@@ -53,7 +53,7 @@ function buttonClassName(
   tone: ButtonTone
 ): string {
   return cx(
-    'inline-flex items-center justify-center rounded-md border font-medium no-underline',
+    'inline-flex cursor-pointer items-center justify-center rounded-md border font-medium no-underline',
     'outline-none transition-colors duration-fast ease-out-quart',
     'disabled:cursor-not-allowed disabled:border-border-subtle',
     'disabled:bg-surface-active disabled:text-text-subtle',

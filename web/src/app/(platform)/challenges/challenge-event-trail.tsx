@@ -1,13 +1,18 @@
 import { Keyboard } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import type { ChallengeEventStandingStub } from './challenge-solve-stub';
+import type { ChallengePresenceStatus } from './use-challenge-presence';
+import type { RealtimeStatus } from '@/app/realtime-context';
 import { AppHeader } from '@/components/layout/app-shell';
 import {
-  Button,
   Dialog,
   DialogTrigger,
+  IconButton,
+  KeyboardKey,
   Progress,
   Sparkline,
+  StatusIndicator,
   Tooltip,
   TooltipTrigger
 } from '@/components/ui';
@@ -18,6 +23,8 @@ interface ChallengeEventTrailProps {
   eventName: string;
   isShortcutHelpOpen: boolean;
   onShortcutHelpOpenChange: (open: boolean) => void;
+  presenceStatus: ChallengePresenceStatus;
+  realtimeStatus: RealtimeStatus;
   standing: ChallengeEventStandingStub;
 }
 
@@ -39,9 +46,35 @@ export function ChallengeEventTrail({
   eventName,
   isShortcutHelpOpen,
   onShortcutHelpOpenChange,
+  presenceStatus,
+  realtimeStatus,
   standing
 }: ChallengeEventTrailProps) {
   const progress = challengeProgress(challenges);
+  const [showInitialConnection, setShowInitialConnection] = useState(false);
+
+  useEffect(() => {
+    if (realtimeStatus !== 'connecting') {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setShowInitialConnection(true);
+    }, 1_500);
+
+    return () => window.clearTimeout(timer);
+  }, [realtimeStatus]);
+
+  const connectionLabel =
+    realtimeStatus === 'offline'
+      ? 'Offline'
+      : realtimeStatus === 'reconnecting'
+        ? 'Reconnecting'
+        : realtimeStatus === 'connecting' && showInitialConnection
+          ? 'Connecting'
+          : realtimeStatus === 'connected' && presenceStatus === 'error'
+            ? 'Team presence unavailable'
+            : null;
 
   return (
     <AppHeader
@@ -58,6 +91,9 @@ export function ChallengeEventTrail({
     >
       <section aria-label="Event progress" className="flex min-w-0 items-center justify-end gap-6">
         <div className="flex shrink-0 items-center gap-6">
+          {connectionLabel ? (
+            <StatusIndicator aria-live="polite" label={connectionLabel} tone="warning" />
+          ) : null}
           <div className="hidden items-center gap-3 xl:flex">
             <span className="kitsune-optical-center hidden items-baseline gap-2 text-right text-sm tabular-nums text-text-muted 2xl:flex">
               <span>rank</span>
@@ -70,14 +106,9 @@ export function ChallengeEventTrail({
           </div>
           <TooltipTrigger>
             <DialogTrigger isOpen={isShortcutHelpOpen} onOpenChange={onShortcutHelpOpenChange}>
-              <Button
-                aria-label="Keyboard shortcuts"
-                className="size-control shrink-0"
-                size="icon"
-                tone="quiet"
-              >
+              <IconButton label="Keyboard shortcuts">
                 <Keyboard aria-hidden className="size-4" />
-              </Button>
+              </IconButton>
               <Dialog title="Keyboard shortcuts">
                 <dl className="m-0 grid gap-3">
                   {challengeShortcuts.map((shortcut) => (
@@ -85,12 +116,7 @@ export function ChallengeEventTrail({
                       <dt className="text-sm text-text-muted">{shortcut.label}</dt>
                       <dd className="m-0 flex shrink-0 items-center gap-1">
                         {shortcut.keys.map((key) => (
-                          <kbd
-                            className="min-w-8 rounded-sm border border-border-subtle bg-surface-sunken px-2 py-1 text-center font-mono text-xs font-medium text-text"
-                            key={key}
-                          >
-                            {key}
-                          </kbd>
+                          <KeyboardKey key={key}>{key}</KeyboardKey>
                         ))}
                       </dd>
                     </div>

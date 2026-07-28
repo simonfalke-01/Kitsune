@@ -78,6 +78,16 @@ reusable failure mode, add the general rule here before closing the issue.
   or interaction.
 - React Aria Components provide all interaction and accessibility primitives.
   Product components compose wrappers from `web/src/components/ui`.
+- Icon-only actions use the shared `IconButton` anatomy so their accessible
+  name, control-sized hit target, and button states cannot drift. Clipboard
+  actions use `CopyButton` or `CopyIconButton`; feature screens do not recreate
+  copied timers, icons, or clipboard failure handling.
+- Keyboard shortcut glyphs use the shared `KeyboardKey` treatment. Downloadable
+  resources use `DownloadLink`, which preserves link semantics and rejects
+  unsafe URL protocols before exposing a navigation target.
+- `SearchField` owns exactly one visible clear action. Its input keeps native
+  search semantics while the primitive suppresses browser search decorations;
+  feature screens never add a second clear control or engine-specific CSS.
 - Current shadcn React Aria Nova source may be inspected as a behavioral and
   composition reference. Kitsune does not install shadcn or copy its theme.
 - TanStack Table is the only approved TanStack package. Do not add TanStack
@@ -102,6 +112,9 @@ reusable failure mode, add the general rule here before closing the issue.
   green only for a confirmed solve; warning and danger only for states that
   require attention. A screen must not become an undifferentiated gray field,
   but color may not be sprayed across decorative chips and cards.
+- Chromatic fills, rails, and chart marks never double as body-text colours.
+  Category labels, podium copy, and avatar initials consume dedicated semantic
+  text roles that meet WCAG AA against their actual light and dark surfaces.
 
 ## 4. Structure and density
 
@@ -136,9 +149,10 @@ reusable failure mode, add the general rule here before closing the issue.
   do not repeat shell width, top padding, or title styling.
 - Fixed workspaces own an explicit viewport-relative height and use internal
   scroll regions. Never suppress document scrolling without owning that height.
-- A fixed challenge workspace has exactly two desktop scroll owners: the
-  challenge collection and the selected challenge detail. The document, page
-  shell, event trail, split root, and nested sections do not scroll.
+- A fixed challenge workspace has one desktop scroll owner before selection:
+  the challenge collection. A selected challenge adds the detail body as the
+  second. The document, page shell, event trail, split root, unselected detail
+  pane, and nested sections do not scroll.
 - The desktop splitter owns its value when a screen does not control it. Drag,
   touch, and arrow-key resizing update the pane immediately without changing
   the selected challenge or either pane's scroll position.
@@ -161,6 +175,10 @@ reusable failure mode, add the general rule here before closing the issue.
 - Selection feedback is optimistic. A challenge row marks itself selected and
   changes the detail in the activation frame; URL synchronization must never
   sit on the critical feedback path.
+- Before selection, preserve the desktop split and its stored collection width
+  while centering one quiet `No challenge selected` prompt in the right pane. Do
+  not widen the collection or add explanatory copy, metrics, charts,
+  illustration, actions, borders, or decorative empty-state treatment.
 - Challenge selection and non-default detail tabs are represented in the URL.
   Back, forward, refresh, and direct links restore the visible challenge and
   tab; clearing selection removes both parameters without disturbing unrelated
@@ -180,9 +198,21 @@ reusable failure mode, add the general rule here before closing the issue.
 - Escape exits challenge search and restores focus to the selected rendered
   challenge row when available. The next J or K movement continues from that
   row and advances selection.
+- When no React Aria overlay owns Escape, an unmodified Escape releases the
+  current focus target so page and workspace shortcuts can resume. Open
+  dialogs, sheets, menus, list boxes, popovers, and tooltips receive the first
+  Escape and retain React Aria's close-and-restore behavior; a following Escape
+  may release the restored trigger.
 - The event trail owns one concise shortcut reference reachable by pointer and
-  keyboard. Every command retains a visible equivalent, and focus movement is
+  keyboard. Every command retains a visible equivalent, and focus movement
   visually agrees with selection when J or K changes the active challenge.
+- With a selected desktop challenge, the collection exposes a focus-only `Skip
+challenge list` link before its controls. It moves focus to the visible
+  challenge heading, whose focus ring confirms the destination; the next Tab
+  continues with the detail actions. The detail exposes the inverse `Back to
+challenge search` link immediately before its first action. These bypasses
+  preserve normal Tab access to every category and challenge link for users who
+  do not activate them and remain absent from the narrow modal focus trap.
 - The challenge route composes global navigation, event identity, live
   progress, standing, and global actions into one persistent header. Its solve
   progress rail is the header's lower edge. A separate global bar is hidden
@@ -222,9 +252,9 @@ reusable failure mode, add the general rule here before closing the issue.
   Challenge-row content keeps one full spacing step between that rail and its
   first glyph so the accent never crowds text.
 - The first-blood rainbow edge uses the shared category-color roles as one
-  static perimeter. It adds no glow, page wash, hue motion, or saturated panel,
-  and it retains the same edge geometry, timing, and reduced-motion behavior as
-  a single-color frame.
+  static perimeter. It adds no glow, hue motion, or saturated panel, and it
+  retains the same edge geometry, restrained interior imprint, timing, and
+  reduced-motion behavior as a single-color frame.
 - A first-blood challenge row adds one solid gold achievement rail to its gold
   wash. The blue inset ring remains the selected-state signal; achievement and
   current location must stay simultaneously legible rather than replacing one
@@ -238,18 +268,11 @@ reusable failure mode, add the general rule here before closing the issue.
   applied, and it must not temporarily overwrite the pre-paint result.
 - Full-screen effect frames remain flush to every viewport edge. Their dedicated
   outer fill is rectangular and lets host-window clipping define the true outer
-  curve. The transparent inner cutout uses the shared workspace-card radius at
-  both top corners, so the corresponding outer radius adds the frame thickness
-  rather than copying the card radius. Both bottom corners retain Kitsune's
-  larger viewport radius. This fills each corner wedge from the native edge to
-  its inner curve while keeping the top frame concentric with the floating
-  workspace surface.
-- Solve-effect viewport perimeters must not use SVG or CSS masks. Safari may
-  reconstruct a masked layer while its ancestor animates and visibly flicker.
-  Compose the static perimeter from edge strips and rounded corner fills, then
-  animate opacity on that plain HTML layer only. Corner fills and edge strips
-  must meet without overlap because translucent semantic colors visibly darken
-  when composited twice.
+  curve; only the transparent inner cutout uses the smaller workspace-card
+  radius. This fills every corner wedge from the native edge to the inner curve.
+- Keep masked viewport geometry static during solve feedback. Animate opacity on
+  a plain HTML wrapper rather than on the SVG mask itself, avoiding Safari layer
+  reconstruction flicker.
 - Scrollbar tracks stay transparent. A pane may reveal its thumb while the user
   scrolls, then hide it after scrolling stops. Do not reserve a permanent gray
   track at the viewport edge.
@@ -271,6 +294,11 @@ reusable failure mode, add the general rule here before closing the issue.
 - Challenge search is immediate and local when data is already loaded. It does
   not need an Apply button, a visible label that repeats its placeholder, or a
   separate results explanation.
+- Team challenge presence is automatic rather than claimed. A visible browser
+  tab refreshes an ephemeral, team-scoped heartbeat for its selected challenge;
+  hidden tabs clear it and abandoned state expires. The current user is omitted,
+  other teams can never observe it, and challenge visibility is checked again
+  before any teammate location is returned.
 - Password creation requires password and confirmation fields plus an
   accessible show or hide control.
 - Temporary credentials must be replaced after first authentication and before
@@ -315,9 +343,11 @@ reusable failure mode, add the general rule here before closing the issue.
 - Every challenge row has one invariant two-line anatomy and hit height: name
   and points on the first line, solve status and solve count on the second.
   Changing state never changes row height or shifts adjacent targets.
-- Trusted author metadata may follow the challenge name on its first-line
-  baseline as truncated, muted `by <name>` text. It never creates a third row,
-  displaces points, or changes the invariant hit height.
+- On ordinary unsolved rows, trusted author metadata replaces the redundant
+  `Unsolved` copy on the second line as truncated, muted `by <name>` text.
+  Solved and blood status keep that line; absent authors fall back to
+  `Unsolved`. Selection never controls author visibility, and the invariant hit
+  height does not change.
 - Static status does not use hover styling.
 - Repeated standings, metrics, and category summaries use aligned ledgers or
   lists. They do not become grids of individually rounded cards. A common
@@ -326,6 +356,10 @@ reusable failure mode, add the general rule here before closing the issue.
   the underlying value. Equal-sized challenge segments are prohibited when
   point values differ. Accessibility minimums may constrain extreme cases;
   the component must retain the real value and expose it in text.
+- Category progress tracks share the highest category point total as their
+  full-width baseline. Tracks with fewer available points scale against that
+  baseline while their internal challenge segments retain their own point
+  proportions.
 - Within each category progress bar, segments accumulate from the leading edge:
   solved challenges come before unsolved challenges while retaining their
   defined order within each state. The overall field bar retains canonical
@@ -392,26 +426,16 @@ reusable failure mode, add the general rule here before closing the issue.
 
 - Challenge discovery keeps search, categories, solve state, points, and the
   submission action in one task flow.
-- When no challenge is selected, the detail pane presents one composed model
-  of the competitor's position and the remaining challenge field. It does not
-  repeat event-trail facts as KPI tiles or wrap each category in a card.
-- In that overview, the run summary, nearby-score chart, challenge-field
-  heading, overall challenge bar, and category column headings remain fixed.
-  Only the category rows own vertical overflow when they exceed the remaining
-  pane height; the overview pane and document do not become scroll owners.
-- The nearby-score chart uses a seven-place local standings window instead of a
-  series legend. It shows consecutive rank, team, and point columns around the
-  current competitor, spans the chart's plotted height, and keeps the current
-  team as the sole accented, weighted row. Neutral neighbours fade toward the
-  top and bottom edges without implying that the ledger is an interactive
-  picker.
-- The chart's first visible Y-axis label shares the section's leading edge.
-  Grid lines retain their internal label inset; that functional plotting inset
-  must not shift the chart's entire visible block away from its heading.
-- Once the nearby-score chart and standings share a row, both use the standard
-  chart-height token. The responsive column split corrects the wide aspect;
-  increasing height again wastes the fixed workspace and pushes the challenge
-  field below the user's decision context.
+- When no challenge is selected, the desktop detail pane contains only a quiet,
+  centered `No challenge selected` prompt. The challenge collection retains
+  its split width and mounted state.
+- Do not mount the run summary, nearby-score chart, local standings, challenge-
+  field bar, category ledger, additional instructional copy, illustration,
+  action, or decorative empty-state treatment in that pane.
+- Preserve `ChallengeOverview` and its supporting chart, standings, and
+  category-progress components for a future team-performance route. They are
+  intentionally unmounted from Challenges, and their current composition does
+  not define the unfinished team route.
 - Responsive SVG charts measure their rendered box and recompute plot bounds,
   pointer coordinates, ticks, and overlays from that box. They must not apply
   `preserveAspectRatio="none"` to a fixed coordinate system, which visibly
@@ -420,13 +444,6 @@ reusable failure mode, add the general rule here before closing the issue.
   fill the already-reserved chart box so it does not appear to grow during
   hydration. The measured render replaces the fallback with matching plot and
   CSS dimensions before enabling exact pointer geometry.
-- A split pane already constrains the overview's reading context. The
-  no-selection overview consumes the available pane width with one compact
-  lateral inset; it must not reapply the global page-shell maximum and create
-  large automatic side margins around charts or ledgers.
-- The no-selection overview title and selected challenge title share the same
-  top and left pane inset. Switching state changes the content, not the primary
-  reading origin.
 - In challenge detail, the tab selection edge, challenge title, and first
   content surface share one left pane inset. A tab's internal hit-area padding
   must not pull its selection underline outside that alignment rule.
@@ -447,15 +464,19 @@ reusable failure mode, add the general rule here before closing the issue.
   `screen-imprint`, `field-wave`, and `none` variants. Until the admin API
   supplies the setting, one feature-local frontend adapter selects the default;
   screens do not branch on ad hoc booleans.
-- The default edge border draws only one crisp semantic-green viewport
-  perimeter at the screen boundary. It applies no page tint, glow, blur,
-  gradient, content movement, or layout animation.
+- The default edge border draws one strong semantic-green viewport perimeter at
+  the screen boundary and briefly carries a restrained edge fade into the page
+  over a very light flat tint. This gives the imprint a stable untinted center
+  and makes it perceptible without glow, blur, content movement, or layout
+  animation.
 - An incorrect flag draws the same geometry once in semantic red, independent
-  of the configured success variant. It adds no wash, does not clear the typed
-  flag, and does not replace the adjacent recovery feedback.
+  of the configured success variant. It uses the same restrained interior
+  imprint, does not clear the typed flag, and does not replace the adjacent
+  recovery feedback.
 - The optional screen imprint reuses that perimeter and briefly applies a
-  low-opacity flat green wash over the page. The weaker wash recedes before the
-  perimeter so it reads as a page imprint rather than replacing the border.
+  stronger low-opacity flat green wash over the page. Its opacity is twice the
+  edge-border imprint so the two variants remain visibly distinct. The wash
+  recedes before the perimeter rather than replacing the border.
 - The optional field wave begins at the measured flag-field bounds and expands
   across the viewport above product chrome. Its imprint preserves the textbox
   bounds, shared field radius, edge, and submitted value; it never substitutes
@@ -470,6 +491,13 @@ reusable failure mode, add the general rule here before closing the issue.
   update the URL without reloading the document.
 - The challenge detail begins with the name, points, minimal decision-relevant
   metadata, description, resources when present, and the submission action.
+- Challenge descriptions consume the shared authored-content primitive. It
+  supports semantic headings, emphasis, lists, safe links, quotes, tables,
+  inline code, and fenced code while treating raw HTML and unsafe protocols as
+  inert text.
+- The selected challenge header owns one quiet Copy challenge link action. It
+  copies the permission-scoped Details URL, reports success through persistent
+  control state plus the toast channel, and gives an actionable failure.
 - Solve-tab labels put the tabular count first and use singular `Solve` only
   when the count is exactly one.
 - A trusted challenge author appears beside the name as muted `by <name>` text.
@@ -479,13 +507,17 @@ reusable failure mode, add the general rule here before closing the issue.
 - A locked hint renders identity and `Locked` at the leading edge, then cost and
   a specifically labelled action at the trailing edge of one compact row. The
   button never repeats the price and never drops beneath the state as a detached
-  control.
+  control. At the 360-pixel floor, `Hint <n>` and `Locked` remain one leading
+  group; neither label wraps independently merely to preserve desktop gaps.
 - Challenge detail provides a solve timeline sourced from the same model as
   the compact first-three-plus-self context. Each solve shows rank, competitor,
   elapsed time from first solve, and absolute solve time. The current competitor
-  stays identifiable at their true ordinal position, and that same row may
-  stick to the solve-pane edge while scrolling. Inserting a second highlighted
-  self row between unrelated ranks is prohibited.
+  stays identifiable at their true ordinal position. As soon as its natural row
+  clips the solve viewport's top edge, a visual-only duplicate docks to the top;
+  clipping the bottom edge docks it to the bottom. The duplicate is hidden from
+  assistive technology and disappears when the natural row is fully inside the
+  viewport. Inserting a second semantic self row between unrelated ranks is
+  prohibited.
 - The compact first-three-plus-self context uses one identity anatomy per
   competitor: placement, a larger team avatar, then a two-line stack of team
   name and elapsed state. First blood reports elapsed competition time in
@@ -520,6 +552,13 @@ reusable failure mode, add the general rule here before closing the issue.
 - Selected challenge rows retain their blue ring and leading rail across state
   changes. Solved and blood washes remain visible inside that selection chrome;
   no secondary shadow animation may overwrite the ring.
+- Active teammate presence stays inside the row's invariant second line. It
+  uses identity plus the word `viewing`, never color alone. On unsolved rows it
+  may temporarily replace ordinary author metadata; on solved rows it sits
+  beside rather than replacing solve or blood state.
+- The repeated sidebar row and solve or blood label use their feature
+  components. Collection and detail screens do not maintain parallel status
+  labels, icon choices, or first-blood colour rules.
 - Asymmetric status glyphs use the shared optical-offset token when bounding-box
   centering leaves their visual mass off the adjacent text baseline.
 - While solve timelines, standings, and team context are absent from the player
@@ -530,10 +569,20 @@ reusable failure mode, add the general rule here before closing the issue.
   current team's score changes once per challenge actually marked solved;
   neighboring demo teams use distinct deterministic event times so simultaneous
   jumps appear only when source data eventually reports them.
+- Realtime transport ignores malformed messages without deleting the last
+  valid state, detects browser offline state, reconnects with bounded backoff,
+  and refreshes event and challenge projections after recovery. The event trail
+  remains quiet while connected and reports Connecting, Reconnecting, Offline,
+  or Team presence unavailable only while that state affects live updates.
 - Do not show tags merely because challenges have tags. Tags remain searchable
   metadata unless they change discovery or a solve decision.
 - Scoreboard controls sit with scoreboard state. Frozen, hidden, delayed, and
   public states use factual user-facing language.
+- The current participant row remains pinned within the ranking scroll owner.
+  It pins to the top while its natural position is above the visible region and
+  to the bottom while its natural position is below it. It returns to its
+  natural position when visible. The pinned row remains the canonical table row
+  and is never duplicated.
 - Team-instance controls show ownership, readiness, expiry, capacity, and
   connection data together. Secrets are explicit copy actions.
 - Health labels describe what is actually measured. Stored inventory is not
@@ -574,6 +623,13 @@ reusable failure mode, add the general rule here before closing the issue.
   remains.
 - Focus order follows visual order. Focus remains visible and overlays trap and
   restore it through React Aria.
+- Shared focus classes must set outline style as well as width and colour after
+  `outline-none`; a logically focused control with `outline-style: none` fails
+  the keyboard contract even when its outline token is present.
+- Bidirectional edge pinning uses the shared `ScrollEdgeDock` behavior against
+  the nearest `data-scroll-region`. Feature code supplies an anchor and visual
+  content; it does not own scroll listeners, viewport measurement, overlay
+  geometry, or duplicate accessibility rules.
 - Controls expose selected, disabled, invalid, expanded, and busy states
   semantically.
 - Color is never the only status carrier.

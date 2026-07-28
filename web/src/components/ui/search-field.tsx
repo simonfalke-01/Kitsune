@@ -28,6 +28,7 @@ export interface SearchFieldProps extends Omit<
 > {
   description?: ReactNode;
   errorMessage?: ReactNode;
+  inputId?: string;
   inputRef?: RefObject<HTMLInputElement | null>;
   label: ReactNode;
   labelHidden?: boolean;
@@ -38,6 +39,7 @@ export function SearchField({
   className,
   description,
   errorMessage,
+  inputId,
   inputRef,
   label,
   labelHidden = false,
@@ -56,14 +58,15 @@ export function SearchField({
           className="pointer-events-none absolute left-3 size-4 text-text-subtle"
         />
         <Input
-          className={cx(fieldInputControl, 'pl-8 pr-8')}
+          className={cx(fieldInputControl, 'kitsune-search-input pl-8 pr-8')}
+          id={inputId}
           placeholder={placeholder}
           ref={inputRef}
         />
         <ReactAriaButton
           aria-label="Clear search"
           className={cx(
-            'absolute right-2 rounded-sm p-1 text-text-muted outline-none',
+            'absolute right-2 cursor-pointer rounded-sm p-1 text-text-muted outline-none',
             'hover:bg-surface-hover hover:text-text empty:hidden',
             focusRing
           )}

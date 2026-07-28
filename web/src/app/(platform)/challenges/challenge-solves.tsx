@@ -1,4 +1,7 @@
+'use client';
+
 import { Check, Trophy } from 'lucide-react';
+import { type Ref, useRef } from 'react';
 
 import type { FirstBloodHighlightColor } from './challenge-presentation';
 import {
@@ -8,7 +11,14 @@ import {
   type ChallengeSolveContext,
   type ChallengeSolveEntry
 } from './challenge-solve-stub';
-import { Alert, Avatar, type AvatarTone, EmptyState, Skeleton } from '@/components/ui';
+import {
+  Alert,
+  Avatar,
+  type AvatarTone,
+  EmptyState,
+  ScrollEdgeDock,
+  Skeleton
+} from '@/components/ui';
 import { cx } from '@/components/ui/styles';
 
 type SolveViewState = 'error' | 'hidden' | 'loading' | 'ready';
@@ -76,21 +86,14 @@ function SolveIdentity({ avatarUrl, caption, competitorId, competitorName }: Sol
 interface SolveRowProps {
   entry: ChallengeSolveEntry;
   eventStartedAt: string;
+  rowRef?: Ref<HTMLLIElement>;
 }
 
-function SolveRow({ entry, eventStartedAt }: SolveRowProps) {
+function SolveRowContent({ entry, eventStartedAt }: Omit<SolveRowProps, 'rowRef'>) {
   const entryPlacement = placement(entry);
 
   return (
-    <li
-      aria-current={entry.isSelf ? 'true' : undefined}
-      className={cx(
-        'flex min-h-16 items-center gap-3 px-3 py-2',
-        entry.isSelf
-          ? 'sticky bottom-0 z-10 border-l-2 border-accent bg-accent-subtle shadow-md'
-          : null
-      )}
-    >
+    <>
       <strong
         className={cx(
           'kitsune-optical-center w-8 shrink-0 text-right text-sm font-semibold tabular-nums text-text-muted',
@@ -114,6 +117,21 @@ function SolveRow({ entry, eventStartedAt }: SolveRowProps) {
         </strong>
         <span className="text-xs text-text-muted">{formatSolveTimestamp(entry.solvedAt)}</span>
       </div>
+    </>
+  );
+}
+
+function SolveRow({ entry, eventStartedAt, rowRef }: SolveRowProps) {
+  return (
+    <li
+      aria-current={entry.isSelf ? 'true' : undefined}
+      className={cx(
+        'flex min-h-16 items-center gap-3 px-3 py-2',
+        entry.isSelf ? 'border-l-2 border-accent bg-accent-subtle' : null
+      )}
+      ref={rowRef}
+    >
+      <SolveRowContent entry={entry} eventStartedAt={eventStartedAt} />
     </li>
   );
 }
@@ -124,6 +142,8 @@ interface ChallengeSolvesProps {
 }
 
 export function ChallengeSolves({ context, state = 'ready' }: ChallengeSolvesProps) {
+  const selfRowRef = useRef<HTMLLIElement>(null);
+
   if (state === 'loading') {
     return (
       <div aria-label="Loading solve standings" className="grid gap-2" role="status">
@@ -147,11 +167,27 @@ export function ChallengeSolves({ context, state = 'ready' }: ChallengeSolvesPro
   }
 
   return (
-    <ol aria-label="Solve standings" className="m-0 grid list-none gap-0 p-0">
-      {context.entries.map((entry) => (
-        <SolveRow entry={entry} eventStartedAt={context.eventStartedAt} key={entry.id} />
-      ))}
-    </ol>
+    <>
+      <ol aria-label="Solve standings" className="m-0 grid list-none gap-0 p-0">
+        {context.entries.map((entry) => (
+          <SolveRow
+            entry={entry}
+            eventStartedAt={context.eventStartedAt}
+            key={entry.id}
+            rowRef={entry.isSelf ? selfRowRef : undefined}
+          />
+        ))}
+      </ol>
+      {context.selfEntry ? (
+        <ScrollEdgeDock
+          anchorRef={selfRowRef}
+          className="flex min-h-16 items-center gap-3 border-l-2 border-accent bg-accent-subtle px-3 py-2 shadow-md"
+          key={context.selfEntry.id}
+        >
+          <SolveRowContent entry={context.selfEntry} eventStartedAt={context.eventStartedAt} />
+        </ScrollEdgeDock>
+      ) : null}
+    </>
   );
 }
 

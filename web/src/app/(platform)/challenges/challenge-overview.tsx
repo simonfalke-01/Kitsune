@@ -29,6 +29,7 @@ interface ChallengeOverviewProps {
   standing: ChallengeEventStandingStub;
 }
 
+/** Preserved for the future team performance route. Not mounted in the challenge workspace. */
 export function ChallengeOverview({
   challenges,
   getChallengeHref,
@@ -38,6 +39,17 @@ export function ChallengeOverview({
 }: ChallengeOverviewProps) {
   const progress = challengeProgress(challenges);
   const groups = groupChallenges(challenges);
+  const categoryRows = groups.map((group) => {
+    const availablePoints = group.challenges.reduce((total, challenge) => {
+      return total + challengePointValue(challenge);
+    }, 0);
+
+    return {
+      availablePoints,
+      group
+    };
+  });
+  const maximumCategoryPoints = Math.max(1, ...categoryRows.map((row) => row.availablePoints));
   const pointWeights = challengePointWeights(challenges);
   const recordedSolves = challenges.reduce((total, challenge) => {
     return total + (solveContexts.get(challenge.id)?.totalSolves ?? challenge.solveCount ?? 0);
@@ -167,10 +179,7 @@ export function ChallengeOverview({
 
           <div className="kitsune-scroll-region min-h-0 flex-1 overflow-y-auto overscroll-contain">
             <ul aria-label="Category breakdown" className="m-0 grid list-none gap-0 p-0">
-              {groups.map((group) => {
-                const availablePoints = group.challenges.reduce((total, challenge) => {
-                  return total + challengePointValue(challenge);
-                }, 0);
+              {categoryRows.map(({ availablePoints, group }) => {
                 const categorySolves = group.challenges.reduce((total, challenge) => {
                   return (
                     total +
@@ -187,14 +196,16 @@ export function ChallengeOverview({
                       <ChallengeCategoryLabel category={group.category} />
                     </strong>
                     <div className="flex min-w-0 items-center gap-3 xl:col-span-7">
-                      <WeightedSegmentBar
-                        ariaLabel={`${group.solved} of ${group.challenges.length} ${group.category} challenges solved`}
-                        className="min-w-0 flex-1"
-                        items={segmentItems(
-                          orderChallengeSegments(group.challenges),
-                          challengePointWeights(group.challenges)
-                        )}
-                      />
+                      <div className="min-w-0 flex-1">
+                        <WeightedSegmentBar
+                          ariaLabel={`${group.solved} of ${group.challenges.length} ${group.category} challenges solved`}
+                          items={segmentItems(
+                            orderChallengeSegments(group.challenges),
+                            challengePointWeights(group.challenges)
+                          )}
+                          maximumValue={maximumCategoryPoints}
+                        />
+                      </div>
                       <span className="shrink-0 text-right text-sm font-semibold tabular-nums text-text">
                         {group.solved} / {group.challenges.length}
                       </span>

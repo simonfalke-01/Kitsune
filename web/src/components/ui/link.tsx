@@ -16,18 +16,17 @@ export interface LinkProps extends ReactAriaLinkProps {
   tone?: LinkTone;
 }
 
-export function Link({ className, tone = 'accent', ...props }: LinkProps) {
-  return (
-    <ReactAriaLink
-      {...props}
-      className={cx(
-        'rounded-sm font-medium underline decoration-border-strong',
-        'underline-offset-4 outline-none transition-colors',
-        'duration-fast ease-out-quart disabled:text-text-subtle',
-        focusRing,
-        variantClass(linkTones, tone),
-        typeof className === 'string' ? className : undefined
-      )}
-    />
+export function linkClassName(className: LinkProps['className'], tone: LinkTone) {
+  return cx(
+    'rounded-sm font-medium underline decoration-border-strong',
+    'underline-offset-4 outline-none transition-colors',
+    'duration-fast ease-out-quart disabled:text-text-subtle',
+    focusRing,
+    variantClass(linkTones, tone),
+    typeof className === 'string' ? className : undefined
   );
+}
+
+export function Link({ className, tone = 'accent', ...props }: LinkProps) {
+  return <ReactAriaLink {...props} className={linkClassName(className, tone)} />;
 }

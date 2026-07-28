@@ -1,6 +1,6 @@
 'use client';
 
-import type { CSSProperties } from 'react';
+import { type CSSProperties, useId } from 'react';
 import { createPortal } from 'react-dom';
 
 import type { FirstBloodEdgeColor, FlagSubmitSuccessEffect } from './challenge-presentation';
@@ -86,18 +86,60 @@ interface EffectFrameProps extends Pick<
 }
 
 function ViewportFrame({ firstBloodEdgeColor, onComplete, outcome }: EffectFrameProps) {
+  const definitionId = useId().replaceAll(':', '');
+  const maskId = `solve-edge-mask-${definitionId}`;
+  const rainbowId = `solve-edge-rainbow-${definitionId}`;
+  const edgeColor =
+    outcome === 'incorrect'
+      ? 'danger'
+      : outcome === 'first-blood'
+        ? firstBloodEdgeColor
+        : undefined;
+  const isRainbow = edgeColor === 'rainbow';
+
   return (
     <span
       className="kitsune-solve-edge-frame absolute inset-0"
-      data-edge-color={
-        outcome === 'incorrect'
-          ? 'danger'
-          : outcome === 'first-blood'
-            ? firstBloodEdgeColor
-            : undefined
-      }
+      data-edge-color={edgeColor}
       onAnimationEnd={onComplete}
-    />
+    >
+      <svg className="kitsune-solve-edge-svg block size-full" focusable="false">
+        <defs>
+          <mask
+            height="100%"
+            id={maskId}
+            maskUnits="userSpaceOnUse"
+            mask-type="luminance"
+            width="100%"
+            x="0"
+            y="0"
+          >
+            <rect className="kitsune-solve-mask-include" height="100%" width="100%" />
+            <rect
+              className="kitsune-solve-edge-cutout kitsune-solve-mask-exclude"
+              height="100%"
+              width="100%"
+            />
+          </mask>
+          {isRainbow ? (
+            <linearGradient id={rainbowId} x1="0" x2="1" y1="0" y2="1">
+              <stop className="kitsune-solve-edge-rainbow-blue" offset="0%" />
+              <stop className="kitsune-solve-edge-rainbow-violet" offset="25%" />
+              <stop className="kitsune-solve-edge-rainbow-pink" offset="50%" />
+              <stop className="kitsune-solve-edge-rainbow-orange" offset="75%" />
+              <stop className="kitsune-solve-edge-rainbow-teal" offset="100%" />
+            </linearGradient>
+          ) : null}
+        </defs>
+        <rect
+          className={isRainbow ? 'kitsune-solve-edge-rainbow-fill' : 'kitsune-solve-edge-fill'}
+          fill={isRainbow ? `url(#${rainbowId})` : undefined}
+          height="100%"
+          mask={`url(#${maskId})`}
+          width="100%"
+        />
+      </svg>
+    </span>
   );
 }
 
@@ -109,6 +151,7 @@ function EdgeBorder({ firstBloodEdgeColor, onComplete, outcome }: EffectFramePro
       data-first-blood={outcome === 'first-blood' || undefined}
       data-incorrect={outcome === 'incorrect' || undefined}
     >
+      <span className="kitsune-solve-edge-wash-subtle absolute inset-0" />
       <ViewportFrame
         firstBloodEdgeColor={firstBloodEdgeColor}
         onComplete={onComplete}

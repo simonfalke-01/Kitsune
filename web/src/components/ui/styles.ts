@@ -14,7 +14,10 @@ export function variantClass<Variant extends string>(
 }
 
 export const focusRing =
-  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring';
+  'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-focus-ring';
+
+export const focusTargetRing =
+  'focus:outline-2 focus:outline-solid focus:outline-offset-2 focus:outline-focus-ring';
 
 export const fieldGroup =
   'flex content-start flex-col gap-2 text-sm text-text disabled:text-text-subtle';
@@ -30,7 +33,7 @@ export const fieldControl = cx(
   'text-base text-text outline-none',
   'transition-colors duration-fast ease-out-quart',
   'hover:border-border',
-  'focus-visible:border-accent-border focus-visible:outline-2',
+  'focus-visible:border-accent-border focus-visible:outline-2 focus-visible:outline-solid',
   'focus-visible:outline-offset-2 focus-visible:outline-focus-ring',
   'invalid:border-danger-border invalid:outline-danger',
   'disabled:cursor-not-allowed disabled:bg-surface-sunken',
@@ -52,7 +55,7 @@ export const collectionItem = cx(
   'transition-colors duration-fast ease-out-quart',
   'hover:bg-surface-hover focused:bg-surface-hover',
   'selected:bg-accent-subtle selected:text-accent-text',
-  'focus-visible:outline-2 focus-visible:outline-offset-2',
+  'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2',
   'focus-visible:outline-focus-ring',
   'disabled:text-text-subtle'
 );

@@ -1,0 +1,14 @@
+Kitsune Open mock capture
+
+Request
+GET /status HTTP/1.1
+Host: cache.foxden.test
+X-Forwarded-Host: origin.foxden.test
+
+Response
+HTTP/1.1 200 OK
+Cache-Control: public, max-age=60
+Vary: X-Forwarded-Host
+X-Cache-Key: status:origin.foxden.test
+
+This fixture contains no live endpoint or secret.

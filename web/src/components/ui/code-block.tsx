@@ -1,10 +1,8 @@
 'use client';
 
-import { Check, Copy } from 'lucide-react';
-import { useEffect, useState } from 'react';
-
-import { Button } from './button';
-import { cx } from './styles';
+import { CopyButton } from './copy-button';
+import { cx, focusRing } from './styles';
+import { showToast } from './toast';
 
 export interface CodeBlockProps {
   code: string;
@@ -13,27 +11,6 @@ export interface CodeBlockProps {
 }
 
 export function CodeBlock({ code, label, language = 'text' }: CodeBlockProps) {
-  const [isCopied, setIsCopied] = useState(false);
-
-  useEffect(() => {
-    if (!isCopied) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      setIsCopied(false);
-    }, 2000);
-
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [isCopied]);
-
-  const copy = async () => {
-    await navigator.clipboard.writeText(code);
-    setIsCopied(true);
-  };
-
   return (
     <figure className="m-0 overflow-hidden rounded-lg border border-border-subtle bg-surface-sunken">
       <figcaption
@@ -43,23 +20,28 @@ export function CodeBlock({ code, label, language = 'text' }: CodeBlockProps) {
         )}
       >
         <span className="text-xs font-medium text-text-muted">{label}</span>
-        <Button
-          aria-label={isCopied ? 'Copied' : `Copy ${label}`}
-          onPress={() => {
-            void copy();
+        <CopyButton
+          copiedLabel={`${label} copied`}
+          label={`Copy ${label}`}
+          onError={() => {
+            showToast({
+              description: 'Select the code and copy it manually.',
+              title: `${label} could not be copied`,
+              tone: 'danger'
+            });
           }}
-          size="small"
-          tone="quiet"
-        >
-          {isCopied ? (
-            <Check aria-hidden className="size-4" />
-          ) : (
-            <Copy aria-hidden className="size-4" />
-          )}
-          {isCopied ? 'Copied' : 'Copy'}
-        </Button>
+          value={code}
+        />
       </figcaption>
-      <pre className="m-0 overflow-x-auto p-4 font-mono text-sm text-text" data-language={language}>
+      <pre
+        aria-label={`${label} code`}
+        className={cx(
+          'm-0 overflow-x-auto p-4 font-mono text-sm text-text outline-none',
+          focusRing
+        )}
+        data-language={language}
+        tabIndex={0}
+      >
         <code>{code}</code>
       </pre>
     </figure>

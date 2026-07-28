@@ -387,7 +387,7 @@ export function LineChart<Metadata>({
         <svg
           aria-describedby={`${descriptionId} ${announcementId}`}
           aria-labelledby={titleId}
-          className={`block w-full outline-none focus-visible:outline-2 focus-visible:outline-focus-ring ${
+          className={`block w-full outline-none focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-focus-ring ${
             height === 'compact' ? 'h-chart-compact' : 'h-chart'
           }`}
           onBlur={() => {

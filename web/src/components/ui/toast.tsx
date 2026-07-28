@@ -139,7 +139,7 @@ export function ToastRegion() {
             <ReactAriaButton
               aria-label="Dismiss notification"
               className={cx(
-                'rounded-sm p-1 text-text-muted outline-none',
+                'cursor-pointer rounded-sm p-1 text-text-muted outline-none',
                 'hover:bg-surface-hover hover:text-text',
                 focusRing
               )}

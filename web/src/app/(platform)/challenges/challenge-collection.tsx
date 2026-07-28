@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ChevronsUpDown, Eye, EyeOff, PanelLeftClose, Trophy } from 'lucide-react';
+import { ChevronsUpDown, Eye, EyeOff, PanelLeftClose } from 'lucide-react';
 import { type RefObject, useMemo, useState, useSyncExternalStore } from 'react';
 
 import {
@@ -8,20 +8,22 @@ import {
   ChallengeCategoryLabel,
   challengeCategoryDefinition
 } from './challenge-category';
+import { ChallengeCollectionRow } from './challenge-collection-row';
 import type { FirstBloodHighlightColor } from './challenge-presentation';
-import { solveCountLabel, type ChallengeSolveContext } from './challenge-solve-stub';
+import type { ChallengeSolveContext } from './challenge-solve-stub';
 import {
   Button,
-  CollectionLink,
   Disclosure,
   DisclosureGroup,
   EmptyState,
+  IconButton,
   SearchField,
+  SkipLink,
   Tooltip,
   TooltipTrigger
 } from '@/components/ui';
+import type { ChallengePresenceMember } from '@/lib/api/client';
 import {
-  challengePoints,
   challengeProgress,
   filterChallenges,
   groupChallenges,
@@ -39,18 +41,6 @@ const categoryBorderClasses: Record<ChallengeCategoryTone, string> = {
   teal: 'border-l-2 border-l-category-teal',
   violet: 'border-l-2 border-l-category-violet'
 };
-
-const bloodTextClasses = {
-  1: 'text-podium-first',
-  2: 'text-podium-second',
-  3: 'text-podium-third'
-} as const;
-
-const bloodLabels = {
-  1: 'First blood',
-  2: 'Second blood',
-  3: 'Third blood'
-} as const;
 
 const preferencesEvent = 'kitsune-challenge-preferences';
 const preferencesVersion = 'v2';
@@ -113,8 +103,10 @@ interface ChallengeCollectionProps {
   onCollapseChallengeList?: () => void;
   onExitSearch?: () => void;
   onSelectChallenge?: (challengeId: string, trigger: HTMLElement) => void;
+  presenceByChallenge: ReadonlyMap<string, ChallengePresenceMember[]>;
   selectedChallengeId: string | null;
   searchInputRef?: RefObject<HTMLInputElement | null>;
+  showDetailFocusLink?: boolean;
   solveContexts: ReadonlyMap<string, ChallengeSolveContext>;
 }
 
@@ -126,8 +118,10 @@ export function ChallengeCollection({
   onCollapseChallengeList,
   onExitSearch,
   onSelectChallenge,
+  presenceByChallenge,
   selectedChallengeId,
   searchInputRef,
+  showDetailFocusLink = false,
   solveContexts
 }: ChallengeCollectionProps) {
   const preferenceValue = useSyncExternalStore(
@@ -166,7 +160,13 @@ export function ChallengeCollection({
   }
 
   return (
-    <section aria-label="Challenge list" className="flex min-h-full flex-col bg-surface-raised">
+    <section
+      aria-label="Challenge list"
+      className="relative flex min-h-full flex-col bg-surface-raised"
+    >
+      {showDetailFocusLink ? (
+        <SkipLink href="#challenge-detail">Skip challenge list</SkipLink>
+      ) : null}
       <div className="sticky top-0 z-20 bg-surface-raised">
         <div className="flex min-h-12 items-center justify-start px-4">
           <dl
@@ -196,11 +196,11 @@ export function ChallengeCollection({
             className="min-w-0 flex-1"
             label="Search challenges"
             labelHidden
+            inputId="challenge-search"
             inputRef={searchInputRef}
             onKeyDown={(event) => {
               if (event.key === 'Escape') {
                 event.preventDefault();
-                event.stopPropagation();
                 onExitSearch?.();
               }
             }}
@@ -209,54 +209,40 @@ export function ChallengeCollection({
             value={query}
           />
           <TooltipTrigger>
-            <Button
-              aria-label={hideSolved ? 'Show solved challenges' : 'Hide solved challenges'}
+            <IconButton
               aria-pressed={hideSolved}
-              className="size-control"
+              label={hideSolved ? 'Show solved challenges' : 'Hide solved challenges'}
               onPress={() => {
                 savePreferences(!hideSolved, expandedKeys);
               }}
-              size="icon"
-              tone="quiet"
             >
               {hideSolved ? (
                 <EyeOff aria-hidden className="size-4" />
               ) : (
                 <Eye aria-hidden className="size-4" />
               )}
-            </Button>
+            </IconButton>
             <Tooltip>{hideSolved ? 'Show solved' : 'Hide solved'}</Tooltip>
           </TooltipTrigger>
           <TooltipTrigger>
-            <Button
-              aria-label={
-                expandedKeys.size === 0 ? 'Expand all categories' : 'Collapse all categories'
-              }
-              className="size-control"
+            <IconButton
+              label={expandedKeys.size === 0 ? 'Expand all categories' : 'Collapse all categories'}
               onPress={() => {
                 const visibleCategories = groups.map((group) => group.category);
                 const next =
                   expandedKeys.size === 0 ? new Set<string>(visibleCategories) : new Set<string>();
                 savePreferences(hideSolved, next);
               }}
-              size="icon"
-              tone="quiet"
             >
               <ChevronsUpDown aria-hidden className="size-4" />
-            </Button>
+            </IconButton>
             <Tooltip>{expandedKeys.size === 0 ? 'Expand all' : 'Collapse all'}</Tooltip>
           </TooltipTrigger>
           {onCollapseChallengeList ? (
             <TooltipTrigger>
-              <Button
-                aria-label="Collapse challenge list"
-                className="size-control"
-                onPress={onCollapseChallengeList}
-                size="icon"
-                tone="quiet"
-              >
+              <IconButton label="Collapse challenge list" onPress={onCollapseChallengeList}>
                 <PanelLeftClose aria-hidden className="size-4" />
-              </Button>
+              </IconButton>
               <Tooltip>Collapse challenge list</Tooltip>
             </TooltipTrigger>
           ) : null}
@@ -298,7 +284,7 @@ export function ChallengeCollection({
               <Disclosure
                 className={`${categoryTextClasses[tone]} bg-surface-raised`}
                 density="compact"
-                headingClassName="sticky top-challenge-list-header z-10 bg-surface-sunken"
+                headingClassName="sticky top-challenge-list-header z-sticky bg-surface-sunken"
                 headingLevel={2}
                 id={group.category}
                 key={group.category}
@@ -309,81 +295,21 @@ export function ChallengeCollection({
               >
                 <ul className="m-0 grid list-none bg-surface-raised p-0">
                   {group.challenges.map((challenge) => {
+                    const challengePresence = presenceByChallenge.get(challenge.id) ?? [];
                     const solveContext = solveContexts.get(challenge.id);
-                    const solveCount = solveContext?.totalSolves ?? challenge.solveCount ?? 0;
-                    const selfRank = challenge.solved ? solveContext?.selfEntry?.rank : null;
-                    const bloodRank = selfRank && selfRank <= 3 ? (selfRank as 1 | 2 | 3) : null;
 
                     return (
-                      <li key={challenge.id}>
-                        <CollectionLink
-                          appearance="challenge"
-                          className="kitsune-challenge-row"
-                          data-blood={bloodRank ?? undefined}
-                          data-challenge-id={challenge.id}
-                          data-challenge-row
-                          data-first-blood-color={
-                            bloodRank === 1 ? firstBloodHighlightColor : undefined
-                          }
-                          data-solved={challenge.solved || undefined}
-                          href={getChallengeHref?.(challenge.id)}
-                          isSelected={selectedChallengeId === challenge.id}
-                          onPress={(event) => {
-                            const target = event.target as HTMLElement;
-                            onSelectChallenge?.(challenge.id, target.closest('a') ?? target);
-                          }}
-                          tone={tone}
-                        >
-                          <span className="flex items-center justify-between gap-4">
-                            <span className="grid min-w-0 gap-1">
-                              <span className="flex min-w-0 items-baseline gap-2">
-                                <span className="min-w-0 flex-1 truncate text-base font-semibold text-text">
-                                  {challenge.name}
-                                </span>
-                                {challenge.authorName ? (
-                                  <span className="max-w-menu shrink truncate text-xs font-normal text-text-subtle">
-                                    by {challenge.authorName}
-                                  </span>
-                                ) : null}
-                              </span>
-                              {challenge.solved ? (
-                                <span
-                                  className={`inline-flex items-center gap-1 text-sm font-medium ${
-                                    bloodRank === 1
-                                      ? 'kitsune-first-blood-copy'
-                                      : bloodRank
-                                        ? bloodTextClasses[bloodRank]
-                                        : 'text-success-text'
-                                  }`}
-                                  data-first-blood-color={
-                                    bloodRank === 1 ? firstBloodHighlightColor : undefined
-                                  }
-                                >
-                                  {bloodRank ? (
-                                    <Trophy
-                                      aria-hidden
-                                      className="size-4 shrink-0 -translate-y-optical"
-                                    />
-                                  ) : (
-                                    <Check aria-hidden className="size-4 shrink-0" />
-                                  )}
-                                  {bloodRank ? bloodLabels[bloodRank] : 'Solved'}
-                                </span>
-                              ) : (
-                                <span className="text-sm text-text-subtle">Unsolved</span>
-                              )}
-                            </span>
-                            <span className="grid shrink-0 justify-items-end gap-1">
-                              <span className="text-sm font-medium tabular-nums text-text">
-                                {challengePoints(challenge)}
-                              </span>
-                              <span className="text-sm tabular-nums text-text-muted">
-                                {solveCountLabel(solveCount)}
-                              </span>
-                            </span>
-                          </span>
-                        </CollectionLink>
-                      </li>
+                      <ChallengeCollectionRow
+                        challenge={challenge}
+                        firstBloodHighlightColor={firstBloodHighlightColor}
+                        href={getChallengeHref?.(challenge.id)}
+                        isSelected={selectedChallengeId === challenge.id}
+                        key={challenge.id}
+                        onSelect={onSelectChallenge}
+                        presence={challengePresence}
+                        solveContext={solveContext}
+                        tone={tone}
+                      />
                     );
                   })}
                 </ul>

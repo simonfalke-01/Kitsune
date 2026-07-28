@@ -8,14 +8,18 @@ import type { ReactNode } from 'react';
 import { useSession } from '@/app/session-context';
 import { useTheme } from '@/app/theme-context';
 import {
-  Button,
+  IconButton,
   Link,
   Menu,
   MenuTrigger,
   NavigationLink,
+  SkipLink,
   showToast,
-  ToastRegion
+  ToastRegion,
+  Tooltip,
+  TooltipTrigger
 } from '@/components/ui';
+import { cx, focusTargetRing } from '@/components/ui/styles';
 
 interface AppShellProps {
   children: ReactNode;
@@ -81,9 +85,9 @@ export function AppHeader({
       >
         <div className="md:hidden">
           <MenuTrigger>
-            <Button aria-label="Open navigation" size="icon" tone="quiet">
+            <IconButton label="Open navigation">
               <MenuIcon aria-hidden className="size-5" />
-            </Button>
+            </IconButton>
             <Menu aria-label="Navigation" options={mobileOptions} />
           </MenuTrigger>
         </div>
@@ -115,42 +119,44 @@ export function AppHeader({
           ))}
         </nav>
         {children ? <div className="min-w-0 flex-1">{children}</div> : <div className="flex-1" />}
-        <Button
-          aria-label={isDark ? 'Use light theme' : 'Use dark theme'}
-          onPress={() => {
-            setPreference(isDark ? 'light' : 'dark');
-          }}
-          size="icon"
-          tone="quiet"
-        >
-          {isDark ? (
-            <Sun aria-hidden className="size-4" />
-          ) : (
-            <Moon aria-hidden className="size-4" />
-          )}
-        </Button>
-        {isAuthenticated ? (
-          <Button
-            aria-label="Sign out"
+        <TooltipTrigger>
+          <IconButton
+            label={isDark ? 'Use light theme' : 'Use dark theme'}
             onPress={() => {
-              void logout().then((signedOut) => {
-                if (signedOut) {
-                  router.replace('/login');
-                  router.refresh();
-                  return;
-                }
-
-                showToast({
-                  title: 'Sign out failed',
-                  tone: 'danger'
-                });
-              });
+              setPreference(isDark ? 'light' : 'dark');
             }}
-            size="icon"
-            tone="quiet"
           >
-            <LogOut aria-hidden className="size-4" />
-          </Button>
+            {isDark ? (
+              <Sun aria-hidden className="size-4" />
+            ) : (
+              <Moon aria-hidden className="size-4" />
+            )}
+          </IconButton>
+          <Tooltip>{isDark ? 'Use light theme' : 'Use dark theme'}</Tooltip>
+        </TooltipTrigger>
+        {isAuthenticated ? (
+          <TooltipTrigger>
+            <IconButton
+              label="Sign out"
+              onPress={() => {
+                void logout().then((signedOut) => {
+                  if (signedOut) {
+                    router.replace('/login');
+                    router.refresh();
+                    return;
+                  }
+
+                  showToast({
+                    title: 'Sign out failed',
+                    tone: 'danger'
+                  });
+                });
+              }}
+            >
+              <LogOut aria-hidden className="size-4" />
+            </IconButton>
+            <Tooltip>Sign out</Tooltip>
+          </TooltipTrigger>
         ) : null}
       </div>
       {footer}
@@ -171,21 +177,19 @@ export function AppShell({ children }: AppShellProps) {
           : 'min-h-screen bg-surface text-text'
       }
     >
-      <Link
-        className="fixed left-2 top-2 z-overlay -translate-y-16 bg-surface-raised px-3 py-2 no-underline shadow-md transition-transform focus-visible:translate-y-0"
-        href="#main-content"
-        tone="current"
-      >
+      <SkipLink href="#main-content" placement="global">
         Skip to content
-      </Link>
+      </SkipLink>
       <AppHeader />
       <main
         id="main-content"
-        className={
+        className={cx(
+          'outline-none',
+          focusTargetRing,
           isChallengeWorkspace
             ? 'min-h-0 w-full flex-1 overflow-hidden p-3'
             : 'w-full px-4 py-6 sm:px-6 lg:px-8'
-        }
+        )}
         tabIndex={-1}
       >
         {rendersContent ? children : null}

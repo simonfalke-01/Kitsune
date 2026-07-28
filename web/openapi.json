@@ -561,6 +561,51 @@
           }
         ]
       },
+      "ChallengePresenceMemberResponse": {
+        "properties": {
+          "challenge_id": {
+            "description": "Selected challenge visible to the caller.",
+            "format": "uuid",
+            "type": "string"
+          },
+          "display_name": {
+            "description": "Public teammate display name.",
+            "type": "string"
+          },
+          "updated_at": {
+            "description": "Last heartbeat accepted by the presence service.",
+            "format": "date-time",
+            "type": "string"
+          },
+          "user_id": {
+            "description": "Teammate user identity.",
+            "format": "uuid",
+            "type": "string"
+          }
+        },
+        "required": [
+          "challenge_id",
+          "display_name",
+          "updated_at",
+          "user_id"
+        ],
+        "type": "object"
+      },
+      "ChallengePresenceResponse": {
+        "properties": {
+          "members": {
+            "description": "Active teammates. The authenticated user is omitted.",
+            "items": {
+              "$ref": "#/components/schemas/ChallengePresenceMemberResponse"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "members"
+        ],
+        "type": "object"
+      },
       "ChallengeResponse": {
         "description": "Player-safe challenge response. Answer rules never appear here.",
         "properties": {
@@ -3571,6 +3616,19 @@
         "required": [
           "user_id"
         ],
+        "type": "object"
+      },
+      "UpdateChallengePresenceRequest": {
+        "properties": {
+          "challenge_id": {
+            "description": "Currently selected challenge. Null clears this browser's presence.",
+            "format": "uuid",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
         "type": "object"
       },
       "UpdateEventStateRequest": {
@@ -7488,6 +7546,148 @@
         },
         "tags": [
           "brackets"
+        ]
+      }
+    },
+    "/api/v1/events/{event_id}/challenge-presence": {
+      "get": {
+        "operationId": "challenge_presence",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChallengePresenceResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "challenges"
+        ]
+      },
+      "put": {
+        "operationId": "update_challenge_presence",
+        "parameters": [
+          {
+            "description": "Event ID",
+            "in": "path",
+            "name": "event_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateChallengePresenceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChallengePresenceResponse"
+                }
+              }
+            },
+            "description": ""
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": ""
+          }
+        },
+        "tags": [
+          "challenges"
         ]
       }
     },

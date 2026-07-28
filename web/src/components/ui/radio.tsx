@@ -48,11 +48,11 @@ export function RadioGroup({
         {options.map((option) => (
           <ReactAriaRadio
             className={cx(
-              'group flex rounded-md border border-border-subtle',
+              'group flex cursor-pointer rounded-md border border-border-subtle',
               'bg-surface-raised p-3 text-sm outline-none',
               'transition-colors duration-fast ease-out-quart',
               'hover:border-border selected:border-accent-border',
-              'selected:bg-accent-subtle disabled:text-text-subtle',
+              'selected:bg-accent-subtle disabled:cursor-not-allowed disabled:text-text-subtle',
               focusRing
             )}
             key={option.value}

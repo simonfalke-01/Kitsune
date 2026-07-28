@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { I18nProvider, RouterProvider } from 'react-aria-components';
 
 import { ThemeProvider } from './theme-context';
+import { EscapeFocusManager } from '@/components/ui/escape-focus-manager';
 
 interface AppProvidersProps {
   children: ReactNode;
@@ -20,7 +21,10 @@ export function AppProviders({ children }: AppProvidersProps) {
       }}
     >
       <I18nProvider locale="en">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <EscapeFocusManager />
+          {children}
+        </ThemeProvider>
       </I18nProvider>
     </RouterProvider>
   );

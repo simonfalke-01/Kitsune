@@ -18,7 +18,10 @@ export interface DomainEnvelope {
 interface RealtimeContextValue {
   isConnected: boolean;
   latest: DomainEnvelope | null;
+  status: RealtimeStatus;
 }
+
+export type RealtimeStatus = 'disabled' | 'connecting' | 'connected' | 'reconnecting' | 'offline';
 
 const RealtimeContext = createContext<RealtimeContextValue | null>(null);
 
@@ -44,8 +47,8 @@ function isDomainEnvelope(value: unknown): value is DomainEnvelope {
 
 export function RealtimeProvider({ children }: RealtimeProviderProps) {
   const { isAuthenticated } = useSession();
-  const [isConnected, setIsConnected] = useState(false);
   const [latest, setLatest] = useState<DomainEnvelope | null>(null);
+  const [status, setStatus] = useState<RealtimeStatus>(isAuthenticated ? 'connecting' : 'disabled');
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -55,13 +58,58 @@ export function RealtimeProvider({ children }: RealtimeProviderProps) {
     let stopped = false;
     let socket: WebSocket | null = null;
     let reconnectTimer: number | null = null;
+    let keepaliveTimer: number | null = null;
+    let reconnectAttempt = 0;
+    let hasConnected = false;
 
-    const connect = () => {
+    const clearSocketTimers = () => {
+      if (reconnectTimer !== null) {
+        window.clearTimeout(reconnectTimer);
+        reconnectTimer = null;
+      }
+
+      if (keepaliveTimer !== null) {
+        window.clearInterval(keepaliveTimer);
+        keepaliveTimer = null;
+      }
+    };
+
+    const scheduleReconnect = () => {
+      if (stopped || !navigator.onLine || reconnectTimer !== null) {
+        return;
+      }
+
+      reconnectAttempt += 1;
+      const delay = Math.min(1_000 * 2 ** Math.min(reconnectAttempt - 1, 4), 15_000);
+      reconnectTimer = window.setTimeout(() => {
+        reconnectTimer = null;
+        connect();
+      }, delay);
+    };
+
+    function connect() {
+      if (stopped) {
+        return;
+      }
+
+      if (!navigator.onLine) {
+        setStatus('offline');
+        return;
+      }
+
+      setStatus(hasConnected ? 'reconnecting' : 'connecting');
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
       socket = new WebSocket(`${protocol}//${window.location.host}/api/v1/realtime/ws`);
 
       socket.addEventListener('open', () => {
-        setIsConnected(true);
+        hasConnected = true;
+        reconnectAttempt = 0;
+        setStatus('connected');
+        keepaliveTimer = window.setInterval(() => {
+          if (socket?.readyState === WebSocket.OPEN) {
+            socket.send('{"type":"keepalive"}');
+          }
+        }, 20_000);
       });
 
       socket.addEventListener('message', (message) => {
@@ -72,39 +120,62 @@ export function RealtimeProvider({ children }: RealtimeProviderProps) {
             setLatest(parsed);
           }
         } catch {
-          setLatest(null);
+          // Ignore malformed transport messages without discarding stable state.
         }
       });
 
       socket.addEventListener('close', () => {
-        setIsConnected(false);
+        if (keepaliveTimer !== null) {
+          window.clearInterval(keepaliveTimer);
+          keepaliveTimer = null;
+        }
+
         socket = null;
 
         if (!stopped) {
-          reconnectTimer = window.setTimeout(connect, 1500);
+          setStatus(navigator.onLine ? 'reconnecting' : 'offline');
+          scheduleReconnect();
         }
       });
+
+      socket.addEventListener('error', () => {
+        socket?.close();
+      });
+    }
+
+    const handleOffline = () => {
+      clearSocketTimers();
+      setStatus('offline');
+      socket?.close();
+    };
+
+    const handleOnline = () => {
+      clearSocketTimers();
+      socket?.close();
+      socket = null;
+      connect();
     };
 
     connect();
+    window.addEventListener('offline', handleOffline);
+    window.addEventListener('online', handleOnline);
 
     return () => {
       stopped = true;
-
-      if (reconnectTimer !== null) {
-        window.clearTimeout(reconnectTimer);
-      }
-
+      clearSocketTimers();
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('online', handleOnline);
       socket?.close();
     };
   }, [isAuthenticated]);
 
   const value = useMemo<RealtimeContextValue>(
     () => ({
-      isConnected: isAuthenticated && isConnected,
-      latest: isAuthenticated ? latest : null
+      isConnected: isAuthenticated && status === 'connected',
+      latest: isAuthenticated ? latest : null,
+      status: isAuthenticated ? status : 'disabled'
     }),
-    [isAuthenticated, isConnected, latest]
+    [isAuthenticated, latest, status]
   );
 
   return <RealtimeContext.Provider value={value}>{children}</RealtimeContext.Provider>;

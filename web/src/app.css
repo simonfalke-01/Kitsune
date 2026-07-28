@@ -68,27 +68,35 @@
   --category-blue-3: oklch(95% 0.035 250);
   --category-blue-6: oklch(84% 0.09 250);
   --category-blue-9: oklch(63% 0.16 255);
+  --category-blue-11: oklch(42% 0.15 255);
   --category-cyan-3: oklch(96% 0.03 220);
   --category-cyan-6: oklch(86% 0.075 220);
   --category-cyan-9: oklch(65% 0.16 220);
+  --category-cyan-11: oklch(42% 0.12 220);
   --category-violet-3: oklch(95% 0.035 300);
   --category-violet-6: oklch(84% 0.09 300);
   --category-violet-9: oklch(64% 0.15 300);
+  --category-violet-11: oklch(43% 0.14 300);
   --category-pink-3: oklch(95% 0.035 345);
   --category-pink-6: oklch(84% 0.09 345);
   --category-pink-9: oklch(66% 0.16 345);
+  --category-pink-11: oklch(44% 0.14 345);
   --category-orange-3: oklch(96% 0.04 65);
   --category-orange-6: oklch(87% 0.09 65);
   --category-orange-9: oklch(70% 0.15 55);
+  --category-orange-11: oklch(44% 0.12 55);
   --category-amber-3: oklch(97% 0.04 95);
   --category-amber-6: oklch(89% 0.09 95);
   --category-amber-9: oklch(72% 0.16 90);
+  --category-amber-11: oklch(42% 0.1 90);
   --category-teal-3: oklch(95% 0.035 185);
   --category-teal-6: oklch(84% 0.085 185);
   --category-teal-9: oklch(65% 0.13 185);
+  --category-teal-11: oklch(41% 0.1 185);
   --category-lime-3: oklch(96% 0.04 135);
   --category-lime-6: oklch(86% 0.095 135);
   --category-lime-9: oklch(69% 0.14 135);
+  --category-lime-11: oklch(42% 0.1 135);
 }
 
 /* Tier two: the only color roles product and plugin components consume. */
@@ -123,7 +131,9 @@
   --success-border: var(--success-6);
   --success: var(--success-9);
   --success-imprint-edge: color-mix(in oklch, var(--success) 82%, transparent);
-  --success-imprint-fill: color-mix(in oklch, var(--success) 7%, transparent);
+  --success-imprint-fill: color-mix(in oklch, var(--success) 12%, transparent);
+  --success-imprint-fill-subtle: color-mix(in oklch, var(--success) 6%, transparent);
+  --success-imprint-inset: color-mix(in oklch, var(--success) 18%, transparent);
   --success-wave-fill: color-mix(in oklch, var(--success) 18%, transparent);
   --success-hover: var(--success-10);
   --success-text: var(--success-12);
@@ -139,6 +149,8 @@
   --danger-border: var(--danger-6);
   --danger: var(--danger-9);
   --danger-imprint-edge: color-mix(in oklch, var(--danger) 82%, transparent);
+  --danger-imprint-fill-subtle: color-mix(in oklch, var(--danger) 6%, transparent);
+  --danger-imprint-inset: color-mix(in oklch, var(--danger) 18%, transparent);
   --danger-hover: var(--danger-10);
   --danger-text: var(--danger-12);
 
@@ -151,41 +163,51 @@
   --category-blue-subtle: var(--category-blue-3);
   --category-blue-border: var(--category-blue-6);
   --category-blue: var(--category-blue-9);
+  --category-blue-text: var(--category-blue-11);
   --category-cyan-subtle: var(--category-cyan-3);
   --category-cyan-border: var(--category-cyan-6);
   --category-cyan: var(--category-cyan-9);
+  --category-cyan-text: var(--category-cyan-11);
   --category-violet-subtle: var(--category-violet-3);
   --category-violet-border: var(--category-violet-6);
   --category-violet: var(--category-violet-9);
+  --category-violet-text: var(--category-violet-11);
   --category-pink-subtle: var(--category-pink-3);
   --category-pink-border: var(--category-pink-6);
   --category-pink: var(--category-pink-9);
+  --category-pink-text: var(--category-pink-11);
   --category-orange-subtle: var(--category-orange-3);
   --category-orange-border: var(--category-orange-6);
   --category-orange: var(--category-orange-9);
+  --category-orange-text: var(--category-orange-11);
   --category-amber-subtle: var(--category-amber-3);
   --category-amber-border: var(--category-amber-6);
   --category-amber: var(--category-amber-9);
+  --category-amber-text: var(--category-amber-11);
   --category-teal-subtle: var(--category-teal-3);
   --category-teal-border: var(--category-teal-6);
   --category-teal: var(--category-teal-9);
+  --category-teal-text: var(--category-teal-11);
   --category-lime-subtle: var(--category-lime-3);
   --category-lime-border: var(--category-lime-6);
   --category-lime: var(--category-lime-9);
+  --category-lime-text: var(--category-lime-11);
 
   --podium-first-subtle: var(--warning-subtle);
   --podium-first: var(--warning-text);
   --podium-second-subtle: var(--surface-hover);
   --podium-second: var(--text-muted);
   --podium-third-subtle: var(--category-orange-subtle);
-  --podium-third: var(--category-orange);
+  --podium-third: var(--category-orange-text);
 
   --first-blood-subtle: var(--podium-first-subtle);
   --first-blood-border: var(--warning-border);
   --first-blood: var(--warning);
   --first-blood-text: var(--podium-first);
   --first-blood-imprint-edge: color-mix(in oklch, var(--first-blood) 82%, transparent);
-  --first-blood-imprint-fill: color-mix(in oklch, var(--first-blood) 7%, transparent);
+  --first-blood-imprint-fill: color-mix(in oklch, var(--first-blood) 12%, transparent);
+  --first-blood-imprint-fill-subtle: color-mix(in oklch, var(--first-blood) 6%, transparent);
+  --first-blood-imprint-inset: color-mix(in oklch, var(--first-blood) 18%, transparent);
   --first-blood-wave-fill: color-mix(in oklch, var(--first-blood) 18%, transparent);
   --first-blood-rainbow-blue: var(--category-blue);
   --first-blood-rainbow-cyan: var(--category-cyan);
@@ -252,7 +274,8 @@
   --overlay: oklch(14.2% 0.005 260 / 55%);
 }
 
-:root:where(.dark, [data-theme='dark']) {
+:root:where(.dark, [data-theme='dark']),
+.kitsune-theme-scope:where(.dark, [data-theme='dark']) {
   color-scheme: dark;
 
   --surface: oklch(15.8% 0.002 270);
@@ -312,27 +335,35 @@
   --category-blue-subtle: oklch(27% 0.045 255);
   --category-blue-border: oklch(50% 0.08 255);
   --category-blue: oklch(82% 0.11 255);
+  --category-blue-text: var(--category-blue);
   --category-cyan-subtle: oklch(27% 0.04 220);
   --category-cyan-border: oklch(50% 0.075 220);
   --category-cyan: oklch(83% 0.105 220);
+  --category-cyan-text: var(--category-cyan);
   --category-violet-subtle: oklch(28% 0.045 300);
   --category-violet-border: oklch(51% 0.08 300);
   --category-violet: oklch(83% 0.11 300);
+  --category-violet-text: var(--category-violet);
   --category-pink-subtle: oklch(28% 0.045 345);
   --category-pink-border: oklch(51% 0.08 345);
   --category-pink: oklch(84% 0.11 345);
+  --category-pink-text: var(--category-pink);
   --category-orange-subtle: oklch(29% 0.045 65);
   --category-orange-border: oklch(52% 0.075 65);
   --category-orange: oklch(84% 0.105 65);
+  --category-orange-text: var(--category-orange);
   --category-amber-subtle: oklch(29% 0.04 95);
   --category-amber-border: oklch(52% 0.07 95);
   --category-amber: oklch(85% 0.1 95);
+  --category-amber-text: var(--category-amber);
   --category-teal-subtle: oklch(27% 0.04 185);
   --category-teal-border: oklch(50% 0.07 185);
   --category-teal: oklch(83% 0.1 185);
+  --category-teal-text: var(--category-teal);
   --category-lime-subtle: oklch(28% 0.04 145);
   --category-lime-border: oklch(50% 0.07 145);
   --category-lime: oklch(84% 0.1 145);
+  --category-lime-text: var(--category-lime);
 
   --focus-ring: oklch(70% 0.15 255);
   --overlay: oklch(6% 0.001 270 / 78%);
@@ -380,27 +411,35 @@
   --color-category-blue-subtle: var(--category-blue-subtle);
   --color-category-blue-border: var(--category-blue-border);
   --color-category-blue: var(--category-blue);
+  --color-category-blue-text: var(--category-blue-text);
   --color-category-cyan-subtle: var(--category-cyan-subtle);
   --color-category-cyan-border: var(--category-cyan-border);
   --color-category-cyan: var(--category-cyan);
+  --color-category-cyan-text: var(--category-cyan-text);
   --color-category-violet-subtle: var(--category-violet-subtle);
   --color-category-violet-border: var(--category-violet-border);
   --color-category-violet: var(--category-violet);
+  --color-category-violet-text: var(--category-violet-text);
   --color-category-pink-subtle: var(--category-pink-subtle);
   --color-category-pink-border: var(--category-pink-border);
   --color-category-pink: var(--category-pink);
+  --color-category-pink-text: var(--category-pink-text);
   --color-category-orange-subtle: var(--category-orange-subtle);
   --color-category-orange-border: var(--category-orange-border);
   --color-category-orange: var(--category-orange);
+  --color-category-orange-text: var(--category-orange-text);
   --color-category-amber-subtle: var(--category-amber-subtle);
   --color-category-amber-border: var(--category-amber-border);
   --color-category-amber: var(--category-amber);
+  --color-category-amber-text: var(--category-amber-text);
   --color-category-teal-subtle: var(--category-teal-subtle);
   --color-category-teal-border: var(--category-teal-border);
   --color-category-teal: var(--category-teal);
+  --color-category-teal-text: var(--category-teal-text);
   --color-category-lime-subtle: var(--category-lime-subtle);
   --color-category-lime-border: var(--category-lime-border);
   --color-category-lime: var(--category-lime);
+  --color-category-lime-text: var(--category-lime-text);
   --color-podium-first-subtle: var(--podium-first-subtle);
   --color-podium-first: var(--podium-first);
   --color-podium-second-subtle: var(--podium-second-subtle);
@@ -491,13 +530,14 @@
   --spacing-chart-compact: 11rem;
   --spacing-challenge-list-header: calc(var(--spacing) * 12 + var(--spacing) * 16);
   --spacing-collapsed-rail: 4rem;
-  --spacing-effect-frame: 0.25rem;
+  --spacing-effect-frame: calc(var(--spacing) + var(--spacing-rail));
   --spacing-optical: 0.0625rem;
   --spacing-rail: 0.125rem;
   --spacing-sparkline: 2.5rem;
   --spacing-sidebar: 15rem;
   --spacing-workspace: calc(100dvh - 4rem);
 
+  --z-index-sticky: 10;
   --z-index-overlay: 50;
   --z-index-celebration: 60;
 }
@@ -590,6 +630,18 @@
 }
 
 @layer components {
+  .kitsune-search-input {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .kitsune-search-input::-webkit-search-cancel-button,
+  .kitsune-search-input::-webkit-search-decoration {
+    display: none;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
   .kitsune-optical-center {
     position: relative;
     inset-block-start: var(--spacing-optical);
@@ -681,57 +733,74 @@
   }
 
   .kitsune-solve-edge-frame {
-    --solve-effect-top-radius: calc(var(--radius-md) + var(--spacing-effect-frame));
-    --solve-effect-top-inner-radius: var(--radius-md);
-    --solve-effect-bottom-radius: var(--radius-viewport);
-    --solve-effect-bottom-inner-radius: calc(
-      var(--solve-effect-bottom-radius) - var(--spacing-effect-frame)
-    );
-
-    background:
-      radial-gradient(
-          circle at 100% 100%,
-          transparent var(--solve-effect-top-inner-radius),
-          var(--solve-effect-edge) var(--solve-effect-top-inner-radius)
-        )
-        top left / var(--solve-effect-top-radius) var(--solve-effect-top-radius) no-repeat,
-      radial-gradient(
-          circle at 0 100%,
-          transparent var(--solve-effect-top-inner-radius),
-          var(--solve-effect-edge) var(--solve-effect-top-inner-radius)
-        )
-        top right / var(--solve-effect-top-radius) var(--solve-effect-top-radius) no-repeat,
-      radial-gradient(
-          circle at 100% 0,
-          transparent var(--solve-effect-bottom-inner-radius),
-          var(--solve-effect-edge) var(--solve-effect-bottom-inner-radius)
-        )
-        bottom left / var(--solve-effect-bottom-radius) var(--solve-effect-bottom-radius) no-repeat,
-      radial-gradient(
-          circle at 0 0,
-          transparent var(--solve-effect-bottom-inner-radius),
-          var(--solve-effect-edge) var(--solve-effect-bottom-inner-radius)
-        )
-        bottom right / var(--solve-effect-bottom-radius) var(--solve-effect-bottom-radius) no-repeat,
-      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) top center /
-        calc(100% - var(--solve-effect-top-radius) - var(--solve-effect-top-radius))
-        var(--spacing-effect-frame) no-repeat,
-      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) right 0 top
-        var(--solve-effect-top-radius) / var(--spacing-effect-frame)
-        calc(100% - var(--solve-effect-top-radius) - var(--solve-effect-bottom-radius)) no-repeat,
-      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) bottom center /
-        calc(100% - var(--solve-effect-bottom-radius) - var(--solve-effect-bottom-radius))
-        var(--spacing-effect-frame) no-repeat,
-      linear-gradient(var(--solve-effect-edge), var(--solve-effect-edge)) left 0 top
-        var(--solve-effect-top-radius) / var(--spacing-effect-frame)
-        calc(100% - var(--solve-effect-top-radius) - var(--solve-effect-bottom-radius)) no-repeat;
     animation: kitsune-solve-edge-frame var(--duration-celebration) linear both;
+  }
+
+  .kitsune-solve-edge-fill {
+    fill: var(--solve-effect-edge);
+  }
+
+  .kitsune-solve-edge-cutout {
+    x: var(--spacing-effect-frame);
+    y: var(--spacing-effect-frame);
+    width: calc(100% - var(--spacing-effect-frame) - var(--spacing-effect-frame));
+    height: calc(100% - var(--spacing-effect-frame) - var(--spacing-effect-frame));
+    rx: var(--radius-md);
+  }
+
+  /* Functional luminance values for the SVG mask, not interface colors. */
+  .kitsune-solve-mask-include {
+    fill: white;
+  }
+
+  .kitsune-solve-mask-exclude {
+    fill: black;
+  }
+
+  .kitsune-solve-edge-rainbow-blue {
+    stop-color: var(--first-blood-rainbow-blue);
+  }
+
+  .kitsune-solve-edge-rainbow-violet {
+    stop-color: var(--first-blood-rainbow-violet);
+  }
+
+  .kitsune-solve-edge-rainbow-pink {
+    stop-color: var(--first-blood-rainbow-pink);
+  }
+
+  .kitsune-solve-edge-rainbow-orange {
+    stop-color: var(--first-blood-rainbow-orange);
+  }
+
+  .kitsune-solve-edge-rainbow-teal {
+    stop-color: var(--first-blood-rainbow-teal);
+  }
+
+  .kitsune-solve-edge-wash,
+  .kitsune-solve-edge-wash-subtle {
+    animation: kitsune-solve-edge-wash var(--duration-celebration) linear both;
+    will-change: opacity;
   }
 
   .kitsune-solve-edge-wash {
     background-color: var(--solve-effect-fill);
-    animation: kitsune-solve-edge-wash var(--duration-celebration) linear both;
-    will-change: opacity;
+  }
+
+  .kitsune-solve-edge-wash-subtle {
+    background-color: var(--solve-effect-fill-subtle);
+    background-image:
+      linear-gradient(to bottom, var(--solve-effect-inset), transparent),
+      linear-gradient(to left, var(--solve-effect-inset), transparent),
+      linear-gradient(to top, var(--solve-effect-inset), transparent),
+      linear-gradient(to right, var(--solve-effect-inset), transparent);
+    background-position: top, right, bottom, left;
+    background-repeat: no-repeat;
+    background-size:
+      100% calc(var(--spacing) * 24),
+      calc(var(--spacing) * 24) 100%,
+      100% calc(var(--spacing) * 24),
+      calc(var(--spacing) * 24) 100%;
   }
 
   .kitsune-solve-edge-frame[data-edge-color='success'] {
@@ -742,73 +811,11 @@
     --solve-effect-edge: var(--danger-imprint-edge);
   }
 
-  .kitsune-solve-edge-frame[data-edge-color='rainbow'] {
-    background:
-      radial-gradient(
-          circle at 100% 100%,
-          transparent var(--solve-effect-top-inner-radius),
-          var(--first-blood-rainbow-blue) var(--solve-effect-top-inner-radius)
-        )
-        top left / var(--solve-effect-top-radius) var(--solve-effect-top-radius) no-repeat,
-      radial-gradient(
-          circle at 0 100%,
-          transparent var(--solve-effect-top-inner-radius),
-          var(--first-blood-rainbow-orange) var(--solve-effect-top-inner-radius)
-        )
-        top right / var(--solve-effect-top-radius) var(--solve-effect-top-radius) no-repeat,
-      radial-gradient(
-          circle at 100% 0,
-          transparent var(--solve-effect-bottom-inner-radius),
-          var(--first-blood-rainbow-violet) var(--solve-effect-bottom-inner-radius)
-        )
-        bottom left / var(--solve-effect-bottom-radius) var(--solve-effect-bottom-radius) no-repeat,
-      radial-gradient(
-          circle at 0 0,
-          transparent var(--solve-effect-bottom-inner-radius),
-          var(--first-blood-rainbow-teal) var(--solve-effect-bottom-inner-radius)
-        )
-        bottom right / var(--solve-effect-bottom-radius) var(--solve-effect-bottom-radius) no-repeat,
-      linear-gradient(
-          90deg,
-          var(--first-blood-rainbow-blue),
-          var(--first-blood-rainbow-violet),
-          var(--first-blood-rainbow-pink),
-          var(--first-blood-rainbow-orange)
-        )
-        top center / calc(100% - var(--solve-effect-top-radius) - var(--solve-effect-top-radius))
-        var(--spacing-effect-frame) no-repeat,
-      linear-gradient(
-          180deg,
-          var(--first-blood-rainbow-orange),
-          var(--first-blood-rainbow-amber),
-          var(--first-blood-rainbow-lime),
-          var(--first-blood-rainbow-teal)
-        )
-        right 0 top var(--solve-effect-top-radius) / var(--spacing-effect-frame)
-        calc(100% - var(--solve-effect-top-radius) - var(--solve-effect-bottom-radius)) no-repeat,
-      linear-gradient(
-          90deg,
-          var(--first-blood-rainbow-violet),
-          var(--first-blood-rainbow-blue),
-          var(--first-blood-rainbow-cyan),
-          var(--first-blood-rainbow-teal)
-        )
-        bottom center /
-        calc(100% - var(--solve-effect-bottom-radius) - var(--solve-effect-bottom-radius))
-        var(--spacing-effect-frame) no-repeat,
-      linear-gradient(
-          180deg,
-          var(--first-blood-rainbow-blue),
-          var(--first-blood-rainbow-pink),
-          var(--first-blood-rainbow-violet)
-        )
-        left 0 top var(--solve-effect-top-radius) / var(--spacing-effect-frame)
-        calc(100% - var(--solve-effect-top-radius) - var(--solve-effect-bottom-radius)) no-repeat;
-  }
-
   .kitsune-solve-effect {
     --solve-effect-edge: var(--success-imprint-edge);
     --solve-effect-fill: var(--success-imprint-fill);
+    --solve-effect-fill-subtle: var(--success-imprint-fill-subtle);
+    --solve-effect-inset: var(--success-imprint-inset);
     --solve-effect-origin-border: var(--success-border);
     --solve-effect-origin-fill: var(--success-subtle);
     --solve-effect-origin-text: var(--success-text);
@@ -818,10 +825,17 @@
   .kitsune-solve-effect[data-first-blood='true'] {
     --solve-effect-edge: var(--first-blood-imprint-edge);
     --solve-effect-fill: var(--first-blood-imprint-fill);
+    --solve-effect-fill-subtle: var(--first-blood-imprint-fill-subtle);
+    --solve-effect-inset: var(--first-blood-imprint-inset);
     --solve-effect-origin-border: var(--first-blood-border);
     --solve-effect-origin-fill: var(--first-blood-subtle);
     --solve-effect-origin-text: var(--first-blood-text);
     --solve-effect-wave-fill: var(--first-blood-wave-fill);
+  }
+
+  .kitsune-solve-effect[data-incorrect='true'] {
+    --solve-effect-fill-subtle: var(--danger-imprint-fill-subtle);
+    --solve-effect-inset: var(--danger-imprint-inset);
   }
 
   .kitsune-first-blood-copy[data-first-blood-color='achievement'] {
@@ -932,6 +946,10 @@
   .kitsune-weighted-segment {
     flex-basis: 0;
     flex-grow: var(--segment-weight);
+  }
+
+  .kitsune-weighted-segment-bar {
+    width: var(--segment-bar-width);
   }
 
   .kitsune-disclosure-panel {

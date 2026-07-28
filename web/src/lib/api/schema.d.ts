@@ -778,6 +778,22 @@ export interface paths {
         patch: operations["update_bracket"];
         trace?: never;
     };
+    "/api/v1/events/{event_id}/challenge-presence": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["challenge_presence"];
+        put: operations["update_challenge_presence"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/events/{event_id}/challenges": {
         parameters: {
             query?: never;
@@ -1488,6 +1504,29 @@ export interface components {
             plugin: string;
             /** @enum {string} */
             type: "plugin";
+        };
+        ChallengePresenceMemberResponse: {
+            /**
+             * Format: uuid
+             * @description Selected challenge visible to the caller.
+             */
+            challenge_id: string;
+            /** @description Public teammate display name. */
+            display_name: string;
+            /**
+             * Format: date-time
+             * @description Last heartbeat accepted by the presence service.
+             */
+            updated_at: string;
+            /**
+             * Format: uuid
+             * @description Teammate user identity.
+             */
+            user_id: string;
+        };
+        ChallengePresenceResponse: {
+            /** @description Active teammates. The authenticated user is omitted. */
+            members: components["schemas"]["ChallengePresenceMemberResponse"][];
         };
         /** @description Player-safe challenge response. Answer rules never appear here. */
         ChallengeResponse: {
@@ -2830,6 +2869,13 @@ export interface components {
              * @description Existing member receiving captain authority.
              */
             user_id: string;
+        };
+        UpdateChallengePresenceRequest: {
+            /**
+             * Format: uuid
+             * @description Currently selected challenge. Null clears this browser's presence.
+             */
+            challenge_id?: string | null;
         };
         /** @description Organizer event lifecycle mutation. */
         UpdateEventStateRequest: {
@@ -5657,6 +5703,110 @@ export interface operations {
                 };
             };
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    challenge_presence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChallengePresenceResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+        };
+    };
+    update_challenge_presence: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Event ID */
+                event_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateChallengePresenceRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChallengePresenceResponse"];
+                };
+            };
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorBody"];
+                };
+            };
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

@@ -91,7 +91,7 @@ export function Disclosure({
           className={cx(
             'flex w-full flex-1 items-start justify-between gap-4 text-left',
             tone === 'inherit' ? 'text-inherit' : 'text-text',
-            'outline-none',
+            'cursor-pointer outline-none disabled:cursor-not-allowed',
             variantClass(
               {
                 compact: disclosureDensities.compact.trigger,

@@ -49,6 +49,10 @@ interface WeightedSegmentStyle extends CSSProperties {
   '--segment-weight'?: number;
 }
 
+interface WeightedSegmentBarStyle extends CSSProperties {
+  '--segment-bar-width': string;
+}
+
 export interface WeightedSegmentBarItem {
   href?: ReactAriaLinkProps['href'];
   id: string;
@@ -64,11 +68,27 @@ export interface WeightedSegmentBarProps {
   ariaLabel: string;
   className?: string;
   items: readonly WeightedSegmentBarItem[];
+  maximumValue?: number;
 }
 
-export function WeightedSegmentBar({ ariaLabel, className, items }: WeightedSegmentBarProps) {
+export function WeightedSegmentBar({
+  ariaLabel,
+  className,
+  items,
+  maximumValue
+}: WeightedSegmentBarProps) {
+  const totalValue = items.reduce((total, item) => total + Math.max(0, item.value), 0);
+  const resolvedMaximum = Math.max(1, maximumValue ?? totalValue, totalValue);
+  const style: WeightedSegmentBarStyle = {
+    '--segment-bar-width': `${(totalValue / resolvedMaximum) * 100}%`
+  };
+
   return (
-    <ol aria-label={ariaLabel} className={cx('m-0 flex min-w-0 list-none gap-2 p-0', className)}>
+    <ol
+      aria-label={ariaLabel}
+      className={cx('kitsune-weighted-segment-bar m-0 flex min-w-0 list-none gap-2 p-0', className)}
+      style={style}
+    >
       {items.map((item) => {
         const style: WeightedSegmentStyle = {
           '--segment-weight': Math.max(1, item.value)
@@ -89,7 +109,7 @@ export function WeightedSegmentBar({ ariaLabel, className, items }: WeightedSegm
                     'h-6 w-full rounded-sm',
                     'group-hover:ring-2 group-hover:ring-inset',
                     'group-pressed:ring-2 group-pressed:ring-inset',
-                    'group-focus-visible:outline-2 group-focus-visible:outline-offset-2',
+                    'group-focus-visible:outline-2 group-focus-visible:outline-solid group-focus-visible:outline-offset-2',
                     'group-focus-visible:outline-focus-ring',
                     item.isEmphasized
                       ? segmentSolidClasses[item.tone]

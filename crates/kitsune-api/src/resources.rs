@@ -960,6 +960,52 @@ pub(crate) async fn list_challenges(
     ))
 }
 
+pub(crate) async fn visible_challenge_ids(
+    state: &AppState,
+    actor: &Actor,
+    event_id: EventId,
+) -> ApiResult<BTreeSet<ChallengeId>> {
+    let repository = ResourceRepository::new(state.db.pool().clone());
+    let manager = actor.can("challenge_manage");
+    let rows = repository
+        .challenges(
+            actor.session.account.organization_id,
+            event_id,
+            manager,
+            Utc::now(),
+        )
+        .await
+        .map_err(ApiError::from)?;
+
+    if manager {
+        return Ok(rows.into_iter().map(|row| ChallengeId(row.id)).collect());
+    }
+
+    let context = repository
+        .challenge_access_context(
+            actor.session.account.organization_id,
+            event_id,
+            actor.session.account.user_id,
+        )
+        .await
+        .map_err(ApiError::from)?;
+    let division = context.division_id.map(DivisionId);
+    let solves = context
+        .solves
+        .into_iter()
+        .map(ChallengeId)
+        .collect::<BTreeSet<_>>();
+
+    Ok(rows
+        .into_iter()
+        .filter(|row| {
+            serde_json::from_value::<VisibilityRule>(row.visibility.clone())
+                .is_ok_and(|visibility| visibility.allows(Utc::now(), division, &solves))
+        })
+        .map(|row| ChallengeId(row.id))
+        .collect())
+}
+
 #[utoipa::path(
     post,
     path = "/api/v1/events/{event_id}/challenges",

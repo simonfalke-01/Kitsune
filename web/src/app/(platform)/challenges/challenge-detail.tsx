@@ -1,10 +1,10 @@
 'use client';
 
-import { Check, Trophy } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { type ReactNode, type RefObject, useEffect, useRef, useState } from 'react';
 
-import { ChallengeCategoryLabel } from './challenge-category';
+import { ChallengeDescription, ChallengeResources } from './challenge-content';
+import { ChallengeDetailHeader } from './challenge-detail-header';
 import { ChallengeHints } from './challenge-hints';
 import { ChallengeInstance } from './challenge-instance';
 import {
@@ -33,7 +33,7 @@ import { ChallengeWriteup } from './challenge-writeup';
 import {
   Alert,
   CodeBlock,
-  Link,
+  SkipLink,
   Tabs,
   TabsList,
   TabsPanel,
@@ -41,12 +41,7 @@ import {
   showToast
 } from '@/components/ui';
 import type { SubmissionReceipt } from '@/lib/api/client';
-import {
-  challengeAttempts,
-  challengeConnection,
-  challengePoints,
-  type ChallengeExperience
-} from '@/lib/challenges';
+import { challengeConnection, type ChallengeExperience } from '@/lib/challenges';
 
 interface ChallengeDetailProps {
   actions: ChallengeWorkspaceActions;
@@ -60,6 +55,8 @@ interface ChallengeDetailProps {
   onSolved?: (challengeId: string, solvedAt: string) => void;
   onTabChange: (tab: ChallengeDetailTab) => void;
   selectedTab: ChallengeDetailTab;
+  shareHref?: string;
+  showListFocusLink?: boolean;
   showTitle?: boolean;
   solveContext: ChallengeSolveContext;
 }
@@ -97,6 +94,7 @@ function RememberedTabPanel({ challengeId, children, eventId, tab }: RememberedT
   return (
     <TabsPanel
       className="kitsune-scroll-region min-h-0 flex-1 overflow-y-auto overscroll-contain rounded-none"
+      data-scroll-region
       id={tab}
       onScroll={(event) => {
         if (scrollTimerRef.current) {
@@ -129,6 +127,8 @@ export function ChallengeDetail({
   onSolved,
   onTabChange,
   selectedTab,
+  shareHref,
+  showListFocusLink = false,
   showTitle = true,
   solveContext
 }: ChallengeDetailProps) {
@@ -187,7 +187,7 @@ export function ChallengeDetail({
   const showGate = challenge.surveyMode === 'gate' && challenge.survey.length > 0;
   const showPostSolveSurvey =
     challenge.surveyMode === 'post_solve' && challenge.survey.length > 0 && isSolved;
-  const hasResources = Boolean(connection) || challenge.attachments.length > 0;
+
   function startSuccessEffect(origin: DOMRect, value: string, firstBlood: boolean) {
     if (
       flagSubmitSuccessEffect === 'none' ||
@@ -223,9 +223,13 @@ export function ChallengeDetail({
 
   return (
     <article
-      className="kitsune-challenge-detail flex h-full min-h-0 flex-col overflow-hidden bg-surface-raised"
+      aria-label={`${challenge.name} details`}
+      className="kitsune-challenge-detail relative flex h-full min-h-0 flex-col overflow-hidden bg-surface-raised"
       key={challenge.id}
     >
+      {showListFocusLink ? (
+        <SkipLink href="#challenge-search">Back to challenge search</SkipLink>
+      ) : null}
       {feedbackEffectOrigin ? (
         <ChallengeFeedbackEffect
           effect={flagSubmitSuccessEffect}
@@ -234,50 +238,16 @@ export function ChallengeDetail({
           origin={feedbackEffectOrigin}
         />
       ) : null}
-      <header className="shrink-0 px-6 py-6">
-        <div className="flex w-full items-start justify-between gap-6">
-          <div className="grid min-w-0 gap-2">
-            {showTitle ? (
-              <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-                <h2 className="m-0 font-display text-xl font-semibold tracking-tight text-text">
-                  {challenge.name}
-                </h2>
-                {challenge.authorName ? (
-                  <span className="text-sm text-text-muted">by {challenge.authorName}</span>
-                ) : null}
-              </div>
-            ) : null}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-text-muted">
-              <ChallengeCategoryLabel category={challenge.category} />
-              <span>{challengeAttempts(resolvedChallenge)}</span>
-              <span className="tabular-nums">
-                {solveContext.totalSolves.toLocaleString()} solves
-              </span>
-              {isSolved ? (
-                <span
-                  data-first-blood-color={isFirstBlood ? firstBloodHighlightColor : undefined}
-                  className={`inline-flex items-center gap-1 font-medium ${
-                    isFirstBlood ? 'kitsune-first-blood-copy' : 'text-success-text'
-                  }`}
-                >
-                  {isFirstBlood ? (
-                    <Trophy aria-hidden className="size-4 -translate-y-optical" />
-                  ) : (
-                    <Check aria-hidden className="size-4" />
-                  )}
-                  {isFirstBlood ? 'First blood' : 'Solved'}
-                </span>
-              ) : null}
-              {isPendingReview ? (
-                <span className="font-medium text-info-text">Pending review</span>
-              ) : null}
-            </div>
-          </div>
-          <strong className="shrink-0 text-lg tabular-nums text-text">
-            {challengePoints(resolvedChallenge)}
-          </strong>
-        </div>
-      </header>
+      <ChallengeDetailHeader
+        challenge={resolvedChallenge}
+        firstBloodHighlightColor={firstBloodHighlightColor}
+        isFirstBlood={isFirstBlood}
+        isPendingReview={isPendingReview}
+        isSolved={isSolved}
+        shareHref={shareHref}
+        showTitle={showTitle}
+        solveCount={solveContext.totalSolves}
+      />
 
       <Tabs
         layout="workspace"
@@ -302,48 +272,13 @@ export function ChallengeDetail({
 
         <RememberedTabPanel challengeId={challenge.id} eventId={eventId} tab="details">
           <div className="grid w-full content-start gap-6 px-6 py-6">
-            <section
-              aria-labelledby={`description-${challenge.id}`}
-              className="grid gap-3 rounded-md border border-border-subtle bg-surface-sunken p-4"
-            >
-              <h3
-                className="m-0 text-sm font-semibold text-text"
-                id={`description-${challenge.id}`}
-              >
-                Description
-              </h3>
-              <p className="m-0 max-w-prose whitespace-pre-line text-base text-text-muted">
-                {challenge.description}
-              </p>
-            </section>
+            <ChallengeDescription challengeId={challenge.id} content={challenge.description} />
 
-            {hasResources ? (
-              <section aria-labelledby={`resources-${challenge.id}`} className="grid gap-3">
-                <h3
-                  className="m-0 text-sm font-semibold text-text"
-                  id={`resources-${challenge.id}`}
-                >
-                  Resources
-                </h3>
-                {connection ? <CodeBlock code={connection} label="Connection" /> : null}
-                {challenge.attachments.length > 0 ? (
-                  <ul className="m-0 grid list-none gap-2 p-0">
-                    {challenge.attachments.map((attachment) => (
-                      <li
-                        className="flex flex-wrap items-center justify-between gap-4 rounded-md bg-surface-sunken px-3 py-2"
-                        key={attachment.id}
-                      >
-                        <span className="grid gap-1">
-                          <strong className="text-base text-text">{attachment.label}</strong>
-                          <span className="text-sm text-text-muted">{attachment.size}</span>
-                        </span>
-                        <Link href={attachment.url}>Download</Link>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </section>
-            ) : null}
+            <ChallengeResources
+              attachments={challenge.attachments}
+              challengeId={challenge.id}
+              connection={connection}
+            />
 
             {challenge.kind.type === 'dynamic_instance' ? (
               <ChallengeInstance
@@ -383,8 +318,10 @@ export function ChallengeDetail({
             ) : null}
 
             {showPostSolveSurvey ? (
-              <section className="grid gap-4">
-                <h3 className="m-0 text-base font-semibold text-text">Rate this challenge</h3>
+              <section aria-labelledby={`rating-${challenge.id}`} className="grid gap-4">
+                <h3 className="m-0 text-base font-semibold text-text" id={`rating-${challenge.id}`}>
+                  Rate this challenge
+                </h3>
                 {postSolveSurveyComplete ? (
                   <p className="m-0 text-sm font-medium text-success-text">Rating submitted</p>
                 ) : (

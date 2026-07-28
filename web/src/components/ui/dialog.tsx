@@ -11,7 +11,7 @@ import {
   type DialogProps as ReactAriaDialogProps
 } from 'react-aria-components';
 
-import { Button } from './button';
+import { IconButton } from './icon-button';
 import { cx } from './styles';
 
 export { DialogTrigger };
@@ -76,9 +76,9 @@ export function Dialog({
                 </p>
               ) : null}
             </div>
-            <Button aria-label="Close dialog" size="icon" slot="close" tone="quiet">
+            <IconButton label="Close dialog" slot="close">
               <X aria-hidden className="size-4" />
-            </Button>
+            </IconButton>
           </div>
           <div>{children}</div>
           {actions ? <div className="flex flex-wrap justify-end gap-2">{actions}</div> : null}

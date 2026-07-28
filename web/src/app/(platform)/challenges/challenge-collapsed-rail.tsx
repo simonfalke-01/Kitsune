@@ -3,7 +3,7 @@
 import { PanelLeftOpen } from 'lucide-react';
 import type { RefObject } from 'react';
 
-import { Button, Tooltip, TooltipTrigger } from '@/components/ui';
+import { IconButton, Tooltip, TooltipTrigger } from '@/components/ui';
 
 interface ChallengeCollapsedRailProps {
   onShowChallengeList: () => void;
@@ -22,15 +22,9 @@ export function ChallengeCollapsedRail({
     >
       <div className="flex min-h-16 shrink-0 items-center justify-center">
         <TooltipTrigger>
-          <Button
-            aria-label="Show challenge list"
-            className="size-control"
-            onPress={onShowChallengeList}
-            size="icon"
-            tone="quiet"
-          >
+          <IconButton label="Show challenge list" onPress={onShowChallengeList}>
             <PanelLeftOpen aria-hidden className="size-4" />
-          </Button>
+          </IconButton>
           <Tooltip>Show challenge list</Tooltip>
         </TooltipTrigger>
       </div>

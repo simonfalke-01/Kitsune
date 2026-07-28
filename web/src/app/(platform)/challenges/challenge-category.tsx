@@ -23,14 +23,14 @@ import {
 } from '@/lib/challenges';
 
 export const categoryTextClasses: Record<ChallengeCategoryTone, string> = {
-  amber: 'text-category-amber',
-  blue: 'text-category-blue',
-  cyan: 'text-category-cyan',
-  lime: 'text-category-lime',
-  orange: 'text-category-orange',
-  pink: 'text-category-pink',
-  teal: 'text-category-teal',
-  violet: 'text-category-violet'
+  amber: 'text-category-amber-text',
+  blue: 'text-category-blue-text',
+  cyan: 'text-category-cyan-text',
+  lime: 'text-category-lime-text',
+  orange: 'text-category-orange-text',
+  pink: 'text-category-pink-text',
+  teal: 'text-category-teal-text',
+  violet: 'text-category-violet-text'
 };
 
 interface ChallengeCategoryDefinition {

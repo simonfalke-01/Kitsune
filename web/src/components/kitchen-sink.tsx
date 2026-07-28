@@ -4,8 +4,14 @@ import { Bell, Ellipsis } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 
 import {
+  ChallengeWorkspace,
+  type ChallengeWorkspaceActions
+} from '@/app/(platform)/challenges/challenge-workspace';
+import { SessionProvider } from '@/app/session-context';
+import {
   Alert,
   AlertDialog,
+  AuthoredContent,
   Badge,
   Breadcrumbs,
   Button,
@@ -18,12 +24,17 @@ import {
   Checkbox,
   CodeBlock,
   ComboBox,
+  CopyButton,
+  CopyIconButton,
   Dialog,
   DialogTrigger,
   Disclosure,
   DisclosureGroup,
+  DownloadLink,
   EmptyState,
   FileDropZone,
+  IconButton,
+  KeyboardKey,
   Link,
   Meter,
   Menu,
@@ -32,6 +43,7 @@ import {
   Pagination,
   Popover,
   PopoverDialog,
+  PresenceSummary,
   Progress,
   RadioGroup,
   SearchField,
@@ -59,6 +71,8 @@ import {
   TooltipTrigger,
   showToast
 } from '@/components/ui';
+import type { ChallengeSummary } from '@/lib/api/client';
+import { createChallengeExperience } from '@/lib/challenges';
 
 const eventOptions = [
   {
@@ -94,6 +108,169 @@ const menuOptions = [
   }
 ] as const;
 
+function previewChallenge(
+  id: string,
+  name: string,
+  category: string,
+  overrides: Partial<ChallengeSummary> = {}
+) {
+  return createChallengeExperience(
+    {
+      category,
+      description:
+        'Follow the request trail, inspect the response, and submit the flag without losing your place.',
+      event_id: 'preview-event',
+      id,
+      kind: {
+        type: 'static_flag'
+      },
+      max_attempts: 5,
+      name,
+      position: 0,
+      scoring: {
+        kind: 'static',
+        points: 300
+      },
+      solved: false,
+      state: 'published',
+      survey: [],
+      tags: ['browser', 'beginner'],
+      visibility: {
+        division_ids: [],
+        prerequisites: [],
+        visible_from: null,
+        visible_until: null
+      },
+      writeups_enabled: false,
+      ...overrides
+    },
+    {
+      attemptsRemaining: 4,
+      solveCount: id === 'survey' ? 41 : 18,
+      surveyMode: id === 'survey' ? 'gate' : null,
+      surveyRewardFlag: id === 'survey' ? 'kit{survey-complete}' : null
+    }
+  );
+}
+
+const previewChallenges = [
+  previewChallenge('survey', 'Welcome survey', 'Welcome', {
+    solved: true,
+    survey: [
+      {
+        key: 'experience',
+        prompt: 'How familiar are you with CTFs?',
+        range: [1, 5],
+        required: true
+      }
+    ]
+  }),
+  previewChallenge('shrine-gate', 'Shrine gate', 'Web'),
+  previewChallenge('cache-route', 'Cache route', 'Web', {
+    solved: true
+  }),
+  previewChallenge('lantern-instance', 'Lantern instance', 'Pwn', {
+    kind: {
+      template: 'pwn-lantern-v1',
+      type: 'dynamic_instance'
+    }
+  }),
+  previewChallenge('after-hours', 'After hours', 'Pwn', {
+    solved: true
+  }),
+  previewChallenge('paper-trail', 'Paper trail', 'Reverse Engineering'),
+  previewChallenge('fox-cipher', 'Fox cipher', 'Crypto', {
+    scoring: {
+      decay: 20,
+      initial: 500,
+      kind: 'dynamic',
+      minimum: 100
+    },
+    solved: true
+  }),
+  previewChallenge('cold-storage', 'Cold storage', 'Forensics')
+];
+
+const previewChallengeActions: ChallengeWorkspaceActions = {
+  loadHints() {
+    return Promise.resolve([
+      {
+        content: null,
+        cost: 10,
+        id: 1,
+        unlocked: false
+      }
+    ]);
+  },
+  submitAnswer(challengeId) {
+    return Promise.resolve({
+      attempts_remaining: 4,
+      awarded_points: 300,
+      challenge_id: challengeId,
+      first_blood: false,
+      id: crypto.randomUUID(),
+      outcome: 'correct',
+      replayed: false,
+      submitted_at: new Date().toISOString()
+    });
+  },
+  submitSurvey(challengeId, answers) {
+    return Promise.resolve({
+      answers,
+      challenge_id: challengeId,
+      id: crypto.randomUUID(),
+      submitted_at: new Date().toISOString()
+    });
+  },
+  unlockHint(_challengeId, hintId) {
+    return Promise.resolve({
+      charged: 10,
+      hint: {
+        content: 'The first redirect contains the value you need.',
+        cost: 10,
+        id: hintId,
+        unlocked: true
+      },
+      replayed: false
+    });
+  }
+};
+
+function ChallengeWorkspacePreview() {
+  const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>('shrine-gate');
+
+  return (
+    <div className="grid gap-4">
+      <div className="flex justify-end">
+        <Button
+          onPress={() => {
+            setSelectedChallengeId('survey');
+          }}
+          size="small"
+          tone="secondary"
+        >
+          Open survey preview
+        </Button>
+      </div>
+      <div className="h-workspace">
+        <ChallengeWorkspace
+          actions={previewChallengeActions}
+          challenges={previewChallenges}
+          currentCompetitor={{ id: 'foxden', name: 'Foxden' }}
+          eventId="preview-event"
+          eventName="Foxden Invitational"
+          getChallengeHref={(challengeId) => `#challenge-${challengeId}`}
+          onClearSelection={() => {
+            setSelectedChallengeId(null);
+          }}
+          onSelectChallenge={setSelectedChallengeId}
+          selectedChallengeId={selectedChallengeId}
+        />
+      </div>
+    </div>
+  );
+}
+
 interface PreviewSectionProps {
   children: ReactNode;
   id?: string;
@@ -121,7 +298,11 @@ function ThemePreview({ isDark = false, title }: ThemePreviewProps) {
 
   return (
     <section
-      className={isDark ? 'dark bg-surface text-text' : 'bg-surface text-text'}
+      className={
+        isDark
+          ? 'kitsune-theme-scope dark bg-surface text-text'
+          : 'kitsune-theme-scope bg-surface text-text'
+      }
       data-theme={isDark ? 'dark' : 'light'}
     >
       <div className="mx-auto grid max-w-shell gap-8 px-4 py-12 sm:px-6">
@@ -138,17 +319,35 @@ function ThemePreview({ isDark = false, title }: ThemePreviewProps) {
             <Button size="small">Small</Button>
             <Button size="medium">Medium</Button>
             <Button size="large">Large</Button>
-            <Button aria-label="Notification settings" size="icon" tone="secondary">
+            <IconButton label="Notification settings" tone="secondary">
               <Bell aria-hidden className="size-4" />
-            </Button>
+            </IconButton>
             <Button isDisabled>Unavailable</Button>
             <Button isLoading>Publishing event</Button>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <CopyButton
+              copiedLabel="Event ID copied"
+              label="Copy event ID"
+              value="foxden-invitational"
+            />
+            <CopyIconButton
+              copiedLabel="Event link copied"
+              label="Copy event link"
+              value="https://kitsune.test/events/foxden"
+            />
+            <span className="flex items-center gap-1">
+              <KeyboardKey>J</KeyboardKey>
+              <KeyboardKey>K</KeyboardKey>
+            </span>
           </div>
           <div className="flex flex-wrap gap-4">
             <Link href="#forms">Jump to forms</Link>
             <Link href="#tables" tone="muted">
               Inspect tables
             </Link>
+            <DownloadLink href="/demo/cache-rules-everything.txt">Download capture</DownloadLink>
+            <DownloadLink href="javascript:unsafe">Unavailable download</DownloadLink>
             <Link href="#states" isDisabled>
               Unavailable link
             </Link>
@@ -519,6 +718,37 @@ function ThemePreview({ isDark = false, title }: ThemePreviewProps) {
           </div>
         </PreviewSection>
 
+        <PreviewSection title="Authored content and presence">
+          <div className="rounded-md border border-border-subtle bg-surface-sunken p-4">
+            <AuthoredContent
+              content={`# Objective
+
+Trace the **cache key** and submit the flag from \`/status\`.
+
+- Inspect the response headers
+- Follow the signed redirect
+
+| Endpoint | Protocol |
+| --- | --- |
+| cache.foxden.test | HTTPS |
+
+\`\`\`sh
+curl https://cache.foxden.test/status
+\`\`\``}
+            />
+          </div>
+          <PresenceSummary
+            people={[
+              { id: 'mina', name: 'Mina Park' },
+              { id: 'theo', name: 'Theo Bell' }
+            ]}
+          />
+        </PreviewSection>
+
+        <PreviewSection title="Challenge workspace">
+          <ChallengeWorkspacePreview />
+        </PreviewSection>
+
         <PreviewSection id="states" title="Async states">
           <div className="grid items-start gap-4 lg:grid-cols-3">
             <Card>
@@ -604,19 +834,21 @@ function ChallengeTable({ state }: ChallengeTableProps) {
 
 export function KitchenSinkPage() {
   return (
-    <>
-      <main>
-        <div className="border-b border-border-subtle bg-surface-sunken">
-          <div className="mx-auto flex max-w-shell items-center px-4 py-4 sm:px-6">
-            <h1 className="m-0 font-display text-lg font-semibold tracking-tight">
-              Kitsune kitchen
-            </h1>
+    <SessionProvider initialSession={null}>
+      <>
+        <main>
+          <div className="border-b border-border-subtle bg-surface-sunken">
+            <div className="mx-auto flex max-w-shell items-center px-4 py-4 sm:px-6">
+              <h1 className="m-0 font-display text-lg font-semibold tracking-tight">
+                Kitsune kitchen
+              </h1>
+            </div>
           </div>
-        </div>
-        <ThemePreview title="Light theme" />
-        <ThemePreview isDark title="Dark theme" />
-      </main>
-      <ToastRegion />
-    </>
+          <ThemePreview title="Light theme" />
+          <ThemePreview isDark title="Dark theme" />
+        </main>
+        <ToastRegion />
+      </>
+    </SessionProvider>
   );
 }

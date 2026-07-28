@@ -8,6 +8,7 @@ describe('WeightedSegmentBar', () => {
     render(
       <WeightedSegmentBar
         ariaLabel="Web challenge points"
+        maximumValue={3_000}
         items={[
           {
             href: '/challenges?challenge=cache',
@@ -34,6 +35,7 @@ describe('WeightedSegmentBar', () => {
     const origin = screen.getByRole('link', { name: /Open Origin story/ });
 
     expect(cache).toHaveAttribute('href', '/challenges?challenge=cache');
+    expect(cache.closest('ol')).toHaveStyle({ '--segment-bar-width': '50%' });
     expect(cache.closest('li')).toHaveStyle({ '--segment-weight': '1000' });
     expect(origin.closest('li')).toHaveStyle({ '--segment-weight': '500' });
 

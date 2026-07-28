@@ -14,6 +14,8 @@ export type UpdateEventStateInput = components['schemas']['UpdateEventStateReque
 export type UpdateScoreboardControlsInput =
   components['schemas']['UpdateScoreboardControlsRequest'];
 export type ChallengeSummary = components['schemas']['ChallengeResponse'];
+export type ChallengePresenceMember = components['schemas']['ChallengePresenceMemberResponse'];
+export type ChallengePresence = components['schemas']['ChallengePresenceResponse'];
 export type CreateChallengeInput = components['schemas']['CreateChallengeRequest'];
 export type TeamSummary = components['schemas']['TeamResponse'];
 export type CreateTeamInput = components['schemas']['CreateTeamRequest'];

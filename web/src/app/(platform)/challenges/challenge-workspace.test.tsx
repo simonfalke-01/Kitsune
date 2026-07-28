@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SessionProvider } from '@/app/session-context';
 import { ThemeProvider } from '@/app/theme-context';
+import { EscapeFocusManager } from '@/components/ui';
 import type {
   FirstBloodEdgeColor,
   FirstBloodHighlightColor,
@@ -14,7 +15,7 @@ import {
   type ChallengeDetailTab
 } from './challenge-workspace-memory';
 import { ChallengeWorkspace, type ChallengeWorkspaceActions } from './challenge-workspace';
-import type { ChallengeSummary } from '@/lib/api/client';
+import type { ChallengePresenceMember, ChallengeSummary } from '@/lib/api/client';
 import { createChallengeExperience, type ChallengeExperience } from '@/lib/challenges';
 
 vi.mock('next/navigation', () => ({
@@ -81,10 +82,12 @@ function renderWorkspace(
   flagSubmitSuccessEffect?: FlagSubmitSuccessEffect,
   selectedChallengeTab: ChallengeDetailTab = 'details',
   firstBloodHighlightColor?: FirstBloodHighlightColor,
-  firstBloodEdgeColor?: FirstBloodEdgeColor
+  firstBloodEdgeColor?: FirstBloodEdgeColor,
+  presenceMembers: ChallengePresenceMember[] = []
 ) {
   render(
     <ThemeProvider>
+      <EscapeFocusManager />
       <SessionProvider initialSession={null}>
         <ChallengeWorkspace
           actions={workspaceActions}
@@ -98,6 +101,7 @@ function renderWorkspace(
           getChallengeHref={(challengeId) => `/challenges?challenge=${challengeId}`}
           onClearSelection={vi.fn()}
           onSelectChallenge={vi.fn()}
+          presenceMembers={presenceMembers}
           selectedChallengeId={selectedChallengeId}
           selectedChallengeTab={selectedChallengeTab}
         />
@@ -119,7 +123,51 @@ beforeEach(() => {
 });
 
 describe('ChallengeWorkspace', () => {
-  it('shows grouped rows and an event overview before selection', () => {
+  it('shows which teammate is viewing each challenge without adding a third row line', () => {
+    const presence = [
+      {
+        challenge_id: 'challenge',
+        display_name: 'Mina Park',
+        updated_at: '2026-07-28T04:00:00Z',
+        user_id: 'mina'
+      }
+    ];
+    renderWorkspace(
+      [createChallengeExperience(challenge(), { solveCount: 18 })],
+      'challenge',
+      actions(),
+      undefined,
+      'details',
+      undefined,
+      undefined,
+      presence
+    );
+
+    const challengeList = screen.getByRole('region', { name: 'Challenge list' });
+    const challengeRow = within(challengeList).getByRole('link', { name: /Shrine gate/ });
+    expect(within(challengeRow).getByText('Mina Park viewing')).toBeVisible();
+    expect(screen.getAllByLabelText('Mina Park is viewing this challenge')).toHaveLength(1);
+  });
+
+  it('copies the selected challenge deep link', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText }
+    });
+    renderWorkspace([createChallengeExperience(challenge())], 'challenge');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy challenge link' }));
+
+    await waitFor(() => {
+      expect(writeText).toHaveBeenCalledWith(
+        expect.stringMatching(/\/challenges\?challenge=challenge$/)
+      );
+    });
+    expect(screen.getByRole('button', { name: 'Challenge link copied' })).toBeVisible();
+  });
+
+  it('shows grouped rows with a quiet selection prompt before selection', () => {
     renderWorkspace(
       [
         createChallengeExperience(challenge(), {
@@ -136,65 +184,30 @@ describe('ChallengeWorkspace', () => {
     expect(screen.getByRole('navigation', { name: 'Player' })).toContainElement(
       screen.getByRole('link', { name: 'Challenges' })
     );
-    expect(screen.getByRole('heading', { name: 'Your run' })).toBeVisible();
-    expect(screen.getByRole('heading', { name: 'Around your rank' })).toBeVisible();
-    expect(screen.queryByRole('button', { name: 'Chart data' })).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole('list', { name: 'Scores around your rank series' })
-    ).not.toBeInTheDocument();
-    const nearbyTeams = screen.getByRole('complementary', { name: 'Teams around your rank' });
-    const nearbyRows = within(nearbyTeams).getAllByRole('listitem');
-    const currentTeam = within(nearbyTeams).getByText('Foxden');
-    const nearbyRanks = nearbyRows.map((row) =>
-      Number(within(row).getByText(/^#/).textContent.slice(1))
+    expect(screen.queryByRole('heading', { name: 'Your run' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Around your rank' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Challenge field' })).not.toBeInTheDocument();
+    const challengeList = screen.getByRole('region', { name: 'Challenge list' });
+    const workspace = challengeList.closest('.kitsune-split-workspace');
+    const detailPane = workspace?.children.item(1);
+    expect(within(challengeList).getByRole('link', { name: /Shrine gate/ })).toHaveAttribute(
+      'href',
+      '/challenges?challenge=challenge'
     );
-    expect(nearbyRows).toHaveLength(7);
-    expect(nearbyRows[0]).not.toHaveClass('px-3');
-    expect(nearbyRanks).toEqual(nearbyRows.map((_, index) => nearbyRanks[0]! + index));
-    expect(currentTeam).toHaveClass('font-semibold', 'text-accent-text');
-    expect(currentTeam.closest('li')).toHaveAttribute('aria-current', 'true');
-    expect(screen.getByRole('img', { name: 'Scores around your rank' })).toHaveClass('h-chart');
-    expect(nearbyTeams).toHaveClass('md:h-chart');
-    expect(nearbyTeams).toHaveClass('w-full', 'justify-self-start', 'text-left');
-    expect(nearbyTeams.querySelector('.bg-linear-to-b')).toBeInTheDocument();
-    const challengeFieldHeading = screen.getByRole('heading', { name: 'Challenge field' });
-    const challengeField = screen.getByRole('region', { name: 'Challenge field' });
-    const overview = screen.getByRole('heading', { name: 'Your run' }).closest('section');
-    const overviewLayout = overview?.firstElementChild;
-    const categoryBreakdown = screen.getByRole('list', { name: 'Category breakdown' });
-    const categoryScrollOwner = categoryBreakdown.parentElement;
-    expect(challengeFieldHeading).toBeVisible();
-    expect(challengeFieldHeading.parentElement).toHaveClass('px-3');
-    expect(overview).toHaveClass('overflow-hidden');
-    expect(overviewLayout).toHaveClass('w-full', 'gap-6', 'px-6', 'py-6');
-    expect(overviewLayout).not.toHaveClass('mx-auto', 'max-w-shell');
-    expect(challengeField).toHaveClass('min-h-0', 'flex-1');
-    expect(categoryScrollOwner).toHaveClass('min-h-0', 'flex-1', 'overflow-y-auto');
-    expect(categoryScrollOwner).not.toContainElement(screen.getByText('Progress'));
-    expect(categoryScrollOwner).not.toContainElement(
-      screen.getByLabelText('0 of 1 challenges solved')
-    );
-    expect(screen.getByText('18 recorded solves')).toBeVisible();
-    expect(screen.getByLabelText('0 of 1 challenges solved')).toHaveClass('px-3');
-    expect(within(challengeField).getByText('Progress').parentElement).toHaveClass('grid-cols-12');
-    expect(screen.getByLabelText('0 of 1 Web challenges solved').parentElement).toHaveClass(
-      'xl:col-span-7'
-    );
-    expect(screen.getByLabelText('0 of 1 Web challenges solved').closest('li')).toHaveClass('py-0');
-    expect(
-      within(screen.getByRole('region', { name: 'Your run' })).getAllByRole('link', {
-        name: 'Open Shrine gate, 300 pts, 18 solves, Unsolved'
-      })[0]
-    ).toHaveAttribute('href', '/challenges?challenge=challenge');
-    expect(screen.getAllByText('Web')[0]).toBeVisible();
-    expect(screen.getAllByText('18 solves')[0]).toBeVisible();
+    const selectionPrompt = within(detailPane as HTMLElement).getByRole('heading', {
+      name: 'No challenge selected'
+    });
+    expect(selectionPrompt).toBeVisible();
+    expect(selectionPrompt).toHaveClass('text-text-muted');
+    expect(detailPane?.firstElementChild).toHaveClass('h-full', 'p-6');
+    expect(detailPane?.firstElementChild).not.toHaveClass('border', 'rounded-lg');
     const rankLabel = screen.getByText('rank');
     expect(rankLabel.parentElement).toHaveClass('items-baseline', 'gap-2');
     expect(screen.queryByText('Rank')).not.toBeInTheDocument();
     expect(screen.getByRole('slider', { name: 'Challenge list width' })).toHaveValue('34');
     expect(screen.getByRole('slider', { name: 'Challenge list width' })).toHaveAttribute(
       'min',
-      '24'
+      '20'
     );
     expect(screen.getByRole('button', { name: /Web/ }).closest('h2')).toHaveClass(
       'sticky',
@@ -346,14 +359,42 @@ describe('ChallengeWorkspace', () => {
     expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true');
   });
 
-  it('focuses the flag field with A without changing detail context', () => {
+  it('provides focus-only bypasses around the long challenge collection', () => {
     renderWorkspace([createChallengeExperience(challenge())], 'challenge');
+
+    expect(screen.getByRole('link', { name: 'Skip challenge list' })).toHaveAttribute(
+      'href',
+      '#challenge-detail'
+    );
+    expect(screen.getByRole('heading', { name: 'Shrine gate' })).toHaveAttribute(
+      'id',
+      'challenge-detail'
+    );
+    expect(screen.getByRole('heading', { name: 'Shrine gate' })).toHaveAttribute('tabindex', '-1');
+    expect(screen.getByRole('link', { name: 'Back to challenge search' })).toHaveAttribute(
+      'href',
+      '#challenge-search'
+    );
+    expect(screen.getByRole('searchbox', { name: 'Search challenges' })).toHaveAttribute(
+      'id',
+      'challenge-search'
+    );
+  });
+
+  it('focuses the flag field with A, releases it with Escape, and resumes shortcuts', () => {
+    renderWorkspace([createChallengeExperience(challenge(), { solveCount: 4 })], 'challenge');
 
     const flag = screen.getByLabelText('Flag');
     fireEvent.keyDown(window, { key: 'a' });
 
     expect(flag).toHaveFocus();
     expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true');
+
+    fireEvent.keyDown(flag, { key: 'Escape' });
+    expect(flag).not.toHaveFocus();
+
+    fireEvent.keyDown(window, { key: 's' });
+    expect(screen.getByRole('tab', { name: '4 Solves' })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('keeps locked hint state, cost, and action in one aligned row', async () => {
@@ -373,10 +414,14 @@ describe('ChallengeWorkspace', () => {
     const hintTitle = await screen.findByText('Hint 1');
     const hintRow = hintTitle.parentElement?.parentElement;
     expect(hintRow).toHaveClass('flex', 'min-h-control', 'items-center', 'justify-between');
+    expect(hintTitle.parentElement).toHaveClass('shrink-0', 'whitespace-nowrap');
     expect(within(hintRow as HTMLElement).getByText('Locked')).toBeVisible();
-    expect(within(hintRow as HTMLElement).getByText('10 pts')).toBeVisible();
+    const cost = within(hintRow as HTMLElement).getByText('10 pts');
+    expect(cost).toHaveClass('kitsune-optical-center');
+    expect(cost.parentElement).toHaveClass('gap-2');
     const unlock = within(hintRow as HTMLElement).getByRole('button', { name: 'Unlock hint' });
-    expect(unlock).toHaveClass('min-h-control', 'border-transparent');
+    expect(unlock).toHaveClass('min-h-control', 'border-border-subtle', 'bg-surface-raised');
+    expect(unlock).not.toHaveClass('border-transparent');
 
     fireEvent.click(unlock);
     expect(await screen.findByRole('alertdialog', { name: 'Unlock hint?' })).toHaveTextContent(
@@ -497,9 +542,14 @@ describe('ChallengeWorkspace', () => {
     expect(screen.getByRole('heading', { name: 'Second trail' })).toBeVisible();
   });
 
-  it('aligns trusted author metadata beside the challenge title', () => {
+  it('shows trusted author metadata beneath an unsolved collection title', () => {
     renderWorkspace(
-      [createChallengeExperience(challenge(), { authorName: 'simonfalke' })],
+      [
+        createChallengeExperience(challenge(), { authorName: 'simonfalke' }),
+        createChallengeExperience(challenge({ id: 'second', name: 'Second trail', position: 1 }), {
+          authorName: 'willow'
+        })
+      ],
       'challenge'
     );
 
@@ -510,13 +560,21 @@ describe('ChallengeWorkspace', () => {
     const collectionAuthor = within(
       screen.getByRole('region', { name: 'Challenge list' })
     ).getByText('by simonfalke');
+    const unselectedAuthor = within(
+      screen.getByRole('region', { name: 'Challenge list' })
+    ).getByText('by willow');
     const tabList = screen.getByRole('tablist', { name: 'Challenge sections' });
     const detailsTab = within(tabList).getByRole('tab', { name: 'Details' });
 
     expect(detailHeader).toHaveClass('px-6', 'py-6');
     expect(titleLine).toHaveClass('items-baseline', 'gap-x-2');
     expect(author).toHaveClass('text-sm', 'text-text-muted');
-    expect(collectionAuthor).toHaveClass('text-xs', 'text-text-subtle', 'truncate');
+    expect(collectionAuthor).toHaveClass('text-sm', 'text-text-subtle', 'truncate');
+    expect(collectionAuthor.previousElementSibling).toHaveTextContent('Shrine gate');
+    expect(unselectedAuthor.previousElementSibling).toHaveTextContent('Second trail');
+    expect(
+      within(screen.getByRole('region', { name: 'Challenge list' })).queryByText('Unsolved')
+    ).not.toBeInTheDocument();
     expect(tabList).toHaveClass('px-6');
     expect(detailsTab).toHaveClass('px-3');
     expect(detailsTab).not.toHaveClass('first:pl-0');
@@ -531,39 +589,6 @@ describe('ChallengeWorkspace', () => {
 
     const tab = screen.getByRole('tab', { name: label });
     expect(within(tab).getByText(String(solveCount))).toHaveClass('font-semibold', 'tabular-nums');
-  });
-
-  it('packs solved progress segments before unsolved segments', () => {
-    renderWorkspace(
-      [
-        createChallengeExperience(
-          challenge({
-            id: 'open-first',
-            name: 'Open first',
-            position: 0
-          })
-        ),
-        createChallengeExperience(
-          challenge({
-            id: 'solved-second',
-            name: 'Solved second',
-            position: 1,
-            solved: true
-          })
-        )
-      ],
-      null
-    );
-
-    const overallProgress = screen.getByLabelText('1 of 2 challenges solved');
-    const categoryProgress = screen.getByLabelText('1 of 2 Web challenges solved');
-    const overallSegments = within(overallProgress).getAllByRole('link');
-    const segments = within(categoryProgress).getAllByRole('link');
-
-    expect(overallSegments[0]).toHaveAccessibleName(/Open Open first/);
-    expect(overallSegments[1]).toHaveAccessibleName(/Open Solved second/);
-    expect(segments[0]).toHaveAccessibleName(/Open Solved second/);
-    expect(segments[1]).toHaveAccessibleName(/Open Open first/);
   });
 
   it('supports a survey-gated challenge that reveals a normal submission flag', async () => {
@@ -742,7 +767,7 @@ describe('ChallengeWorkspace', () => {
     });
   });
 
-  it('keeps the current competitor at their true solve rank', () => {
+  it('keeps the current competitor at their true solve rank and docks it toward its position', async () => {
     const solved = createChallengeExperience(
       challenge({
         id: 'ordered-0',
@@ -767,7 +792,44 @@ describe('ChallengeWorkspace', () => {
     );
     expect(currentRow).toBe(rows[13]);
     expect(currentRow).toHaveAttribute('aria-current', 'true');
-    expect(currentRow).toHaveClass('sticky', 'bottom-0', 'z-10');
+    expect(currentRow).not.toHaveClass('sticky', 'bottom-0');
+
+    const scrollOwner = currentRow?.closest<HTMLElement>('.kitsune-scroll-region');
+    expect(scrollOwner).not.toBeNull();
+
+    vi.spyOn(scrollOwner!, 'getBoundingClientRect').mockReturnValue(
+      new DOMRect(100, 100, 600, 400)
+    );
+    const currentRowBounds = vi.spyOn(currentRow!, 'getBoundingClientRect');
+
+    currentRowBounds.mockReturnValue(new DOMRect(124, 460, 552, 64));
+    fireEvent.scroll(scrollOwner!);
+
+    await waitFor(() => {
+      expect(document.querySelector('[data-scroll-edge-dock="bottom"]')).toHaveStyle({
+        left: '124px',
+        top: '436px',
+        width: '552px'
+      });
+    });
+
+    currentRowBounds.mockReturnValue(new DOMRect(124, 60, 552, 64));
+    fireEvent.scroll(scrollOwner!);
+
+    await waitFor(() => {
+      expect(document.querySelector('[data-scroll-edge-dock="top"]')).toHaveStyle({
+        left: '124px',
+        top: '100px',
+        width: '552px'
+      });
+    });
+
+    currentRowBounds.mockReturnValue(new DOMRect(124, 220, 552, 64));
+    fireEvent.scroll(scrollOwner!);
+
+    await waitFor(() => {
+      expect(document.querySelector('[data-scroll-edge-dock]')).not.toBeInTheDocument();
+    });
   });
 
   it('preserves the solved dock and emits the default edge border', async () => {
@@ -825,10 +887,12 @@ describe('ChallengeWorkspace', () => {
     expect(solveEffect).not.toHaveAttribute('data-first-blood');
     expect(edgeFrame?.tagName.toLowerCase()).toBe('span');
     expect(edgeFrame).toHaveClass('inset-0');
-    expect(edgeFrame).toBeEmptyDOMElement();
-    expect(edgeFrame?.querySelector('svg')).not.toBeInTheDocument();
+    expect(edgeFrame?.querySelector('.kitsune-solve-edge-svg')).toBeInTheDocument();
+    expect(edgeFrame?.querySelector('.kitsune-solve-edge-fill')).toBeInTheDocument();
+    expect(edgeFrame?.querySelector('.kitsune-solve-edge-cutout')).toBeInTheDocument();
     expect(edgeFrame?.parentElement).toBe(solveEffect);
     expect(document.querySelector('.kitsune-solve-edge-wash')).not.toBeInTheDocument();
+    expect(document.querySelector('.kitsune-solve-edge-wash-subtle')).toBeInTheDocument();
     expect(document.querySelector('.kitsune-solve-origin')).not.toBeInTheDocument();
     expect(document.querySelector('.kitsune-solve-wave')).not.toBeInTheDocument();
   });
@@ -865,8 +929,9 @@ describe('ChallengeWorkspace', () => {
     const solveEffect = document.querySelector('.kitsune-solve-effect');
     expect(document.querySelector('.kitsune-solve-edge-frame')?.parentElement).toBe(solveEffect);
     expect(document.querySelector('.kitsune-solve-edge-frame')).toHaveClass('inset-0');
-    expect(document.querySelector('.kitsune-solve-edge-frame')).toBeEmptyDOMElement();
-    expect(document.querySelector('.kitsune-solve-edge-frame svg')).not.toBeInTheDocument();
+    expect(document.querySelector('.kitsune-solve-edge-svg')).toBeInTheDocument();
+    expect(document.querySelector('.kitsune-solve-edge-fill')).toBeInTheDocument();
+    expect(document.querySelector('.kitsune-solve-edge-cutout')).toBeInTheDocument();
     expect(document.querySelector('.kitsune-solve-edge-wash')?.parentElement).toBe(solveEffect);
   });
 
@@ -981,6 +1046,8 @@ describe('ChallengeWorkspace', () => {
           'data-edge-color',
           'rainbow'
         );
+        expect(solveEffect?.querySelector('.kitsune-solve-edge-rainbow-fill')).toBeInTheDocument();
+        expect(solveEffect?.querySelector('.kitsune-solve-edge-cutout')).toBeInTheDocument();
       }
       expect(solvedSummary).toHaveAttribute('data-first-blood', 'true');
       expect(solvedMessage.parentElement).toHaveClass('kitsune-first-blood-copy');
@@ -1111,5 +1178,6 @@ describe('ChallengeWorkspace', () => {
       'danger'
     );
     expect(document.querySelector('.kitsune-solve-edge-wash')).not.toBeInTheDocument();
+    expect(document.querySelector('.kitsune-solve-edge-wash-subtle')).toBeInTheDocument();
   });
 });
