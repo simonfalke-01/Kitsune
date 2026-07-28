@@ -38,6 +38,8 @@ export function CollectionLink({
   tone = 'accent',
   ...props
 }: CollectionLinkProps) {
+  const mergesSelectionAndFocus = appearance === 'challenge' && isSelected;
+
   return (
     <ReactAriaLink
       {...props}
@@ -53,7 +55,9 @@ export function CollectionLink({
           (appearance === 'challenge'
             ? 'bg-accent-subtle ring-1 ring-inset ring-accent-border hover:bg-accent-subtle'
             : 'border-accent-border bg-accent-subtle'),
-        focusRing,
+        mergesSelectionAndFocus
+          ? 'focus-visible:ring-2 focus-visible:ring-focus-ring'
+          : focusRing,
         typeof className === 'string' ? className : undefined
       )}
     >
