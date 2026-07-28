@@ -9,7 +9,7 @@ export * from './chart';
 export * from './checkbox';
 export * from './code-block';
 export * from './combo-box';
-export * from './collection-link';
+export * from './collection-tree';
 export * from './copy-button';
 export * from './dialog';
 export * from './disclosure';

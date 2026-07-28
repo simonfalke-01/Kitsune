@@ -196,6 +196,11 @@ reusable failure mode, add the general rule here before closing the issue.
   brackets resize the desktop split; Question mark toggles shortcut help.
   Editable controls, composition, modifier chords, and unrelated open overlays
   must not trigger them.
+- The categorized challenge ledger uses the shared React Aria tree composition:
+  category parents own expansion and challenge children own selection. The
+  composite contributes one roving Tab stop rather than one stop per row.
+  J/K moves only through visible challenges; standard tree keys traverse and
+  expand the full hierarchy, and React Aria owns Space and Enter selection.
 - Escape exits challenge search and restores focus to the selected rendered
   challenge row when available. The next J or K movement continues from that
   row and advances selection.
@@ -212,8 +217,8 @@ challenge list` link before its controls. It moves focus to the visible
   challenge heading, whose focus ring confirms the destination; the next Tab
   continues with the detail actions. The detail exposes the inverse `Back to
 challenge search` link immediately before its first action. These bypasses
-  preserve normal Tab access to every category and challenge link for users who
-  do not activate them and remain absent from the narrow modal focus trap.
+  preserve direct access around the collection while its tree keyboard model
+  remains available, and remain absent from the narrow modal focus trap.
 - The challenge route composes global navigation, event identity, live
   progress, standing, and global actions into one persistent header. Its solve
   progress rail is the header's lower edge. A separate global bar is hidden

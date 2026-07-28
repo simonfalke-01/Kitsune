@@ -1,8 +1,10 @@
+import type { Ref } from 'react';
+
 import type { ChallengeBloodRank } from './challenge-solve-status';
 import { ChallengeSolveStatus } from './challenge-solve-status';
 import type { FirstBloodHighlightColor } from './challenge-presentation';
 import { solveCountLabel, type ChallengeSolveContext } from './challenge-solve-stub';
-import { CollectionLink, PresenceSummary } from '@/components/ui';
+import { CollectionTreeItem, PresenceSummary } from '@/components/ui';
 import type { ChallengePresenceMember } from '@/lib/api/client';
 import {
   challengePoints,
@@ -13,10 +15,8 @@ import {
 interface ChallengeCollectionRowProps {
   challenge: ChallengeExperience;
   firstBloodHighlightColor: FirstBloodHighlightColor;
-  href?: string;
-  isSelected: boolean;
-  onSelect?: (challengeId: string, trigger: HTMLElement) => void;
   presence: readonly ChallengePresenceMember[];
+  rowRef?: Ref<HTMLDivElement>;
   solveContext?: ChallengeSolveContext;
   tone: ChallengeCategoryTone;
 }
@@ -24,10 +24,8 @@ interface ChallengeCollectionRowProps {
 export function ChallengeCollectionRow({
   challenge,
   firstBloodHighlightColor,
-  href,
-  isSelected,
-  onSelect,
   presence,
+  rowRef,
   solveContext,
   tone
 }: ChallengeCollectionRowProps) {
@@ -40,23 +38,9 @@ export function ChallengeCollectionRow({
   }));
 
   return (
-    <li>
-      <CollectionLink
-        appearance="challenge"
-        className="kitsune-challenge-row"
-        data-blood={bloodRank ?? undefined}
-        data-challenge-id={challenge.id}
-        data-challenge-row
-        data-first-blood-color={bloodRank === 1 ? firstBloodHighlightColor : undefined}
-        data-solved={challenge.solved || undefined}
-        href={href}
-        isSelected={isSelected}
-        onPress={(event) => {
-          const target = event.target as HTMLElement;
-          onSelect?.(challenge.id, target.closest('a') ?? target);
-        }}
-        tone={tone}
-      >
+    <CollectionTreeItem
+      appearance="challenge"
+      content={
         <span className="flex items-center justify-between gap-4">
           <span className="grid min-w-0 gap-1">
             <span className="min-w-0 flex-1 truncate text-base font-semibold text-text">
@@ -87,7 +71,16 @@ export function ChallengeCollectionRow({
             </span>
           </span>
         </span>
-      </CollectionLink>
-    </li>
+      }
+      data-blood={bloodRank ?? undefined}
+      data-challenge-id={challenge.id}
+      data-challenge-row
+      data-first-blood-color={bloodRank === 1 ? firstBloodHighlightColor : undefined}
+      data-solved={challenge.solved || undefined}
+      id={`challenge:${challenge.id}`}
+      itemRef={rowRef}
+      textValue={challenge.name}
+      tone={tone}
+    />
   );
 }

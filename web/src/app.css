@@ -888,7 +888,7 @@
     --challenge-state-wash: var(--challenge-first-blood-wash);
   }
 
-  .kitsune-challenge-row[data-blood='1'] > .kitsune-collection-marker {
+  .kitsune-challenge-row[data-blood='1'] .kitsune-collection-marker {
     background-color: var(--first-blood);
   }
 
@@ -897,7 +897,7 @@
   }
 
   .kitsune-challenge-row[data-blood='1'][data-first-blood-color='success']
-    > .kitsune-collection-marker {
+    .kitsune-collection-marker {
     background-color: var(--success);
   }
 
@@ -906,7 +906,7 @@
   }
 
   .kitsune-challenge-row[data-blood='1'][data-first-blood-color='rainbow']
-    > .kitsune-collection-marker {
+    .kitsune-collection-marker {
     background: var(--challenge-first-blood-rainbow-marker);
   }
 
@@ -922,11 +922,11 @@
     background-color: var(--surface-hover);
   }
 
-  .kitsune-challenge-row[aria-current='true'] {
+  .kitsune-challenge-row[data-selected] {
     background: var(--accent-subtle);
   }
 
-  .kitsune-challenge-row[aria-current='true'][data-solved='true'] {
+  .kitsune-challenge-row[data-selected][data-solved='true'] {
     background: var(--challenge-state-background);
   }
 

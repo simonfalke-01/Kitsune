@@ -112,6 +112,12 @@ function renderWorkspace(
   return workspaceActions;
 }
 
+function pressChallengeRow(row: HTMLElement) {
+  fireEvent.pointerDown(row, { button: 0, pointerType: 'mouse' });
+  fireEvent.pointerUp(row, { button: 0, pointerType: 'mouse' });
+  fireEvent.click(row);
+}
+
 beforeEach(() => {
   window.localStorage.clear();
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
@@ -144,7 +150,7 @@ describe('ChallengeWorkspace', () => {
     );
 
     const challengeList = screen.getByRole('region', { name: 'Challenge list' });
-    const challengeRow = within(challengeList).getByRole('link', { name: /Shrine gate/ });
+    const challengeRow = within(challengeList).getByRole('row', { name: /Shrine gate/ });
     expect(within(challengeRow).getByText('Mina Park viewing')).toBeVisible();
     expect(
       within(screen.getByRole('article', { name: 'Shrine gate details' })).queryByText(
@@ -188,16 +194,13 @@ describe('ChallengeWorkspace', () => {
     const challengeList = screen.getByRole('region', { name: 'Challenge list' });
     const workspace = challengeList.closest('.kitsune-split-workspace');
     const detailPane = workspace?.children.item(1);
-    expect(within(challengeList).getByRole('link', { name: /Shrine gate/ })).toHaveAttribute(
-      'href',
-      '/challenges?challenge=challenge'
-    );
+    expect(within(challengeList).getByRole('row', { name: /Shrine gate/ })).toBeVisible();
     const selectionPrompt = within(detailPane as HTMLElement).getByRole('heading', {
       name: 'No challenge selected'
     });
     expect(selectionPrompt).toBeVisible();
     expect(screen.getByRole('slider', { name: 'Challenge list width' })).toHaveValue('34');
-    expect(screen.getByRole('button', { name: /Web/ }).closest('h2')).toHaveClass(
+    expect(within(challengeList).getByRole('row', { name: 'Web' })).toHaveClass(
       'sticky',
       'top-challenge-list-header'
     );
@@ -225,20 +228,18 @@ describe('ChallengeWorkspace', () => {
 
     const challengeList = screen.getByRole('region', { name: 'Challenge list' });
 
-    expect(within(challengeList).getByRole('link', { name: /Web trail/ })).toBeVisible();
-    expect(within(challengeList).getByRole('link', { name: /Crypto trail/ })).toBeVisible();
+    expect(within(challengeList).getByRole('row', { name: /Web trail/ })).toBeVisible();
+    expect(within(challengeList).getByRole('row', { name: /Crypto trail/ })).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: /Web/ }));
 
-    expect(
-      within(challengeList).queryByRole('link', { name: /Web trail/ })
-    ).not.toBeInTheDocument();
-    expect(within(challengeList).getByRole('link', { name: /Crypto trail/ })).toBeVisible();
+    expect(within(challengeList).queryByRole('row', { name: /Web trail/ })).not.toBeInTheDocument();
+    expect(within(challengeList).getByRole('row', { name: /Crypto trail/ })).toBeVisible();
 
     fireEvent.click(screen.getByRole('button', { name: /Web/ }));
 
-    expect(within(challengeList).getByRole('link', { name: /Web trail/ })).toBeVisible();
-    expect(within(challengeList).getByRole('link', { name: /Crypto trail/ })).toBeVisible();
+    expect(within(challengeList).getByRole('row', { name: /Web trail/ })).toBeVisible();
+    expect(within(challengeList).getByRole('row', { name: /Crypto trail/ })).toBeVisible();
   });
 
   it('restores the challenge list, URL-selected tab, and detail scroll positions', async () => {
@@ -277,24 +278,23 @@ describe('ChallengeWorkspace', () => {
     );
 
     const challengeList = screen.getByRole('region', { name: 'Challenge list' });
-    const first = within(challengeList).getByRole('link', { name: /First trail/ });
-    const second = within(challengeList).getByRole('link', { name: /Second trail/ });
+    const first = within(challengeList).getByRole('row', { name: /First trail/ });
+    const second = within(challengeList).getByRole('row', { name: /Second trail/ });
 
     fireEvent.keyDown(window, { key: 'j' });
     expect(first).toHaveFocus();
-    expect(first).toHaveAttribute('aria-current', 'true');
+    expect(first).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('heading', { name: 'First trail' })).toBeVisible();
 
     fireEvent.keyDown(first, { key: 'j' });
     expect(second).toHaveFocus();
-    expect(second).toHaveAttribute('aria-current', 'true');
-    expect(first).not.toHaveAttribute('aria-current');
+    expect(second).toHaveAttribute('aria-selected', 'true');
+    expect(first).toHaveAttribute('aria-selected', 'false');
     expect(screen.getByRole('heading', { name: 'Second trail' })).toBeVisible();
 
     fireEvent.keyDown(second, { key: 'k' });
     expect(first).toHaveFocus();
-    expect(first).toHaveAttribute('aria-current', 'true');
-    expect(first).toHaveAttribute('href', '/challenges?challenge=first');
+    expect(first).toHaveAttribute('aria-selected', 'true');
   });
 
   it('opens Details when a different challenge is selected', () => {
@@ -311,7 +311,7 @@ describe('ChallengeWorkspace', () => {
     fireEvent.click(screen.getByRole('tab', { name: '4 Solves' }));
     expect(screen.getByRole('tab', { name: '4 Solves' })).toHaveAttribute('aria-selected', 'true');
 
-    fireEvent.click(screen.getByRole('link', { name: /Second trail/ }));
+    pressChallengeRow(screen.getByRole('row', { name: /Second trail/ }));
 
     expect(screen.getByRole('heading', { name: 'Second trail' })).toBeVisible();
     expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute('aria-selected', 'true');
@@ -413,8 +413,8 @@ describe('ChallengeWorkspace', () => {
     );
 
     const challengeList = screen.getByRole('region', { name: 'Challenge list' });
-    const first = within(challengeList).getByRole('link', { name: /First trail/ });
-    const second = within(challengeList).getByRole('link', { name: /Second trail/ });
+    const first = within(challengeList).getByRole('row', { name: /First trail/ });
+    const second = within(challengeList).getByRole('row', { name: /Second trail/ });
 
     fireEvent.keyDown(window, { key: '/' });
     const search = screen.getByRole('searchbox', { name: 'Search challenges' });
@@ -425,8 +425,8 @@ describe('ChallengeWorkspace', () => {
 
     fireEvent.keyDown(window, { key: 'j' });
     expect(second).toHaveFocus();
-    expect(second).toHaveAttribute('aria-current', 'true');
-    expect(first).not.toHaveAttribute('aria-current');
+    expect(second).toHaveAttribute('aria-selected', 'true');
+    expect(first).toHaveAttribute('aria-selected', 'false');
   });
 
   it('resizes the challenge list and exposes a shortcut reference', async () => {
@@ -504,14 +504,14 @@ describe('ChallengeWorkspace', () => {
     );
 
     const challengeList = screen.getByRole('region', { name: 'Challenge list' });
-    const first = within(challengeList).getByRole('link', { name: /First trail/ });
-    const second = within(challengeList).getByRole('link', { name: /Second trail/ });
+    const first = within(challengeList).getByRole('row', { name: /First trail/ });
+    const second = within(challengeList).getByRole('row', { name: /Second trail/ });
 
-    expect(first).toHaveAttribute('aria-current', 'true');
-    fireEvent.click(second);
+    expect(first).toHaveAttribute('aria-selected', 'true');
+    pressChallengeRow(second);
 
-    expect(second).toHaveAttribute('aria-current', 'true');
-    expect(first).not.toHaveAttribute('aria-current');
+    expect(second).toHaveAttribute('aria-selected', 'true');
+    expect(first).toHaveAttribute('aria-selected', 'false');
     expect(screen.getByRole('heading', { name: 'Second trail' })).toBeVisible();
   });
 
@@ -578,8 +578,8 @@ describe('ChallengeWorkspace', () => {
     renderWorkspace([gated], gated.id, workspaceActions);
 
     expect(screen.getByRole('heading', { name: 'Entry survey' })).toBeVisible();
-    expect(screen.getAllByRole('link', { name: /Entry survey/ })[0]).toHaveAttribute(
-      'aria-current',
+    expect(screen.getByRole('row', { name: /Entry survey/ })).toHaveAttribute(
+      'aria-selected',
       'true'
     );
     fireEvent.click(screen.getByRole('radio', { name: '4' }));
@@ -618,9 +618,9 @@ describe('ChallengeWorkspace', () => {
 
     const challengeList = screen.getByRole('region', { name: 'Challenge list' });
     expect(
-      within(challengeList).queryByRole('link', { name: /Solved trail/ })
+      within(challengeList).queryByRole('row', { name: /Solved trail/ })
     ).not.toBeInTheDocument();
-    expect(within(challengeList).getByRole('link', { name: /Open trail/ })).toBeVisible();
+    expect(within(challengeList).getByRole('row', { name: /Open trail/ })).toBeVisible();
     expect(window.localStorage.getItem('kitsune.challenge-preferences.v2.event')).toContain(
       '"hideSolved":true'
     );
@@ -647,7 +647,7 @@ describe('ChallengeWorkspace', () => {
 
     const challengeList = screen.getByRole('region', { name: 'Challenge list' });
     expect(
-      within(challengeList).queryByRole('link', { name: /Solved trail/ })
+      within(challengeList).queryByRole('row', { name: /Solved trail/ })
     ).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'No challenge selected' })).toBeVisible();
     expect(screen.getByRole('button', { name: 'Show solved challenges' })).toHaveFocus();
@@ -680,8 +680,8 @@ describe('ChallengeWorkspace', () => {
     expect(solveStripRows[2]).toHaveTextContent('3rd');
     expect(solveStripRows[3]).toHaveTextContent('Foxden');
     expect(within(solveStrip).getAllByText(/^First blood \(.+\)$/).length).toBeGreaterThan(0);
-    const selectedChallenge = screen.getByRole('link', { name: /Solved timeline/ });
-    expect(selectedChallenge).toHaveAttribute('aria-current', 'true');
+    const selectedChallenge = screen.getByRole('row', { name: /Solved timeline/ });
+    expect(selectedChallenge).toHaveAttribute('aria-selected', 'true');
     expect(selectedChallenge).toHaveAttribute('data-solved', 'true');
     expect(selectedChallenge).toHaveAttribute('data-blood', '1');
     expect(within(selectedChallenge).getByText('First blood')).toBeVisible();
@@ -800,8 +800,8 @@ describe('ChallengeWorkspace', () => {
     });
     expect(screen.queryByRole('button', { name: 'Submit flag' })).not.toBeInTheDocument();
     expect(screen.getAllByText('Challenge solved').length).toBeGreaterThan(0);
-    const selectedChallenge = screen.getByRole('link', { name: /Shrine gate/ });
-    expect(selectedChallenge).toHaveAttribute('aria-current', 'true');
+    const selectedChallenge = screen.getByRole('row', { name: /Shrine gate/ });
+    expect(selectedChallenge).toHaveAttribute('aria-selected', 'true');
     expect(selectedChallenge).toHaveAttribute('data-solved', 'true');
     expect(document.querySelector('.kitsune-solve-effect')).toBeInTheDocument();
   });

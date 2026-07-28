@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 
 import { ChallengeCollapsedRail } from './challenge-collapsed-rail';
-import { ChallengeCollection } from './challenge-collection';
+import { ChallengeCollection, type ChallengeCollectionHandle } from './challenge-collection';
 import { ChallengeDetail } from './challenge-detail';
 import { ChallengeEventTrail } from './challenge-event-trail';
 import {
@@ -173,6 +173,7 @@ export function ChallengeWorkspace({
     });
   }
   const collectionScrollRef = useRef<HTMLDivElement>(null);
+  const challengeCollectionRef = useRef<ChallengeCollectionHandle>(null);
   const collectionScrollTimerRef = useRef<number | null>(null);
   const collapsedRailRef = useRef<HTMLElement>(null);
   const answerInputRef = useRef<HTMLInputElement>(null);
@@ -228,31 +229,17 @@ export function ChallengeWorkspace({
     return grouped;
   }, [presenceMembers]);
   immediateSelectedTab = availableTab(selectedChallenge, immediateSelectedTab, actions);
-  const visibleChallengeRows = useCallback(() => {
-    return Array.from(
-      collectionScrollRef.current?.querySelectorAll<HTMLElement>('[data-challenge-row]') ?? []
-    ).filter((row) => !row.closest('[hidden], [aria-hidden="true"], [inert]'));
-  }, []);
   const exitChallengeSearch = useCallback(() => {
-    const selectedRow = visibleChallengeRows().find(
-      (row) => row.dataset.challengeId === selectedChallenge?.id
-    );
-
-    if (selectedRow) {
-      selectedRow.focus();
-    } else {
+    if (!challengeCollectionRef.current?.focusSelected()) {
       searchInputRef.current?.blur();
     }
-  }, [selectedChallenge?.id, visibleChallengeRows]);
+  }, []);
   const restoreChallengeList = useCallback(() => {
     setFocusedChallengeId(null);
     window.requestAnimationFrame(() => {
-      const selectedRow = visibleChallengeRows().find(
-        (row) => row.dataset.challengeId === selectedChallenge?.id
-      );
-      selectedRow?.focus();
+      challengeCollectionRef.current?.focusSelected();
     });
-  }, [selectedChallenge?.id, visibleChallengeRows]);
+  }, []);
   const collapseChallengeList = useCallback(() => {
     if (!selectedChallenge) {
       return;
@@ -355,41 +342,6 @@ export function ChallengeWorkspace({
   }
 
   useEffect(() => {
-    function moveChallengeSelection(direction: 1 | -1) {
-      const rows = visibleChallengeRows();
-
-      if (rows.length === 0) {
-        return;
-      }
-
-      const activeElement = document.activeElement;
-      const activeIndex = rows.findIndex(
-        (row) => row === activeElement || (activeElement && row.contains(activeElement))
-      );
-      const selectedIndex = rows.findIndex(
-        (row) => row.dataset.challengeId === selectedChallenge?.id
-      );
-      const currentIndex = activeIndex >= 0 ? activeIndex : selectedIndex;
-      const nextIndex =
-        currentIndex < 0
-          ? direction > 0
-            ? 0
-            : rows.length - 1
-          : Math.min(Math.max(currentIndex + direction, 0), rows.length - 1);
-      const nextRow = rows[nextIndex];
-      const nextChallengeId = nextRow?.dataset.challengeId;
-
-      if (!nextRow || !nextChallengeId) {
-        return;
-      }
-
-      nextRow.focus();
-
-      if (nextChallengeId !== selectedChallenge?.id) {
-        selectChallenge(nextChallengeId, nextRow);
-      }
-    }
-
     function handleChallengeMovement(event: globalThis.KeyboardEvent) {
       const key = event.key.toLocaleLowerCase();
       const hasOpenOverlay = Boolean(
@@ -411,7 +363,7 @@ export function ChallengeWorkspace({
       }
 
       event.preventDefault();
-      moveChallengeSelection(key === 'j' ? 1 : -1);
+      challengeCollectionRef.current?.moveSelection(key === 'j' ? 1 : -1);
     }
 
     function handleWorkspaceShortcut(event: globalThis.KeyboardEvent) {
@@ -507,8 +459,7 @@ export function ChallengeWorkspace({
     restoreChallengeList,
     selectChallenge,
     selectTab,
-    selectedChallenge,
-    visibleChallengeRows
+    selectedChallenge
   ]);
 
   function handleSolved(challengeId: string, solvedAt: string) {
@@ -524,17 +475,14 @@ export function ChallengeWorkspace({
       challenges={displayedChallenges}
       eventId={eventId}
       firstBloodHighlightColor={firstBloodHighlightColor}
-      getChallengeHref={(challengeId) => {
-        return getChallengeHref?.(challengeId, 'details');
-      }}
       onCollapseChallengeList={isDesktop && selectedChallenge ? collapseChallengeList : undefined}
       onClearSelectedChallenge={() => {
         clearSelection(false);
       }}
-      onExitSearch={exitChallengeSearch}
       onSelectChallenge={(challengeId, trigger) => {
         selectChallenge(challengeId, trigger);
       }}
+      ref={challengeCollectionRef}
       selectedChallengeId={immediateSelectedChallengeId}
       searchInputRef={searchInputRef}
       showDetailFocusLink={Boolean(isDesktop && selectedChallenge)}

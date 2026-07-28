@@ -230,6 +230,10 @@ without losing competition context.
   sections; A focuses the flag or answer field; brackets resize the collection.
   Question mark toggles shortcut help. Text entry and unrelated open overlays
   suspend workspace shortcuts.
+- The categorized challenge ledger is one React Aria composite. Category
+  parents and challenge children share one roving Tab stop, so Tab crosses the
+  ledger once instead of walking every row. J/K moves challenge-to-challenge;
+  standard tree keys retain an assistive-technology path through the hierarchy.
 - Escape leaves challenge search and returns focus to the selected visible row
   when one exists. J and K then continue selection from that row; trapped
   search focus or focus-only movement is a keyboard-navigation defect.
