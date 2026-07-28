@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { Link as ReactAriaLink, type LinkProps as ReactAriaLinkProps } from 'react-aria-components';
 
-import { cx, focusRing } from './styles';
+import { cx, focusRing, insetFocusRing } from './styles';
 
 const collectionLinkAppearances = {
   challenge: 'kitsune-optical-py-3 min-h-control rounded-none pr-3 pl-4',
@@ -22,9 +22,6 @@ const collectionLinkMarkers = {
   teal: 'bg-category-teal',
   violet: 'bg-category-violet'
 } as const;
-
-const challengeFocusRing =
-  'focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-2 focus-visible:outline-text';
 
 export interface CollectionLinkProps extends Omit<ReactAriaLinkProps, 'children'> {
   appearance?: keyof typeof collectionLinkAppearances;
@@ -71,7 +68,7 @@ export function CollectionLink({
           (appearance === 'challenge'
             ? 'bg-accent-subtle ring-1 ring-inset ring-accent-border hover:bg-accent-subtle'
             : 'border-accent-border bg-accent-subtle'),
-        appearance === 'challenge' ? challengeFocusRing : focusRing,
+        appearance === 'challenge' ? insetFocusRing : focusRing,
         typeof className === 'string' ? className : undefined
       )}
     >

@@ -297,8 +297,8 @@ export function ChallengeWorkspace({
     });
   }, [selectedChallengeId]);
 
-  function closeDetail() {
-    restoreSelectionFocusRef.current = true;
+  function clearSelection(restoreFocus: boolean) {
+    restoreSelectionFocusRef.current = restoreFocus;
     setFocusedChallengeId(null);
     setImmediateSelection({
       current: null,
@@ -307,6 +307,10 @@ export function ChallengeWorkspace({
       tab: 'details'
     });
     onClearSelection();
+  }
+
+  function closeDetail() {
+    clearSelection(true);
   }
 
   const selectChallenge = useCallback(
@@ -504,6 +508,9 @@ export function ChallengeWorkspace({
         return getChallengeHref?.(challengeId, 'details');
       }}
       onCollapseChallengeList={isDesktop && selectedChallenge ? collapseChallengeList : undefined}
+      onClearSelectedChallenge={() => {
+        clearSelection(false);
+      }}
       onExitSearch={exitChallengeSearch}
       onSelectChallenge={(challengeId, trigger) => {
         selectChallenge(challengeId, trigger);

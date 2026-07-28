@@ -101,6 +101,7 @@ interface ChallengeCollectionProps {
   firstBloodHighlightColor: FirstBloodHighlightColor;
   getChallengeHref?: (challengeId: string) => string | undefined;
   onCollapseChallengeList?: () => void;
+  onClearSelectedChallenge?: () => void;
   onExitSearch?: () => void;
   onSelectChallenge?: (challengeId: string, trigger: HTMLElement) => void;
   presenceByChallenge: ReadonlyMap<string, ChallengePresenceMember[]>;
@@ -116,6 +117,7 @@ export function ChallengeCollection({
   firstBloodHighlightColor,
   getChallengeHref,
   onCollapseChallengeList,
+  onClearSelectedChallenge,
   onExitSearch,
   onSelectChallenge,
   presenceByChallenge,
@@ -143,9 +145,9 @@ export function ChallengeCollection({
   const filteredChallenges = useMemo(
     () =>
       filterChallenges(challenges, query).filter((challenge) => {
-        return !hideSolved || !challenge.solved || challenge.id === selectedChallengeId;
+        return !hideSolved || !challenge.solved;
       }),
-    [challenges, hideSolved, query, selectedChallengeId]
+    [challenges, hideSolved, query]
   );
   const groups = useMemo(() => groupChallenges(filteredChallenges), [filteredChallenges]);
   const resolvedExpandedKeys = query
@@ -213,7 +215,18 @@ export function ChallengeCollection({
               aria-pressed={hideSolved}
               label={hideSolved ? 'Show solved challenges' : 'Hide solved challenges'}
               onPress={() => {
-                savePreferences(!hideSolved, expandedKeys);
+                const nextHideSolved = !hideSolved;
+                const hidesSelection =
+                  nextHideSolved &&
+                  challenges.some(
+                    (challenge) => challenge.id === selectedChallengeId && challenge.solved
+                  );
+
+                if (hidesSelection) {
+                  onClearSelectedChallenge?.();
+                }
+
+                savePreferences(nextHideSolved, expandedKeys);
               }}
             >
               {hideSolved ? (
@@ -284,6 +297,7 @@ export function ChallengeCollection({
               <Disclosure
                 className={`${categoryTextClasses[tone]} bg-surface-raised`}
                 density="compact"
+                focusAppearance="inset"
                 headingClassName="sticky top-challenge-list-header z-sticky bg-surface-sunken"
                 headingLevel={2}
                 id={group.category}

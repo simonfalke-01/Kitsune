@@ -65,8 +65,9 @@ user.
   surfaces may have none.
 - Establish hierarchy in this order: position, decisive size, whitespace,
   weight, colour, contrast, then depth.
-- Colour is a scarce structural signal. Interactive blue communicates focus
-  and selection. Green communicates a confirmed solve. Podium colours
+- Colour is a scarce structural signal. Interactive blue communicates
+  selection. An adaptive high-contrast neutral ring communicates keyboard
+  focus. Green communicates a confirmed solve. Podium colours
   communicate first through third blood. Category colours index challenge
   families. These meanings do not overlap.
 - A screen must pass the squint test: when text becomes unreadable, its reading
@@ -196,8 +197,8 @@ without losing competition context.
   and blood status retain that line; absent authors fall back to `Unsolved`.
   The invariant two-line row height never changes.
 - Hover, focus, selected, solved, and podium states remain distinguishable.
-  Blue alone means interaction/selection; green means solved; podium tones mean
-  placement.
+  Blue means selection; an adaptive neutral ring means keyboard focus; green
+  means solved; podium tones mean placement.
 - Category colour appears as an index: icon, label, narrow rail, or progress
   segment. It does not become a saturated full-width challenge slab.
 - One compact solved-and-points line sits above search. It reports collection

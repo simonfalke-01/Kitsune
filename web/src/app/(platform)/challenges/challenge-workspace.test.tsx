@@ -626,6 +626,33 @@ describe('ChallengeWorkspace', () => {
     );
   });
 
+  it('hides a selected solved challenge and clears its detail', () => {
+    renderWorkspace(
+      [
+        createChallengeExperience(
+          challenge({
+            id: 'solved',
+            name: 'Solved trail',
+            solved: true
+          })
+        ),
+        createChallengeExperience(challenge({ id: 'open', name: 'Open trail' }))
+      ],
+      'solved'
+    );
+    const hideSolved = screen.getByRole('button', { name: 'Hide solved challenges' });
+    hideSolved.focus();
+
+    fireEvent.click(hideSolved);
+
+    const challengeList = screen.getByRole('region', { name: 'Challenge list' });
+    expect(
+      within(challengeList).queryByRole('link', { name: /Solved trail/ })
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'No challenge selected' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Show solved challenges' })).toHaveFocus();
+  });
+
   it('shows podium context and a complete solve timeline with the current competitor', async () => {
     const solved = createChallengeExperience(
       challenge({

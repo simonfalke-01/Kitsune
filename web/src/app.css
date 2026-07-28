@@ -270,7 +270,7 @@
   --chart-series-self: var(--success);
   --chart-series-muted: var(--text-subtle);
 
-  --focus-ring: var(--a-9);
+  --focus-ring: var(--text);
   --overlay: oklch(14.2% 0.005 260 / 55%);
 }
 
@@ -365,7 +365,7 @@
   --category-lime: oklch(84% 0.1 145);
   --category-lime-text: var(--category-lime);
 
-  --focus-ring: oklch(70% 0.15 255);
+  --focus-ring: var(--text);
   --overlay: oklch(6% 0.001 270 / 78%);
 }
 

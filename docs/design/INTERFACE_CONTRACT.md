@@ -107,11 +107,12 @@ reusable failure mode, add the general rule here before closing the issue.
 - `web/src/app.css` is the source of truth for visual tokens. Theme packs,
   white-label configuration, plugins, and first-party screens share the same
   semantic contract.
-- Use color to encode real structure: interactive blue for event context,
-  focus, and selection; restrained category color for challenge grouping;
-  green only for a confirmed solve; warning and danger only for states that
-  require attention. A screen must not become an undifferentiated gray field,
-  but color may not be sprayed across decorative chips and cards.
+- Use color to encode real structure: interactive blue for event context and
+  selection; an adaptive high-contrast neutral for keyboard focus; restrained
+  category color for challenge grouping; green only for a confirmed solve;
+  warning and danger only for states that require attention. A screen must not
+  become an undifferentiated gray field, but color may not be sprayed across
+  decorative chips and cards.
 - Chromatic fills, rails, and chart marks never double as body-text colours.
   Category labels, podium copy, and avatar initials consume dedicated semantic
   text roles that meet WCAG AA against their actual light and dark surfaces.
@@ -334,9 +335,10 @@ challenge search` link immediately before its first action. These bypasses
   Categories are section structure. Solved state is plain text or a compact
   confirmation beside the challenge it affects.
 - Category color indexes the challenge ledger through its category icon,
-  label, and narrow header rail. Blue alone communicates focus and selection;
-  green communicates a confirmed solve; podium tones communicate first,
-  second, and third blood. Full-width chromatic category bands reproduce
+  label, and narrow header rail. Blue communicates selection; an adaptive
+  high-contrast neutral ring communicates keyboard focus; green communicates a
+  confirmed solve; podium tones communicate first, second, and third blood.
+  Full-width chromatic category bands reproduce
   rCTF's skin instead of expressing Kitsune's event-trail system.
 - Category headers remain sticky inside the collection scroll owner and fully
   occlude rows moving underneath them.
@@ -626,6 +628,10 @@ challenge search` link immediately before its first action. These bypasses
 - Shared focus classes must set outline style as well as width and colour after
   `outline-none`; a logically focused control with `outline-style: none` fails
   the keyboard contract even when its outline token is present.
+- Keyboard focus uses the semantic high-contrast neutral: near-white in dark
+  mode and near-black in light mode. Focus indicators inside clipped or
+  scrolling collections use the shared inset treatment so every edge remains
+  visible; feature code does not compensate with local offsets.
 - Bidirectional edge pinning uses the shared `ScrollEdgeDock` behavior against
   the nearest `data-scroll-region`. Feature code supplies an anchor and visual
   content; it does not own scroll listeners, viewport measurement, overlay

@@ -32,9 +32,9 @@ describe('CollectionLink', () => {
       'ring-1',
       'ring-inset',
       'ring-accent-border',
-      'focus-visible:outline-offset-2',
-      'focus-visible:outline-text'
+      'focus-visible:ring-2',
+      'focus-visible:ring-focus-ring'
     );
-    expect(link).not.toHaveClass('focus-visible:ring-2');
+    expect(link).not.toHaveClass('focus-visible:outline-offset-2');
   });
 });

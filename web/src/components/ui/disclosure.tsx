@@ -12,7 +12,7 @@ import {
   type DisclosureProps as ReactAriaDisclosureProps
 } from 'react-aria-components';
 
-import { cx, focusRing, variantClass } from './styles';
+import { cx, focusRing, insetFocusRing, variantClass } from './styles';
 
 const disclosureGroupAppearances = {
   card: 'divide-y divide-border-subtle rounded-lg border border-border-subtle bg-surface-raised',
@@ -32,6 +32,11 @@ const disclosureDensities = {
     panel: 'px-6 pb-6 pr-12',
     trigger: 'kitsune-optical-py-6 px-6 text-base'
   }
+} as const;
+
+const disclosureFocusAppearances = {
+  inset: insetFocusRing,
+  outline: focusRing
 } as const;
 
 export type DisclosureDensity = keyof typeof disclosureDensities;
@@ -60,6 +65,7 @@ export interface DisclosureProps extends Omit<ReactAriaDisclosureProps, 'childre
   children: ReactNode;
   density?: DisclosureDensity;
   description?: ReactNode;
+  focusAppearance?: keyof typeof disclosureFocusAppearances;
   headingClassName?: string;
   headingLevel?: 2 | 3 | 4;
   meta?: ReactNode;
@@ -73,6 +79,7 @@ export function Disclosure({
   className,
   density = 'standard',
   description,
+  focusAppearance = 'outline',
   headingClassName,
   headingLevel = 3,
   meta,
@@ -104,7 +111,7 @@ export function Disclosure({
             tone === 'inherit'
               ? 'hover:bg-surface-hover hover:text-inherit pressed:bg-surface-active pressed:text-inherit'
               : 'hover:text-accent-text pressed:text-accent-text',
-            focusRing,
+            variantClass(disclosureFocusAppearances, focusAppearance),
             triggerClassName
           )}
           slot="trigger"
