@@ -8,7 +8,8 @@ describe('SearchField', () => {
     render(<SearchField defaultValue="cache" label="Find a challenge" />);
 
     const input = screen.getByRole('searchbox', { name: 'Find a challenge' });
-    expect(input).toHaveClass('kitsune-search-input');
+    expect(input).toHaveClass('kitsune-search-input', 'py-2');
+    expect(input).not.toHaveClass('kitsune-optical-py-2');
     expect(screen.getAllByRole('button', { name: 'Clear search' })).toHaveLength(1);
 
     fireEvent.click(screen.getByRole('button', { name: 'Clear search' }));
