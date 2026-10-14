@@ -123,6 +123,18 @@ beforeEach(() => {
 });
 
 describe('ChallengeWorkspace', () => {
+  it('keeps the inset navbar styling in the fixed workspace', () => {
+    renderWorkspace([createChallengeExperience(challenge())], null);
+
+    const header = screen.getByRole('banner');
+
+    expect(header).toHaveClass('overflow-hidden', 'rounded-md', 'bg-surface-raised');
+    expect(header).not.toHaveClass('border-b');
+    expect(header.firstElementChild).toHaveClass('px-4');
+    expect(header.firstElementChild).not.toHaveClass('sm:px-6', 'lg:px-8');
+    expect(screen.getByRole('link', { name: 'Foxden Invitational' })).toHaveClass('text-text');
+  });
+
   it('shows teammate presence only in the challenge row', () => {
     const presence = [
       {

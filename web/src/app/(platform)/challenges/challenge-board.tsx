@@ -17,6 +17,7 @@ import { useRealtime } from '@/app/realtime-context';
 import { useSession } from '@/app/session-context';
 import { Alert, Button, EmptyState, Skeleton } from '@/components/ui';
 import { challengeSelection, createChallengeExperience } from '@/lib/challenges';
+import { publicDemoEventName } from '@/lib/events';
 
 export function ChallengeBoard() {
   const pathname = usePathname();
@@ -45,7 +46,7 @@ export function ChallengeBoard() {
   const isDemo = !isAuthenticated || !session;
   const challenges = isDemo ? demoChallenges : authenticatedChallenges;
   const eventId = isDemo ? 'demo-event' : (selectedEvent?.id ?? '');
-  const eventName = isDemo ? 'Kitsune Open' : (selectedEvent?.name ?? 'Challenges');
+  const eventName = isDemo ? publicDemoEventName : (selectedEvent?.name ?? 'Challenges');
   const actions = useMemo(() => {
     return isDemo
       ? createChallengeDemoActions(demoChallenges)

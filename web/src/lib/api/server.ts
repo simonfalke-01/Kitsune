@@ -179,7 +179,7 @@ export async function getServerScoreboardBootstrap(): Promise<ScoreboardBootstra
           event_id: selectedEvent.id
         },
         query: {
-          limit: 5
+          limit: 20
         }
       }
     }),
@@ -392,6 +392,23 @@ export async function getServerAuditBootstrap(): Promise<AuditBootstrap> {
   };
 }
 
+export async function getServerSubmissionAuditBootstrap(): Promise<AuditBootstrap> {
+  const client = await getServerClient();
+  const result = await client.GET('/api/v1/audit', {
+    params: {
+      query: {
+        limit: 50,
+        resource_type: 'submission'
+      }
+    }
+  });
+
+  return {
+    error: result.data ? null : 'Submission history could not be loaded.',
+    page: result.data ?? null
+  };
+}
+
 export interface SettingsBootstrap {
   error: string | null;
   oauthClients: OAuthClient[];
@@ -400,16 +417,26 @@ export interface SettingsBootstrap {
 }
 
 export async function getServerSettingsBootstrap(): Promise<SettingsBootstrap> {
-  const client = await getServerClient();
-  const [oauthResult, oidcResult, samlResult] = await Promise.all([
-    client.GET('/api/v1/auth/oauth-clients'),
-    client.GET('/api/v1/auth/oidc/providers'),
-    client.GET('/api/v1/auth/saml/providers')
-  ]);
+  const [client, session] = await Promise.all([getServerClient(), getServerSession()]);
+  const canManageIdentity = session?.permissions.includes('identity_manage') ?? false;
+  const oauthResult = await client.GET('/api/v1/auth/oauth-clients');
+  const [oidcResult, samlResult] = canManageIdentity
+    ? await Promise.all([
+        client.GET('/api/v1/auth/oidc/providers'),
+        client.GET('/api/v1/auth/saml/providers')
+      ])
+    : [
+        {
+          data: [] as OidcProvider[]
+        },
+        {
+          data: [] as SamlProvider[]
+        }
+      ];
 
   return {
     error:
-      oauthResult.data && oidcResult.data && samlResult.data
+      oauthResult.data && (!canManageIdentity || (oidcResult.data && samlResult.data))
         ? null
         : 'Platform settings could not be loaded.',
     oauthClients: oauthResult.data ?? [],

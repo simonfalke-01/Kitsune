@@ -244,3 +244,16 @@ test('browser interaction primitives stay singular and safe', async ({ page }, t
   expect(accessibility.violations).toEqual([]);
   expect(relevantConsoleErrors).toEqual([]);
 });
+
+test('stored dark theme resolves without the hydration runtime', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'chromium', 'The pre-paint contract needs one browser.');
+  await page.addInitScript(() => {
+    window.localStorage.setItem('kitsune.theme', 'dark');
+  });
+  await page.route(/\/_next\/static\/chunks\//, (route) => route.abort());
+
+  await page.goto('/challenges', { waitUntil: 'domcontentloaded' });
+
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await expect(page.locator('html')).toHaveClass(/dark/);
+});

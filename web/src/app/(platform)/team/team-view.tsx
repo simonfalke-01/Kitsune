@@ -18,6 +18,7 @@ import {
   DialogTrigger,
   EmptyState,
   Form,
+  Link,
   Select,
   StatusIndicator,
   Table,
@@ -37,6 +38,7 @@ import {
   type EventRegistration,
   type TeamSummary
 } from '@/lib/api/client';
+import { competitorProfileHref } from '@/lib/competitors';
 import { findUserTeam, isTeamRealtimeEvent, teamCapacity } from '@/lib/team';
 
 interface TeamViewProps {
@@ -791,7 +793,9 @@ export function TeamView({
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div className="grid gap-1">
               <h2 className="m-0 font-display text-xl font-semibold tracking-tight text-text">
-                {team.name}
+                <Link href={competitorProfileHref('team', team.id)} tone="current">
+                  {team.name}
+                </Link>
               </h2>
               <span className="text-sm text-text-muted">{capacity.label}</span>
             </div>
@@ -825,7 +829,9 @@ export function TeamView({
                 {team.members.map((member) => (
                   <TableRow id={member.user_id} key={member.user_id}>
                     <TableCell>
-                      <span className="font-medium text-text">{member.display_name}</span>
+                      <Link href={competitorProfileHref('user', member.user_id)} tone="current">
+                        {member.display_name}
+                      </Link>
                     </TableCell>
                     <TableCell>
                       <Badge tone={member.captain ? 'accent' : 'neutral'}>

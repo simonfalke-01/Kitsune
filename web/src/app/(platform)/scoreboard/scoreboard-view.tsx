@@ -1,17 +1,24 @@
 'use client';
 
 import { flexRender, getCoreRowModel, type ColumnDef, useReactTable } from '@tanstack/react-table';
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
 
 import { useEvent } from '../../event-context';
 import { useRealtime } from '../../realtime-context';
 import { useSession } from '../../session-context';
+import { ScoreHistoryChart } from '@/components/charts/score-history-chart';
+import { ScoreboardExport } from '@/components/charts/scoreboard-export';
 import {
   Alert,
+  Badge,
   Button,
   EmptyState,
+  Link,
+  SearchField,
   Select,
   Skeleton,
+  Sparkline,
   StatusIndicator,
   Table,
   TableBody,
@@ -28,7 +35,9 @@ import {
   type Scoreboard,
   type ScoreboardRow
 } from '@/lib/api/client';
-import { buildScoreChartModel, scoreChartPath } from '@/lib/scoreboard';
+import { competitorProfileHref, parseCompetitorKind } from '@/lib/competitors';
+import { filterScoreboardRows, parseScoreboardUrlState } from '@/lib/scoreboard';
+import { buildScoreHistorySeries, buildSparklineSeries } from '@/lib/visualization/score-history';
 
 interface ScoreboardViewProps {
   initialDivisions: DivisionSummary[];
@@ -36,33 +45,6 @@ interface ScoreboardViewProps {
   initialEventId: string | null;
   initialHistory: ScoreHistory | null;
   initialScoreboard: Scoreboard | null;
-}
-
-const historyTones = [
-  {
-    line: 'stroke-accent',
-    swatch: 'bg-accent'
-  },
-  {
-    line: 'stroke-success',
-    swatch: 'bg-success'
-  },
-  {
-    line: 'stroke-warning',
-    swatch: 'bg-warning'
-  },
-  {
-    line: 'stroke-danger',
-    swatch: 'bg-danger'
-  },
-  {
-    line: 'stroke-info',
-    swatch: 'bg-info'
-  }
-] as const;
-
-function historyTone(index: number): (typeof historyTones)[number] {
-  return historyTones[index % historyTones.length] ?? historyTones[0];
 }
 
 function competitorKind(kind: string): string {
@@ -82,102 +64,20 @@ function eventPhase(state: string): string {
   return phases[state] ?? 'Event standings';
 }
 
-function ScoreHistoryChart({ history }: { history: ScoreHistory }) {
-  const titleId = useId();
-  const descriptionId = useId();
-  const model = useMemo(() => buildScoreChartModel(history.series), [history.series]);
-  const accessiblePoints = useMemo(() => {
-    return history.series
-      .flatMap((series) => {
-        return series.points.map((point) => ({
-          competitorId: series.competitor_id,
-          name: series.name,
-          point
-        }));
-      })
-      .slice(-100);
-  }, [history.series]);
-
-  if (model.series.length === 0 || model.series.every((series) => series.points.length === 0)) {
-    return (
-      <EmptyState
-        className="p-6"
-        description="Score changes will appear after the first accepted solve."
-        title="No score history"
-      />
-    );
+function rankTone(rank: number): 'info' | 'neutral' | 'success' | 'warning' {
+  if (rank === 1) {
+    return 'warning';
   }
 
-  return (
-    <div className="grid gap-4">
-      <div
-        aria-label="Scrollable score history chart"
-        className="overflow-x-auto rounded-lg border border-border-subtle bg-surface-raised"
-        role="region"
-        tabIndex={0}
-      >
-        <svg
-          aria-describedby={descriptionId}
-          aria-labelledby={titleId}
-          className="block min-w-prose w-full"
-          role="img"
-          viewBox="0 0 800 320"
-        >
-          <title id={titleId}>Score history</title>
-          <desc id={descriptionId}>
-            Running score totals for the leading competitors in this event.
-          </desc>
-          {[32, 96, 160, 224, 288].map((position) => (
-            <line
-              className="stroke-border-subtle"
-              key={position}
-              x1="32"
-              x2="768"
-              y1={position}
-              y2={position}
-            />
-          ))}
-          <text className="fill-text-muted text-xs" x="32" y="24">
-            {model.maxScore}
-          </text>
-          <text className="fill-text-muted text-xs" x="32" y="312">
-            {model.minScore}
-          </text>
-          {model.series.map((series, index) => (
-            <path
-              className={`${historyTone(index).line} fill-none`}
-              d={scoreChartPath(series.points)}
-              key={series.competitorId}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="3"
-            />
-          ))}
-        </svg>
-      </div>
-      <ul className="m-0 grid list-none gap-2 p-0 sm:grid-cols-2">
-        {history.series.map((series, index) => (
-          <li className="flex min-w-0 items-center gap-3 text-sm" key={series.competitor_id}>
-            <span
-              aria-hidden
-              className={`h-1 w-6 shrink-0 rounded-sm ${historyTone(index).swatch}`}
-            />
-            <span className="min-w-0 flex-1 truncate text-text">{series.name}</span>
-            <span className="shrink-0 tabular-nums text-text-muted">
-              {series.points.at(-1)?.score ?? 0}
-            </span>
-          </li>
-        ))}
-      </ul>
-      <ol className="sr-only">
-        {accessiblePoints.map(({ competitorId, name, point }) => (
-          <li key={`${competitorId}-${point.sequence}`}>
-            {name}: {point.score} points at {point.occurred_at}
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
+  if (rank === 2) {
+    return 'info';
+  }
+
+  if (rank === 3) {
+    return 'success';
+  }
+
+  return 'neutral';
 }
 
 function ScoreboardLoading() {
@@ -205,37 +105,114 @@ export function ScoreboardView({
   initialHistory,
   initialScoreboard
 }: ScoreboardViewProps) {
+  const pathname = usePathname() ?? '/scoreboard';
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialUrlState = parseScoreboardUrlState(
+    new URLSearchParams(searchParams?.toString() ?? '')
+  );
   const { selectedEvent } = useEvent();
   const { latest } = useRealtime();
-  const { can } = useSession();
+  const { can, session } = useSession();
   const selectedEventId = selectedEvent?.id ?? null;
   const [eventId, setEventId] = useState(initialEventId);
-  const [divisionId, setDivisionId] = useState<string | null>(null);
+  const [divisionId, setDivisionId] = useState<string | null>(initialUrlState.divisionId);
   const [divisions, setDivisions] = useState(initialDivisions);
   const [scoreboard, setScoreboard] = useState(initialScoreboard);
   const [history, setHistory] = useState(initialHistory);
   const [error, setError] = useState(initialError);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeCompetitorId, setActiveCompetitorId] = useState<string | null>(null);
+  const [selfCompetitorId, setSelfCompetitorId] = useState<string | null>(session?.user.id ?? null);
+  const [query, setQuery] = useState(initialUrlState.search);
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const deferredQuery = useDeferredValue(normalizedQuery.length >= 2 ? normalizedQuery : '');
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const requestSequence = useRef(0);
+  const loadedInitialDivision = useRef(false);
   const canManageScoreboard = can('scoreboard_manage');
+  const chartSeries = useMemo(
+    () =>
+      buildScoreHistorySeries(
+        history?.series ?? [],
+        selfCompetitorId ? new Set([selfCompetitorId]) : new Set()
+      ),
+    [history?.series, selfCompetitorId]
+  );
+  const latestHistoryTimestamp = Math.max(
+    ...chartSeries.flatMap((series) => series.points.map((point) => point.x)),
+    0
+  );
+  const sparklineByCompetitor = useMemo(() => {
+    return new Map(
+      chartSeries.map((series) => [series.id, buildSparklineSeries(series, latestHistoryTimestamp)])
+    );
+  }, [chartSeries, latestHistoryTimestamp]);
+  const filteredRows = useMemo(() => {
+    return filterScoreboardRows(scoreboard?.rows ?? [], deferredQuery);
+  }, [deferredQuery, scoreboard?.rows]);
+
+  const updateUrl = useCallback(
+    (nextSearch: string, nextDivisionId: string | null) => {
+      const next = new URLSearchParams(searchParams?.toString() ?? '');
+
+      if (nextSearch.trim().length >= 2) {
+        next.set('search', nextSearch.trim());
+      } else {
+        next.delete('search');
+      }
+
+      if (nextDivisionId) {
+        next.set('division', nextDivisionId);
+      } else {
+        next.delete('division');
+      }
+
+      const serialized = next.toString();
+      router.replace(serialized ? `${pathname}?${serialized}` : pathname, {
+        scroll: false
+      });
+    },
+    [pathname, router, searchParams]
+  );
 
   const columns = useMemo<ColumnDef<ScoreboardRow>[]>(
     () => [
       {
         accessorKey: 'rank',
-        cell: (context) => context.getValue<number>(),
+        cell: (context) => (
+          <Badge tone={rankTone(context.getValue<number>())}>#{context.getValue<number>()}</Badge>
+        ),
         header: 'Rank'
       },
       {
         accessorKey: 'name',
-        cell: (context) => (
-          <span className="grid gap-1">
-            <span className="font-medium">{context.row.original.name}</span>
-            <span className="text-xs text-text-muted">
-              {competitorKind(context.row.original.competitor_kind)}
+        cell: (context) => {
+          const kind = parseCompetitorKind(context.row.original.competitor_kind);
+
+          return (
+            <span className="grid gap-1">
+              <span className="flex flex-wrap items-center gap-2">
+                {kind ? (
+                  <Link
+                    href={competitorProfileHref(kind, context.row.original.competitor_id)}
+                    tone="current"
+                  >
+                    {context.row.original.name}
+                  </Link>
+                ) : (
+                  <span className="font-medium">{context.row.original.name}</span>
+                )}
+                {context.row.original.competitor_id === selfCompetitorId ? (
+                  <Badge tone="success">You</Badge>
+                ) : null}
+              </span>
+              <span className="text-xs text-text-muted">
+                {competitorKind(context.row.original.competitor_kind)}
+              </span>
             </span>
-          </span>
-        ),
+          );
+        },
         header: 'Competitor'
       },
       {
@@ -247,14 +224,22 @@ export function ScoreboardView({
         accessorKey: 'score',
         cell: (context) => context.getValue<number>(),
         header: 'Score'
+      },
+      {
+        id: 'trend',
+        cell: (context) => {
+          const series = sparklineByCompetitor.get(context.row.original.competitor_id);
+          return series ? <Sparkline interpolation="step" series={series} /> : null;
+        },
+        header: '12-hour trend'
       }
     ],
-    []
+    [selfCompetitorId, sparklineByCompetitor]
   );
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table returns non-memoizable helpers by design.
   const table = useReactTable({
     columns,
-    data: scoreboard?.rows ?? [],
+    data: filteredRows,
     getCoreRowModel: getCoreRowModel(),
     getRowId: (row) => row.competitor_id
   });
@@ -283,7 +268,7 @@ export function ScoreboardView({
             },
             query: {
               division_id: nextDivisionId,
-              limit: 5
+              limit: 20
             }
           }
         }),
@@ -323,6 +308,75 @@ export function ScoreboardView({
       }
     }
   }, []);
+
+  useEffect(() => {
+    function handleSearchShortcut(event: globalThis.KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 'f') {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+      }
+    }
+
+    window.addEventListener('keydown', handleSearchShortcut);
+    return () => {
+      window.removeEventListener('keydown', handleSearchShortcut);
+    };
+  }, []);
+
+  useEffect(() => {
+    const userId = session?.user.id;
+
+    if (!selectedEvent || !userId) {
+      setSelfCompetitorId(null);
+      return;
+    }
+
+    setSelfCompetitorId(userId);
+
+    if (selectedEvent.participation !== 'team') {
+      return;
+    }
+
+    let active = true;
+
+    void api
+      .GET('/api/v1/events/{event_id}/competitors/{competitor_kind}/{competitor_id}', {
+        params: {
+          path: {
+            competitor_id: userId,
+            competitor_kind: 'user',
+            event_id: selectedEvent.id
+          }
+        }
+      })
+      .then((result) => {
+        const teamId = result.data?.teams[0]?.team_id;
+
+        if (active && teamId) {
+          setSelfCompetitorId(teamId);
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      active = false;
+    };
+  }, [selectedEvent, session?.user.id]);
+
+  useEffect(() => {
+    if (
+      loadedInitialDivision.current ||
+      !divisionId ||
+      !selectedEventId ||
+      selectedEventId !== eventId
+    ) {
+      return;
+    }
+
+    loadedInitialDivision.current = true;
+    void load(selectedEventId, divisionId);
+  }, [divisionId, eventId, load, selectedEventId]);
 
   useEffect(() => {
     if (selectedEventId === eventId) {
@@ -418,7 +472,9 @@ export function ScoreboardView({
 
   const leadingScore = scoreboard.rows[0]?.score ?? 0;
   const solvedChallenges = scoreboard.rows.reduce((total, row) => total + row.solves, 0);
-
+  const selfStanding = selfCompetitorId
+    ? (scoreboard.rows.find((row) => row.competitor_id === selfCompetitorId) ?? null)
+    : null;
   return (
     <div aria-busy={isLoading} className="grid gap-8">
       <section
@@ -473,7 +529,7 @@ export function ScoreboardView({
         />
       ) : null}
 
-      <div className="flex flex-wrap items-end justify-between gap-4">
+      <div className="grid gap-4">
         <div className="flex flex-wrap gap-6 border-y border-border-subtle py-3">
           <span className="grid gap-1">
             <span className="text-xs font-semibold text-text-muted">Competitors</span>
@@ -488,79 +544,92 @@ export function ScoreboardView({
             <strong className="text-lg tabular-nums text-text">{leadingScore}</strong>
           </span>
         </div>
-        <div className="flex flex-wrap items-end gap-2">
-          {divisions.length > 0 ? (
-            <Select
-              className="min-w-menu"
-              isDisabled={isLoading}
-              label="Division"
-              onSelectionChange={(key) => {
-                const nextDivisionId = String(key) === 'all' ? null : String(key);
-                setDivisionId(nextDivisionId);
-                void load(selectedEvent.id, nextDivisionId);
-              }}
-              options={[
-                {
-                  id: 'all',
-                  label: 'All divisions'
-                },
-                ...divisions.map((division) => ({
-                  id: division.id,
-                  label: division.name
-                }))
-              ]}
-              selectedKey={divisionId ?? 'all'}
-            />
-          ) : null}
-          <Button
-            isLoading={isLoading}
-            onPress={() => {
-              void load(selectedEvent.id, divisionId);
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <SearchField
+            className="w-full max-w-auth"
+            description="Press Command or Control F to focus search."
+            inputRef={searchInputRef}
+            label="Find competitor"
+            onChange={(value) => {
+              setQuery(value);
+              updateUrl(value, divisionId);
             }}
-            size="small"
-            tone="secondary"
-          >
-            Refresh
-          </Button>
+            placeholder="Team or competitor"
+            value={query}
+          />
+          <div className="flex flex-wrap items-end gap-2">
+            {divisions.length > 0 ? (
+              <Select
+                className="min-w-menu"
+                isDisabled={isLoading}
+                label="Division"
+                onSelectionChange={(key) => {
+                  const nextDivisionId = String(key) === 'all' ? null : String(key);
+                  setDivisionId(nextDivisionId);
+                  updateUrl(query, nextDivisionId);
+                  void load(selectedEvent.id, nextDivisionId);
+                }}
+                options={[
+                  {
+                    id: 'all',
+                    label: 'All divisions'
+                  },
+                  ...divisions.map((division) => ({
+                    id: division.id,
+                    label: division.name
+                  }))
+                ]}
+                selectedKey={divisionId ?? 'all'}
+              />
+            ) : null}
+            <ScoreboardExport
+              eventName={selectedEvent.name}
+              history={history}
+              rows={filteredRows}
+            />
+            <Button
+              isLoading={isLoading}
+              onPress={() => {
+                void load(selectedEvent.id, divisionId);
+              }}
+              size="small"
+              tone="secondary"
+            >
+              Refresh
+            </Button>
+          </div>
         </div>
       </div>
 
-      <section className="grid gap-4" aria-labelledby="ranked-scoreboard-title">
-        <h2
-          className="m-0 font-display text-xl font-semibold tracking-tight text-text"
-          id="ranked-scoreboard-title"
+      {selfStanding ? (
+        <section
+          aria-label="Your standing"
+          className="grid gap-4 border-l-4 border-success bg-success-subtle px-4 py-3 sm:grid-cols-4"
         >
-          Rankings
-        </h2>
-        <Table aria-label="Ranked scoreboard">
-          <TableHeader>
-            <TableColumn className="text-right">Rank</TableColumn>
-            <TableColumn isRowHeader>Competitor</TableColumn>
-            <TableColumn className="text-right">Solves</TableColumn>
-            <TableColumn className="text-right">Score</TableColumn>
-          </TableHeader>
-          <TableBody emptyState="No accepted solves yet.">
-            {table.getRowModel().rows.map((row) => (
-              <TableRow className="hover:bg-surface" id={row.id} key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell
-                    className={
-                      cell.column.id === 'rank' ||
-                      cell.column.id === 'solves' ||
-                      cell.column.id === 'score'
-                        ? 'text-right'
-                        : undefined
-                    }
-                    key={cell.id}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </section>
+          <span className="grid gap-1 sm:col-span-2">
+            <span className="text-xs font-semibold text-success-text">Your standing</span>
+            <Link
+              href={competitorProfileHref(
+                parseCompetitorKind(selfStanding.competitor_kind) ?? 'user',
+                selfStanding.competitor_id
+              )}
+              tone="current"
+            >
+              {selfStanding.name}
+            </Link>
+          </span>
+          <span className="grid gap-1">
+            <span className="text-xs text-success-text">Rank</span>
+            <strong className="text-lg tabular-nums text-text">#{selfStanding.rank}</strong>
+          </span>
+          <span className="grid gap-1">
+            <span className="text-xs text-success-text">Score</span>
+            <strong className="text-lg tabular-nums text-text">
+              {selfStanding.score.toLocaleString()} pts
+            </strong>
+          </span>
+        </section>
+      ) : null}
 
       <section className="grid gap-4" aria-labelledby="score-history-title">
         <h2
@@ -569,7 +638,84 @@ export function ScoreboardView({
         >
           Score history
         </h2>
-        <ScoreHistoryChart history={history} />
+        <ScoreHistoryChart
+          activeCompetitorId={activeCompetitorId}
+          emphasizedCompetitorId={selfCompetitorId}
+          eventStart={selectedEvent.starts_at}
+          history={history}
+          onActiveCompetitorChange={setActiveCompetitorId}
+        />
+      </section>
+
+      <section className="grid gap-4" aria-labelledby="ranked-scoreboard-title">
+        <h2
+          className="m-0 font-display text-xl font-semibold tracking-tight text-text"
+          id="ranked-scoreboard-title"
+        >
+          Rankings
+          <span className="ml-3 text-sm font-normal text-text-muted">
+            {filteredRows.length} shown
+          </span>
+        </h2>
+        <Table
+          aria-label="Ranked scoreboard"
+          wrapperClassName="max-h-workspace overflow-y-auto"
+          wrapperLabel="Scrollable ranked scoreboard"
+        >
+          <TableHeader>
+            <TableColumn className="text-right">Rank</TableColumn>
+            <TableColumn isRowHeader>Competitor</TableColumn>
+            <TableColumn className="text-right">Solves</TableColumn>
+            <TableColumn className="text-right">Score</TableColumn>
+            <TableColumn>Trend</TableColumn>
+          </TableHeader>
+          <TableBody
+            emptyState={
+              deferredQuery ? 'No competitors match this search.' : 'No accepted solves yet.'
+            }
+          >
+            {table.getRowModel().rows.map((row) => {
+              const isSelf = selfCompetitorId === row.original.competitor_id;
+
+              return (
+                <TableRow
+                  aria-current={isSelf ? 'true' : undefined}
+                  className={
+                    activeCompetitorId === row.original.competitor_id
+                      ? 'bg-accent-subtle'
+                      : isSelf
+                        ? 'bg-success-subtle'
+                        : 'hover:bg-surface'
+                  }
+                  data-pin={isSelf ? 'viewport' : undefined}
+                  id={row.id}
+                  key={row.id}
+                  onHoverEnd={() => {
+                    setActiveCompetitorId(null);
+                  }}
+                  onHoverStart={() => {
+                    setActiveCompetitorId(row.original.competitor_id);
+                  }}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell
+                      className={`${isSelf ? 'sticky top-0 bottom-0 z-20 bg-success-subtle' : ''} ${
+                        cell.column.id === 'rank' ||
+                        cell.column.id === 'solves' ||
+                        cell.column.id === 'score'
+                          ? 'text-right'
+                          : ''
+                      }`}
+                      key={cell.id}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       </section>
     </div>
   );

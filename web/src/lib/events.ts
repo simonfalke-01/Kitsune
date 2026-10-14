@@ -1,5 +1,7 @@
 import type { ChallengeSummary, EventSummary } from './api/client';
 
+export const publicDemoEventName = 'SML';
+
 type WireChallenge = Omit<ChallengeSummary, 'survey'> & {
   survey: Array<
     Omit<ChallengeSummary['survey'][number], 'range'> & {

@@ -1,4 +1,4 @@
-Kitsune Open mock capture
+SML mock capture
 
 Request
 GET /status HTTP/1.1

@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from 'next';
-import Script from 'next/script';
 import type { ReactNode } from 'react';
 
 import '../app.css';
@@ -28,12 +27,16 @@ export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <Script id="kitsune-theme-bootstrap" strategy="beforeInteractive">
-          {themeBootstrapScript}
-        </Script>
-        <Script id="kitsune-split-workspace-bootstrap" strategy="beforeInteractive">
-          {splitWorkspaceBootstrapScript}
-        </Script>
+        <script
+          dangerouslySetInnerHTML={{ __html: themeBootstrapScript }}
+          id="kitsune-theme-bootstrap"
+          suppressHydrationWarning
+        />
+        <script
+          dangerouslySetInnerHTML={{ __html: splitWorkspaceBootstrapScript }}
+          id="kitsune-split-workspace-bootstrap"
+          suppressHydrationWarning
+        />
       </head>
       <body>
         <AppProviders>{children}</AppProviders>

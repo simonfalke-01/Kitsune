@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { useSession } from '../../session-context';
+import { useSession } from '../../../session-context';
 import { MfaPanel } from './mfa-panel';
 import { TokenPanel } from './token-panel';
 import {
@@ -16,6 +16,7 @@ import {
   DialogTrigger,
   EmptyState,
   Form,
+  Link,
   StatusIndicator,
   Table,
   TableBody,
@@ -34,6 +35,7 @@ import {
   type SessionSummary
 } from '@/lib/api/client';
 import { createPasskey } from '@/lib/auth/passkeys';
+import { competitorProfileHref } from '@/lib/competitors';
 
 interface AccountViewProps {
   initialError: string | null;
@@ -372,10 +374,14 @@ export function AccountView({
             <strong className="text-sm font-semibold text-text">{session.user.display_name}</strong>
             <span className="text-xs text-text-muted">{session.user.email}</span>
           </div>
-          <StatusIndicator
-            label={session.user.email_verified ? 'Email verified' : 'Email unverified'}
-            tone={session.user.email_verified ? 'success' : 'warning'}
-          />
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href={competitorProfileHref('user', session.user.id)}>Competition profile</Link>
+            <Link href="/admin/settings">Integrations</Link>
+            <StatusIndicator
+              label={session.user.email_verified ? 'Email verified' : 'Email unverified'}
+              tone={session.user.email_verified ? 'success' : 'warning'}
+            />
+          </div>
         </div>
       </section>
 

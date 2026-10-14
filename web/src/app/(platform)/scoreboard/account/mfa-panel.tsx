@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
-import { useSession } from '../../session-context';
+import { useSession } from '../../../session-context';
 import { Alert, Button, CodeBlock, Form, TextField, showToast } from '@/components/ui';
 import { api, errorMessage, type TotpEnrollment } from '@/lib/api/client';
 

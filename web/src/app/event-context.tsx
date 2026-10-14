@@ -1,7 +1,17 @@
 'use client';
 
-import { createContext, type ReactNode, useCallback, useContext, useMemo, useState } from 'react';
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react';
 
+import { useRealtime } from './realtime-context';
 import { useSession } from './session-context';
 import { api, errorMessage, type ChallengeSummary, type EventSummary } from '@/lib/api/client';
 import { chooseDefaultEvent, normalizeChallenge } from '@/lib/events';
@@ -35,11 +45,14 @@ export function EventProvider({
   initialSelectedEventId
 }: EventProviderProps) {
   const { isAuthenticated } = useSession();
+  const { latest, status: realtimeStatus } = useRealtime();
   const [events, setEvents] = useState<EventSummary[]>(initialEvents);
   const [challenges, setChallenges] = useState<ChallengeSummary[]>(initialChallenges);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(initialSelectedEventId);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const realtimeRefreshTimerRef = useRef<number | null>(null);
+  const priorRealtimeStatusRef = useRef(realtimeStatus);
 
   const selectedEvent = useMemo(() => {
     return events.find((event) => event.id === selectedEventId) ?? null;
@@ -61,7 +74,6 @@ export function EventProvider({
       });
 
       if (!result.data) {
-        setChallenges([]);
         setError(errorMessage(result.error, 'Challenges could not be loaded.'));
         return;
       }
@@ -81,8 +93,8 @@ export function EventProvider({
       });
 
       setChallenges(sorted);
+      setError(null);
     } catch {
-      setChallenges([]);
       setError('Challenges could not be loaded. Check your connection and retry.');
     }
   }, []);
@@ -137,6 +149,7 @@ export function EventProvider({
   const selectEvent = useCallback(
     async (eventId: string) => {
       setSelectedEventId(eventId);
+      setChallenges([]);
       window.localStorage.setItem(selectedEventKey, eventId);
       document.cookie = `${selectedEventKey}=${encodeURIComponent(eventId)}; Path=/; Max-Age=31536000; SameSite=Lax`;
       setError(null);
@@ -154,6 +167,51 @@ export function EventProvider({
   const refreshChallenges = useCallback(async () => {
     await loadChallenges(selectedEventId);
   }, [loadChallenges, selectedEventId]);
+
+  useEffect(() => {
+    const priorStatus = priorRealtimeStatusRef.current;
+    priorRealtimeStatusRef.current = realtimeStatus;
+
+    if (
+      realtimeStatus === 'connected' &&
+      (priorStatus === 'reconnecting' || priorStatus === 'offline')
+    ) {
+      void refresh();
+    }
+  }, [realtimeStatus, refresh]);
+
+  useEffect(() => {
+    if (!latest || latest.event_id !== selectedEventId) {
+      return;
+    }
+
+    const refreshTypes = new Set([
+      'challenge_changed',
+      'first_blood',
+      'score_changed',
+      'submission_reviewed'
+    ]);
+
+    if (!refreshTypes.has(latest.event.type)) {
+      return;
+    }
+
+    if (realtimeRefreshTimerRef.current !== null) {
+      window.clearTimeout(realtimeRefreshTimerRef.current);
+    }
+
+    realtimeRefreshTimerRef.current = window.setTimeout(() => {
+      realtimeRefreshTimerRef.current = null;
+      void refreshChallenges();
+    }, 120);
+
+    return () => {
+      if (realtimeRefreshTimerRef.current !== null) {
+        window.clearTimeout(realtimeRefreshTimerRef.current);
+        realtimeRefreshTimerRef.current = null;
+      }
+    };
+  }, [latest, refreshChallenges, selectedEventId]);
 
   const value = useMemo<EventContextValue>(
     () => ({

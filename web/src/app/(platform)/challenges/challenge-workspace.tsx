@@ -29,7 +29,12 @@ import {
 import type { ChallengeWorkspaceActions } from './challenge-types';
 import type { ChallengePresenceStatus } from './use-challenge-presence';
 import type { RealtimeStatus } from '@/app/realtime-context';
-import { EmptyState, Sheet, SplitWorkspace, type SplitWorkspaceHandle } from '@/components/ui';
+import {
+  Sheet,
+  SplitWorkspace,
+  type SplitWorkspaceHandle,
+  WorkspacePlaceholder
+} from '@/components/ui';
 import type { ChallengePresenceMember } from '@/lib/api/client';
 import type { ChallengeExperience } from '@/lib/challenges';
 
@@ -520,7 +525,7 @@ export function ChallengeWorkspace({
       solveContext={solveContexts.get(selectedChallenge.id)!}
     />
   ) : (
-    <EmptyState appearance="plain" className="h-full" title="No challenge selected" />
+    <WorkspacePlaceholder className="h-full" title="No challenge selected" />
   );
 
   return (

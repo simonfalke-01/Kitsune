@@ -1,85 +1,54 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildScoreChartModel, scoreChartPath } from './scoreboard';
+import type { ScoreboardRow } from './api/client';
+import {
+  competitorProfilePath,
+  filterScoreboardRows,
+  parseScoreboardUrlState,
+  scoreboardSearchIsActive
+} from './scoreboard';
 
-describe('scoreboard chart model', () => {
-  it('maps score history into bounded chart coordinates', () => {
-    const model = buildScoreChartModel([
-      {
-        competitor_id: 'team-1',
-        competitor_kind: 'team',
-        name: 'Foxden',
-        points: [
-          {
-            occurred_at: '2026-07-23T10:00:00Z',
-            score: 100,
-            sequence: 1
-          },
-          {
-            occurred_at: '2026-07-23T11:00:00Z',
-            score: 300,
-            sequence: 2
-          }
-        ]
-      }
-    ]);
+const rows: ScoreboardRow[] = [
+  {
+    competitor_id: 'team-1',
+    competitor_kind: 'team',
+    name: 'Foxden',
+    rank: 1,
+    reached_at: '2026-07-23T10:00:00Z',
+    score: 500,
+    solves: 2
+  },
+  {
+    competitor_id: 'user-1',
+    competitor_kind: 'user',
+    name: 'Rei',
+    rank: 2,
+    reached_at: '2026-07-23T10:05:00Z',
+    score: 300,
+    solves: 1
+  }
+];
 
-    expect(model.maxScore).toBe(300);
-    expect(model.series[0]?.points[0]?.x).toBe(32);
-    expect(model.series[0]?.points[0]?.y).toBeCloseTo(202.67);
-    expect(model.series[0]?.points[1]).toEqual({
-      x: 768,
-      y: 32
+describe('scoreboard helpers', () => {
+  it('activates search at two characters and filters names or kinds', () => {
+    expect(scoreboardSearchIsActive('f')).toBe(false);
+    expect(scoreboardSearchIsActive('fo')).toBe(true);
+    expect(filterScoreboardRows(rows, 'fo')).toEqual([rows[0]]);
+    expect(filterScoreboardRows(rows, 'individual')).toEqual([rows[1]]);
+  });
+
+  it('parses stable URL state and ignores short search values', () => {
+    expect(parseScoreboardUrlState(new URLSearchParams('search=f&division=division-1'))).toEqual({
+      divisionId: 'division-1',
+      search: ''
+    });
+    expect(parseScoreboardUrlState(new URLSearchParams('search=fox'))).toEqual({
+      divisionId: null,
+      search: 'fox'
     });
   });
 
-  it('keeps empty and zero-score histories finite', () => {
-    const model = buildScoreChartModel([
-      {
-        competitor_id: 'user-1',
-        competitor_kind: 'user',
-        name: 'Rei',
-        points: [
-          {
-            occurred_at: 'invalid',
-            score: 0,
-            sequence: 1
-          }
-        ]
-      }
-    ]);
-
-    expect(model.series[0]?.points[0]).toEqual({
-      x: 32,
-      y: 288
-    });
-    expect(scoreChartPath([])).toBe('');
-    expect(scoreChartPath(model.series[0]?.points ?? [])).toBe('M 32.00 288.00');
-  });
-
-  it('keeps negative score adjustments inside the chart', () => {
-    const model = buildScoreChartModel([
-      {
-        competitor_id: 'team-2',
-        competitor_kind: 'team',
-        name: 'Lantern',
-        points: [
-          {
-            occurred_at: '2026-07-23T10:00:00Z',
-            score: -10,
-            sequence: 1
-          },
-          {
-            occurred_at: '2026-07-23T11:00:00Z',
-            score: 20,
-            sequence: 2
-          }
-        ]
-      }
-    ]);
-
-    expect(model.minScore).toBe(-10);
-    expect(model.series[0]?.points[0]?.y).toBe(288);
-    expect(model.series[0]?.points[1]?.y).toBe(32);
+  it('builds encoded competitor profile paths', () => {
+    expect(competitorProfilePath('team', 'team/1')).toBe('/competitors/team/team%2F1');
   });
 });

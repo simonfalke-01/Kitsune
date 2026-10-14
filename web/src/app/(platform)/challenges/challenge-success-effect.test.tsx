@@ -47,6 +47,20 @@ describe('ChallengeFeedbackEffect', () => {
     expect(document.querySelector(expectedPart)).toBeInTheDocument();
   });
 
+  it('carries the edge border into the page without using the stronger screen wash', () => {
+    renderEffect('edge-border');
+
+    expect(document.querySelector('.kitsune-solve-edge-wash-subtle')).toBeInTheDocument();
+    expect(document.querySelector('.kitsune-solve-edge-wash')).not.toBeInTheDocument();
+  });
+
+  it('keeps the screen imprint stronger than the edge-border imprint', () => {
+    renderEffect('screen-imprint');
+
+    expect(document.querySelector('.kitsune-solve-edge-wash')).toBeInTheDocument();
+    expect(document.querySelector('.kitsune-solve-edge-wash-subtle')).not.toBeInTheDocument();
+  });
+
   it('allows correct feedback to be disabled without suppressing incorrect feedback', () => {
     const { rerender } = render(
       <ChallengeFeedbackEffect
