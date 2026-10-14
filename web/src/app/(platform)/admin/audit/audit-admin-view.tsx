@@ -33,6 +33,8 @@ interface AuditFilters {
   action: string;
   actorId: string;
   eventId: string;
+  occurredAfter: string;
+  occurredBefore: string;
   resourceType: string;
 }
 
@@ -40,6 +42,8 @@ const initialFilters: AuditFilters = {
   action: '',
   actorId: '',
   eventId: 'all',
+  occurredAfter: '',
+  occurredBefore: '',
   resourceType: ''
 };
 
@@ -134,6 +138,12 @@ export function AuditAdminView({ initialError, initialPage }: AuditAdminViewProp
     if (nextFilters.eventId !== 'all') {
       query.event_id = nextFilters.eventId;
     }
+    if (nextFilters.occurredAfter) {
+      query.occurred_after = new Date(nextFilters.occurredAfter).toISOString();
+    }
+    if (nextFilters.occurredBefore) {
+      query.occurred_before = new Date(nextFilters.occurredBefore).toISOString();
+    }
     if (nextFilters.resourceType.trim()) {
       query.resource_type = nextFilters.resourceType.trim();
     }
@@ -178,7 +188,7 @@ export function AuditAdminView({ initialError, initialPage }: AuditAdminViewProp
           });
         }}
       >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <TextField
             label="Action"
             onChange={(value) => {
@@ -228,6 +238,28 @@ export function AuditAdminView({ initialError, initialPage }: AuditAdminViewProp
               }))
             ]}
             selectedKey={filters.eventId}
+          />
+          <TextField
+            label="Occurred after"
+            onChange={(value) => {
+              setFilters((current) => ({
+                ...current,
+                occurredAfter: value
+              }));
+            }}
+            type="datetime-local"
+            value={filters.occurredAfter}
+          />
+          <TextField
+            label="Occurred before"
+            onChange={(value) => {
+              setFilters((current) => ({
+                ...current,
+                occurredBefore: value
+              }));
+            }}
+            type="datetime-local"
+            value={filters.occurredBefore}
           />
         </div>
         <div className="flex flex-wrap items-center gap-2">

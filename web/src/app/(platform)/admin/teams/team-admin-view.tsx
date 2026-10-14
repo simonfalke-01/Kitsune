@@ -10,10 +10,13 @@ import {
   AlertDialog,
   Badge,
   Button,
+  ButtonLink,
   Dialog,
   DialogTrigger,
   EmptyState,
   Form,
+  Link,
+  SearchField,
   Select,
   Table,
   TableBody,
@@ -24,6 +27,7 @@ import {
   showToast
 } from '@/components/ui';
 import { api, errorMessage, type TeamSummary } from '@/lib/api/client';
+import { competitorProfileHref } from '@/lib/competitors';
 
 interface TeamAdminViewProps {
   initialError: string | null;
@@ -343,7 +347,17 @@ export function TeamAdminView({ initialError, initialTeams }: TeamAdminViewProps
   const [teams, setTeams] = useState(initialTeams);
   const [error, setError] = useState(initialError);
   const [isLoading, setIsLoading] = useState(false);
+  const [query, setQuery] = useState('');
   const [transferTeamId, setTransferTeamId] = useState<string | null>(null);
+  const normalizedQuery = query.trim().toLocaleLowerCase();
+  const filteredTeams =
+    normalizedQuery.length < 2
+      ? teams
+      : teams.filter((team) => {
+          return [team.name, ...team.members.map((member) => member.display_name)].some((value) => {
+            return value.toLocaleLowerCase().includes(normalizedQuery);
+          });
+        });
 
   const refresh = async () => {
     setIsLoading(true);
@@ -391,7 +405,9 @@ export function TeamAdminView({ initialError, initialTeams }: TeamAdminViewProps
       ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <Badge>{teams.length} teams</Badge>
+        <Badge>
+          {filteredTeams.length} of {teams.length} teams
+        </Badge>
         <Button
           isLoading={isLoading}
           onPress={() => {
@@ -404,10 +420,34 @@ export function TeamAdminView({ initialError, initialTeams }: TeamAdminViewProps
         </Button>
       </div>
 
+      <SearchField
+        className="max-w-auth"
+        label="Find team"
+        onChange={setQuery}
+        placeholder="Team or member"
+        value={query}
+      />
+
       {teams.length === 0 ? (
         <EmptyState
           description="Teams appear here after competitors create them."
           title="No teams"
+        />
+      ) : filteredTeams.length === 0 ? (
+        <EmptyState
+          action={
+            <Button
+              onPress={() => {
+                setQuery('');
+              }}
+              size="small"
+              tone="secondary"
+            >
+              Clear search
+            </Button>
+          }
+          description="Try another team or member name."
+          title="No matching teams"
         />
       ) : (
         <Table aria-label="Organizer teams">
@@ -419,17 +459,36 @@ export function TeamAdminView({ initialError, initialTeams }: TeamAdminViewProps
             <TableColumn>Actions</TableColumn>
           </TableHeader>
           <TableBody emptyState="No teams.">
-            {teams.map((team) => {
+            {filteredTeams.map((team) => {
               const captain = team.members.find((member) => member.captain);
 
               return (
                 <TableRow id={team.id} key={team.id}>
-                  <TableCell>{team.name}</TableCell>
-                  <TableCell>{captain?.display_name ?? 'No captain'}</TableCell>
+                  <TableCell>
+                    <Link href={competitorProfileHref('team', team.id)} tone="current">
+                      {team.name}
+                    </Link>
+                  </TableCell>
+                  <TableCell>
+                    {captain ? (
+                      <Link href={competitorProfileHref('user', captain.user_id)} tone="current">
+                        {captain.display_name}
+                      </Link>
+                    ) : (
+                      'No captain'
+                    )}
+                  </TableCell>
                   <TableCell>{team.members.length}</TableCell>
                   <TableCell>{formatDate(team.created_at)}</TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-2">
+                      <ButtonLink
+                        href={`/admin/submissions?kind=team&search=${encodeURIComponent(team.id)}`}
+                        size="small"
+                        tone="quiet"
+                      >
+                        Submissions
+                      </ButtonLink>
                       <DialogTrigger
                         isOpen={transferTeamId === team.id}
                         onOpenChange={(open) => {
