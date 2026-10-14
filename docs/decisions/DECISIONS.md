@@ -80,9 +80,6 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Persist only the selected event ID in browser local storage — a
   refresh keeps organizer/player context without caching tenant data or making
   node-local state authoritative, and logout removes it.
-- 2026-07-22 — Run browser E2E against the real Rust server through Vite’s same-
-  origin proxy — this covers encrypted cookies, CSRF, PostgreSQL, generated API
-  types, UI state, responsive layout, and accessibility in one honest journey.
 - 2026-07-22 — Make event lifecycle transitions explicit and forward-only after
   competition end — pause/resume remains operationally safe while historical
   results cannot silently become writable again.
@@ -107,9 +104,6 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-22 — Implement score freeze by marking new ledger entries concealed
   while frozen, never by mutating totals — organizer views stay live, the public
   snapshot stays stable, and unfreeze is an auditable reveal rather than replay.
-- 2026-07-22 — Extend the root Prettier contract to cross-cutting Playwright
-  sources — browser tests now follow the same readable width, quote, and trailing
-  comma policy as the Svelte application instead of relying on editor defaults.
 - 2026-07-22 — Charge hints as one-time negative score-ledger entries for the
   event's resolved competitor, including team-wide unlocks — this keeps the
   economy deterministic, historically explainable, and naturally freeze-aware.
@@ -343,7 +337,7 @@ Format: `YYYY-MM-DD — decision — rationale`.
   transfers its captain — privileged repair remains possible without ever
   leaving a persistent team without exactly one accountable captain.
 - 2026-07-23 — Pin the repository toolchain to Rust 1.97 with Rustfmt and Clippy
-  components — local `cargo`, Playwright-managed servers, CI, and contributor
+  components — local `cargo`, CI, and contributor
   commands now honor the same Wasmtime-compatible compiler automatically.
 - 2026-07-23 — Partition scoreboard snapshots by tenant, event, revision,
   audience, division, and projection, and keep them behind the shared `Cache`
@@ -475,17 +469,15 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-23 — Use icons only when they materially clarify an unlabeled action
   or state — Kitsune does not decorate headings, labels, navigation, or brand
   text with generic Lucide symbols.
-- 2026-07-23 — Run Next development and Playwright servers through webpack while
-  retaining Turbopack production builds — Next 16's development Turbopack panics
-  while emitting the authenticated challenge route on the Linux Node 26 host,
-  whereas webpack passes the same desktop/mobile browser and axe journey.
+- 2026-07-23 — Run the Next development server through webpack while retaining
+  Turbopack production builds — Next 16's development Turbopack panics while
+  emitting the authenticated challenge route on the Linux Node 26 host.
 - 2026-07-23 — Render score history as a deterministic token-colored SVG with a
   bounded screen-reader event list — the route keeps historical standings
   accessible and responsive without adding an unapproved chart dependency.
 - 2026-07-23 — Route destructive confirmations through a dedicated shared
   alert-dialog primitive — team removal, departure, captain transfer, and invite
   replacement need explicit consequence copy and a protected confirmation path.
-- 2026-10-14 — Remove the browser E2E suite, its Playwright config, CI job, and
-  dependencies — the owner judged it low value. Coverage comes from typecheck,
-  lint, Vitest unit and component tests, and Rust tests. Do not reintroduce
-  E2E without an explicit owner request.
+- 2026-10-14 — Keep no browser-driven test suite — owner decision. Coverage
+  comes from typecheck, lint, Vitest unit and component tests, and Rust tests.
+  Do not add one without an explicit owner request.

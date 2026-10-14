@@ -16,8 +16,7 @@ export default ts.config(
       'eslint.config.js',
       'openapi.json',
       'next-env.d.ts',
-      'postcss.config.mjs',
-      'test-results/**'
+      'postcss.config.mjs'
     ]
   },
   js.configs.recommended,

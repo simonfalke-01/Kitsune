@@ -702,5 +702,5 @@ Before a user-facing route is complete:
 10. Inspect visible fixture copy and the local database for generated browser
     names, timestamps, or run suffixes.
 11. Run format, lint, strict typecheck, tests, production build, keyboard
-    review, Playwright screenshots, and axe.
+    review, and screenshots.
 12. Record any new reusable failure mode in this contract.

@@ -33,7 +33,7 @@ The frontend reset is not a cosmetic reskin. It replaces the runtime, route
 composition, server-state model, interaction primitives, visual tokens, page
 hierarchy, component documentation, and accessibility contracts together.
 Legacy Svelte routes are removed once their React counterparts pass the same
-real API and browser journeys.
+real API checks.
 
 The organizer experience is a product surface, not a maintenance afterthought.
 Its live-ops workspace must remain calm and responsive while exposing event,

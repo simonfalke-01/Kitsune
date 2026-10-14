@@ -84,11 +84,9 @@ Updated: 2026-07-23 (Asia/Singapore)
 - CTFd reference inspected only for externally visible features and schema
   concepts; no source or assets copied.
 - Current Linux toolchain: Rust 1.97.0, Node 26.4.0, and pnpm 10.13.1.
-  Next 16 production builds remain on Turbopack; local development and
-  Playwright use the supported webpack dev mode because Turbopack panics while
-  emitting the authenticated challenge route on this host.
-- The setup/challenge and toast-motion Playwright journeys pass in desktop and
-  mobile Chromium with axe against PostgreSQL 17 on the Linux port.
+  Next 16 production builds remain on Turbopack; local development uses the
+  supported webpack dev mode because Turbopack panics while emitting the
+  authenticated challenge route on this host.
 - The scoreboard token scan, formatter, ESLint, strict TypeScript, five Vitest
   assertions, production build, and authenticated SSR smoke are green. The
   production route manifest marks `/scoreboard` as request-time server rendered.
@@ -163,18 +161,14 @@ Updated: 2026-07-23 (Asia/Singapore)
 - Event setup, active-event selection, challenge authoring, and the categorized
   player board now call the generated API client and react to domain-event
   fanout. Active selection survives hard navigation and is cleared on logout.
-- A real Playwright journey starts PostgreSQL-backed Kitsune plus the Svelte dev
-  proxy, creates an event and published challenge, verifies the player board on
-  desktop and mobile Chromium, and passes axe with no violations.
 - Organizer lifecycle controls now move events through domain-validated
   draft/scheduled/live/paused/ended/archive transitions; invalid historical
   reopen attempts return conflicts, while successful changes are audited,
-  outboxed, published in realtime, and exercised through the browser journey.
+  outboxed, and published in realtime.
 - Tenant-scoped teams now support self-service creation, digest-only one-time
   invite codes, player joining, and atomic captain transfer. PostgreSQL enforces
   one team per user per organization and unique invite lookup under races;
-  managed role upgrades keep existing installations authorized. The real
-  desktop/mobile browser journey now verifies the team surface too.
+  managed role upgrades keep existing installations authorized.
 - Jeopardy submissions now validate exact, case-insensitive, regex, choice, and
   manual-review answers inside a challenge-scoped transaction; enforce global,
   per-challenge, and authored attempt budgets; persist answer digests only; and
@@ -183,9 +177,7 @@ Updated: 2026-07-23 (Asia/Singapore)
 - The live responsive scoreboard ranks individual or team competitors, supports
   division filtering at the API, honors hidden and frozen public views, and
   refreshes from cross-node-ready score events. Organizer freeze/unfreeze and
-  hide/reveal controls are API-backed, audited, and browser-tested. The full
-  event → challenge → flag → first blood → scoreboard journey passes desktop,
-  mobile, and axe checks.
+  hide/reveal controls are API-backed and audited.
 - Hint authoring and one-time unlock economics are now end-to-end. Locked hint
   content never enters player responses, user/team unlock identity is resolved
   with the same event policy as scoring, positive costs append negative score
@@ -197,8 +189,7 @@ Updated: 2026-07-23 (Asia/Singapore)
   responses are schema/range validated and organizer analytics expose aggregate
   counts and statistics only. The PostgreSQL-backed API journey exercises every
   transition with matching audit/outbox events. Player writeup/survey forms and
-  the organizer review/analytics surface update from realtime events and pass
-  the full desktop/mobile browser journey with axe.
+  the organizer review/analytics surface update from realtime events.
 - Manual-verification evidence is now XChaCha20-Poly1305 encrypted at rest,
   isolated behind submission-management RBAC, and accepted or discarded in a
   challenge-locked review transaction. Acceptance reuses automatic solve,
@@ -209,27 +200,23 @@ Updated: 2026-07-23 (Asia/Singapore)
   typed REST/OpenAPI resource that honors division, hidden, frozen, and reversal
   rules. The responsive SVG compares the five leading competitors, exposes a
   keyboard skip path for horizontal mobile overflow, and coalesces realtime
-  browser refreshes within 150 ms. API regression tests and desktop/mobile axe
-  journeys cover the graph and final totals.
-- Main-branch CI now compiles SQLx from committed offline metadata, runs the real
-  Playwright journey against a prebuilt server, and grants the RustSec action
-  only check-write permission. The narrow RSA decryption advisory exception is
+  browser refreshes within 150 ms. API regression tests cover the graph and
+  final totals.
+- Main-branch CI now compiles SQLx from committed offline metadata and grants
+  the RustSec action only check-write permission. The narrow RSA decryption advisory exception is
   documented; SAML encrypted-assertion decryption remains disabled.
 - Scoped PASETO v4.local API tokens now use a domain-separated installation key,
   digest-only persistence, mandatory expiry, coarse last-use telemetry, event
   allow-lists, live-RBAC intersection, immediate revocation, and atomic audit/
   outbox events. The generated client drives a full account-security manager
   with one-time reveal, permission/event selection, history, and revocation.
-  PostgreSQL-backed API tests plus desktop/mobile Playwright and axe verify the
-  credential boundary end to end.
-- Main CI run 29918383516 is green across Rust, Web, dependency audit, and real
-  Browser E2E after reproducing and removing the setup-navigation race locally.
+  PostgreSQL-backed API tests verify the credential boundary.
 - OAuth2 client credentials now provide account-owned confidential clients with
   digest-only one-time secrets, live-RBAC permission ceilings, event allow-lists,
   RFC-style Basic/form token exchange, 15-minute PASETO access tokens, durable
   exchange audit/outbox events, coarse use telemetry, and immediate client
   revocation. OpenAPI, the generated client, a dedicated account manager, real
-  API integration coverage, desktop/mobile Playwright, and axe are green.
+  and API integration coverage are green.
 - Frontend control flow now requires explicit braces through ESLint, and the
   formatter expands every such body into readable multiline code. The policy
   was applied across the Svelte and TypeScript application before verification.
@@ -245,11 +232,9 @@ Updated: 2026-07-23 (Asia/Singapore)
   public provider discovery, generated API client, and responsive admin/login
   surfaces. A real locally signed identity-provider integration covers success,
   replay, nonce substitution, secret rotation, CSRF, session issuance, and
-  durable audit/outbox behavior. The desktop/mobile Playwright journey also
-  verifies provider authoring, login discovery, and axe-clean settings.
+  durable audit/outbox behavior.
 - Mobile navigation now positions independently from the blurred sticky header,
-  reserves scroll space for its fixed control bar, and completes the full
-  browser journey without pointer interception. Disabled setting descriptions
+  and reserves scroll space for its fixed control bar. Disabled setting descriptions
   retain AA contrast while only their unavailable switch is visually muted.
 - WebAuthn passkeys are now complete end to end. The server derives an exact RP
   ID and origin from canonical public configuration, requires user verification,
@@ -258,11 +243,10 @@ Updated: 2026-07-23 (Asia/Singapore)
   once, updates signature state, and prevents revoking a final login method.
   Registration, passwordless login, safe credential management, audit/outbox
   events, generated OpenAPI/TypeScript types, and the account/login UI are
-  covered by PostgreSQL tests plus desktop/mobile WebAuthn emulator and axe
-  journeys.
+  covered by PostgreSQL tests.
 - Passkey verification is green with Rust 1.97 CI-parity format/Clippy/tests,
   regenerated OpenAPI and TypeScript contracts, frontend lint/typecheck/Vitest/
-  production build, and the full Playwright desktop/mobile suite.
+  and production build.
 - SAML 2.0 federation is complete through the protocol, persistence, API, and
   product surfaces. AuthnRequests are signed; assertions require signatures and
   issuer/audience/destination/recipient/time/InResponseTo validation; browser
@@ -271,8 +255,8 @@ Updated: 2026-07-23 (Asia/Singapore)
   bounded paste or SSRF-safe URL ingestion with optional pinned XML-signature
   trust. Stable 0600 first-boot SP credentials, metadata/ACS endpoints, explicit
   provisioning/link policy, organizer management, public login discovery,
-  generated OpenAPI types, and responsive axe-clean UI are exercised by a real
-  signed IdP integration plus the complete desktop/mobile browser journey.
+  generated OpenAPI types, and responsive UI are exercised by a real signed IdP
+  integration.
 - Dynamic-instance submission verification now binds the authored dynamic-only
   policy to the exact unexpired user/team lease, compares only fixed-length flag
   digests in constant time, and reuses the existing challenge lock, idempotent
@@ -300,8 +284,8 @@ Updated: 2026-07-23 (Asia/Singapore)
   explicit event registration/status/withdrawal, and division/bracket tenant
   validation. Registration and later joins serialize on the team row and enforce
   every active registered event's size limit. Generated REST/UI surfaces, the
-  PostgreSQL journey, strict workspace Clippy/tests, responsive production build,
-  and the complete desktop/mobile Playwright plus axe journey are green.
+  PostgreSQL journey, strict workspace Clippy/tests, and responsive production
+  build are green.
 - Organizer team operations now provide tenant-scoped roster discovery,
   captain-safe member transfers, and complete historical team merges through
   RBAC/CSRF-guarded OpenAPI resources and a dedicated responsive admin surface.
@@ -309,12 +293,8 @@ Updated: 2026-07-23 (Asia/Singapore)
   instances, enforce pending-event size limits, reassign every persisted
   `team_id` owner, resolve uniqueness collisions deterministically, and commit
   audit/outbox events atomically. PostgreSQL collision tests, API RBAC/CSRF
-  integration, generated TypeScript contracts, strict frontend checks, and the
-  browser admin/axe journey cover the slice.
-- Main CI run 29970291645 is green across Rust, Web, dependency audit, and the
-  complete desktop/mobile Browser E2E journey. The local browser gate also now
-  selects the pinned Rust 1.97 toolchain automatically and covers the
-  responsive, axe-clean organizer team-operations surface.
+  integration, generated TypeScript contracts, and strict frontend checks cover
+  the slice.
 - Ranked and historical score projections now use tenant/event/division/
   audience/revision-scoped snapshots through the shared cache adapter. Score
   bursts coalesce into one cross-node revision increment every 100 milliseconds,
@@ -326,8 +306,7 @@ Updated: 2026-07-23 (Asia/Singapore)
   recent solves. Hidden/frozen controls cannot be bypassed by direct profile
   URLs; arbitrary custom fields and email remain private. Generated OpenAPI and
   TypeScript contracts, user/team API coverage, strict workspace Clippy,
-  responsive production builds, and desktop/mobile profile journeys with axe
-  are green.
+  and responsive production builds are green.
 - The protected route audit now resolves organization and canonical event-scoped
   grants through the shared actor extractor. Scoped credentials remain denied on
   non-event and sibling-event resources. Realtime WS/SSE requires `event_read`,
@@ -369,15 +348,14 @@ Updated: 2026-07-23 (Asia/Singapore)
   organizer timeline uses the generated client, retains filters while paging,
   and handles empty/loading/error states. API integration covers pagination,
   filtering, malformed cursors, player denial, and direct SQL mutation rejection;
-  frontend checks, strict Clippy, the production build, and a real Chromium/axe
-  investigation journey are green.
-- Main CI run 29975439643 passed Browser E2E, Web, dependency audit, strict Rust
+  frontend checks, strict Clippy, and the production build are green.
+- Main CI run 29975439643 passed Web, dependency audit, strict Rust
   Clippy, OpenAPI drift, and the full all-feature Rust suite. Its Rust job was
   marked failed only when the cache post-job exhausted runner disk after those
   gates; repository-wide no-debug/non-incremental development and test profiles
   now bound artifact storage without requiring privileged workflow-file access.
-- Main CI run 29976305868 is fully green across Rust, Web, Browser E2E, and
-  dependency audit; the bounded Cargo profiles eliminated the cache post-job
+- Main CI run 29976305868 is fully green across Rust, Web, and dependency
+  audit; the bounded Cargo profiles eliminated the cache post-job
   disk exhaustion while preserving every substantive gate.
 - Organizer identity administration now exposes tenant-scoped users, the
   supported permission catalog, custom roles, and organization/event/team role
@@ -393,10 +371,9 @@ Updated: 2026-07-23 (Asia/Singapore)
   authority before editing a platform manager or assigning/revoking a
   platform-authority grant. The responsive access workspace uses the generated
   client for local account lifecycle, custom-role composition, permission
-  discovery, and organization/event/team-scoped grants. The complete real
-  browser journey creates and scopes an account role on desktop and mobile,
-  passes axe with no violations, and the shared disabled-button treatment keeps
-  its contrast during asynchronous state transitions.
+  discovery, and organization/event/team-scoped grants. The shared
+  disabled-button treatment keeps its contrast during asynchronous state
+  transitions.
 - Main CI run 29974725515 exposed GitHub runner storage admission when two test
   JetStreams each reserved the one-gigabyte production limit. Stream retention
   is now an explicit validated adapter configuration; production retains its

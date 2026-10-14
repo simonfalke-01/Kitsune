@@ -28,7 +28,7 @@ Each exit criterion requires passing focused tests and ledger evidence.
   behavior, and WCAG AA pass with neutral mascot slots.
 - [ ] 13 — Compose, OCI/Podman, Helm, Terraform, raw Kubernetes, and every CLI
   command work and are documented.
-- [ ] 14 — Unit, integration, contract, component, E2E, axe, and 10k load tests
+- [ ] 14 — Unit, integration, contract, component, and 10k load tests
   meet gates; CI, scans, coverage, and performance budgets pass.
 - [ ] 15 — Starlight documentation and generated API reference are accurate and
   build; rich seed data works.

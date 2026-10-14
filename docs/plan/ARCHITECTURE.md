@@ -205,9 +205,7 @@ and Motion is reserved for gesture or layout transitions that CSS cannot
 express.
 
 The non-production `/_kitchen` route is the executable drift detector. It
-renders every primitive, variant, and state in both themes. Product Playwright
-journeys remain PostgreSQL-backed and validate the integrated desktop/mobile
-application, keyboard behavior, screenshots, and axe.
+renders every primitive, variant, and state in both themes.
 
 The versioned theme contract is a public adapter surface. First-party screens,
 declarative theme packs, white-label configuration, and plugin UI slots consume

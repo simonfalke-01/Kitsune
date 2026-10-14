@@ -160,9 +160,6 @@ product decisions, not optional aesthetic suggestions.
 - Branch: `main`, remote `origin git@github.com:simonfalke-01/Kitsune.git`
 - As of 2026-10-14 the working tree is committed. Gates: `check`, `lint`,
   `test` (54 files, 201 tests), token scan, and `cargo check` are green.
-- Browser E2E (Playwright suite, config, CI job, and dependencies) was removed
-  on 2026-10-14 by owner decision. References to E2E in older sections below
-  are historical.
 - The account route lives under `scoreboard/account/`. The former
   `(platform)/account/` route is removed.
 - Local Postgres for development is the `kitsune-dev-pg` container on port
@@ -227,15 +224,11 @@ product decisions, not optional aesthetic suggestions.
 - Use React Aria toast `Text` elements with `slot="title"` and
   `slot="description"`; `strong`/`span` alone left `alertdialog` unnamed.
 - Never use bare `<header>` or `<footer>` inside a dialog or page body unless it
-  is deliberately scoped by sectioning content. Axe treated them as duplicate
+  is deliberately scoped by sectioning content. They create duplicate
   landmarks.
 - React Aria `TextFieldProps` are props for the field root, not a generic input
   prop bag. If a new browser-input attribute is needed, extend the wrapper to
   pass it to `Input`; do not blindly spread it onto `TextField`.
-- Wait for React Aria overlay exit before a full-page Axe assertion. Auditing
-  during the 180ms fade makes text appear low-contrast due to compositing.
-- Avoid duplicate test locators in the two-theme kitchen; scope them to one
-  preview or intentionally use `.first()`.
 
 ## Current local runtime state
 
@@ -258,14 +251,7 @@ visible dev server available.
   ```
 
 - A local Docker PostgreSQL container named `kitsune-dev-pg` is exposed on
-  `127.0.0.1:54329`. The dedicated E2E database is `kitsune_e2e`.
-- A `kitsune-server` process currently listens on port `3000`. It was spawned
-  by the most recent local E2E attempt and may be safely inspected with
-  `lsof -nP -iTCP:3000 -sTCP:LISTEN`; do not assume it is a durable developer
-  server. Keep the frontend dev server alive unless the owner says otherwise.
-- The E2E database was recreated once because its previous schema recorded a
-  removed migration `17`. That destructive action was strictly limited to the
-  disposable `kitsune_e2e` database, never the normal development database.
+  `127.0.0.1:54329`.
 - `web/next.config.ts` contains `allowedDevOrigins: ['127.0.0.1',
   'dev.vortq.com']`, which resolves the prior Next development HMR warning for
   the owner’s `dev.vortq.com` preview host. Retain this unless the preview host
@@ -290,73 +276,19 @@ Result: strict TypeScript, lint, two Vitest tests, and Next production build
 were green. The production route manifest showed `/challenges`, `/login`, and
 `/setup` as request-time server-rendered routes and `/_kitchen` as static.
 
-### Browser E2E progress
-
-The new browser suite is deliberately narrower than the obsolete Svelte-wide
-test. It validates a real product vertical slice rather than stale markup:
-
-1. first-run setup or sign-in;
-2. authenticated session and CSRF retrieval;
-3. typed API creation of a draft event;
-4. transition to live;
-5. typed API creation of a published static-flag challenge;
-6. SSR event-cookie selection;
-7. player challenge dialog and correct flag submission;
-8. solved state and success toast;
-9. full-page Axe audit after overlay exit;
-10. kitchen toast entry animation and toast-scoped Axe audit.
-
-Use the following local command while the owner-visible server is running:
-
-```sh
-KITSUNE_E2E_URL='http://127.0.0.1:5173' \
-KITSUNE_E2E_DATABASE_URL='postgres://kitsune:kitsune@127.0.0.1:54329/kitsune_e2e' \
-pnpm --dir web test:e2e
-```
-
-The full local browser suite was rerun after the final a11y patches and passed
-on 2026-07-23: all four tests (Chromium and mobile challenge journeys plus
-Chromium and mobile toast-motion/Axe checks) passed in 7.5 seconds. Re-run the
-exact command after any subsequent change to the setup, session, event,
-challenge, toast, token, or overlay paths.
-
-Earlier failures and their intended fixes:
-
-| Failure | Fix already present |
-| --- | --- |
-| Old GitHub E2E expected removed Svelte copy such as “Raise your first torii.” | Replaced test with actual Next/React Aria setup and challenge journey. |
-| Backend refused stale `kitsune_e2e` migration history | Recreated only the disposable E2E DB. |
-| Next 16 refused a second dev server due `.next/dev/lock` | E2E config supports reusing `KITSUNE_E2E_URL=5173` locally; CI defaults to isolated port 4173. |
-| Toast lacked accessible name | Uses official RAC `Text` title/description slots. |
-| Full-page Axe saw duplicate banner landmarks | Dialog and page header no longer create unscoped header/footer landmarks. |
-| Mobile Axe saw a dialog mid-exit and failed contrast | Test waits for dialog hidden; semantic light status text now uses darker `*-12` roles. |
-
 ### GitHub Actions status
 
-At handoff, latest pushed main CI run is:
-
-- `29984914222` for `6fbf0ba` — **failed** only in Browser E2E because CI still
-  ran the old Svelte-era test before the uncommitted replacement existed.
-- The Rust, Web, and dependency-audit jobs were reported green in the prior
-  inspection.
-- The prior failure `29984030406` has the same root cause.
-
-After committing the current slice, immediately push and inspect:
+After pushing, inspect:
 
 ```sh
-git push origin main
 gh run list --repo simonfalke-01/Kitsune --limit 5
 gh run view <run-id> --repo simonfalke-01/Kitsune --log-failed
 ```
 
-The current E2E configuration's CI default remains `localhost:4173`; CI does
-not have the developer's 5173 server, so Playwright will start its own server.
-
 ## Exact next actions, in order
 
 1. Preserve all currently dirty files and read this handoff plus `AGENTS.md`.
-2. The local frontend and browser gates have passed for the current slice;
-   rerun them after any change. The frontend sequence is:
+2. Rerun the frontend gates after any change. The frontend sequence is:
 
    ```sh
    pnpm --dir web format
@@ -366,36 +298,33 @@ not have the developer's 5173 server, so Playwright will start its own server.
    pnpm --dir web build
    ```
 
-3. Run the exact local browser command above after changes. Fix the test or
-   product if either Chromium or mobile fails. Do not mask Axe rules or relax
-   accessibility assertions without a real accessibility rationale.
-4. Run the mechanical token scan from `AGENTS.md`, inspect both themes at wide
+3. Run the mechanical token scan from `AGENTS.md`, inspect both themes at wide
    and 360/390px widths, and take/inspect screenshots. Watch specifically for:
    field height alignment, card title/tag alignment, hover inset, toast entry/
    exit, no pointless empty vertical regions, and no stray monospace/icon use.
-5. Determine whether `web/next-env.d.ts`'s generated `.next/dev` reference is
+4. Determine whether `web/next-env.d.ts`'s generated `.next/dev` reference is
    the expected current Next 16 generated output. Do not hand-edit it merely to
    quiet a diff; regenerate through the normal Next command and commit it only
    if the generated project state requires it.
-6. Update `docs/plan/TODO.md` and `docs/plan/STATE.md` with the final verified
+5. Update `docs/plan/TODO.md` and `docs/plan/STATE.md` with the final verified
    result. This handoff file should remain as a historical continuation note.
-7. Stage only the active slice (explicit file list; exclude `.github/workflows/
+6. Stage only the active slice (explicit file list; exclude `.github/workflows/
    ci.yml` and `.omc/`), commit with GPG signing disabled if necessary, and
    push. Suggested commit split:
-   - `feat(web): add SSR first-run setup and browser journey`
+   - `feat(web): add SSR first-run setup`
    - `fix(web): harden React Aria accessibility semantics`
 
    If both rely on each other for green CI, one atomic commit is preferable to
    a broken intermediate commit.
-8. Inspect the resulting GitHub Actions run and repair all real failures before
+7. Inspect the resulting GitHub Actions run and repair all real failures before
    beginning the next route.
-9. Resume product work with the next user-facing SSR slice:
+8. Resume product work with the next user-facing SSR slice:
    - scoreboard (ranked board, filters, freeze/hidden/public state, history);
    - team (roster, invitations, membership, event registration);
    - account/security;
    - organizer event/challenge/automation/access/audit/settings surfaces using
      compact TanStack Table + React Aria data-table composition and dialogs.
-10. Only after the frontend reset gates are genuinely green, restore the
+9. Only after the frontend reset gates are genuinely green, restore the
     notification vertical slice from `stash@{0}` and continue the pre-reset
     milestone.
 
@@ -478,7 +407,7 @@ visual code as done at first render:
 - It receives a visual screenshot review, including hover and overlay states.
 - Its mutations are idempotent where needed, preserve scroll/context, show a
   busy state immediately, update the local object, and use the shared toast.
-- It receives typed API tests and a real browser journey where it crosses a
+- It receives typed API tests where it crosses a
   meaningful user workflow.
 
 ## Useful commands
@@ -522,7 +451,7 @@ gh run view <run-id> --repo simonfalke-01/Kitsune --log-failed
   observability, automation, marketplace, deployment, and UX work remaining.
 - Do not overwrite the user’s unrelated changes, especially the dirty workflow
   file. Use explicit staging lists.
-- Do not resurrect Svelte components, routing, data stores, or stale E2E copy.
+- Do not resurrect Svelte components, routing, data stores, or copy.
   The supported frontend path is Next.js App Router + SSR + React Aria.
 - Do not restore the notification stash early; it predates this frontend reset
   and can reintroduce incompatible UI assumptions.

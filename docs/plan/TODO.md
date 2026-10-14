@@ -67,13 +67,9 @@
 - [ ] Keep the mascot slot visually empty; do not ship generated or placeholder
       character artwork.
 - [ ] Pass token-policy lint, formatting, ESLint, strict typecheck, Vitest,
-      production build, keyboard review, desktop/mobile Playwright, screenshots,
-      and axe.
+      production build, keyboard review, and screenshots.
   - [x] First auth/challenge slice passes formatting, ESLint, strict typecheck,
         Vitest, and the Next production build.
-  - [x] Setup/challenge browser journey and toast-motion checks pass Chromium and
-        mobile Playwright with axe on Linux; Node 26 uses Next's webpack dev mode
-        because Next 16 Turbopack panics while emitting the challenge route.
   - [x] Scoreboard passes the token scan, formatting, ESLint, strict typecheck,
         five Vitest assertions, production build, and authenticated SSR smoke.
 - [x] Commit and push the completed frontend rewrite in reviewable atomic units.
@@ -245,10 +241,7 @@ or scaffolding alone.
 - [ ] Wire player and organizer resources to the complete domain REST API.
 - [x] Wire event setup, selection, challenge authoring, and player challenge
       board to the generated REST client and realtime invalidation.
-- [x] Exercise the event-to-published-challenge journey with PostgreSQL-backed
-      Playwright on desktop/mobile and axe.
-- [x] Wire the player team page to create/join/list/captain APIs and cover team
-      creation through the real desktop/mobile browser journey.
+- [x] Wire the player team page to create/join/list/captain APIs.
 - [x] Wire inline flag submission, solved state, first-blood feedback, live
       ranked standings, and organizer scoreboard controls through the generated API
       and exercise them on desktop/mobile with axe.
