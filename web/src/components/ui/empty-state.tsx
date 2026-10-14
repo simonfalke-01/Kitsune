@@ -51,3 +51,15 @@ export function EmptyState({
     </div>
   );
 }
+
+export interface WorkspacePlaceholderProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
+  title: ReactNode;
+}
+
+export function WorkspacePlaceholder({ className, title, ...props }: WorkspacePlaceholderProps) {
+  return (
+    <div {...props} className={cx('flex items-center justify-center p-6 text-center', className)}>
+      <h3 className="m-0 font-display text-lg font-semibold text-text-muted">{title}</h3>
+    </div>
+  );
+}

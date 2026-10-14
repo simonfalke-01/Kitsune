@@ -1,9 +1,14 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { renderToString } from 'react-dom/server';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PresenceSummary } from './presence-summary';
 
 describe('PresenceSummary', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('names every teammate without relying on avatar color', () => {
     const { container } = render(
       <PresenceSummary
@@ -33,4 +38,42 @@ describe('PresenceSummary', () => {
 
     expect(container).toBeEmptyDOMElement();
   });
+
+  it.each(['en-GB', 'de-DE', 'tr-TR'])(
+    'hydrates without replacing presence text when the browser locale is %s',
+    (browserLocale) => {
+      const NativeListFormat = Intl.ListFormat;
+      let defaultLocale = 'en-US';
+      vi.spyOn(Intl, 'ListFormat').mockImplementation(function (
+        locales?: Intl.LocalesArgument,
+        options?: Intl.ListFormatOptions
+      ) {
+        return new NativeListFormat(locales ?? defaultLocale, options);
+      });
+
+      const summary = (
+        <PresenceSummary
+          people={[
+            { id: 'theo', name: 'Theo Bell' },
+            { id: 'sora', name: 'Sora Chen' }
+          ]}
+        />
+      );
+      const container = document.createElement('div');
+      container.innerHTML = renderToString(summary);
+      const serverElement = container.firstElementChild;
+      const onRecoverableError = vi.fn();
+
+      defaultLocale = browserLocale;
+      render(summary, { container, hydrate: true, onRecoverableError });
+
+      expect(onRecoverableError).not.toHaveBeenCalled();
+      expect(container.firstElementChild).toBe(serverElement);
+      expect(container.firstElementChild).toHaveAttribute(
+        'aria-label',
+        'Theo Bell & Sora Chen are viewing this challenge'
+      );
+      expect(container).toHaveTextContent('Theo Bell & Sora Chen viewing');
+    }
+  );
 });

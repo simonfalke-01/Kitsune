@@ -1,9 +1,33 @@
 import { act, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { showToast, toastQueue, ToastRegion } from './toast';
 
 describe('ToastRegion', () => {
+  it('does not snapshot the document when the toast queue updates', () => {
+    const startViewTransition = vi.fn();
+    Object.defineProperty(document, 'startViewTransition', {
+      configurable: true,
+      value: startViewTransition
+    });
+    render(<ToastRegion />);
+
+    let toastId = '';
+    act(() => {
+      toastId = showToast({
+        title: 'Challenge solved',
+        tone: 'success'
+      });
+    });
+
+    expect(startViewTransition).not.toHaveBeenCalled();
+
+    act(() => {
+      toastQueue.close(toastId);
+    });
+    Reflect.deleteProperty(document, 'startViewTransition');
+  });
+
   it('renders first blood as a gold achievement rather than a warning', () => {
     render(<ToastRegion />);
 

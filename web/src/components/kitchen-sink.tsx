@@ -8,6 +8,8 @@ import {
   type ChallengeWorkspaceActions
 } from '@/app/(platform)/challenges/challenge-workspace';
 import { SessionProvider } from '@/app/session-context';
+import { ProfileAnalytics } from '@/components/charts/profile-analytics';
+import { ScoreHistoryChart } from '@/components/charts/score-history-chart';
 import {
   Alert,
   AlertDialog,
@@ -71,7 +73,7 @@ import {
   TooltipTrigger,
   showToast
 } from '@/components/ui';
-import type { ChallengeSummary } from '@/lib/api/client';
+import type { ChallengeSummary, ScoreHistory } from '@/lib/api/client';
 import { createChallengeExperience } from '@/lib/challenges';
 
 const eventOptions = [
@@ -190,6 +192,86 @@ const previewChallenges = [
   }),
   previewChallenge('cold-storage', 'Cold storage', 'Forensics')
 ];
+
+const chartStart = Date.parse('2026-07-23T10:00:00Z');
+const chartEnd = Date.parse('2026-07-23T18:00:00Z');
+const previewHistory: ScoreHistory = {
+  frozen: false,
+  hidden: false,
+  series: [
+    {
+      competitor_id: 'foxden',
+      competitor_kind: 'team',
+      name: 'Foxden',
+      points: [
+        {
+          occurred_at: '2026-07-23T10:00:00Z',
+          score: 0,
+          sequence: 1
+        },
+        {
+          occurred_at: '2026-07-23T11:00:00Z',
+          score: 120,
+          sequence: 2
+        },
+        {
+          occurred_at: '2026-07-23T13:00:00Z',
+          score: 420,
+          sequence: 3
+        }
+      ]
+    },
+    {
+      competitor_id: 'lantern',
+      competitor_kind: 'team',
+      name: 'Lantern',
+      points: [
+        {
+          occurred_at: '2026-07-23T10:00:00Z',
+          score: 0,
+          sequence: 1
+        },
+        {
+          occurred_at: '2026-07-23T12:00:00Z',
+          score: 200,
+          sequence: 2
+        },
+        {
+          occurred_at: '2026-07-23T15:00:00Z',
+          score: 360,
+          sequence: 3
+        }
+      ]
+    }
+  ]
+};
+
+const previewAnalyticsSolves = [
+  {
+    category: 'Web',
+    challengeId: 'web-1',
+    challengeName: 'Shrine gate',
+    globalSolves: 4,
+    points: 120,
+    solvedAt: Date.parse('2026-07-23T11:00:00Z')
+  },
+  {
+    category: 'Crypto',
+    challengeId: 'crypto-1',
+    challengeName: 'Fox cipher',
+    globalSolves: 14,
+    points: 300,
+    solvedAt: Date.parse('2026-07-23T13:00:00Z')
+  },
+  {
+    category: 'Pwn',
+    challengeId: 'pwn-1',
+    challengeName: 'Lantern heap',
+    globalSolves: 1,
+    points: 500,
+    solvedAt: Date.parse('2026-07-23T16:00:00Z')
+  }
+] as const;
 
 const previewChallengeActions: ChallengeWorkspaceActions = {
   loadHints() {
@@ -716,6 +798,17 @@ function ThemePreview({ isDark = false, title }: ThemePreviewProps) {
             </SheetTrigger>
             <Pagination currentPage={page} onPageChange={setPage} totalPages={6} />
           </div>
+        </PreviewSection>
+
+        <PreviewSection title="Charts and analytics">
+          <ScoreHistoryChart eventStart="2026-07-23T10:00:00Z" history={previewHistory} />
+          <ProfileAnalytics
+            competitorId="foxden"
+            competitorName="Foxden"
+            end={chartEnd}
+            solves={previewAnalyticsSolves}
+            start={chartStart}
+          />
         </PreviewSection>
 
         <PreviewSection title="Authored content and presence">

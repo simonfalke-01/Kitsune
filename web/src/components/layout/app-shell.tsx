@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import type { ReactNode } from 'react';
 
+import { useEvent } from '@/app/event-context';
 import { useSession } from '@/app/session-context';
 import { useTheme } from '@/app/theme-context';
 import {
@@ -20,6 +21,7 @@ import {
   TooltipTrigger
 } from '@/components/ui';
 import { cx, focusTargetRing } from '@/components/ui/styles';
+import { publicDemoEventName } from '@/lib/events';
 
 interface AppShellProps {
   children: ReactNode;
@@ -39,7 +41,7 @@ interface NavigationItem {
 
 const playerNavigation: readonly NavigationItem[] = [
   {
-    href: '/event',
+    href: '/overview',
     label: 'Overview'
   },
   {
@@ -67,37 +69,35 @@ export function AppHeader({
     id: item.href,
     label: item.label
   }));
+  const selectedNavigationHref = playerNavigation.find((item) =>
+    pathIsCurrent(pathname, item.href)
+  )?.href;
 
   return (
     <header
       className={
         appearance === 'workspace'
           ? 'kitsune-merged-header shrink-0 overflow-hidden rounded-md bg-surface-raised'
-          : 'kitsune-global-header sticky top-0 z-40 shrink-0 border-b border-border-subtle bg-surface-raised'
+          : 'kitsune-global-header sticky top-3 z-40 mx-3 mt-3 shrink-0 overflow-hidden rounded-md bg-surface-raised'
       }
     >
-      <div
-        className={
-          appearance === 'workspace'
-            ? 'flex min-h-16 w-full items-center gap-3 px-4'
-            : 'flex min-h-16 w-full items-center gap-3 px-4 sm:px-6 lg:px-8'
-        }
-      >
+      <div className="flex min-h-16 w-full items-center gap-3 px-4">
         <div className="md:hidden">
           <MenuTrigger>
             <IconButton label="Open navigation">
               <MenuIcon aria-hidden className="size-5" />
             </IconButton>
-            <Menu aria-label="Navigation" options={mobileOptions} />
+            <Menu
+              aria-label="Navigation"
+              options={mobileOptions}
+              selectedKeys={selectedNavigationHref ? [selectedNavigationHref] : []}
+              selectionMode="single"
+            />
           </MenuTrigger>
         </div>
         <Link
-          className={
-            appearance === 'workspace'
-              ? 'min-w-0 truncate font-display text-lg font-semibold tracking-tight text-text no-underline'
-              : 'font-display text-lg font-semibold tracking-tight text-accent-text no-underline'
-          }
-          href="/event"
+          className="min-w-0 truncate font-display text-lg font-semibold tracking-tight text-text no-underline"
+          href="/overview"
           tone="current"
         >
           {appearance === 'workspace' ? (
@@ -166,21 +166,24 @@ export function AppHeader({
 
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname() ?? '/';
-  const rendersContent = pathname === '/event' || pathname === '/challenges';
+  const { selectedEvent } = useEvent();
+  const { isAuthenticated, session } = useSession();
+  const isDemo = !isAuthenticated || !session;
   const isChallengeWorkspace = pathname === '/challenges';
+  const eventName = isDemo ? publicDemoEventName : (selectedEvent?.name ?? 'Kitsune');
 
   return (
     <div
       className={
         isChallengeWorkspace
           ? 'kitsune-fixed-workspace fixed inset-0 flex flex-col overflow-hidden overscroll-none bg-surface text-text'
-          : 'min-h-screen bg-surface text-text'
+          : 'flex min-h-screen flex-col bg-surface text-text'
       }
     >
       <SkipLink href="#main-content" placement="global">
         Skip to content
       </SkipLink>
-      <AppHeader />
+      <AppHeader brandLabel={eventName} />
       <main
         id="main-content"
         className={cx(
@@ -188,11 +191,11 @@ export function AppShell({ children }: AppShellProps) {
           focusTargetRing,
           isChallengeWorkspace
             ? 'min-h-0 w-full flex-1 overflow-hidden p-3'
-            : 'w-full px-4 py-6 sm:px-6 lg:px-8'
+            : 'm-3 flex min-h-0 flex-1 flex-col rounded-md bg-surface-raised p-4 sm:p-6 lg:p-8'
         )}
         tabIndex={-1}
       >
-        {rendersContent ? children : null}
+        {children}
       </main>
       <ToastRegion />
     </div>

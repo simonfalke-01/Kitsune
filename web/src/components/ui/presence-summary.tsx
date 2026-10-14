@@ -17,7 +17,8 @@ export function PresenceSummary({ className, people }: PresenceSummaryProps) {
   }
 
   const names = people.map((person) => person.name);
-  const visibleNames = new Intl.ListFormat(undefined, {
+  // Match the document language so server and browser defaults cannot change this text.
+  const visibleNames = new Intl.ListFormat('en', {
     style: 'short',
     type: 'conjunction'
   }).format(names);

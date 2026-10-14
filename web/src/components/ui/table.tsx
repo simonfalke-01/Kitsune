@@ -20,14 +20,20 @@ import {
 import { cx, focusRing } from './styles';
 
 export interface TableProps extends ReactAriaTableProps {
+  wrapperClassName?: string;
   wrapperLabel?: string;
 }
 
-export function Table({ className, wrapperLabel = 'Scrollable data table', ...props }: TableProps) {
+export function Table({
+  className,
+  wrapperClassName,
+  wrapperLabel = 'Scrollable data table',
+  ...props
+}: TableProps) {
   return (
     <div
       aria-label={wrapperLabel}
-      className="overflow-x-auto rounded-lg border border-border-subtle"
+      className={cx('overflow-x-auto rounded-lg border border-border-subtle', wrapperClassName)}
       role="region"
       tabIndex={0}
     >

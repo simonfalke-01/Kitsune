@@ -133,7 +133,7 @@
   --success-imprint-edge: color-mix(in oklch, var(--success) 82%, transparent);
   --success-imprint-fill: color-mix(in oklch, var(--success) 12%, transparent);
   --success-imprint-fill-subtle: color-mix(in oklch, var(--success) 6%, transparent);
-  --success-imprint-inset: color-mix(in oklch, var(--success) 18%, transparent);
+  --success-imprint-inset: color-mix(in oklch, var(--success) 14%, transparent);
   --success-wave-fill: color-mix(in oklch, var(--success) 18%, transparent);
   --success-hover: var(--success-10);
   --success-text: var(--success-12);
@@ -150,7 +150,7 @@
   --danger: var(--danger-9);
   --danger-imprint-edge: color-mix(in oklch, var(--danger) 82%, transparent);
   --danger-imprint-fill-subtle: color-mix(in oklch, var(--danger) 6%, transparent);
-  --danger-imprint-inset: color-mix(in oklch, var(--danger) 18%, transparent);
+  --danger-imprint-inset: color-mix(in oklch, var(--danger) 14%, transparent);
   --danger-hover: var(--danger-10);
   --danger-text: var(--danger-12);
 
@@ -207,7 +207,7 @@
   --first-blood-imprint-edge: color-mix(in oklch, var(--first-blood) 82%, transparent);
   --first-blood-imprint-fill: color-mix(in oklch, var(--first-blood) 12%, transparent);
   --first-blood-imprint-fill-subtle: color-mix(in oklch, var(--first-blood) 6%, transparent);
-  --first-blood-imprint-inset: color-mix(in oklch, var(--first-blood) 18%, transparent);
+  --first-blood-imprint-inset: color-mix(in oklch, var(--first-blood) 14%, transparent);
   --first-blood-wave-fill: color-mix(in oklch, var(--first-blood) 18%, transparent);
   --first-blood-rainbow-blue: var(--category-blue);
   --first-blood-rainbow-cyan: var(--category-cyan);
@@ -509,6 +509,7 @@
   --duration-normal: 180ms;
   --duration-slow: 260ms;
   --duration-celebration: 1200ms;
+  --ease-imprint-release: cubic-bezier(0.65, 0, 0.35, 1);
   --transition-duration-fast: var(--duration-fast);
   --transition-duration-normal: var(--duration-normal);
   --transition-duration-slow: var(--duration-slow);
@@ -526,7 +527,7 @@
   --container-detail: 48rem;
   --container-prose: 68ch;
   --container-shell: 80rem;
-  --container-toast: 24rem;
+  --container-toast: 20rem;
 
   --spacing-control: 2.75rem;
   --spacing-chart: 20rem;
@@ -619,11 +620,16 @@
 @keyframes kitsune-solve-edge-wash {
   from {
     opacity: 0;
+    animation-timing-function: var(--ease-out-quart);
   }
 
-  12%,
+  12% {
+    opacity: 1;
+  }
+
   28% {
     opacity: 1;
+    animation-timing-function: var(--ease-imprint-release);
   }
 
   68%,
@@ -963,18 +969,12 @@
 
   .kitsune-toast {
     animation: kitsune-toast-in var(--duration-slow) var(--ease-out-quart) both;
-    view-transition-class: kitsune-toast;
     will-change: opacity, transform;
   }
 
   .kitsune-toast[data-exiting] {
-    animation: kitsune-toast-out var(--duration-normal) var(--ease-out-quart) both;
+    animation: kitsune-toast-out var(--duration-fast) var(--ease-out-quart) both;
   }
-}
-
-::view-transition-group(.kitsune-toast) {
-  animation-duration: var(--duration-slow);
-  animation-timing-function: var(--ease-out-quart);
 }
 
 @layer base {
