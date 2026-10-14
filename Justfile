@@ -23,8 +23,6 @@ lint:
   pnpm lint
   pnpm check
 
-e2e:
-  pnpm --dir web test:e2e
 
 load:
   cargo run --manifest-path tests/load/Cargo.toml --release

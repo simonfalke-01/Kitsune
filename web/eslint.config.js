@@ -17,7 +17,6 @@ export default ts.config(
       'openapi.json',
       'next-env.d.ts',
       'postcss.config.mjs',
-      'playwright-report/**',
       'test-results/**'
     ]
   },

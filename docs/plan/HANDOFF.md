@@ -160,13 +160,13 @@ product decisions, not optional aesthetic suggestions.
 - Branch: `main`, remote `origin git@github.com:simonfalke-01/Kitsune.git`
 - As of 2026-10-14 the working tree is committed. Gates: `check`, `lint`,
   `test` (54 files, 201 tests), token scan, and `cargo check` are green.
-  Browser E2E was not rerun locally because the Playwright Chromium binary is
-  not installed. Run `pnpm --dir web exec playwright install chromium` first.
+- Browser E2E (Playwright suite, config, CI job, and dependencies) was removed
+  on 2026-10-14 by owner decision. References to E2E in older sections below
+  are historical.
 - The account route lives under `scoreboard/account/`. The former
   `(platform)/account/` route is removed.
-- Local Postgres for development and E2E is the `kitsune-dev-pg` container on
-  port 54329 (databases `kitsune` and `kitsune_e2e`). Port 3000 must be free
-  for the E2E backend.
+- Local Postgres for development is the `kitsune-dev-pg` container on port
+  54329 (database `kitsune`).
 - A startup shim that back-filled the `_sqlx_migrations` row for migration 17
   was removed rather than committed. Local databases whose history predates
   that row must be recreated, not patched in code.

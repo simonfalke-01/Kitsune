@@ -35,5 +35,4 @@ Reference reviewed at `otter-sec/rctf@5965315`. The implementation must reproduc
 - `pnpm --dir web check`
 - `pnpm --dir web lint`
 - `pnpm --dir web test`
-- `pnpm --dir web test:e2e`
 - Interface-contract token scan

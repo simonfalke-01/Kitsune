@@ -13,8 +13,6 @@
 /data/
 /web/data/
 /dist/
-**/playwright-report/
-**/test-results/
 /.astro/
 *.profraw
 *.log

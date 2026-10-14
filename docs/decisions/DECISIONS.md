@@ -485,3 +485,7 @@ Format: `YYYY-MM-DD — decision — rationale`.
 - 2026-07-23 — Route destructive confirmations through a dedicated shared
   alert-dialog primitive — team removal, departure, captain transfer, and invite
   replacement need explicit consequence copy and a protected confirmation path.
+- 2026-10-14 — Remove the browser E2E suite, its Playwright config, CI job, and
+  dependencies — the owner judged it low value. Coverage comes from typecheck,
+  lint, Vitest unit and component tests, and Rust tests. Do not reintroduce
+  E2E without an explicit owner request.
