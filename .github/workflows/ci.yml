@@ -110,7 +110,8 @@ jobs:
       - uses: rustsec/audit-check@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          # SQLx macros lock its optional MySQL driver even though Kitsune's
-          # dependency graph contains only PostgreSQL. The affected RSA crate
-          # is therefore neither built nor reachable in shipped binaries.
+          # saml-rs uses the affected RSA release for signatures. The advisory
+          # concerns RSA PKCS#1 v1.5 decryption; Kitsune never enables encrypted
+          # SAML assertions and the library rejects that software-decryption
+          # path by default. Key generation and signing are not affected.
           ignore: RUSTSEC-2023-0071
