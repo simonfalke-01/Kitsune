@@ -44,7 +44,7 @@ lettre = { version = "0.11.22", default-features = false, features = ["builder",
 metrics = "0.24.3"
 metrics-exporter-prometheus = "0.18.1"
 openidconnect = { version = "4.0.1", default-features = false, features = ["reqwest", "rustls-tls"] }
-pasetors = "0.7.8"
+pasetors = "0.8.0"
 rand = "0.10.2"
 rcgen = { version = "0.14.8", default-features = false, features = ["crypto", "pem", "ring"] }
 regex = "1.12.2"
