@@ -5,7 +5,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { SessionProvider, useSession } from '../session-context';
-import { Alert, Button, Form, PasswordField, TextField } from '@/components/ui';
+import { Alert, Button, Form, Link, PasswordField, TextField } from '@/components/ui';
 
 const loginSchema = z.object({
   email: z.email('Enter a valid email address.'),
@@ -16,7 +16,12 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-function LoginFormFields() {
+interface LoginFormProps {
+  initialOrganization: string;
+  returnTo: string;
+}
+
+function LoginFormFields({ initialOrganization, returnTo }: LoginFormProps) {
   const router = useRouter();
   const { clearError, error, errorCode, isLoading, login } = useSession();
   const requiresMfa = errorCode === 'mfa_required' || errorCode === 'mfa_invalid';
@@ -30,7 +35,7 @@ function LoginFormFields() {
     defaultValues: {
       email: '',
       mfa_code: '',
-      organization: '',
+      organization: initialOrganization,
       password: ''
     }
   });
@@ -75,82 +80,38 @@ function LoginFormFields() {
     });
 
     if (authenticated) {
-      router.replace('/challenges');
+      router.replace(returnTo);
       router.refresh();
     }
   });
 
+  const routeParameters = new URLSearchParams({
+    next: returnTo
+  });
+  const recoveryParameters = new URLSearchParams();
+
+  if (initialOrganization) {
+    routeParameters.set('organization', initialOrganization);
+    recoveryParameters.set('organization', initialOrganization);
+  }
+
   return (
-    <Form
-      onSubmit={(event) => {
-        void submit(event);
-      }}
-      validationBehavior="aria"
-    >
-      <Controller
-        control={control}
-        name="organization"
-        render={({ field }) => (
-          <TextField
-            autoComplete="organization"
-            errorMessage={errors.organization?.message}
-            isInvalid={Boolean(errors.organization)}
-            label="Organization"
-            name={field.name}
-            onBlur={field.onBlur}
-            onChange={field.onChange}
-            value={field.value}
-          />
-        )}
-      />
-      <Controller
-        control={control}
-        name="email"
-        render={({ field }) => (
-          <TextField
-            autoComplete="username"
-            errorMessage={errors.email?.message}
-            inputMode="email"
-            isInvalid={Boolean(errors.email)}
-            label="Email"
-            name={field.name}
-            onBlur={field.onBlur}
-            onChange={field.onChange}
-            type="email"
-            value={field.value}
-          />
-        )}
-      />
-      <Controller
-        control={control}
-        name="password"
-        render={({ field }) => (
-          <PasswordField
-            autoComplete="current-password"
-            errorMessage={errors.password?.message}
-            isInvalid={Boolean(errors.password)}
-            label="Password"
-            name={field.name}
-            onBlur={field.onBlur}
-            onChange={field.onChange}
-            value={field.value}
-          />
-        )}
-      />
-      {requiresMfa ? (
+    <div className="grid gap-6">
+      <Form
+        onSubmit={(event) => {
+          void submit(event);
+        }}
+        validationBehavior="aria"
+      >
         <Controller
           control={control}
-          name="mfa_code"
+          name="organization"
           render={({ field }) => (
             <TextField
-              autoComplete="one-time-code"
-              errorMessage={
-                errors.mfa_code?.message ??
-                (errorCode === 'mfa_invalid' ? 'Enter a valid authentication code.' : undefined)
-              }
-              inputMode="numeric"
-              isInvalid={Boolean(errors.mfa_code) || errorCode === 'mfa_invalid'}
-              label="Authentication code"
+              autoComplete="organization"
+              errorMessage={errors.organization?.message}
+              isInvalid={Boolean(errors.organization)}
+              label="Organization"
               name={field.name}
               onBlur={field.onBlur}
               onChange={field.onChange}
@@ -158,21 +119,94 @@ function LoginFormFields() {
             />
           )}
         />
-      ) : null}
-      {error && errorCode !== 'mfa_required' && errorCode !== 'mfa_invalid' ? (
-        <Alert title={error} tone="danger" />
-      ) : null}
-      <Button isLoading={isLoading} type="submit">
-        Sign in
-      </Button>
-    </Form>
+        <Controller
+          control={control}
+          name="email"
+          render={({ field }) => (
+            <TextField
+              autoComplete="username"
+              errorMessage={errors.email?.message}
+              inputMode="email"
+              isInvalid={Boolean(errors.email)}
+              label="Email"
+              name={field.name}
+              onBlur={field.onBlur}
+              onChange={field.onChange}
+              type="email"
+              value={field.value}
+            />
+          )}
+        />
+        <Controller
+          control={control}
+          name="password"
+          render={({ field }) => (
+            <PasswordField
+              autoComplete="current-password"
+              errorMessage={errors.password?.message}
+              isInvalid={Boolean(errors.password)}
+              label="Password"
+              name={field.name}
+              onBlur={field.onBlur}
+              onChange={field.onChange}
+              value={field.value}
+            />
+          )}
+        />
+        {requiresMfa ? (
+          <Controller
+            control={control}
+            name="mfa_code"
+            render={({ field }) => (
+              <TextField
+                autoComplete="one-time-code"
+                errorMessage={
+                  errors.mfa_code?.message ??
+                  (errorCode === 'mfa_invalid' ? 'Enter a valid authentication code.' : undefined)
+                }
+                inputMode="numeric"
+                isInvalid={Boolean(errors.mfa_code) || errorCode === 'mfa_invalid'}
+                label="Authentication code"
+                name={field.name}
+                onBlur={field.onBlur}
+                onChange={field.onChange}
+                value={field.value}
+              />
+            )}
+          />
+        ) : null}
+        {error && errorCode !== 'mfa_required' && errorCode !== 'mfa_invalid' ? (
+          <Alert title={error} tone="danger" />
+        ) : null}
+        <Button isLoading={isLoading} type="submit">
+          Sign in
+        </Button>
+      </Form>
+      <div className="grid gap-3 text-sm text-text-muted">
+        <p className="m-0">
+          <Link href={`/recover?${recoveryParameters.toString()}`}>Forgot password?</Link>
+        </p>
+        <p className="m-0">
+          <Link href={`/login/passkey?${routeParameters.toString()}`}>Use a passkey</Link>
+        </p>
+        <p className="m-0">
+          <Link href={`/login/external?${routeParameters.toString()}`}>
+            Use organization sign in
+          </Link>
+        </p>
+        <p className="m-0">
+          Need an account?{' '}
+          <Link href={`/register?${routeParameters.toString()}`}>Create account</Link>
+        </p>
+      </div>
+    </div>
   );
 }
 
-export function LoginForm() {
+export function LoginForm(props: LoginFormProps) {
   return (
     <SessionProvider initialSession={null}>
-      <LoginFormFields />
+      <LoginFormFields {...props} />
     </SessionProvider>
   );
 }

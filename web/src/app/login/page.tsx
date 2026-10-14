@@ -2,13 +2,26 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 
 import { LoginForm } from './login-form';
+import { AuthShell } from '@/components/layout/auth-shell';
 import { getServerSetupRequired } from '@/lib/api/server';
+import { safeReturnPath } from '@/lib/auth/public-auth';
 
 export const metadata: Metadata = {
   title: 'Sign in'
 };
 
-export default async function LoginPage() {
+interface LoginPageProps {
+  searchParams: Promise<{
+    next?: string | string[];
+    organization?: string | string[];
+  }>;
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const parameters = await searchParams;
+  const organization = Array.isArray(parameters.organization)
+    ? (parameters.organization[0] ?? '')
+    : (parameters.organization ?? '');
   let setupRequired = false;
 
   try {
@@ -22,19 +35,8 @@ export default async function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center px-4 py-12 sm:px-6">
-      <section className="grid w-full max-w-auth gap-8" aria-labelledby="login-title">
-        <header className="grid gap-2">
-          <p className="m-0 font-display text-lg font-semibold tracking-tight text-text">Kitsune</p>
-          <h1
-            className="m-0 font-display text-2xl font-semibold tracking-tight text-text"
-            id="login-title"
-          >
-            Sign in
-          </h1>
-        </header>
-        <LoginForm />
-      </section>
-    </main>
+    <AuthShell title="Sign in">
+      <LoginForm initialOrganization={organization} returnTo={safeReturnPath(parameters.next)} />
+    </AuthShell>
   );
 }
