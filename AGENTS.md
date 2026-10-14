@@ -21,6 +21,13 @@ Two things follow from that:
 
 You are not finished when it works. You are finished when it passes §9.
 
+### Development-stage compatibility
+
+Kitsune has no existing deployments. Do not preserve backward compatibility
+unless the user explicitly requests it. Prefer clean breaking changes and
+remove obsolete routes, aliases, compatibility shims, dual paths, and
+deprecated fallbacks instead of maintaining legacy behavior.
+
 ## 1. Stack — locked, do not substitute
 
 | Concern | Choice |

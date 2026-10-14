@@ -439,7 +439,7 @@ Format: `YYYY-MM-DD — decision — rationale`.
   packs, and white-label configuration — deep customization must not require a
   fork or component-level CSS override.
 - 2026-07-23 — Supersede the initial foxfire-teal proposal while retaining its
-  cool graphite ramp and Archivo, Instrument Sans, and IBM Plex Mono type
+  cool graphite ramp and Archivo, Instrument Sans, and JetBrains Mono type
   pairing — the typography remains calm and distinctive, but the action color
   needed less chromatic pressure.
 - 2026-07-23 — Replace the over-chromatic teal with a solid cobalt action family
